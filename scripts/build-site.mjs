@@ -18,7 +18,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,6 +38,18 @@ mkdirSync(site, { recursive: true });
 // Storybook emits relative asset paths, so it needs no base configuration to sit
 // under a repository subpath.
 run('npx', ['storybook', 'build', '--output-dir', 'site']);
+
+// Storybook hard-codes "storybook - Storybook" in its manager template, and `managerHead`
+// can only *append* to <head> — a second <title> loses to the first. So rewrite it here,
+// which also keeps the tab title correct without relying on JS.
+const managerIndex = join(site, 'index.html');
+writeFileSync(
+  managerIndex,
+  readFileSync(managerIndex, 'utf8').replace(
+    /<title>[^<]*<\/title>/,
+    '<title>Birdie POS — Design System</title>',
+  ),
+);
 
 // ── 2. The React prototype at /prototype/ ─────────────────────────────────
 run('npx', ['vite', 'build', '--base', `${BASE}prototype/`, '--outDir', 'site/prototype']);
