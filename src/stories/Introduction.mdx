@@ -1,0 +1,79 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Getting Started/Introduction" />
+
+# ⛳ Birdie POS — Design System
+
+A **React + MUI (Material UI) + Emotion** component library for the TenFore golf-course
+point of sale, plus the working prototype built from it.
+
+## The three things this repo publishes
+
+| | |
+|---|---|
+| **This Storybook** | The design system — foundations, components, and every POS screen as a story. |
+| **[The prototype →](../prototype/)** | The POS as a running React app, built from these components. |
+| **[The original →](../reference/)** | The single-file HTML prototype this port is measured against. Read-only. |
+
+The prototype and this Storybook import the *same* components from `src/pos`, which is the
+point: refining a component changes both. The original is kept alongside so any drift is
+visible rather than assumed.
+
+## Design language
+
+Ported from a prototype that follows **Material Design 3** role naming, so the token set is
+MD3 — `primary` / `primary-container` / `on-surface` / `outline-variant` / `surface-container` —
+and maps onto MUI's palette rather than living beside it. See **Foundations → Colors**.
+
+Two things shape everything else:
+
+- **Light mode only.** The POS runs on a lit pro-shop counter terminal. The tokens are
+  semantic, so adding a dark scheme later means adding tones, not touching components.
+- **Dense, not touch-first.** Controls sit at 12–14px with 1.5px outlines and ~32–38px hit
+  targets, because an operator works this with a mouse across a fixed 1366×840 frame. (That's
+  the opposite of the Goose KDS system this repo was scaffolded from, where gloved kitchen use
+  forced everything large.)
+
+## Structure
+
+- **Foundations** — Colors, Typography, Spacing, Radius, Border, Effect Styles, Icons, Logos
+- **Components** — grouped by purpose: **Actions**, **Navigation**, **Forms**,
+  **Feedback & Status**, **Layout & Structure**, **Media & Visuals**, **Typography & Content**
+- **Account** — Log in, Sign up, Forgot password, Verification
+- **POS Screens** — the application itself, in seven sections:
+  1. **Register & Order** — the catalog and the persistent order panel
+  2. **Tee Sheet** — the courses × time grid, and its list view
+  3. **Booking & Check-in** — the booking record and its five tabs
+  4. **Tee Time Selection** — picking a slot, including 18-hole crossovers
+  5. **Payment** — checkout, tips and change, the card reader
+  6. **Operations** — blocks, notes, price overrides, leagues, moves
+  7. **People** — member validation, golfer search, guest details
+
+## How a screen story works
+
+The whole app is driven by one reducer, so a screen is reproducible from a plain state
+object. A story describes the state it wants and gets that screen — no clicking, no effects:
+
+```tsx
+<Screen initialState={withLoadedBooking(paidFoursome(), {
+  modal: { kind: 'checkout' },
+})} />
+```
+
+That's why there are stories for states that would otherwise take a dozen interactions to
+reach, like a staged tip on a member's rain-checked round.
+
+## Customizing
+
+Everything renders inside `<ThemeProvider theme={theme}>`, so customization lives in two files:
+
+- **`src/theme/tokens.ts`** — the token layer, ported 1:1 from the prototype's `:root` block.
+  Nothing here imports MUI, so stories and plain CSS read the same values.
+- **`src/theme/theme.ts`** — how those tokens map onto MUI's `palette`, `typography`, `shape`,
+  and per-component `defaultProps` / `styleOverrides`.
+
+Domain token groups hang off the palette: `palette.pay.*` (payment-state badges),
+`palette.shifts.*` (time-of-day bands), `palette.memberTypes.*`, `palette.playerAccents`.
+
+> Uses **core Material UI** plus **MUI X** — Data Grid and Date Pickers.
+> `LocalizationProvider` (dayjs) is wired globally.

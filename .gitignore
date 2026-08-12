@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*storybook.log
+storybook-static
+
+# Local design/UX references — not for publishing, with one exception:
+# the source prototype is committed so the Pages build can serve it at /reference/
+# as the read-only original this port is measured against.
+# (Directories are excluded with /* rather than / so git still descends into them
+# and the negation below can take effect.)
+references/*
+!references/prototoype/
+references/prototoype/*
+!references/prototoype/GolfCoursePOS_Package/
+references/prototoype/GolfCoursePOS_Package/*
+!references/prototoype/GolfCoursePOS_Package/Golf_Course_POS.html
+
+# The assembled Pages site (Storybook + prototype + reference)
+site/

@@ -1,0 +1,323 @@
+import type { MemberTypeKey, NoteColorKey } from '../theme/tokens';
+
+/**
+ * Domain types for the Birdie POS.
+ *
+ * These describe the prototype's runtime shapes as they actually exist, not an
+ * idealized model — field names (`n`/`p` for catalog items, `pay` for payment
+ * state, `timeMin` for minutes-from-midnight) are kept verbatim so the ported
+ * data files stay diffable against the original prototype.
+ */
+
+// ─── Catalog ────────────────────────────────────────────────────────────────
+
+/** A sellable tile. `n` is the display name, `p` the price in dollars. */
+export interface CatalogItem {
+  n: string;
+  p: number;
+  /** Membership tier required to ring this item, if any. */
+  memberType?: MemberTypeKey | null;
+  /** Short badge shown on the cart line once applied (modifiers only). */
+  tag?: string;
+  tagColor?: string;
+  desc?: string;
+  /** Riding/push cart — mutually exclusive per player. */
+  isTransport?: boolean;
+  /** Reduces the round price rather than adding a line. */
+  isDiscount?: boolean;
+  /** Replaces the round price outright (e.g. Comp Round → $0). */
+  isOverride?: boolean;
+  overridePrice?: number;
+}
+
+export interface CatalogCategory {
+  /** Tile fill color; drives the category button and its item tiles. */
+  color: string;
+  /** Text color that reads on `color`. */
+  tc: string;
+  /** Modifier categories attach to an existing check-in line instead of adding one. */
+  isModifier?: boolean;
+  items: CatalogItem[];
+}
+
+export type CategoryName = string;
+
+/** A catalog item flattened with its owning category, for global search. */
+export type SearchableItem = CatalogItem & { cat: CategoryName };
+
+// ─── People ─────────────────────────────────────────────────────────────────
+
+export interface Golfer {
+  id: string;
+  /** Stored "Last, First" — the POS sorts and displays surname-first. */
+  name: string;
+  phone: string;
+  email: string;
+  type: 'Member' | 'Guest';
+  memberType: MemberTypeKey | null;
+  hcp: number;
+  /** `YYYY-MM` join month; null for guests. Present in MEMBER_DB only. */
+  joined?: string | null;
+  notes?: string;
+}
+
+// ─── Courses & time ─────────────────────────────────────────────────────────
+
+/**
+ * A parallel time track on a course. Pass 1 of the prototype edits track 0 only;
+ * the Time Settings modal is built to expose up to three.
+ */
+export interface CourseTrack {
+  startH: number;
+  startM: number;
+  endH: number;
+  endM: number;
+  intervalMins: number;
+}
+
+export interface Course {
+  id: string;
+  name: string;
+  /** Display string, e.g. `'9 HOLES'`. */
+  holes: string;
+  /** Players per tee time — the number of columns in this course's grid group. */
+  slots: number;
+  visible: boolean;
+  locked: boolean;
+  note: string;
+  /** When true this column scrolls independently of the others. */
+  indScroll: boolean;
+  tracks?: CourseTrack[];
+}
+
+/** One tee-sheet row. `totalMin` is minutes from midnight. */
+export interface TimeSlot {
+  h: number;
+  m: number;
+  totalMin: number;
+  /** Pre-formatted 12-hour label, e.g. `'7:28 AM'`. */
+  label: string;
+}
+
+/** Tee-sheet display preferences (the gear panel on the tee sheet toolbar). */
+export interface TeeSheetSettings {
+  slots: number;
+  compactMode: boolean;
+  hideEmpty: boolean;
+  intervalMins: number;
+  gridStartHour: number;
+  gridEndHour: number;
+  autoScrollNow: boolean;
+  colorblindMode: boolean;
+}
+
+// ─── Bookings ───────────────────────────────────────────────────────────────
+
+export type BookingStatus =
+  | 'booked'
+  | 'walkin'
+  | 'member'
+  | 'checkedin'
+  | 'group'
+  /** Non-bookable slot (maintenance, ranger hold, shift change). */
+  | 'block'
+  /** League/outing occupying a slot span. */
+  | 'event';
+
+export type PayStatus = 'paid' | 'open' | 'rain_chk' | 'no_show' | 'refund' | 'block' | 'event';
+
+export type Transport = 'walking' | 'cart' | 'push';
+
+/**
+ * Per-player round state.
+ *
+ * `step` is an index into the progress rail
+ * `['Pending','Checked In','Teed Off','At Turn','Finished']`, where `-1` means
+ * not yet checked in. The generated fixtures also use `6` for "round finished
+ * on a past day", which renders as the final step.
+ */
+export interface PlayerState {
+  paid: boolean;
+  step: number;
+  noShow: boolean;
+}
+
+/** A named player on a booking, hydrated from CRM or typed in at the counter. */
+export interface BookingGuest {
+  name: string;
+  phone?: string;
+  email?: string;
+  memberType?: MemberTypeKey | null;
+  hcp?: number | string;
+  notes?: string;
+  /** Set when the guest was linked to a CRM record rather than typed free-form. */
+  crmId?: string;
+}
+
+export interface ActivityEntry {
+  time: string;
+  label: string;
+  detail?: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface FinancialAction {
+  time: string;
+  label: string;
+  player: string;
+  type: 'refund' | 'raincheck' | 'raincheck_all';
+}
+
+/** Transport surcharges for a league, keyed by transport mode. */
+export type TransportPrices = Record<Transport, number>;
+
+/** Shared configuration for every booking generated by one league/outing. */
+export interface GroupMeta {
+  groupId: string;
+  name: string;
+  holes: 9 | 18;
+  /** Total players the league needs seated. */
+  want: number;
+  greenFee: number;
+  transportPrices: TransportPrices;
+  startMin: number;
+  dateStr: string;
+  rangeEndMin: number;
+  /** Minutes between the front-9 and back-9 crossover for 18-hole leagues. */
+  duration: number;
+  course9: string | null;
+  frontCourse: string | null;
+  backCourse: string | null;
+}
+
+export interface Booking {
+  id: string;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  /** `Course.id`. */
+  course: string;
+  /** Zero-based starting column within the course's slot group. */
+  slot: number;
+  timeMin: number;
+  name: string;
+  /** Player count — also the number of slot columns this booking spans. */
+  players: number;
+  cart: Transport;
+  status: BookingStatus;
+  phone: string;
+  /** Confirmation code, e.g. `R-3001` / `M-3002` / `G-3008`. */
+  conf: string;
+  pay: PayStatus;
+  price: number;
+  /** `'9H'` | `'18H'` | `''` for blocks. */
+  holes: string;
+  note?: string;
+  playerStates: PlayerState[];
+  guests?: BookingGuest[];
+  /** Extra courses this booking also occupies (18-hole crossovers). */
+  courses?: string[];
+  startHole?: number;
+  startMin?: number;
+  groupId?: string;
+  groupMeta?: GroupMeta;
+  groupEvent?: boolean;
+  groupNote?: string;
+  playerNotes?: Record<number, string>;
+  activityLog?: ActivityEntry[];
+  financialActions?: FinancialAction[];
+  paymentRecord?: { method: string; time: string; amount: number };
+  transportPrices?: TransportPrices;
+  transportPrice?: number;
+  memberType?: MemberTypeKey | null;
+  cartNum?: string;
+  keyNum?: string;
+  /** Tags applied in the Group Notes tab (VIP, Birthday, …). */
+  tags?: string[];
+}
+
+// ─── Cart ───────────────────────────────────────────────────────────────────
+
+/** A modifier applied to a specific player on a check-in line. */
+export interface ModifierTag {
+  name: string;
+  tag: string;
+  tagColor: string;
+  /** Signed price delta, or the absolute override when `isOverride`. */
+  p: number;
+  isDiscount?: boolean;
+  isOverride?: boolean;
+  isTransport?: boolean;
+  overridePrice?: number;
+}
+
+/** One player row inside a check-in cart line. */
+export interface CartPlayer {
+  name: string;
+  transport: Transport;
+  modifierTags: ModifierTag[];
+  /** Populated when the row was matched to a CRM record. */
+  crmId?: string;
+  phone?: string;
+  memberType?: MemberTypeKey | null;
+}
+
+/** A selected tee time attached to a check-in line. */
+export interface CartTeeTime {
+  courseId: string;
+  courseName: string;
+  timeMin: number;
+  label: string;
+  shiftLabel?: string;
+}
+
+export interface CartItem {
+  name: string;
+  price: number;
+  qty: number;
+  /** True for green-fee/round lines — these carry players, modifiers and tee times. */
+  isCheckIn?: boolean;
+  /** Unit price before per-player modifiers, used to recompute after edits. */
+  unitPrice?: number;
+  players?: CartPlayer[];
+  /** Legacy line-level modifiers (pre per-player); still rendered if present. */
+  modifierTags?: ModifierTag[];
+  teeTime?: CartTeeTime;
+  /** Front/back halves of an 18-hole reservation, so totals can pair them. */
+  is18HFront?: boolean;
+  is18HBack?: boolean;
+  /** Tax and fee rows that hang off the line above rather than standing alone. */
+  isSubItem?: boolean;
+  isTax?: boolean;
+  /** Set when a member-rate item was validated against a MEMBER_DB record. */
+  memberId?: string;
+  memberName?: string;
+  /** Locks the cart to 9 or 18 holes once a round is on it. */
+  holes?: string;
+}
+
+// ─── Operator annotations ───────────────────────────────────────────────────
+
+/** A note pinned to a tee-sheet time row (frost delay, lightning hold). */
+export interface TimeRowNote {
+  text: string;
+  color: NoteColorKey;
+}
+
+/** A price override applied to one time row, or a span of them. */
+export interface TimeRowPrice {
+  label?: string;
+  /** Green fee override. */
+  fee?: number | null;
+  walking?: number | null;
+  cart?: number | null;
+  walkingCart?: number | null;
+  /** Last row in the span, inclusive; equals the anchor for single-row overrides. */
+  rangeEnd?: number;
+}
+
+// ─── Views ──────────────────────────────────────────────────────────────────
+
+export type MainView = 'pos' | 'tee';
+export type TeeSheetViewMode = 'cal' | 'list';
+export type FlowMode = '' | 'walkin' | 'reserve';
