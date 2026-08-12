@@ -1,22 +1,42 @@
 # ⛳ Birdie POS — Design System (tf-birdie-ds-v2)
 
-A **React 19 + MUI v9 + Emotion** design system for the TenFore golf-course point of sale,
-and the working prototype built from it.
+A **React 19 + MUI v9 + Emotion** design system for the TenFore golf-course point of sale, and
+the working prototype built from it — a register, a tee sheet, check-in, and payments.
 
-Live: **https://jg-tenfore.github.io/tf-birdie-ds-v2/**
+## 🔗 Live links
 
-| | |
+### ⛳ [Open the Prototype →](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/)
+
+The POS as a running React app. Ring up a walk-in, work the tee sheet, take a payment.
+
+### 📚 [Open the Design System →](https://jg-tenfore.github.io/tf-birdie-ds-v2/)
+
+Storybook: foundations, the component library, and all 65 POS screens as stories.
+
+### 📄 [Open the Original →](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/)
+
+The single-file HTML prototype this port came from. Read-only, kept for comparison.
+
+<details>
+<summary>All URLs</summary>
+
+| Surface | URL |
 |---|---|
-| [`/`](https://jg-tenfore.github.io/tf-birdie-ds-v2/) | **Storybook** — foundations, components, and every POS screen as a story |
-| [`/prototype/`](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) | **The prototype** — the POS as a running React app |
-| [`/reference/`](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/) | **The original** — the single-file HTML prototype this port came from, read-only |
+| Prototype | https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/ |
+| Storybook | https://jg-tenfore.github.io/tf-birdie-ds-v2/ |
+| Original HTML | https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/ |
 
-## Why the three surfaces
+GitHub Pages serves one site per repository, so all three share one tree — Storybook at the
+root, the other two in subdirectories. See [`scripts/build-site.mjs`](scripts/build-site.mjs).
+
+</details>
+
+## Why three surfaces
 
 The prototype and Storybook import the *same* components from `src/pos`. That's the point:
-refining a component changes both, so the design system and the thing it describes can't
-drift. The original HTML prototype is published alongside them so any difference from the
-source design is visible rather than assumed.
+refining a component changes both, so the design system and the thing it describes can't drift.
+The original HTML prototype is published alongside them so any difference from the source design
+is visible rather than assumed.
 
 ## Getting started
 
