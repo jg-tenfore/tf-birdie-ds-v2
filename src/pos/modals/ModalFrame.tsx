@@ -460,9 +460,16 @@ export function ResultRow({
       }}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{primary}</Typography>
+        {/* `component="div"`: callers pass element content (a member-dot row), and
+            Typography's default <p> cannot legally contain a <div>. */}
+        <Typography component="div" sx={{ fontSize: 13, fontWeight: 700 }}>
+          {primary}
+        </Typography>
         {secondary && (
-          <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: '1px' }}>
+          <Typography
+            component="div"
+            sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: '1px' }}
+          >
             {secondary}
           </Typography>
         )}

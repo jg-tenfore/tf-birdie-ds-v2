@@ -31,9 +31,14 @@ Other scripts:
 ```bash
 npm run typecheck   # tsc, no emit
 npm run lint        # oxlint
+npm run test        # render every story in Chromium; fails on any runtime error
 npm run build       # prototype → dist/
 npm run build:site  # the full Pages tree → site/
 ```
+
+`npm run test` is the useful guard here: it mounts all 280 stories — including every POS
+screen and dialog — in a real browser and fails on any error or unhandled rejection. It
+caught nothing on the last run, which is the point of running it.
 
 ## Design language
 

@@ -84,10 +84,16 @@ npm run storybook    # → :6006 (the design system)
 npm run dev          # → :5173 (the prototype)
 npm run typecheck    # tsc --noEmit; keep this green
 npm run lint         # oxlint
+npm run test         # renders all 280 stories in Chromium; fails on any runtime error
 npm run build:site   # the full Pages tree → site/
 ```
 
 `npm run build:site` is what CI runs. If it passes locally, the deploy will too.
+
+`vite.config.ts` pre-bundles a handful of CJS-only test deps (`aria-query`, `lz-string`,
+`dom-accessibility-api`, …) via `optimizeDeps.include`. Without it the whole story suite dies
+on import before a single story renders — which is the state goose-kds is still in. Don't
+remove those entries when tidying.
 
 ## Known divergences from the original
 
