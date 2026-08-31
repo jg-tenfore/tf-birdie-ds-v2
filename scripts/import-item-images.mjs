@@ -28,8 +28,21 @@ const SRC = join(root, 'pos-item-imagery');
 const OUT = join(root, 'src/assets/items');
 const BALLS = join(SRC, 'PGA TOUR Superstore Ball Imagery');
 
-/** Long-edge pixels. Tiles show ~110–120px, so this covers a 2× display. */
+/**
+ * Output is always exactly `SIZE × SIZE`.
+ *
+ * Every image is scaled to fit and then padded to a true square on white. Source photos
+ * arrive in wildly different shapes — a ball sleeve is portrait, a dozen box is landscape,
+ * a screenshot is whatever it was cropped to — and normalising them here rather than in CSS
+ * means the tile grid is uniform no matter what lands in the folder, and the assets are
+ * predictable if anything else ever consumes them.
+ *
+ * White because the tile's image panel is white; the padding is invisible.
+ *
+ * 240px covers the ~110–120px a tile renders at on a 2× display.
+ */
 const SIZE = 240;
+const PAD_COLOR = 'FFFFFF';
 
 /** Catalog item name → asset filename. Must match `slugify` in `item-images.ts`. */
 const slugify = (name) =>
@@ -107,32 +120,54 @@ const LOOSE = [
   ['1.32.08', 'Cocktail'],
   ['1.32.25', 'Bloody Mary'],
 
+  // GOLF BALLS — real 3-ball sleeve photos, supplied separately. The PGA folders for
+  // these reused dozen-box imagery (no separate sleeve product page existed), which made a
+  // sleeve tile identical to its box tile at a third of the price.
+  ['2.20.23', 'Titleist Pro V1x Sleeve'],
+  ['2.19.45', 'Titleist AVX Sleeve'],
+  ['2.20.07', 'Callaway Chrome Soft Sleeve'],
+
+  // GOLF BALLS — the scrape found no current Tour Speed box and fell back to a
+  // "Reload Near Mint-Grade 24-pack" of *recycled* balls, a different product entirely.
+  ['2.23.38', 'Titleist Tour Speed Box'],
+
+  // GOLF BALLS — the two range-bucket items. These come from loose screenshots rather
+  // than the PGA folders, whose 26/27 scraped a home practice net by mistake. The source
+  // images carry their own "S [40-50 Balls]" / "L [100-110 Balls]" label, which is the
+  // size information the catalog item name doesn't give.
+  ['2.02.24', 'Range Bucket Small'],
+  ['2.02.32', 'Range Bucket Large'],
+
   // 1.08.34 is a screenshot of the POS item grid itself, not a product.
   // 1.18.47 / 1.18.50 / 1.19.16 duplicate ball folders 01 / 02 / 03; the folder
   // versions are used instead so all 25 ball shots come from one source and match.
 ];
 
 /**
- * The scraped ball galleries: folder prefix → catalog item name.
+ * The scraped ball galleries: `[folder prefix, catalog item name, image file?]`.
  *
- * `01_product_image.png` is the packaging hero in every folder — verified by eye — which is
- * the right shot for a POS tile.
+ * `01_product_image.png` is the packaging hero in every folder and the default. A third
+ * element overrides it, which the sleeves need: the scrape found no separate sleeve product
+ * page and reused the *dozen-box* imagery for all five, so a sleeve tile was showing the same
+ * photo as its box counterpart — two adjacent tiles, identical image, $54 against $16.
  *
- * Folders 26 and 27 (RANGE BUCKET SMALL / LARGE) are deliberately absent: the scrape
- * matched a home practice net kit, not a bucket of range balls. A wrong photo is worse
- * than none, so those two tiles stay text-only until real imagery exists.
+ * Four of the five are now resolved: the Pro V1 folder turned out to contain a real sleeve
+ * further down its gallery (index 05), and real photos were supplied for Pro V1x, AVX and
+ * Chrome Soft — those are handled in `LOOSE` and deliberately absent here. TaylorMade TP5
+ * Sleeve is the one still showing box imagery.
+ *
+ * Folders 26 and 27 (RANGE BUCKET SMALL / LARGE) are deliberately skipped here: the scrape
+ * matched a home practice net kit, not a bucket of range balls. Real photos for both were
+ * supplied separately and are handled in `LOOSE` above.
  */
 const BALL_MAP = [
   ['01', 'Titleist Pro V1 Box'],
   ['02', 'Titleist Pro V1x Box'],
-  ['03', 'Titleist Pro V1 Sleeve'],
-  ['04', 'Titleist Pro V1x Sleeve'],
+  // A genuine 3-ball sleeve, found at index 05 of the Pro V1 gallery.
+  ['03', 'Titleist Pro V1 Sleeve', '05_product_image.png'],
   ['05', 'Titleist AVX Box'],
-  ['06', 'Titleist AVX Sleeve'],
-  ['07', 'Titleist Tour Speed Box'],
   ['08', 'Titleist TruFeel Box'],
   ['09', 'Callaway Chrome Soft Box'],
-  ['10', 'Callaway Chrome Soft Sleeve'],
   ['11', 'Callaway Chrome Soft X Box'],
   ['12', 'Callaway Supersoft Box'],
   ['13', 'Callaway Warbird Box'],
@@ -165,11 +200,21 @@ const looseFiles = readdirSync(SRC).filter((f) => f.endsWith('.png'));
 let written = 0;
 const problems = [];
 
-/** Downscale one image to `OUT/<slug>.png`. */
+/** Scale one image to fit, pad it to a square, and write it to `OUT/<slug>.png`. */
 function emit(sourcePath, itemName) {
   const out = join(OUT, `${slugify(itemName)}.png`);
   try {
-    execFileSync('sips', ['-Z', String(SIZE), sourcePath, '--out', out], { stdio: 'pipe' });
+    execFileSync(
+      'sips',
+      [
+        '-Z', String(SIZE),
+        '--padToHeightWidth', String(SIZE), String(SIZE),
+        '--padColor', PAD_COLOR,
+        sourcePath,
+        '--out', out,
+      ],
+      { stdio: 'pipe' },
+    );
     written++;
   } catch {
     problems.push(`could not convert ${sourcePath}`);
@@ -187,15 +232,16 @@ for (const [stamp, item] of LOOSE) {
 
 if (existsSync(BALLS)) {
   const folders = readdirSync(BALLS);
-  for (const [prefix, item] of BALL_MAP) {
+  for (const [prefix, item, image] of BALL_MAP) {
     const folder = folders.find((f) => f.startsWith(`${prefix} -`));
     if (!folder) {
       problems.push(`no ball folder "${prefix} - …" for ${item}`);
       continue;
     }
-    const hero = join(BALLS, folder, '01_product_image.png');
+    const file = image ?? '01_product_image.png';
+    const hero = join(BALLS, folder, file);
     if (!existsSync(hero)) {
-      problems.push(`${folder} has no 01_product_image.png`);
+      problems.push(`${folder} has no ${file}`);
       continue;
     }
     emit(hero, item);

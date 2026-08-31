@@ -45,15 +45,13 @@ describe('coverage', () => {
   const GOODS = ['RENTALS', 'GOLF BALLS', 'APPAREL', 'ACCESSORIES', 'SNACKS', 'DRINKS', 'ALCOHOL'];
 
   /**
-   * Known gaps, each for a stated reason. Listing them explicitly means a *new* gap fails
-   * the test rather than blending into an ever-growing allowance.
+   * Goods knowingly without a photo. Currently none — every sellable item is covered.
+   *
+   * Kept as an explicit list rather than deleted: if coverage ever regresses, a named
+   * exception is a deliberate decision someone has to write down, whereas loosening the
+   * assertion is a decision that can be made silently.
    */
-  const EXPECTED_GAPS = new Set([
-    // The scrape matched a home practice net, not a bucket of range balls — a wrong
-    // photo is worse than none, so these stay text tiles.
-    'Range Bucket Small',
-    'Range Bucket Large',
-  ]);
+  const EXPECTED_GAPS = new Set<string>([]);
 
   it.each(GOODS)('%s has a photo for every item', (category) => {
     const missing = CATALOG[category].items
@@ -71,10 +69,38 @@ describe('coverage', () => {
     }
   });
 
-  it('still covers the great majority of sellable goods', () => {
+  it('covers every sellable good', () => {
     const goods = GOODS.flatMap((c) => CATALOG[c].items.map((i) => i.n));
-    const covered = goods.filter((n) => itemImage(n)).length;
-    expect(covered / goods.length).toBeGreaterThan(0.95);
+    const uncovered = goods.filter((n) => !itemImage(n));
+    expect(uncovered, `no image for: ${uncovered.join(', ')}`).toEqual([]);
+  });
+});
+
+describe('asset shape', () => {
+  /**
+   * Every file is padded to a true square by the importer. Asserted here because a
+   * non-square asset does not error — it silently made its tile taller than the rest of the
+   * row, which is how the ball-sleeve photos first went wrong.
+   *
+   * PNG dimensions live at a fixed offset in the IHDR chunk, so this reads them directly
+   * rather than pulling in an image library.
+   */
+  it('every image is a 240x240 square', async () => {
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const { join, dirname } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+
+    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items');
+    const wrong: string[] = [];
+
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.png'))) {
+      const buf = readFileSync(join(dir, file));
+      // IHDR: 8-byte PNG signature, 4-byte length, 4-byte type, then width and height.
+      const width = buf.readUInt32BE(16);
+      const height = buf.readUInt32BE(20);
+      if (width !== 240 || height !== 240) wrong.push(`${file} is ${width}x${height}`);
+    }
+    expect(wrong, `not square: ${wrong.join(', ')}`).toEqual([]);
   });
 });
 

@@ -475,10 +475,12 @@ function ItemTile({
             aspectRatio: '1 / 1',
             bgcolor: '#fff',
             borderBottom: `1px solid ${border}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            p: 0.75,
+            // The image is positioned rather than flowed. An in-flow <img> contributes its
+            // intrinsic height to the box, which overrides `aspect-ratio` — a portrait
+            // product (a ball sleeve, a bottle) then made its panel taller than the square
+            // and broke the row's rhythm. Taking it out of flow means the panel's height
+            // comes only from the aspect ratio, whatever shape the photo is.
+            position: 'relative',
             flexShrink: 0,
           }}
         >
@@ -487,9 +489,17 @@ function ItemTile({
             src={image}
             alt=""
             loading="lazy"
-            // `contain` so a tall bottle and a wide box both show whole rather than
-            // being cropped to the square.
-            sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+            // `contain` so a tall sleeve and a wide box both show whole rather than being
+            // cropped; the padding keeps either off the panel's edges.
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              p: 0.75,
+              boxSizing: 'border-box',
+            }}
           />
         </Box>
       )}
@@ -522,6 +532,17 @@ function ItemTile({
           fontWeight: isModifier ? 600 : 700,
           px: image ? 0.75 : 0,
           pt: image ? 0.75 : 0,
+          // Reserve three lines on image tiles. Names run from "Water" to "Callaway Chrome
+          // Soft Sleeve", and letting the label height vary made a row with one long name
+          // taller than its neighbours — the grid stretches every tile in a row to the
+          // tallest. Three lines is what the longest names need; clamping to two instead
+          // would truncate exactly the words that distinguish a sleeve from a box.
+          ...(image && {
+            minHeight: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }),
         }}
       >
         {item.n}

@@ -85,8 +85,8 @@ screen stories use.
 
 ## Product imagery
 
-Item tiles carry product photography — 72 images covering every sellable good across Rentals,
-Golf Balls, Apparel, Accessories, Snacks, Drinks and Alcohol, bar the two range-bucket items. Categories that sell a *rate*
+Item tiles carry product photography — 74 images covering **every** sellable good across
+Rentals, Golf Balls, Apparel, Accessories, Snacks, Drinks and Alcohol. Categories that sell a *rate*
 rather than an object (Check In, Modifiers, Packages, Membership, Services, Promotions, High
 Speed) keep the compact text tile, because there is nothing to photograph.
 
@@ -105,11 +105,12 @@ Images are matched to items **by filename** — the slugified catalog item name,
 - add a line to `MAP` in [`scripts/import-item-images.mjs`](scripts/import-item-images.mjs) and
   re-run `node scripts/import-item-images.mjs`, which downscales from the source folder.
 
-`npm run test:unit` fails if a file doesn't match a real catalog item, and lists any sellable
-good that has no photo.
+`npm run test:unit` fails if a file doesn't match a real catalog item, and fails if any
+sellable good has no photo — coverage is currently complete, and the test is what keeps it
+that way.
 
 The ~130MB of source screenshots lives in `pos-item-imagery/` and is **not committed** —
-only the downscaled 240px versions are (3.6MB).
+only the downscaled 240px versions are (3.7MB).
 
 ## Deploying, and previewing a PR
 
