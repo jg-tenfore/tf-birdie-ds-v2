@@ -123,6 +123,14 @@ npm run build:site   # the full Pages tree → site/
 
 `npm run build:site` is what CI runs. If it passes locally, the deploy will too.
 
+Two deploy targets, and they need **different builds**: Pages serves from
+`/tf-birdie-ds-v2/`, Netlify from `/`. Asset URLs — images included — have the base baked in
+at build time, so the wrong one 404s everything. `BASE_PATH` is set per target
+(`deploy-pages.yml` and `netlify.toml`); don't hard-code a base anywhere else.
+
+Pages has no per-PR preview (one site per repo, deploys from `main` only). Netlify Deploy
+Previews are the way to look at a branch.
+
 `vite.config.ts` pre-bundles a handful of CJS-only test deps (`aria-query`, `lz-string`,
 `dom-accessibility-api`, …) via `optimizeDeps.include`. Without it the whole story suite dies
 on import before a single story renders — which is the state goose-kds is still in. Don't

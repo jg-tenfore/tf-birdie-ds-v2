@@ -1,0 +1,47 @@
+# Netlify build — used for PR Deploy Previews and any branch deploy.
+#
+# Why this exists alongside the GitHub Pages workflow: Pages serves one site per
+# repository and only deploys from `main`, so there is no way to preview a pull request
+# on it. Netlify builds every PR to its own URL, which is what makes a branch reviewable
+# before it is merged.
+#
+# The two hosts need *different builds*, not the same artifact deployed twice. Asset URLs
+# — including all the product photography — are written at build time with the base path
+# baked in. Pages serves from `/tf-birdie-ds-v2/`, Netlify from the root, so a Pages build
+# uploaded to Netlify would 404 on every image, script, and stylesheet. `BASE_PATH` below
+# is what keeps them straight.
+
+[build]
+  # Assembles all three surfaces: Storybook at the root, the React prototype at
+  # /prototype/, and the original HTML at /reference/. See scripts/build-site.mjs.
+  command = "npm run build:site"
+  publish = "site"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Netlify serves from the domain root, including on Deploy Preview URLs
+  # (deploy-preview-N--<site>.netlify.app), so assets are addressed from `/`.
+  BASE_PATH = "/"
+
+# No SPA fallback rules are needed. The prototype uses hash routing
+# (`/prototype/#/tee-sheet?...`), so every URL resolves to a real file on disk and the
+# hash never reaches the server. That is the same property that lets these links work on
+# Pages, and it means there is nothing to configure here.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Hashed filenames are content-addressed, so they can be cached indefinitely — a changed
+# image gets a new filename rather than a stale cache entry.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/prototype/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

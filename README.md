@@ -111,6 +111,34 @@ good that has no photo.
 The ~130MB of source screenshots lives in `pos-item-imagery/` and is **not committed** —
 only the downscaled 240px versions are (3.6MB).
 
+## Deploying, and previewing a PR
+
+The three surfaces are built by [`scripts/build-site.mjs`](scripts/build-site.mjs) into
+`site/`. Two hosts, two different builds — not one artifact deployed twice:
+
+| Host | Serves from | Build | When |
+|---|---|---|---|
+| GitHub Pages | `/tf-birdie-ds-v2/` | `BASE_PATH=/tf-birdie-ds-v2/` | push to `main` |
+| Netlify | `/` | `BASE_PATH=/` (see `netlify.toml`) | every PR, as a Deploy Preview |
+
+**Asset URLs are written at build time with the base path baked in**, product photography
+included. A Pages build uploaded to Netlify would 404 on every image, script and stylesheet,
+which is what `BASE_PATH` exists to prevent. Both configurations are verified.
+
+**Pages cannot preview a pull request** — it serves one site per repository and only deploys
+from `main`. That's what Netlify Deploy Previews are for: every PR gets its own URL with the
+imagery rendering. CI additionally builds the full site on each PR, so a build break surfaces
+before merge rather than after.
+
+No redirect rules are needed on either host. The prototype uses hash routing, so every URL
+resolves to a real file and the hash never reaches the server.
+
+### Connecting Netlify (one time)
+
+`netlify.toml` is committed, so Netlify needs no manual build settings — link the repo in the
+Netlify UI (**Add new site → Import an existing project → GitHub → tf-birdie-ds-v2**) and it
+picks up the command, publish directory, and `BASE_PATH`. Deploy Previews are on by default.
+
 ## Design language
 
 Ported from a prototype that follows **Material Design 3** role naming, so the token set is

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Pure logic: pricing, scheduling, the deep-link codec, and the check that every
+      # product image maps to a real catalog item.
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Mounts all ~280 stories in a real browser and fails on any runtime error.
+      - name: Story tests
+        run: npm run test:stories
+
+      # GitHub Pages only deploys from `main` and has no per-PR preview, so without this
+      # a build break would not surface until after merge. Netlify Deploy Previews cover
+      # the visual review; this covers the build itself.
+      - name: Build the full site
+        run: npm run build:site
