@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Box, ButtonBase, InputBase, Paper, Popper, Typography } from '@mui/material';
 import { elevation, grid, md3, radius } from '../../theme/tokens';
-import { ALL_ITEMS, CATALOG, CAT_ROWS, CHECK_IN_ITEMS, MEMBER_ITEM_TYPES } from '../data/catalog';
+import {
+  ALL_ITEMS,
+  CATALOG,
+  CATEGORY_ICONS,
+  CAT_ROWS,
+  CHECK_IN_ITEMS,
+  MEMBER_ITEM_TYPES,
+} from '../data/catalog';
+import { itemImage } from '../data/item-images';
 import * as cart from '../logic/cart';
 import { usePos } from '../state/PosProvider';
 import type { CatalogItem } from '../types';
@@ -92,8 +100,9 @@ export function PosView() {
                     fontWeight: 700,
                     letterSpacing: '.6px',
                     textTransform: 'uppercase',
-                    alignItems: 'flex-end',
-                    justifyContent: 'flex-start',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
                     textAlign: 'left',
                     p: '9px 10px',
                     lineHeight: 1.2,
@@ -114,6 +123,7 @@ export function PosView() {
                         }),
                   }}
                 >
+                  <Icon name={CATEGORY_ICONS[catName] ?? 'sell'} size={20} />
                   {catName}
                 </ButtonBase>
               );
@@ -372,6 +382,7 @@ function ItemGrid({
             <ItemTile
               key={item.n}
               item={item}
+              image={itemImage(item.n)}
               bg={dimmed && locked ? md3.surfaceContainer : bg}
               border={dimmed && locked ? md3.outlineVariant : border}
               isModifier={Boolean(d.isModifier)}
@@ -385,8 +396,23 @@ function ItemGrid({
   );
 }
 
+/**
+ * One sellable tile.
+ *
+ * Two shapes, decided by whether the item has a photo:
+ *
+ *  - **With a photo** — a 1:1 image panel above the name and price. Physical goods get sold
+ *    by sight, and a wall of near-identical ball-box names is genuinely hard to pick from.
+ *  - **Without** — the original compact text tile. Rates, modifiers, memberships, services
+ *    and promotions have nothing to photograph, so a blank image panel would read as missing
+ *    content rather than as a deliberate treatment.
+ *
+ * The photo sits on white inside the tile rather than on the category tint, because the
+ * source shots are cut out on white and a tinted backing would show as a grey halo.
+ */
 function ItemTile({
   item,
+  image,
   bg,
   border,
   isModifier,
@@ -394,6 +420,7 @@ function ItemTile({
   onClick,
 }: {
   item: CatalogItem;
+  image?: string;
   bg: string;
   border: string;
   isModifier: boolean;
@@ -416,9 +443,9 @@ function ItemTile({
       sx={{
         position: 'relative',
         minHeight: 64,
-        pt: isModifier ? '28px' : '10px',
-        pb: '10px',
-        px: 1,
+        pt: image ? 0 : isModifier ? '28px' : '10px',
+        pb: image ? '8px' : '10px',
+        px: image ? 0 : 1,
         borderRadius: `${radius.md}px`,
         border: `1.5px solid ${border}`,
         bgcolor: bg,
@@ -426,7 +453,7 @@ function ItemTile({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: image ? 'flex-start' : 'center',
         gap: 0.5,
         fontSize: 10,
         fontWeight: 700,
@@ -435,11 +462,37 @@ function ItemTile({
         color: md3.onSurface,
         textAlign: 'center',
         lineHeight: 1.3,
+        overflow: 'hidden',
         transition: 'all .12s',
         '&:hover': { transform: 'translateY(-1px)', filter: 'brightness(.94)' },
         '&.Mui-disabled': { opacity: disabled ? 0.4 : 1, color: md3.outline },
       }}
     >
+      {image && (
+        <Box
+          sx={{
+            width: '100%',
+            aspectRatio: '1 / 1',
+            bgcolor: '#fff',
+            borderBottom: `1px solid ${border}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 0.75,
+            flexShrink: 0,
+          }}
+        >
+          <Box
+            component="img"
+            src={image}
+            alt=""
+            loading="lazy"
+            // `contain` so a tall bottle and a wide box both show whole rather than
+            // being cropped to the square.
+            sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+          />
+        </Box>
+      )}
       {isModifier && item.tag && (
         <Box
           component="span"
@@ -462,7 +515,15 @@ function ItemTile({
           {item.tag}
         </Box>
       )}
-      <Box component="span" sx={{ fontSize: isModifier ? 11 : 10, fontWeight: isModifier ? 600 : 700 }}>
+      <Box
+        component="span"
+        sx={{
+          fontSize: isModifier ? 11 : 10,
+          fontWeight: isModifier ? 600 : 700,
+          px: image ? 0.75 : 0,
+          pt: image ? 0.75 : 0,
+        }}
+      >
         {item.n}
       </Box>
       <Box component="span" sx={{ fontSize: 10, fontWeight: 500, opacity: 0.72, color: priceColor }}>

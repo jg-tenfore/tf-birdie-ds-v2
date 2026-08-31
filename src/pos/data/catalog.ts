@@ -140,6 +140,32 @@ export const MEMBER_ITEM_TYPES: Record<string, MemberTypeKey> = {
   'Student Member 18 Holes':   'student',
 };
 
+/**
+ * An icon per category, for the category buttons.
+ *
+ * The buttons are colour-coded and staff navigate them by position and hue, so the icon is
+ * a second, redundant cue rather than the primary one — it earns its place for someone new
+ * to the terminal, and costs nothing to someone who already knows the grid.
+ *
+ * Names are Material Symbols ligatures, resolved by `iconFor()` in `../icons.ts`.
+ */
+export const CATEGORY_ICONS: Record<string, string> = {
+  'CHECK IN': 'how_to_reg',
+  MODIFIERS: 'local_offer',
+  RENTALS: 'trolley',
+  'GOLF BALLS': 'sports_golf',
+  APPAREL: 'checkroom',
+  ACCESSORIES: 'sell',
+  SNACKS: 'lunch_dining',
+  DRINKS: 'local_cafe',
+  ALCOHOL: 'local_bar',
+  PACKAGES: 'inventory_2',
+  MEMBERSHIP: 'workspace_premium',
+  SERVICES: 'handyman',
+  PROMOTIONS: 'card_giftcard',
+  'HIGH SPEED': 'speed',
+};
+
 /** Modifier lookup by name, derived from the MODIFIERS category. */
 export const MODIFIER_ITEMS: Record<string, CatalogItem> = Object.fromEntries(
   (CATALOG['MODIFIERS']?.items ?? []).map((m) => [m.n, m]),

@@ -83,6 +83,34 @@ serialized; `?order=` names a scenario from
 [`src/pos/state/scenarios.ts`](src/pos/state/scenarios.ts), which is the same vocabulary the
 screen stories use.
 
+## Product imagery
+
+Item tiles carry product photography — 71 images covering every sellable good across Rentals,
+Golf Balls, Apparel, Accessories, Snacks, Drinks and Alcohol. Categories that sell a *rate*
+rather than an object (Check In, Modifiers, Packages, Membership, Services, Promotions, High
+Speed) keep the compact text tile, because there is nothing to photograph.
+
+**Nothing is externally hosted.** Images are imported from `src/assets/items/` through Vite, so
+they're content-hashed, emitted alongside the bundle, and rewritten with whatever base path the
+build was given — the same link works on `localhost:5173` and under
+`…github.io/tf-birdie-ds-v2/prototype/`. Tiles are plain `<img loading="lazy">`, so a browser
+only downloads the category on screen (~20 images, not all 71).
+
+### Adding or replacing a photo
+
+Images are matched to items **by filename** — the slugified catalog item name, so
+`Titleist Pro V1 Box` → `titleist-pro-v1-box.png`. Either:
+
+- drop a correctly-named PNG into `src/assets/items/`, or
+- add a line to `MAP` in [`scripts/import-item-images.mjs`](scripts/import-item-images.mjs) and
+  re-run `node scripts/import-item-images.mjs`, which downscales from the source folder.
+
+`npm run test:unit` fails if a file doesn't match a real catalog item, and lists any sellable
+good that has no photo.
+
+The ~130MB of source screenshots lives in `pos-item-imagery/` and is **not committed** —
+only the downscaled 240px versions are (3.5MB).
+
 ## Design language
 
 Ported from a prototype that follows **Material Design 3** role naming, so the token set is

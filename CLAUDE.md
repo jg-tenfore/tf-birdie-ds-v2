@@ -70,6 +70,21 @@ Helpers are in `src/showcase/pos/screen-helpers.tsx`. When you add a dialog:
 
 Step 3 is not optional — a dialog with no story is a dialog nobody reviews.
 
+## Product imagery
+
+Matched to catalog items **by filename**: the slugified item name, so `Titleist Pro V1 Box` →
+`src/assets/items/titleist-pro-v1-box.png`. `item-images.ts` globs the folder; there is no
+registry to update. A mis-slugged file fails silently into a text tile, which is why
+`item-images.test.ts` asserts every file maps to a real item and lists uncovered goods.
+
+Two tile shapes, and which one you get is decided by whether the item has a photo — image
+tiles are ~210px tall, text tiles ~64px. Don't add a blank image panel to make them uniform;
+rates and modifiers have nothing to photograph and a blank panel reads as missing content.
+
+Source screenshots (`pos-item-imagery/`, ~130MB) are gitignored. `scripts/import-item-images.mjs`
+downscales them to 240px into `src/assets/items/`, and *those* are committed. Never commit the
+source folder.
+
 ## Deep links
 
 The prototype mirrors state into the address bar (`src/pos/state/url-state.ts`,
