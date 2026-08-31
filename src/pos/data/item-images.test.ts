@@ -76,6 +76,34 @@ describe('coverage', () => {
   });
 });
 
+describe('asset shape', () => {
+  /**
+   * Every file is padded to a true square by the importer. Asserted here because a
+   * non-square asset does not error — it silently made its tile taller than the rest of the
+   * row, which is how the ball-sleeve photos first went wrong.
+   *
+   * PNG dimensions live at a fixed offset in the IHDR chunk, so this reads them directly
+   * rather than pulling in an image library.
+   */
+  it('every image is a 240x240 square', async () => {
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const { join, dirname } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+
+    const dir = join(dirname(fileURLToPath(import.meta.url)), '../../assets/items');
+    const wrong: string[] = [];
+
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.png'))) {
+      const buf = readFileSync(join(dir, file));
+      // IHDR: 8-byte PNG signature, 4-byte length, 4-byte type, then width and height.
+      const width = buf.readUInt32BE(16);
+      const height = buf.readUInt32BE(20);
+      if (width !== 240 || height !== 240) wrong.push(`${file} is ${width}x${height}`);
+    }
+    expect(wrong, `not square: ${wrong.join(', ')}`).toEqual([]);
+  });
+});
+
 describe('category icons', () => {
   it('names an icon for every category', () => {
     const categories = CAT_ROWS.flat();
