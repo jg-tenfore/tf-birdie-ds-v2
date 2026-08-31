@@ -107,6 +107,13 @@ const LOOSE = [
   ['1.32.08', 'Cocktail'],
   ['1.32.25', 'Bloody Mary'],
 
+  // GOLF BALLS — the two range-bucket items. These come from loose screenshots rather
+  // than the PGA folders, whose 26/27 scraped a home practice net by mistake. The source
+  // images carry their own "S [40-50 Balls]" / "L [100-110 Balls]" label, which is the
+  // size information the catalog item name doesn't give.
+  ['2.02.24', 'Range Bucket Small'],
+  ['2.02.32', 'Range Bucket Large'],
+
   // 1.08.34 is a screenshot of the POS item grid itself, not a product.
   // 1.18.47 / 1.18.50 / 1.19.16 duplicate ball folders 01 / 02 / 03; the folder
   // versions are used instead so all 25 ball shots come from one source and match.
@@ -118,9 +125,9 @@ const LOOSE = [
  * `01_product_image.png` is the packaging hero in every folder — verified by eye — which is
  * the right shot for a POS tile.
  *
- * Folders 26 and 27 (RANGE BUCKET SMALL / LARGE) are deliberately absent: the scrape
- * matched a home practice net kit, not a bucket of range balls. A wrong photo is worse
- * than none, so those two tiles stay text-only until real imagery exists.
+ * Folders 26 and 27 (RANGE BUCKET SMALL / LARGE) are deliberately skipped here: the scrape
+ * matched a home practice net kit, not a bucket of range balls. Real photos for both were
+ * supplied separately and are handled in `LOOSE` above.
  */
 const BALL_MAP = [
   ['01', 'Titleist Pro V1 Box'],

@@ -45,15 +45,13 @@ describe('coverage', () => {
   const GOODS = ['RENTALS', 'GOLF BALLS', 'APPAREL', 'ACCESSORIES', 'SNACKS', 'DRINKS', 'ALCOHOL'];
 
   /**
-   * Known gaps, each for a stated reason. Listing them explicitly means a *new* gap fails
-   * the test rather than blending into an ever-growing allowance.
+   * Goods knowingly without a photo. Currently none — every sellable item is covered.
+   *
+   * Kept as an explicit list rather than deleted: if coverage ever regresses, a named
+   * exception is a deliberate decision someone has to write down, whereas loosening the
+   * assertion is a decision that can be made silently.
    */
-  const EXPECTED_GAPS = new Set([
-    // The scrape matched a home practice net, not a bucket of range balls — a wrong
-    // photo is worse than none, so these stay text tiles.
-    'Range Bucket Small',
-    'Range Bucket Large',
-  ]);
+  const EXPECTED_GAPS = new Set<string>([]);
 
   it.each(GOODS)('%s has a photo for every item', (category) => {
     const missing = CATALOG[category].items
@@ -71,10 +69,10 @@ describe('coverage', () => {
     }
   });
 
-  it('still covers the great majority of sellable goods', () => {
+  it('covers every sellable good', () => {
     const goods = GOODS.flatMap((c) => CATALOG[c].items.map((i) => i.n));
-    const covered = goods.filter((n) => itemImage(n)).length;
-    expect(covered / goods.length).toBeGreaterThan(0.95);
+    const uncovered = goods.filter((n) => !itemImage(n));
+    expect(uncovered, `no image for: ${uncovered.join(', ')}`).toEqual([]);
   });
 });
 
