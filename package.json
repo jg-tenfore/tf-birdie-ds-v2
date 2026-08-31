@@ -12,7 +12,9 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "build:site": "node scripts/build-site.mjs",
-    "test": "vitest run --project=storybook"
+    "test": "vitest run",
+    "test:unit": "vitest run --project=unit",
+    "test:stories": "vitest run --project=storybook"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

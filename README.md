@@ -49,16 +49,95 @@ npm run dev         # prototype      → http://localhost:5173
 Other scripts:
 
 ```bash
-npm run typecheck   # tsc, no emit
-npm run lint        # oxlint
-npm run test        # render every story in Chromium; fails on any runtime error
-npm run build       # prototype → dist/
-npm run build:site  # the full Pages tree → site/
+npm run typecheck    # tsc, no emit
+npm run lint         # oxlint
+npm run test         # everything below
+npm run test:unit    # pure modules (pricing, scheduling, the URL codec) in node
+npm run test:stories # every story mounted in Chromium; fails on any runtime error
+npm run build        # prototype → dist/
+npm run build:site   # the full Pages tree → site/
 ```
 
-`npm run test` is the useful guard here: it mounts all 280 stories — including every POS
-screen and dialog — in a real browser and fails on any error or unhandled rejection. It
-caught nothing on the last run, which is the point of running it.
+`npm run test` is the useful guard here: 254 tests across two projects — the story suite mounts
+all 280 stories in a real browser and fails on any runtime error, and the unit suite covers the
+pure logic.
+
+## Deep links
+
+Every screen and dialog in the prototype has its own URL, so you can share the exact thing you
+want reviewed:
+
+```
+#/tee-sheet?date=2026-05-23&shift=peak       a specific day and time band
+#/tee-sheet/list?status=open&sort=status     the unpaid worklist
+#/register?order=walkin&modal=checkout       an order mid-payment
+#/tee-sheet?modal=block&t=0912               blocking the 9:12 row
+```
+
+Back and Forward step through screens and dialogs, not through every keystroke typed into a
+filter. Full scheme: **Getting Started → Deep Links** in Storybook, or
+[`src/pos/state/url-state.ts`](src/pos/state/url-state.ts).
+
+Links use a hash because Pages has no SPA fallback — a real path would 404. Carts aren't
+serialized; `?order=` names a scenario from
+[`src/pos/state/scenarios.ts`](src/pos/state/scenarios.ts), which is the same vocabulary the
+screen stories use.
+
+## Product imagery
+
+Item tiles carry product photography — 72 images covering every sellable good across Rentals,
+Golf Balls, Apparel, Accessories, Snacks, Drinks and Alcohol, bar the two range-bucket items. Categories that sell a *rate*
+rather than an object (Check In, Modifiers, Packages, Membership, Services, Promotions, High
+Speed) keep the compact text tile, because there is nothing to photograph.
+
+**Nothing is externally hosted.** Images are imported from `src/assets/items/` through Vite, so
+they're content-hashed, emitted alongside the bundle, and rewritten with whatever base path the
+build was given — the same link works on `localhost:5173` and under
+`…github.io/tf-birdie-ds-v2/prototype/`. Tiles are plain `<img loading="lazy">`, so a browser
+only downloads the category on screen (~20 images, not all 71).
+
+### Adding or replacing a photo
+
+Images are matched to items **by filename** — the slugified catalog item name, so
+`Titleist Pro V1 Box` → `titleist-pro-v1-box.png`. Either:
+
+- drop a correctly-named PNG into `src/assets/items/`, or
+- add a line to `MAP` in [`scripts/import-item-images.mjs`](scripts/import-item-images.mjs) and
+  re-run `node scripts/import-item-images.mjs`, which downscales from the source folder.
+
+`npm run test:unit` fails if a file doesn't match a real catalog item, and lists any sellable
+good that has no photo.
+
+The ~130MB of source screenshots lives in `pos-item-imagery/` and is **not committed** —
+only the downscaled 240px versions are (3.6MB).
+
+## Deploying, and previewing a PR
+
+The three surfaces are built by [`scripts/build-site.mjs`](scripts/build-site.mjs) into
+`site/`. Two hosts, two different builds — not one artifact deployed twice:
+
+| Host | Serves from | Build | When |
+|---|---|---|---|
+| GitHub Pages | `/tf-birdie-ds-v2/` | `BASE_PATH=/tf-birdie-ds-v2/` | push to `main` |
+| Netlify | `/` | `BASE_PATH=/` (see `netlify.toml`) | every PR, as a Deploy Preview |
+
+**Asset URLs are written at build time with the base path baked in**, product photography
+included. A Pages build uploaded to Netlify would 404 on every image, script and stylesheet,
+which is what `BASE_PATH` exists to prevent. Both configurations are verified.
+
+**Pages cannot preview a pull request** — it serves one site per repository and only deploys
+from `main`. That's what Netlify Deploy Previews are for: every PR gets its own URL with the
+imagery rendering. CI additionally builds the full site on each PR, so a build break surfaces
+before merge rather than after.
+
+No redirect rules are needed on either host. The prototype uses hash routing, so every URL
+resolves to a real file and the hash never reaches the server.
+
+### Connecting Netlify (one time)
+
+`netlify.toml` is committed, so Netlify needs no manual build settings — link the repo in the
+Netlify UI (**Add new site → Import an existing project → GitHub → tf-birdie-ds-v2**) and it
+picks up the command, publish directory, and `BASE_PATH`. Deploy Previews are on by default.
 
 ## Design language
 

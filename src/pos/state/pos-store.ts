@@ -1,6 +1,8 @@
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, COURSES, toDateStr } from '../data/courses';
-import { DEMO_TODAY, createBookings } from '../data/bookings';
+import { DEMO_TODAY } from '../data/bookings';
+import { demoBookings } from './scenarios';
+import type { OrderScenario } from './scenarios';
 import * as cartLogic from '../logic/cart';
 import type {
   Booking,
@@ -92,6 +94,15 @@ export interface PosState {
   flowMode: FlowMode;
   /** Additional named golfers attached before a round is on the cart. */
   additionalGolfers: Golfer[];
+  /**
+   * Which named scenario seeded the cart, if any.
+   *
+   * Carts are far too large for a URL, so a deep link names a scenario instead of
+   * serializing line items. This records the name so the link can be regenerated. It is
+   * only ever a claim about where the order *started* — once the operator edits the cart,
+   * the link restores the scenario's opening state, not their edits.
+   */
+  orderScenario: OrderScenario | null;
 
   /** POS: which category's items are showing. */
   currentCategory: string | null;
@@ -149,7 +160,7 @@ export const emptyListFilters: ListFilters = {
 export function createInitialState(overrides: Partial<PosState> = {}): PosState {
   return {
     view: 'pos',
-    bookings: createBookings(),
+    bookings: demoBookings(),
     courses: COURSES.map((c) => ({ ...c })),
     settings: { ...DEFAULT_TEE_SHEET_SETTINGS },
     cart: [],
@@ -157,6 +168,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     selectedBookingId: null,
     flowMode: '',
     additionalGolfers: [],
+    orderScenario: null,
     currentCategory: null,
     leftPanelCollapsed: false,
     currentDate: DEMO_TODAY(),
@@ -234,7 +246,9 @@ export type Action =
   | { type: 'closeModal' }
   | { type: 'openContextMenu'; menu: ContextMenuState }
   | { type: 'closeContextMenu' }
-  | { type: 'toast'; message: string | null };
+  | { type: 'toast'; message: string | null }
+  // Deep linking: merge a state patch parsed from the URL (initial load, or back/forward).
+  | { type: 'applyUrl'; patch: Partial<PosState> };
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -264,6 +278,23 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, contextMenu: null };
     case 'toast':
       return { ...state, toast: action.message };
+    case 'applyUrl':
+      // A URL never describes the whole app — only what a link can say. Fields the patch
+      // omits (chiefly `modal`, which is absent from a link with no dialog) are reset to
+      // their neutral value so pressing Back actually closes a dialog rather than leaving
+      // it open. Bookings are preserved: the operator's edits to the sheet outlive
+      // navigation.
+      return {
+        ...state,
+        modal: null,
+        contextMenu: null,
+        sidebarOpen: false,
+        sidebarCourse: null,
+        multiSelectActive: false,
+        multiSelectIds: [],
+        ...action.patch,
+        bookings: action.patch.bookings ?? state.bookings,
+      };
 
     // ─── Cart ─────────────────────────────────────────────────────────────
     case 'addItem': {
@@ -334,6 +365,7 @@ export function reducer(state: PosState, action: Action): PosState {
         flowMode: '',
         additionalGolfers: [],
         currentCategory: null,
+        orderScenario: null,
         lastPayment: null,
         modal: null,
       };
@@ -350,6 +382,7 @@ export function reducer(state: PosState, action: Action): PosState {
         selectedGolfer: null,
         flowMode: '',
         cart: cartLogic.buildTeeTimeCart(b),
+        orderScenario: null,
         lastPayment: null,
       };
     }

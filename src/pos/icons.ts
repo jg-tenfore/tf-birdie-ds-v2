@@ -1,4 +1,11 @@
 import type { SvgIconComponent } from '@mui/icons-material';
+import Checkroom from '@mui/icons-material/Checkroom';
+import LunchDining from '@mui/icons-material/LunchDining';
+import LocalCafe from '@mui/icons-material/LocalCafe';
+import LocalBar from '@mui/icons-material/LocalBar';
+import Handyman from '@mui/icons-material/Handyman';
+import Speed from '@mui/icons-material/Speed';
+import Inventory2 from '@mui/icons-material/Inventory2';
 import Add from '@mui/icons-material/Add';
 import AddCircle from '@mui/icons-material/AddCircle';
 import AddShoppingCart from '@mui/icons-material/AddShoppingCart';
@@ -215,6 +222,13 @@ export const ICONS: Record<string, SvgIconComponent> = {
   wb_twilight: WbTwilight,
   workspace_premium: WorkspacePremium,
   person_check: HowToReg,
+  checkroom: Checkroom,
+  lunch_dining: LunchDining,
+  local_cafe: LocalCafe,
+  local_bar: LocalBar,
+  handyman: Handyman,
+  speed: Speed,
+  inventory_2: Inventory2,
 };
 
 /**

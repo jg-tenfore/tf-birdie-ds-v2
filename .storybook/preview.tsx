@@ -48,7 +48,7 @@ const preview: Preview = {
       storySort: {
         order: [
           'Getting Started',
-          ['Introduction'],
+          ['Introduction', 'Deep Links'],
           'Foundations',
           ['Colors', 'Typography', 'Spacing', 'Radius', 'Border', 'Effect Styles', 'Icons', 'Logos', 'Images'],
           'Components',

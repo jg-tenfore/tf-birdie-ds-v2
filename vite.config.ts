@@ -32,11 +32,24 @@ export default defineConfig({
 
   test: {
     projects: [
+      // Plain unit tests for the pure modules — pricing, scheduling, the URL codec.
+      // Node environment, no browser, so they run in a second rather than a minute.
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      // Mounts every story in a real Chromium and fails on any runtime error.
       {
         extends: true,
         plugins: [storybookTest({ configDir: path.join(dirname, '.storybook') })],
         test: {
           name: 'storybook',
+          // No `include`: the Storybook plugin indexes from `.storybook/main.ts`'s
+          // `stories` field, and setting it here is ignored with a warning.
           browser: {
             enabled: true,
             headless: true,

@@ -40,3 +40,8 @@ references/prototoype/GolfCoursePOS_Package/*
 
 # The assembled Pages site (Storybook + prototype + reference)
 site/
+
+# Source product photography — ~130MB of full-res screenshots and scraped galleries.
+# `scripts/import-item-images.mjs` downscales what the app needs into src/assets/items/,
+# and those *are* committed. Never commit the source folder.
+pos-item-imagery/

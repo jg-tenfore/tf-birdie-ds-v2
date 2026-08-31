@@ -70,6 +70,37 @@ Helpers are in `src/showcase/pos/screen-helpers.tsx`. When you add a dialog:
 
 Step 3 is not optional — a dialog with no story is a dialog nobody reviews.
 
+## Product imagery
+
+Matched to catalog items **by filename**: the slugified item name, so `Titleist Pro V1 Box` →
+`src/assets/items/titleist-pro-v1-box.png`. `item-images.ts` globs the folder; there is no
+registry to update. A mis-slugged file fails silently into a text tile, which is why
+`item-images.test.ts` asserts every file maps to a real item and lists uncovered goods.
+
+Two tile shapes, and which one you get is decided by whether the item has a photo — image
+tiles are ~210px tall, text tiles ~64px. Don't add a blank image panel to make them uniform;
+rates and modifiers have nothing to photograph and a blank panel reads as missing content.
+
+Source screenshots (`pos-item-imagery/`, ~130MB) are gitignored. `scripts/import-item-images.mjs`
+downscales them to 240px into `src/assets/items/`, and *those* are committed. Never commit the
+source folder.
+
+## Deep links
+
+The prototype mirrors state into the address bar (`src/pos/state/url-state.ts`,
+`useUrlSync.ts`). Storybook does **not** — it owns its own URL, so `PosApp` takes `syncUrl` and
+only `App.tsx` passes it.
+
+Two rules when you touch the `Modal` union:
+
+1. Add a slug to `MODAL_SLUGS` and encode/decode its arguments, or the dialog silently stops
+   being linkable.
+2. Add it to the round-trip table in `url-state.test.ts`. That test asserts encode→decode→encode
+   is stable, which is the only property that makes a shared link trustworthy.
+
+Carts are never serialized into a URL — `?order=` names a scenario from `scenarios.ts`. If a
+particular order needs to be linkable, add it there and both the prototype and the stories get it.
+
 ## Demo data is deterministic
 
 `DEMO_TODAY()` is pinned to **Thursday, May 21, 2026**. The 11-day booking window is generated
@@ -84,11 +115,21 @@ npm run storybook    # → :6006 (the design system)
 npm run dev          # → :5173 (the prototype)
 npm run typecheck    # tsc --noEmit; keep this green
 npm run lint         # oxlint
-npm run test         # renders all 280 stories in Chromium; fails on any runtime error
+npm run test         # both projects: unit (node) + storybook (chromium)
+npm run test:unit    # fast — pure logic and the URL codec
+npm run test:stories # slow — mounts all 280 stories
 npm run build:site   # the full Pages tree → site/
 ```
 
 `npm run build:site` is what CI runs. If it passes locally, the deploy will too.
+
+Two deploy targets, and they need **different builds**: Pages serves from
+`/tf-birdie-ds-v2/`, Netlify from `/`. Asset URLs — images included — have the base baked in
+at build time, so the wrong one 404s everything. `BASE_PATH` is set per target
+(`deploy-pages.yml` and `netlify.toml`); don't hard-code a base anywhere else.
+
+Pages has no per-PR preview (one site per repo, deploys from `main` only). Netlify Deploy
+Previews are the way to look at a branch.
 
 `vite.config.ts` pre-bundles a handful of CJS-only test deps (`aria-query`, `lz-string`,
 `dom-accessibility-api`, …) via `optimizeDeps.include`. Without it the whole story suite dies
