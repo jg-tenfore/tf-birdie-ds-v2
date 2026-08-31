@@ -1,4 +1,5 @@
 import { Meta } from '@storybook/addon-docs/blocks';
+import { SiteLink } from './SiteLink';
 
 <Meta title="Getting Started/Introduction" />
 
@@ -12,8 +13,8 @@ point of sale, plus the working prototype built from it.
 | | |
 |---|---|
 | **This Storybook** | The design system — foundations, components, and every POS screen as a story. |
-| **[The prototype →](../prototype/)** | The POS as a running React app, built from these components. |
-| **[The original →](../reference/)** | The single-file HTML prototype this port is measured against. Read-only. |
+| **<SiteLink to="prototype">The prototype →</SiteLink>** | The POS as a running React app, built from these components. |
+| **<SiteLink to="reference">The original →</SiteLink>** | The single-file HTML prototype this port is measured against. Read-only. |
 
 The prototype and this Storybook import the *same* components from `src/pos`, which is the
 point: refining a component changes both. The original is kept alongside so any drift is

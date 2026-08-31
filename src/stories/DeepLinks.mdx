@@ -1,10 +1,11 @@
 import { Meta } from '@storybook/addon-docs/blocks';
+import { SiteLink, DeepLink } from './SiteLink';
 
 <Meta title="Getting Started/Deep Links" />
 
 # Deep links
 
-Every screen and dialog in the [prototype](../prototype/) has its own URL. The address bar
+Every screen and dialog in the <SiteLink to="prototype">prototype</SiteLink> has its own URL. The address bar
 tracks what you're looking at, so copying it shares exactly that screen — a specific day on
 the tee sheet, a booking mid-checkout, a dialog open on a particular time row.
 
@@ -83,16 +84,16 @@ is 9:12 AM.
 
 ## Worth copying
 
-```
-#/tee-sheet?date=2026-05-23&shift=peak
-#/tee-sheet/list?status=open&sort=status
-#/tee-sheet?compact=1
-#/register?order=walkin&modal=checkout
-#/register?order=walkin&modal=modifiers&i=0&p=1
-#/tee-sheet?modal=block&t=0912
-#/tee-sheet?modal=league&t=0800
-#/tee-sheet?summary=ponds
-```
+Each of these opens the prototype in a new tab:
+
+- <DeepLink hash="#/tee-sheet?date=2026-05-23&shift=peak" /> — a specific day and time band
+- <DeepLink hash="#/tee-sheet/list?status=open&sort=status" /> — the unpaid worklist
+- <DeepLink hash="#/tee-sheet?compact=1" /> — compact rows
+- <DeepLink hash="#/register?order=walkin&modal=checkout" /> — an order mid-payment
+- <DeepLink hash="#/register?order=walkin&modal=modifiers&i=0&p=1" /> — per-player modifiers
+- <DeepLink hash="#/tee-sheet?modal=block&t=0912" /> — blocking the 9:12 row
+- <DeepLink hash="#/tee-sheet?modal=league&t=0800" /> — seating a league
+- <DeepLink hash="#/tee-sheet?summary=ponds" /> — one course's summary
 
 ## Two limits, on purpose
 
