@@ -49,6 +49,7 @@ const slugify = (name) =>
 const LOOSE = [
   // RENTALS
   ['1.07.02', 'Club Rental Full Set'],
+  ['1.55.55', 'Club Rental Half Set'],
   ['1.07.11', 'Pull Cart'],
   ['1.07.46', 'Riding Cart 18'],
   // Same physical cart, sold by duration — one photo legitimately serves both.

@@ -49,8 +49,6 @@ describe('coverage', () => {
    * the test rather than blending into an ever-growing allowance.
    */
   const EXPECTED_GAPS = new Set([
-    // No source photo supplied.
-    'Club Rental Half Set',
     // The scrape matched a home practice net, not a bucket of range balls — a wrong
     // photo is worse than none, so these stay text tiles.
     'Range Bucket Small',
