@@ -1,0 +1,107 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Getting Started/Deep Links" />
+
+# Deep links
+
+Every screen and dialog in the [prototype](../prototype/) has its own URL. The address bar
+tracks what you're looking at, so copying it shares exactly that screen — a specific day on
+the tee sheet, a booking mid-checkout, a dialog open on a particular time row.
+
+Back and Forward work as you'd expect: they step through screens and dialogs, not through
+every keystroke you typed into a filter.
+
+> Links use a `#` hash. GitHub Pages serves static files with no SPA fallback, so a path like
+> `…/prototype/tee-sheet` would 404 — nothing exists there. A hash never reaches the server, so
+> the same link works on Pages, on `localhost:5173`, and from a local copy.
+
+## Screens
+
+| URL | Screen |
+|---|---|
+| `#/register` | The register |
+| `#/register/GOLF%20BALLS` | The register with a category open |
+| `#/tee-sheet` | Tee sheet, calendar |
+| `#/tee-sheet/list` | Tee sheet, list view |
+
+## Modifiers
+
+Append as query params. Anything left off falls back to the default, so links stay short.
+
+| Param | Values | Effect |
+|---|---|---|
+| `date` | `2026-05-23` | Which day. Defaults to the demo day, Thu 21 May 2026 |
+| `shift` | `early` `peak` `twilight` | Time band. Scopes both the grid and the list |
+| `booking` | a booking id | Loads that booking into the register, cart and all |
+| `order` | `walkin` `retail` | Seeds a cart from a named scenario |
+| `panel` | `open` `collapsed` | Forces the order panel's state |
+| `summary` | `day` or a course id | Opens the summary drawer |
+| `select` | `p01,p02` | Multi-select, with those chips selected |
+| `compact` | `1` | Compact 30px rows |
+| `hide-empty` | `1` | Hide time rows with no bookings |
+
+List view only:
+
+| Param | Values |
+|---|---|
+| `status` | `open` `paid` `no_show` `rain_chk` `refund` |
+| `sort` | `time` `status` `course` |
+| `member` | `member` `guest` `annual` `seasonal` `monthly` `senior` `student` |
+| `course-filter` | `ponds,valley` |
+| `holes-filter` | `9H` `18H` |
+| `q` | free text — name, confirmation, or phone |
+
+## Dialogs
+
+`modal=` names the dialog; the rest are its arguments. **Times are `HHMM`, 24-hour** — `t=0912`
+is 9:12 AM.
+
+| `modal=` | Arguments | Dialog |
+|---|---|---|
+| `booking` | `id`, `tab` (0–4) | Booking detail |
+| `checkout` | — | Checkout |
+| `payment` | `method` = `card` `cash` `giftcert` `cashpay` | Payment reader |
+| `tee-picker` | `holes=18` | Tee time selection |
+| `reserve` | `pay` = `now` `later` | Reserve confirmation |
+| `new-booking` | `course`, `t`, `slot` | New tee time |
+| `member-lookup` | `item`, `tier` | Membership verification |
+| `golfer-search` | `target` = `primary` or `0.1` | Golfer search |
+| `guest` | `i` | Guest details for seat `i` |
+| `modifiers` | `i`, `p` | Per-player modifiers |
+| `new-customer` | — | New customer |
+| `walk-in` | — | Walk-in |
+| `open-item` | — | Open item |
+| `action` | `do` = `checkin` `refund` `raincheck` | Action panel |
+| `block` | `t`, `edit=1` | Block a time |
+| `note` | `t` | Time-row note |
+| `price` | `t` | Price override |
+| `league` | `t`, `group` | League / outing |
+| `move` | `t` | Move players |
+| `course-times` | `course` | Course time settings |
+| `rates` | `course` | Rate card |
+| `search` | — | Find a tee time |
+
+## Worth copying
+
+```
+#/tee-sheet?date=2026-05-23&shift=peak
+#/tee-sheet/list?status=open&sort=status
+#/tee-sheet?compact=1
+#/register?order=walkin&modal=checkout
+#/register?order=walkin&modal=modifiers&i=0&p=1
+#/tee-sheet?modal=block&t=0912
+#/tee-sheet?modal=league&t=0800
+#/tee-sheet?summary=ponds
+```
+
+## Two limits, on purpose
+
+**Carts are named, not serialized.** An order is far too big for a URL, so `?order=` names a
+scenario from `src/pos/state/scenarios.ts` — the same ones the screen stories use. A link to a
+cart you built by hand restores the *screen*, not your line items. If you need a particular
+order to be linkable, add it as a scenario and it becomes available to both the prototype and
+Storybook.
+
+**The confirm dialog isn't linkable.** It carries prose — a title, a body, the action it would
+run — and only ever appears after something you just did. A bare "are you sure?" with no context
+isn't a screen worth sharing.

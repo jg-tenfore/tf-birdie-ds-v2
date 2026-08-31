@@ -8,6 +8,7 @@ import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
 import type { PosState } from './state/pos-store';
 import { PosProvider, usePos } from './state/PosProvider';
+import { useUrlSync } from './state/useUrlSync';
 
 /**
  * The Birdie POS prototype.
@@ -45,12 +46,25 @@ export function PosShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Mounts the URL sync. A component rather than a call in `PosAppBody` because hooks can't
+ * be conditional, and only the hosted prototype wants this — Storybook owns its own URL,
+ * and a story rewriting the hash would fight the addressbar it already uses to track which
+ * story is open.
+ */
+function UrlSync() {
+  const { state, dispatch } = usePos();
+  useUrlSync(state, dispatch);
+  return null;
+}
+
 /** Everything inside the frame — assumes a `PosProvider` above it. */
-export function PosAppBody() {
+export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   const { state, dispatch } = usePos();
 
   return (
     <PosShell>
+      {syncUrl && <UrlSync />}
       <LeftPanel />
       {state.view === 'pos' ? <PosView /> : <TeeSheetView />}
 
@@ -83,13 +97,22 @@ export function PosAppBody() {
 /**
  * The prototype, provider included.
  *
- * `initialState` lets a story or a deep link open the app in a specific condition —
- * a loaded booking, the tee sheet on a busy Saturday, a dialog already open.
+ * `initialState` lets a story or a deep link open the app in a specific condition — a
+ * loaded booking, the tee sheet on a busy Saturday, a dialog already open.
+ *
+ * `syncUrl` mirrors state into the address bar and honours Back/Forward. The hosted
+ * prototype turns it on; stories leave it off.
  */
-export function PosApp({ initialState }: { initialState?: Partial<PosState> }) {
+export function PosApp({
+  initialState,
+  syncUrl,
+}: {
+  initialState?: Partial<PosState>;
+  syncUrl?: boolean;
+}) {
   return (
     <PosProvider initialState={initialState}>
-      <PosAppBody />
+      <PosAppBody syncUrl={syncUrl} />
     </PosProvider>
   );
 }

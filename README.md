@@ -49,16 +49,39 @@ npm run dev         # prototype      → http://localhost:5173
 Other scripts:
 
 ```bash
-npm run typecheck   # tsc, no emit
-npm run lint        # oxlint
-npm run test        # render every story in Chromium; fails on any runtime error
-npm run build       # prototype → dist/
-npm run build:site  # the full Pages tree → site/
+npm run typecheck    # tsc, no emit
+npm run lint         # oxlint
+npm run test         # everything below
+npm run test:unit    # pure modules (pricing, scheduling, the URL codec) in node
+npm run test:stories # every story mounted in Chromium; fails on any runtime error
+npm run build        # prototype → dist/
+npm run build:site   # the full Pages tree → site/
 ```
 
-`npm run test` is the useful guard here: it mounts all 280 stories — including every POS
-screen and dialog — in a real browser and fails on any error or unhandled rejection. It
-caught nothing on the last run, which is the point of running it.
+`npm run test` is the useful guard here: 254 tests across two projects — the story suite mounts
+all 280 stories in a real browser and fails on any runtime error, and the unit suite covers the
+pure logic.
+
+## Deep links
+
+Every screen and dialog in the prototype has its own URL, so you can share the exact thing you
+want reviewed:
+
+```
+#/tee-sheet?date=2026-05-23&shift=peak       a specific day and time band
+#/tee-sheet/list?status=open&sort=status     the unpaid worklist
+#/register?order=walkin&modal=checkout       an order mid-payment
+#/tee-sheet?modal=block&t=0912               blocking the 9:12 row
+```
+
+Back and Forward step through screens and dialogs, not through every keystroke typed into a
+filter. Full scheme: **Getting Started → Deep Links** in Storybook, or
+[`src/pos/state/url-state.ts`](src/pos/state/url-state.ts).
+
+Links use a hash because Pages has no SPA fallback — a real path would 404. Carts aren't
+serialized; `?order=` names a scenario from
+[`src/pos/state/scenarios.ts`](src/pos/state/scenarios.ts), which is the same vocabulary the
+screen stories use.
 
 ## Design language
 
