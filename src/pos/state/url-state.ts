@@ -146,6 +146,9 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
       q.set('course', m.courseId);
       q.set('t', minToHHMM(m.timeMin));
       q.set('slot', String(m.startSlot));
+      // Only the party size travels. `maxPlayers` is a property of the grid at that moment,
+      // and the dialog recomputes it from the row rather than trusting a stale link.
+      if (m.players) q.set('p', String(m.players));
       break;
     case 'actionPanel':
       q.set('do', m.action);
@@ -219,9 +222,15 @@ function decodeModal(q: URLSearchParams): Modal | null {
       return { kind, itemIdx: num('i'), playerIdx: num('p') };
     case 'newBooking': {
       const course = q.get('course');
-      return course && t !== null
-        ? { kind, courseId: course, timeMin: t, startSlot: num('slot') }
-        : null;
+      if (!course || t === null) return null;
+      const p = q.get('p');
+      return {
+        kind,
+        courseId: course,
+        timeMin: t,
+        startSlot: num('slot'),
+        ...(p ? { players: Number(p) } : {}),
+      };
     }
     case 'actionPanel': {
       const action = q.get('do');

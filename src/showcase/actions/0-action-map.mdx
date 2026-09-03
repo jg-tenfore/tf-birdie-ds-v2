@@ -1,0 +1,124 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Tee Sheet Actions/0 · Action Map" />
+
+# Tee Sheet Action Map
+
+Every action the tee sheet offers, where it is reached from, and what it writes.
+
+The **Writes** column is the useful one. Roughly half of these actions change tee-sheet
+*data* — they are the ones with a before and an after, and each has a story in the folders
+below. The rest change only what is *shown*; they are covered by the
+**Components / Layout & Structure / Tee Sheet** stories instead, because there is nothing to
+diff.
+
+## How to read a story in this section
+
+Each one has three parts:
+
+| Part | What it is |
+|---|---|
+| **Before** | The starting sheet, with the action's dialog or menu open over it |
+| **After** | The same sheet with the action applied |
+| **Writes to the tee sheet** | The difference between the two, derived — not written by hand |
+
+The After pane is produced by running the action through the real reducer, and the change
+list by diffing the two states. Where the action has a short dialog path, a `play` function
+also drives the real dialog and requires the Before sheet to end up matching the After sheet
+— so a story cannot claim an outcome the dialog does not actually produce.
+
+---
+
+## Open cell
+
+| Action | Writes |
+|---|---|
+| New booking (type → rate → party) | A booking. Party size comes from *which* open cell was clicked — the Nth seats N |
+
+## Booking chip · right-click
+
+| Action | Writes |
+|---|---|
+| Load into register | Nothing on the sheet — the booking moves to the order panel |
+| Booking details | Nothing directly; the dialog's own tabs write |
+| Check in all players | `playerStates[].step = 0` |
+| Mark teed off | `playerStates[].step = 1` |
+| Mark finished | `playerStates[].step = 4` |
+| Mark all paid | `pay = 'paid'` and every player's balance |
+| Mark all unpaid | `pay = 'open'` and every player's balance |
+| Refund | `pay = 'refund'` |
+| Issue rain check | `pay = 'rain_chk'` |
+| Select multiple | Enters multi-select. Writes nothing |
+| Move players | `course`, `timeMin`, `slot` |
+| Mark no-show | `pay = 'no_show'`, every player flagged, all pushed off the rail |
+| Delete booking | Removes the booking and releases the slot. Confirmed |
+
+On a **block** chip the menu is Edit block / Remove block instead. On a **league** chip it is
+Edit league / Delete league / Booking details, and both act on the whole group.
+
+## Time label · right-click
+
+Acts on the whole row, across every course at once.
+
+| Action | Writes |
+|---|---|
+| Block this time | A full-width block booking per course. Clears whatever it lands on |
+| Add / Edit note | `timeNotes[date_minute]` |
+| Override price | `timePrices[date_minute]` |
+| Create league / outing | One booking per course per row, sharing a `groupId` |
+| Move players out | `timeMin` / `slot` on every booking in the row |
+| Mark row paid | `pay` and player balances on every booking in the row |
+| Check in row | `playerStates[].step` on every booking in the row |
+| Clear this time | Removes every booking in the row. Confirmed |
+
+## Course header menu
+
+Changes the columns, never the bookings.
+
+| Action | Writes |
+|---|---|
+| Lock / Unlock course | `course.locked`. Column and tee times stay; open cells stop accepting clicks |
+| Hide course | `course.visible`. Bookings stay in state, undrawn |
+| Focus this course | Hides every other course |
+| Show all courses | Restores every hidden course |
+| Course note | `course.note` — a standing note for the day |
+| Tee time settings | Course interval and window |
+| Tee time prices | The course rate card |
+
+## Multi-select bar
+
+| Action | Writes |
+|---|---|
+| Mark paid | `pay` and player balances, per selected booking, then leaves the mode |
+| No show | `pay = 'no_show'` and player flags, per selected booking, then leaves the mode |
+| Rain check | `pay = 'rain_chk'` across the selection in one patch, then leaves the mode |
+| Message | Nothing on the sheet |
+| Clear selection / Exit | Nothing |
+
+## Toolbar — view only
+
+Previous / Today / Next · date picker · weekend jump · shift band · grid ⇄ list · search ·
+day summary · settings · register.
+
+None of these write tee-sheet data. They are shown under
+**Components / Layout & Structure / Tee Sheet**.
+
+## Settings panel — view only
+
+Compact rows · hide empty rows · interval (7/8/10/15) · start hour · end hour · auto-scroll
+to now · colourblind mode.
+
+## List view — view only
+
+Filters (status, guest, membership, course, holes, players, special) · sort · search · group
+by status.
+
+---
+
+## Where the rest of the sheet is documented
+
+| Section | What it covers |
+|---|---|
+| **Components / Layout & Structure / Tee Sheet** | The surface itself — every time, density and booking state, no behaviour |
+| **POS Screens** | Whole-app flows in staff order, with the order panel and every dialog |
+| **Tee Sheet Actions** (here) | One action at a time, and what it writes |

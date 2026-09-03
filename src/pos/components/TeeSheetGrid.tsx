@@ -3,6 +3,7 @@ import { Box, ButtonBase, Tooltip, Typography } from '@mui/material';
 import { grid as gridTokens, md3, noteColors, radius, shifts } from '../../theme/tokens';
 import { DEMO_TODAY } from '../data/bookings';
 import { TIMES, formatTimeLabel } from '../data/courses';
+import { openRuns } from '../logic/openings';
 import { dayBookings, timeRowKey, visibleCourses } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking, Course, TimeSlot } from '../types';
@@ -28,11 +29,14 @@ export function TeeSheetGrid() {
   const courses = visibleCourses(state);
   const bookings = dayBookings(state);
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** The row holding the current time — the anchor the opening scroll measures from. */
+  const nowRowRef = useRef<HTMLDivElement>(null);
 
   const shift = shifts[state.shift] ?? shifts.full;
   const shiftStart = shift.startH * 60 + shift.startM;
   const shiftEnd = shift.endH * 60 + shift.endM;
   const rowH = state.settings.compactMode ? gridTokens.rowHCompact : gridTokens.rowH;
+  const isToday = DEMO_TODAY().toDateString() === state.currentDate.toDateString();
 
   const times = useMemo(
     () => TIMES.filter((t) => t.totalMin >= shiftStart && t.totalMin < shiftEnd),
@@ -51,6 +55,50 @@ export function TeeSheetGrid() {
     }
     return map;
   }, [bookings]);
+
+  /**
+   * The rows actually drawn.
+   *
+   * `hideEmpty` removes rows, and the full-day view inserts band separators between them,
+   * so the sheet's pixel height is not `rows × rowH`. Anything positioned against the grid
+   * has to be measured from this list rather than computed from the start hour.
+   */
+  const visibleTimes = useMemo(() => {
+    if (!state.settings.hideEmpty) return times;
+    return times.filter((t) => courses.some((c) => byCell.has(`${c.id}:${t.totalMin}`)));
+  }, [times, state.settings.hideEmpty, courses, byCell]);
+
+  /**
+   * Which drawn row holds the current time, and how far down it.
+   *
+   * `null` when now falls outside the rows on screen — an early-morning band read in the
+   * afternoon has no "now" on it, and neither the rule nor the opening scroll should
+   * pretend otherwise.
+   */
+  const nowAnchor = useMemo(() => {
+    if (!isToday) return null;
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const iv = state.settings.intervalMins;
+    for (const t of visibleTimes) {
+      // Before the first row still to come: sit at its top edge, so everything above the
+      // rule is past and everything below is bookable.
+      if (nowMin < t.totalMin) return { totalMin: t.totalMin, fraction: 0 };
+      if (nowMin < t.totalMin + iv)
+        return { totalMin: t.totalMin, fraction: (nowMin - t.totalMin) / iv };
+    }
+    return null;
+  }, [isToday, visibleTimes, state.settings.intervalMins]);
+
+  // Open where work is happening rather than at 6am. Measured from the row element, not
+  // from the start hour: the old arithmetic ignored the band filter, so choosing a morning
+  // band in the afternoon scrolled past every row and opened on a blank sheet.
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const el = nowRowRef.current;
+    scrollRef.current.scrollTop =
+      state.settings.autoScrollNow && el ? Math.max(0, el.offsetTop - 180) : 0;
+  }, [state.settings.autoScrollNow, nowAnchor?.totalMin, rowH, visibleTimes.length]);
 
   /**
    * Row tint. On the full-day view each band gets its own wash so the shape of the
@@ -77,17 +125,6 @@ export function TeeSheetGrid() {
     return null;
   };
 
-  // Scroll to the current time on mount, so the sheet opens where work is
-  // happening rather than at 6am. Only when the viewed day is the demo "today".
-  const isToday = DEMO_TODAY().toDateString() === state.currentDate.toDateString();
-  useEffect(() => {
-    if (!state.settings.autoScrollNow || !isToday || !scrollRef.current) return;
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    const offset =
-      ((nowMin - state.settings.gridStartHour * 60) / state.settings.intervalMins) * rowH - 180;
-    scrollRef.current.scrollTop = Math.max(0, offset);
-  }, [isToday, rowH, state.settings.autoScrollNow, state.settings.gridStartHour, state.settings.intervalMins]);
 
   return (
     <Box ref={scrollRef} sx={{ flex: 1, overflow: 'auto', position: 'relative' }}>
@@ -123,17 +160,11 @@ export function TeeSheetGrid() {
         </Stack>
 
         {/* ── Time rows ── */}
-        {times.map((t) => {
+        {visibleTimes.map((t) => {
           const band = bandLabel(t.h);
           const noteKey = timeRowKey(state.currentDate, t.totalMin);
           const note = state.timeNotes[noteKey];
           const priceOverride = state.timePrices[noteKey];
-
-          // "Hide empty rows" drops any row with no booking on any course.
-          if (state.settings.hideEmpty) {
-            const any = courses.some((c) => byCell.has(`${c.id}:${t.totalMin}`));
-            if (!any) return null;
-          }
 
           return (
             <Box key={t.totalMin}>
@@ -183,14 +214,17 @@ export function TeeSheetGrid() {
               {priceOverride && <PriceOverrideBanner timeMin={t.totalMin} />}
 
               <Stack
+                ref={nowAnchor?.totalMin === t.totalMin ? nowRowRef : undefined}
                 direction="row"
                 sx={{
                   height: rowH,
                   borderBottom: `1px solid ${md3.outlineVariant}`,
                   width: '100%',
                   bgcolor: rowBg(t.h),
+                  position: 'relative',
                 }}
               >
+                {nowAnchor?.totalMin === t.totalMin && <NowLine fraction={nowAnchor.fraction} />}
                 <TimeLabel time={t} hasOverride={Boolean(priceOverride)} />
                 {courses.map((course, ci) => (
                   <CourseGroup
@@ -207,8 +241,6 @@ export function TeeSheetGrid() {
             </Box>
           );
         })}
-
-        {isToday && <NowLine rowH={rowH} />}
       </Box>
 
       {/* Read so the grid re-renders when the operator changes an unrelated setting. */}
@@ -612,6 +644,12 @@ function CourseGroup({
     for (let s = b.slot + 1; s < b.slot + b.players && s < course.slots; s++) occupied.add(s);
   }
 
+  // Open slots grouped into contiguous runs — the rule that turns the cells into a
+  // party-size picker. See `logic/openings.ts`; it lives there so it can be tested without
+  // rendering, because the failure it prevents (a booking overlapping its neighbour) looks
+  // perfectly fine on screen.
+  const runs = openRuns(cellBookings, course.slots);
+
   const cells: React.ReactNode[] = [];
   let si = 0;
   while (si < course.slots) {
@@ -625,6 +663,20 @@ function CourseGroup({
       cells.push(
         <Box
           key={`b${si}`}
+          // Story/test hook, not an accessibility affordance — the action stories compare
+          // the set of bookings on two sheets, and chip text alone (uppercased, truncated,
+          // mixed with the meta line) is not reliable to read back.
+          data-booking-id={booking.id}
+          data-booking={[
+            booking.name,
+            booking.players,
+            booking.pay,
+            booking.status,
+            // Per-player state is where check-in and part-payment live. Without it a story
+            // comparing two sheets cannot see "all checked in" happen at all.
+            `ci:${(booking.playerStates ?? []).filter((p) => p.step >= 0).length}`,
+            `paid:${(booking.playerStates ?? []).filter((p) => p.paid).length}`,
+          ].join('|')}
           sx={{ flex: span, position: 'relative', minWidth: 0, cursor: 'pointer' }}
           onClick={() => {
             if (state.multiSelectActive)
@@ -645,16 +697,38 @@ function CourseGroup({
       si += span;
     } else {
       const locked = course.locked;
+      // `si` is the loop's mutable cursor, so the handler has to close over a copy —
+      // reading `si` on click gives whatever the loop finished at, which silently made
+      // every cell in the row book the full opening.
+      const slotIndex = si;
+      const run = runs.get(slotIndex);
       cells.push(
         <ButtonBase
-          key={`e${si}`}
+          key={`e${slotIndex}`}
           disabled={locked}
-          onClick={() =>
+          // The icon is decorative, so without this the cell is an unnamed button. The
+          // name also carries the party size the click implies, which is the one thing
+          // about this control that isn't visible.
+          aria-label={
+            locked
+              ? `${course.name} ${formatTimeLabel(timeMin)} — course locked`
+              : `Book ${run?.nth ?? 1} player${(run?.nth ?? 1) === 1 ? '' : 's'} on ${course.name} at ${formatTimeLabel(timeMin)}`
+          }
+          onClick={() => {
             dispatch({
               type: 'openModal',
-              modal: { kind: 'newBooking', courseId: course.id, timeMin, startSlot: si },
-            })
-          }
+              modal: {
+                kind: 'newBooking',
+                courseId: course.id,
+                timeMin,
+                // Always the run's first slot, so an N-player booking occupies N
+                // adjacent cells rather than starting where the pointer happened to land.
+                startSlot: run?.start ?? slotIndex,
+                players: run?.nth,
+                maxPlayers: run?.size,
+              },
+            });
+          }}
           sx={{
             flex: 1,
             minWidth: 0,
@@ -899,24 +973,22 @@ function PriceOverrideBanner({ timeMin }: { timeMin: number }) {
   );
 }
 
-/** The red "now" rule, positioned by wall-clock time against the grid geometry. */
-function NowLine({ rowH }: { rowH: number }) {
-  const { state } = usePos();
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const startMin = state.settings.gridStartHour * 60;
-  const endMin = state.settings.gridEndHour * 60;
-  if (nowMin < startMin || nowMin > endMin) return null;
-
-  const top = ((nowMin - startMin) / state.settings.intervalMins) * rowH;
-
+/**
+ * The red "now" rule.
+ *
+ * Drawn inside the row that holds the current time and offset by `fraction` of that row,
+ * so it needs no knowledge of the grid above it. Positioning it against the whole sheet
+ * instead meant recomputing a height that band separators, hidden rows and price banners
+ * all change — and getting it wrong put the rule past the end of the content.
+ */
+function NowLine({ fraction }: { fraction: number }) {
   return (
     <Box
       sx={{
         position: 'absolute',
         left: gridTokens.timeGutterW,
         right: 0,
-        top,
+        top: `${fraction * 100}%`,
         height: 2,
         bgcolor: '#dc2626',
         zIndex: 10,

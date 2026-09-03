@@ -8,7 +8,7 @@ import {
   formatDuration,
   plan18Hole,
   planMove,
-  slotsFree,
+  largestFit,
   timeRange,
 } from '../logic/bookings';
 import { dayBookings, timeRowKey } from '../state/pos-store';
@@ -818,7 +818,11 @@ export function MovePlayers({ timeMin }: { timeMin: number }) {
   const moving = state.bookings.filter((b) => selected.includes(b.id));
   const course = state.courses.find((c) => c.id === destCourse);
   const result = course ? planMove(state.bookings, moving, course, dateStr, destTime, placement) : null;
-  const free = course ? slotsFree(state.bookings.filter((b) => !selected.includes(b.id)), course, destTime) : 0;
+  // What the move needs is room for the group side by side, so this is the widest opening
+  // at the destination rather than its free-slot total.
+  const free = course
+    ? largestFit(state.bookings.filter((b) => !selected.includes(b.id)), course, destTime)
+    : 0;
 
   const apply = () => {
     if (!moving.length) return toast('Select at least one tee time');
