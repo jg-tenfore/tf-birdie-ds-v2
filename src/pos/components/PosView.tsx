@@ -12,6 +12,7 @@ import {
 import { itemImage } from '../data/item-images';
 import * as cart from '../logic/cart';
 import { usePos } from '../state/PosProvider';
+import { venue } from '../data/venues';
 import type { CatalogItem } from '../types';
 import { EmptyState, Icon, SectionLabel } from './primitives';
 import { Stack } from './Stack';
@@ -170,7 +171,11 @@ function PosTopBar() {
         flexShrink: 0,
       }}
     >
-      <Typography sx={{ fontSize: 14, fontWeight: 700, flex: 1 }}>Pro Shop · Register 1</Typography>
+      {/* Names the club, which is the only visible difference between the three
+          published prototypes when the register is empty. */}
+      <Typography sx={{ fontSize: 14, fontWeight: 700, flex: 1 }}>
+        {venue(state.venueId).name}
+      </Typography>
       <Stack direction="row" alignItems="center" gap={0.75}>
         <SwitchButton
           icon="add_circle"
@@ -186,8 +191,6 @@ function PosTopBar() {
           Tee sheet
         </SwitchButton>
       </Stack>
-      {/* `state` is read so the switch reflects the live view in Storybook stories. */}
-      <Box sx={{ display: 'none' }}>{state.view}</Box>
     </Stack>
   );
 }

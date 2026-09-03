@@ -1,24 +1,40 @@
 import { Meta } from '@storybook/addon-docs/blocks';
-import { SiteLink } from './SiteLink';
+import { SiteLink, PrototypeLinks } from './SiteLink';
 
 <Meta title="Getting Started/Introduction" />
 
 # ⛳ Birdie POS — Design System
 
 A **React + MUI (Material UI) + Emotion** component library for the TenFore golf-course
-point of sale, plus the working prototype built from it.
+point of sale, plus three working prototypes built from it.
 
-## The three things this repo publishes
+## Everything this repo publishes
 
-| | |
+This Storybook is the front door. Every other surface is a directory beside it:
+
+| Directory | What |
 |---|---|
-| **This Storybook** | The design system — foundations, components, and every POS screen as a story. |
-| **<SiteLink to="prototype">The prototype →</SiteLink>** | The POS as a running React app, built from these components. |
-| **<SiteLink to="reference">The original →</SiteLink>** | The single-file HTML prototype this port is measured against. Read-only. |
+| `/` | **This Storybook** — foundations, components, and every POS screen as a story |
+| `/prototype/` | <SiteLink to="prototype">**Three nines →**</SiteLink> the original club: Ponds, Valley and Rolling as independent nine-hole tracks |
+| `/prototype-18/` | <SiteLink to="prototype-18">**18-hole course →**</SiteLink> one championship course, split into front and back nines |
+| `/prototype-9/` | <SiteLink to="prototype-9">**Single nine →**</SiteLink> one nine-hole course |
+| `/reference/` | <SiteLink to="reference">**The original →**</SiteLink> the single-file HTML prototype this port came from. Read-only |
 
-The prototype and this Storybook import the *same* components from `src/pos`, which is the
-point: refining a component changes both. The original is kept alongside so any drift is
-visible rather than assumed.
+## The three prototypes are one app
+
+They are **not** three codebases. The only thing that differs is the course layout: the tee
+sheet renders one column group per course, so a club's shape *is* its `courses` array. Each is
+the same build run with a different `VITE_VENUE` — see `src/pos/data/venues.ts`.
+
+<PrototypeLinks />
+
+That matters because it is the same rule the prototype and this Storybook already follow: they
+import the *same* components from `src/pos`, so refining a component changes all of them at
+once. The original HTML is kept alongside so any drift from the source design is visible
+rather than assumed.
+
+Any prototype can also show another club without rebuilding — append `?venue=eighteen`,
+`?venue=nine`, or `?venue=three-nines` to a deep link. See **Getting Started → Deep Links**.
 
 ## Design language
 
@@ -61,8 +77,7 @@ object. A story describes the state it wants and gets that screen — no clickin
 })} />
 ```
 
-That's why there are stories for states that would otherwise take a dozen interactions to
-reach, like a staged tip on a member's rain-checked round.
+Pass `venueId` to render any of the three clubs the same way.
 
 ## Customizing
 

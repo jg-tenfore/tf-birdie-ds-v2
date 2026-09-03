@@ -78,8 +78,17 @@ export interface CourseTrack {
 export interface Course {
   id: string;
   name: string;
-  /** Display string, e.g. `'9 HOLES'`. */
+  /** Display string on the column header, e.g. `'9 HOLES'` or `'FRONT 9'`. */
   holes: string;
+  /**
+   * Holes in a round teed off here — 9 or 18.
+   *
+   * Separate from `holes` because that is a *label*: an 18-hole club's front nine displays
+   * "FRONT 9" but a round there is still 18. Pricing and round labels read this; parsing the
+   * display string (as the original prototype did) breaks the moment a course isn't named
+   * "N HOLES".
+   */
+  holeCount: 9 | 18;
   /** Players per tee time — the number of columns in this course's grid group. */
   slots: number;
   visible: boolean;

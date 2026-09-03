@@ -5,9 +5,15 @@
  * GitHub Pages serves one site per repository, so all three deliverables share one
  * tree:
  *
- *   /             Storybook          — the design system, the front door
- *   /prototype/   the React POS app  — built from the same components
- *   /reference/   the original HTML  — read-only, what the port is measured against
+ *   /                Storybook          — the design system, the front door
+ *   /prototype/      three nines        — the original club
+ *   /prototype-18/   one 18-hole course — front and back nines
+ *   /prototype-9/    a single nine
+ *   /reference/      the original HTML  — read-only, what the port is measured against
+ *
+ * The three prototypes are the *same build* run three times with a different `VITE_VENUE`.
+ * They are not forks: a venue is a course layout (`src/pos/data/venues.ts`), and the tee
+ * sheet renders one column group per course, so the club's shape is entirely data.
  *
  * Storybook is the root because that matches goose-kds and tf-fox-ds-v1, so every
  * TenFore design-system site behaves the same way.
@@ -51,8 +57,22 @@ writeFileSync(
   ),
 );
 
-// ── 2. The React prototype at /prototype/ ─────────────────────────────────
-run('npx', ['vite', 'build', '--base', `${BASE}prototype/`, '--outDir', 'site/prototype']);
+// ── 2. The three prototypes ───────────────────────────────────────────────
+// Each needs its own build because the base path is baked into asset URLs and the venue
+// into the bundle; one artifact cannot serve two paths or two clubs.
+const PROTOTYPES = [
+  { dir: 'prototype', venue: 'three-nines' },
+  { dir: 'prototype-18', venue: 'eighteen' },
+  { dir: 'prototype-9', venue: 'nine' },
+];
+
+for (const { dir, venue } of PROTOTYPES) {
+  run(
+    'npx',
+    ['vite', 'build', '--base', `${BASE}${dir}/`, '--outDir', `site/${dir}`],
+    { VITE_VENUE: venue },
+  );
+}
 
 // ── 3. The original single-file prototype at /reference/ ──────────────────
 const reference = join(
@@ -90,6 +110,8 @@ if (existsSync(reference)) {
 writeFileSync(join(site, '.nojekyll'), '');
 
 console.log(`\n✓ site assembled at ${site}`);
-console.log(`   ${BASE}              Storybook`);
-console.log(`   ${BASE}prototype/    POS prototype`);
-console.log(`   ${BASE}reference/    original HTML`);
+console.log(`   ${BASE}                 Storybook`);
+for (const { dir, venue } of PROTOTYPES) {
+  console.log(`   ${BASE}${dir}/`.padEnd(BASE.length + 21) + venue);
+}
+console.log(`   ${BASE}reference/`.padEnd(BASE.length + 21) + 'original HTML');

@@ -373,7 +373,7 @@ export function timeShiftDiscount(
 export function buildTeeTimeCart(b: Booking): CartItem[] {
   const course = COURSES.find((c) => c.id === b.course);
   const prices = TEE_PRICES[b.status] ?? TEE_PRICES.booked;
-  const holes = course?.holes.replace(' HOLES', '') ?? '9';
+  const holes = String(course?.holeCount ?? 9);
 
   const roundLabel =
     b.status === 'member'

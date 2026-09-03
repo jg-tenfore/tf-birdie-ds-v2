@@ -1,8 +1,9 @@
 import type { ShiftKey } from '../../theme/tokens';
-import { DEFAULT_TEE_SHEET_SETTINGS, COURSES, toDateStr } from '../data/courses';
+import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY } from '../data/bookings';
-import { demoBookings } from './scenarios';
 import type { OrderScenario } from './scenarios';
+import { buildVenue, venue, venueBookings } from '../data/venues';
+import type { VenueId } from '../data/venues';
 import * as cartLogic from '../logic/cart';
 import type {
   Booking,
@@ -78,6 +79,15 @@ export type ContextMenuState =
 
 export interface PosState {
   view: MainView;
+
+  /**
+   * Which club this is — three nines, one 18-hole course split into its nines, or a single
+   * nine. The only thing that differs between the three published prototypes.
+   *
+   * It seeds `courses` and `bookings`; nothing reads it at render time except the register's
+   * top bar, so changing it means rebuilding state rather than flipping a flag.
+   */
+  venueId: VenueId;
 
   /** Every booking across the 11-day demo window. */
   bookings: Booking[];
@@ -156,12 +166,22 @@ export const emptyListFilters: ListFilters = {
   search: '',
 };
 
-/** Fresh state with the demo data loaded. */
+/**
+ * Fresh state with the demo data loaded.
+ *
+ * `venueId` decides the course layout and which bookings come with it. An explicit
+ * `courses` or `bookings` override still wins — that is how a story pins an unusual layout
+ * (a hidden course, a locked one) without inventing a venue for it.
+ */
 export function createInitialState(overrides: Partial<PosState> = {}): PosState {
+  const venueId = overrides.venueId ?? buildVenue();
+  const config = venue(venueId);
+
   return {
     view: 'pos',
-    bookings: demoBookings(),
-    courses: COURSES.map((c) => ({ ...c })),
+    venueId,
+    bookings: venueBookings(venueId),
+    courses: config.courses.map((c) => ({ ...c })),
     settings: { ...DEFAULT_TEE_SHEET_SETTINGS },
     cart: [],
     selectedGolfer: null,

@@ -7,6 +7,7 @@ import type { MainView, TeeSheetViewMode } from '../types';
 import type { ListFilters, Modal, PosState } from './pos-store';
 import { emptyListFilters } from './pos-store';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
+import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
  * Deep linking: a two-way map between POS state and a URL.
@@ -274,6 +275,10 @@ export function stateToHash(state: PosState): string {
         ? `/register/${encodeURIComponent(state.currentCategory)}`
         : '/register';
 
+  // Which club. Omitted when it matches the build's own venue, so each deployed
+  // prototype's links stay clean and only a deliberate cross-venue link carries it.
+  if (state.venueId !== buildVenue()) q.set('venue', state.venueId);
+
   // Day and band
   const dateStr = toDateStr(state.currentDate);
   if (dateStr !== toDateStr(DEMO_TODAY())) q.set('date', dateStr);
@@ -356,8 +361,14 @@ export function hashToState(hash: string): Partial<PosState> {
   const shift = q.get('shift');
   if (shift && shift in shifts) patch.shift = shift as ShiftKey;
 
+  // ── Which club ──
+  const venueParam = q.get('venue');
+  const venueId = venueParam && isVenueId(venueParam) ? venueParam : buildVenue();
+  patch.venueId = venueId;
+  patch.courses = venue(venueId).courses.map((c) => ({ ...c }));
+
   // ── The order ──
-  const bookings = demoBookings();
+  const bookings = venueId === buildVenue() ? demoBookings() : venueBookings(venueId);
   patch.bookings = bookings;
 
   const bookingId = q.get('booking');

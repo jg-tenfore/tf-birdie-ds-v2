@@ -8,9 +8,15 @@ prototype at `/prototype/`, the original HTML prototype at `/reference/`.
 
 ## The rule that matters
 
-**The prototype and Storybook import the same components from `src/pos`.** There is no
+**The prototypes and Storybook import the same components from `src/pos`.** There is no
 second copy of anything. If you find yourself writing a component for one and not the other,
 stop — that's the drift this repo exists to prevent.
+
+That includes the **three prototypes**. They are not forks: a club is a course layout
+(`src/pos/data/venues.ts`), the tee sheet renders one column group per course, and each
+deployment is the same build with a different `VITE_VENUE`. Adding a fourth club is adding an
+entry to `VENUES` and a line to `PROTOTYPES` in `scripts/build-site.mjs` — never a copy of the
+app.
 
 `/reference/` is the original single-file HTML prototype, unmodified. It is the answer to
 "is this what the original did", and it is never edited.
@@ -28,6 +34,8 @@ src/pos/types.ts         Domain types. Field names are the prototype's verbatim
 src/pos/icons.ts         Material Symbols ligature name → MUI icon component.
 src/pos/data/            Catalog, golfers, courses, bookings, config — extracted from the
                          prototype programmatically, then typed. Do not retype by hand.
+src/pos/data/venues.ts   The three clubs. Each names its courses and how the shared booking
+                         fixtures are re-homed onto them, so one fixture set serves all three.
 src/pos/logic/           Pure functions: cart pricing, booking filters, league/block/move
                          planning. Reason about rules here, without rendering.
 src/pos/state/           One reducer + provider. The whole app is a function of it.
@@ -100,6 +108,22 @@ Two rules when you touch the `Modal` union:
 
 Carts are never serialized into a URL — `?order=` names a scenario from `scenarios.ts`. If a
 particular order needs to be linkable, add it there and both the prototype and the stories get it.
+
+## Venues
+
+Three published prototypes, one app. `venueId` seeds `courses` and `bookings`; nothing else
+reads it except the register's top bar.
+
+- Bookings are authored once against the three-nines club and **re-homed** per venue via
+  `courseMap`. Mapping is 1:1 per source course — two sources must never collapse onto one
+  target, or two bookings land in the same cell. `venues.test.ts` asserts this.
+- A booking pointing at a course the venue doesn't have renders **nowhere** rather than
+  erroring, which is why the test checks for orphans explicitly.
+- `Course.holeCount` is the round length; `Course.holes` is only a label. The 18-hole club's
+  front nine displays "FRONT 9" but counts 18. Never parse the label — the original did, and
+  it breaks the moment a course isn't named "N HOLES".
+- Mixed 9H/18H bookings on the 18-hole club are correct, not a bug: an 18-hole course sells
+  nine-hole rounds too.
 
 ## Demo data is deterministic
 
