@@ -1,16 +1,19 @@
 import type { Course, TeeSheetSettings, TimeSlot } from '../types';
 
 /**
- * Course and time-grid configuration, ported verbatim from the prototype.
+ * Course and time-grid configuration.
  *
- * This club runs three parallel nine-hole tracks. Each is a column group on the
- * tee sheet, `slots` wide — so the default grid is 3 courses × 4 players = 12
- * bookable cells per time row.
+ * `COURSES` is the three-nines club — the original prototype's layout and the default
+ * venue. Each course is a column group on the tee sheet, `slots` wide, so this grid is
+ * 3 courses × 4 players = 12 bookable cells per time row.
+ *
+ * The other venue layouts live in `venues.ts`; this stays as the default so the many
+ * modules that look a course up by id have something to resolve against.
  */
 export const COURSES: Course[] = [
-  {id:'ponds',  name:'Ponds (to Woods)', holes:'9 HOLES', slots:4, visible:true, locked:false, note:'', indScroll:false},
-  {id:'valley', name:'Front Valley',     holes:'9 HOLES', slots:4, visible:true, locked:false, note:'', indScroll:false},
-  {id:'rolling',name:'Rolling',          holes:'9 HOLES', slots:4, visible:true, locked:false, note:'', indScroll:false},
+  { id: 'ponds', name: 'Ponds (to Woods)', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: false, note: '', indScroll: false },
+  { id: 'valley', name: 'Front Valley', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: false, note: '', indScroll: false },
+  { id: 'rolling', name: 'Rolling', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: false, note: '', indScroll: false },
 ];
 
 /**

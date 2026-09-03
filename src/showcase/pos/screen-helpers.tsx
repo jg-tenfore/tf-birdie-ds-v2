@@ -11,6 +11,8 @@ import {
   withWalkInOrder,
 } from '../../pos/state/scenarios';
 import type { PosState } from '../../pos/state/pos-store';
+import type { VenueId } from '../../pos/data/venues';
+import { venueBookings } from '../../pos/data/venues';
 import type { Booking } from '../../pos/types';
 
 /**
@@ -83,6 +85,24 @@ export function Screen({ initialState }: { initialState?: Partial<PosState> }) {
       <PosApp initialState={initialState} />
     </Box>
   );
+}
+
+/**
+ * The tee sheet for a given club.
+ *
+ * The three prototypes differ only in course layout, so a story renders any of them by
+ * naming the venue — no separate fixtures, and no chance of the story and the deployed
+ * prototype disagreeing.
+ */
+export function atVenue(venueId: VenueId, extra: Partial<PosState> = {}): Partial<PosState> {
+  return {
+    venueId,
+    bookings: venueBookings(venueId),
+    view: 'tee',
+    teeSheetMode: 'cal',
+    leftPanelCollapsed: true,
+    ...extra,
+  };
 }
 
 /** Standard story parameters for a full-screen POS story. */

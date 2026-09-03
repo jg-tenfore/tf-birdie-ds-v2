@@ -164,9 +164,9 @@ export const FocusedCourse: Story = {
     <Screen
       initialState={onTeeSheet({
         courses: [
-          { id: 'ponds', name: 'Ponds (to Woods)', holes: '9 HOLES', slots: 4, visible: true, locked: false, note: '', indScroll: false },
-          { id: 'valley', name: 'Front Valley', holes: '9 HOLES', slots: 4, visible: false, locked: false, note: '', indScroll: false },
-          { id: 'rolling', name: 'Rolling', holes: '9 HOLES', slots: 4, visible: false, locked: false, note: '', indScroll: false },
+          { id: 'ponds', name: 'Ponds (to Woods)', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: false, note: '', indScroll: false },
+          { id: 'valley', name: 'Front Valley', holes: '9 HOLES', holeCount: 9, slots: 4, visible: false, locked: false, note: '', indScroll: false },
+          { id: 'rolling', name: 'Rolling', holes: '9 HOLES', holeCount: 9, slots: 4, visible: false, locked: false, note: '', indScroll: false },
         ],
       })}
     />
@@ -179,9 +179,9 @@ export const LockedCourse: Story = {
     <Screen
       initialState={onTeeSheet({
         courses: [
-          { id: 'ponds', name: 'Ponds (to Woods)', holes: '9 HOLES', slots: 4, visible: true, locked: false, note: '', indScroll: false },
-          { id: 'valley', name: 'Front Valley', holes: '9 HOLES', slots: 4, visible: true, locked: true, note: 'Aerating greens — closed until Monday', indScroll: false },
-          { id: 'rolling', name: 'Rolling', holes: '9 HOLES', slots: 4, visible: true, locked: false, note: '', indScroll: false },
+          { id: 'ponds', name: 'Ponds (to Woods)', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: false, note: '', indScroll: false },
+          { id: 'valley', name: 'Front Valley', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: true, note: 'Aerating greens — closed until Monday', indScroll: false },
+          { id: 'rolling', name: 'Rolling', holes: '9 HOLES', holeCount: 9, slots: 4, visible: true, locked: false, note: '', indScroll: false },
         ],
       })}
     />

@@ -1,5 +1,5 @@
-import { COURSES, TIMES } from '../data/courses';
-import { createBookings } from '../data/bookings';
+import { TIMES } from '../data/courses';
+import { buildVenue, venue, venueBookings } from '../data/venues';
 import { buildTeeTimeCart } from '../logic/cart';
 import type { Booking } from '../types';
 import type { PosState } from './pos-store';
@@ -19,19 +19,14 @@ import type { PosState } from './pos-store';
 
 // ─── Shared demo data ───────────────────────────────────────────────────────
 
-let cachedBookings: Booking[] | null = null;
-
 /**
- * The demo booking set, generated once per session.
+ * The demo booking set for the build's venue.
  *
- * Memoized because generating the 11-day window is not free and every provider and
- * every story would otherwise redo it. Sharing one array is safe: the reducer only ever
- * replaces bookings immutably, so no consumer can mutate another's copy.
+ * Delegates to `venueBookings`, which memoizes per venue — generating the 11-day window is
+ * not free and every provider and story would otherwise redo it. Sharing one array is safe:
+ * the reducer only ever replaces bookings immutably, so no consumer can mutate another's.
  */
-export function demoBookings(): Booking[] {
-  cachedBookings ??= createBookings();
-  return cachedBookings;
-}
+export const demoBookings = (): Booking[] => venueBookings(buildVenue());
 
 /** Find a booking on a given date matching a predicate, falling back to the first. */
 export function findBooking(
@@ -70,7 +65,7 @@ export function withLoadedBooking(
  * per-player pricing that the cart is built around.
  */
 export function withWalkInOrder(extra: Partial<PosState> = {}): Partial<PosState> {
-  const course = COURSES[0];
+  const course = venue(buildVenue()).courses[0];
   const slot = TIMES.find((t) => t.totalMin === 8 * 60 + 24)!;
   return {
     bookings: demoBookings(),

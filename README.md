@@ -5,9 +5,17 @@ the working prototype built from it — a register, a tee sheet, check-in, and p
 
 ## 🔗 Live links
 
-### ⛳ [Open the Prototype →](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/)
+### ⛳ Open a prototype
 
-The POS as a running React app. Ring up a walk-in, work the tee sheet, take a payment.
+The POS as a running React app — ring up a walk-in, work the tee sheet, take a payment. Three
+clubs, one codebase:
+
+- [**Three nines →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) Ponds, Valley and
+  Rolling as independent nine-hole tracks — twelve cells a row
+- [**18-hole course →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-18/) one
+  championship course split into front and back nines — eight cells a row
+- [**Single nine →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/) one nine-hole
+  course — four cells a row
 
 ### 📚 [Open the Design System →](https://jg-tenfore.github.io/tf-birdie-ds-v2/)
 
@@ -20,23 +28,35 @@ The single-file HTML prototype this port came from. Read-only, kept for comparis
 <details>
 <summary>All URLs</summary>
 
-| Surface | URL |
+| Directory | Surface |
 |---|---|
-| Prototype | https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/ |
-| Storybook | https://jg-tenfore.github.io/tf-birdie-ds-v2/ |
-| Original HTML | https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/ |
+| `/` | Storybook — the design system |
+| `/prototype/` | Three nines (the original club) |
+| `/prototype-18/` | One 18-hole course, front and back nines |
+| `/prototype-9/` | A single nine-hole course |
+| `/reference/` | The original single-file HTML prototype |
 
-GitHub Pages serves one site per repository, so all three share one tree — Storybook at the
-root, the other two in subdirectories. See [`scripts/build-site.mjs`](scripts/build-site.mjs).
+GitHub Pages serves one site per repository, so they share one tree — Storybook at the root,
+the rest in subdirectories. See [`scripts/build-site.mjs`](scripts/build-site.mjs).
 
 </details>
 
-## Why three surfaces
+## Why three prototypes, and why they're one codebase
 
-The prototype and Storybook import the *same* components from `src/pos`. That's the point:
-refining a component changes both, so the design system and the thing it describes can't drift.
-The original HTML prototype is published alongside them so any difference from the source design
-is visible rather than assumed.
+The prototypes and Storybook import the *same* components from `src/pos`. Refining a component
+changes all of them, so the design system and the things it describes can't drift.
+
+The three clubs differ only in **course layout**. The tee sheet renders one column group per
+course, so a club's shape *is* its `courses` array — see
+[`src/pos/data/venues.ts`](src/pos/data/venues.ts). Each prototype is the same build run with a
+different `VITE_VENUE`; nothing is forked.
+
+Any prototype can show another club without a rebuild: append `?venue=eighteen`, `?venue=nine`
+or `?venue=three-nines` to a deep link. That's how you compare them side by side, and how the
+Storybook stories render all three.
+
+The original HTML prototype is published alongside them so any difference from the source
+design is visible rather than assumed.
 
 ## Getting started
 

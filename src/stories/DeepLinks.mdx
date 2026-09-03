@@ -1,13 +1,17 @@
 import { Meta } from '@storybook/addon-docs/blocks';
-import { SiteLink, DeepLink } from './SiteLink';
+import { SiteLink, DeepLink, PrototypeLinks } from './SiteLink';
 
 <Meta title="Getting Started/Deep Links" />
 
 # Deep links
 
-Every screen and dialog in the <SiteLink to="prototype">prototype</SiteLink> has its own URL. The address bar
-tracks what you're looking at, so copying it shares exactly that screen — a specific day on
-the tee sheet, a booking mid-checkout, a dialog open on a particular time row.
+Every screen and dialog in the prototypes has its own URL. The address bar tracks what you're
+looking at, so copying it shares exactly that screen — a specific day on the tee sheet, a
+booking mid-checkout, a dialog open on a particular time row.
+
+The same scheme works on all three:
+
+<PrototypeLinks />
 
 Back and Forward work as you'd expect: they step through screens and dialogs, not through
 every keystroke you typed into a filter.
@@ -40,6 +44,7 @@ Append as query params. Anything left off falls back to the default, so links st
 | `select` | `p01,p02` | Multi-select, with those chips selected |
 | `compact` | `1` | Compact 30px rows |
 | `hide-empty` | `1` | Hide time rows with no bookings |
+| `venue` | `three-nines` `eighteen` `nine` | Which club. Defaults to whichever prototype you're on, so it only appears in a link that deliberately crosses to another |
 
 List view only:
 
@@ -94,6 +99,12 @@ Each of these opens the prototype in a new tab:
 - <DeepLink hash="#/tee-sheet?modal=block&t=0912" /> — blocking the 9:12 row
 - <DeepLink hash="#/tee-sheet?modal=league&t=0800" /> — seating a league
 - <DeepLink hash="#/tee-sheet?summary=ponds" /> — one course's summary
+
+The same day on each of the three clubs, for comparison:
+
+- <DeepLink to="prototype" hash="#/tee-sheet" >three nines · 12 cells a row</DeepLink>
+- <DeepLink to="prototype-18" hash="#/tee-sheet" >18-hole · front and back, 8 cells a row</DeepLink>
+- <DeepLink to="prototype-9" hash="#/tee-sheet" >single nine · 4 cells a row</DeepLink>
 
 ## Two limits, on purpose
 
