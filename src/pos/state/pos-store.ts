@@ -55,7 +55,16 @@ export type Modal =
   | { kind: 'walkIn' }
   | { kind: 'openItem' }
   | { kind: 'playerModifier'; itemIdx: number; playerIdx: number }
-  | { kind: 'newBooking'; courseId: string; timeMin: number; startSlot: number }
+  | {
+      kind: 'newBooking';
+      courseId: string;
+      timeMin: number;
+      startSlot: number;
+      /** Party size implied by which open cell was clicked — the Nth seats N. */
+      players?: number;
+      /** Slots in that opening; the party can't exceed it without overlapping a booking. */
+      maxPlayers?: number;
+    }
   | { kind: 'actionPanel'; action: 'checkin' | 'refund' | 'raincheck' }
   | { kind: 'blockTime'; timeMin: number; editing?: boolean }
   | { kind: 'timeNote'; timeMin: number }

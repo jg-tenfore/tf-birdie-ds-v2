@@ -1,6 +1,7 @@
 import { TIMES, formatTimeLabel } from '../data/courses';
 import { findMemberByPhone } from '../data/golfers';
 import type { ListFilters } from '../state/pos-store';
+import { openRuns } from './openings';
 import type { Booking, Course } from '../types';
 
 /**
@@ -161,13 +162,38 @@ export function slotsUsed(bookings: Booking[], courseId: string, timeMin: number
     .reduce((s, b) => s + b.players, 0);
 }
 
-/** Free slots on a course at a time. */
-export function slotsFree(
-  bookings: Booking[],
-  course: Course,
-  timeMin: number,
-): number {
-  return Math.max(0, course.slots - slotsUsed(bookings, course.id, timeMin));
+/** The open cells of one course-and-time, grouped into contiguous runs. */
+export function runsAt(bookings: Booking[], course: Course, timeMin: number) {
+  return openRuns(
+    bookings.filter((b) => b.course === course.id && b.timeMin === timeMin),
+    course.slots,
+  );
+}
+
+/**
+ * Free slots on a course at a time.
+ *
+ * Counted from the cells the grid actually draws rather than as `slots - sum(players)`,
+ * because that subtraction is wrong on two shapes the data really contains: bookings that
+ * overlap (two parties both claiming a slot) and bookings that overrun the course width (a
+ * foursome placed at slot 2 of 4). Both make the sum exceed the row and report zero free
+ * while cells sit visibly empty — the dialog then refused bookings the grid was offering.
+ */
+export function slotsFree(bookings: Booking[], course: Course, timeMin: number): number {
+  return runsAt(bookings, course, timeMin).size;
+}
+
+/**
+ * The largest party that fits on a course at a time.
+ *
+ * This, not `slotsFree`, is the right question before placing a group: a booking cannot
+ * straddle an occupied slot, so a row with slots 0 and 3 open has two free cells and still
+ * cannot seat a pair.
+ */
+export function largestFit(bookings: Booking[], course: Course, timeMin: number): number {
+  let max = 0;
+  for (const run of runsAt(bookings, course, timeMin).values()) max = Math.max(max, run.size);
+  return max;
 }
 
 /** Consecutive tee-sheet rows from `startMin` through `endMin`, inclusive. */

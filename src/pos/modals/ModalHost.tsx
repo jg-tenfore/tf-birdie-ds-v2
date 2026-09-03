@@ -43,7 +43,15 @@ export function ModalHost() {
     case 'reserveConfirm':
       return <ReserveConfirm payMode={m.payMode} />;
     case 'newBooking':
-      return <NewBooking courseId={m.courseId} timeMin={m.timeMin} startSlot={m.startSlot} />;
+      return (
+        <NewBooking
+          courseId={m.courseId}
+          timeMin={m.timeMin}
+          startSlot={m.startSlot}
+          players={m.players}
+          maxPlayers={m.maxPlayers}
+        />
+      );
     case 'checkout':
       return <Checkout />;
     case 'paymentReader':

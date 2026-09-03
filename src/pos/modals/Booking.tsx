@@ -4,7 +4,7 @@ import { md3, playerAccents, radius, shifts } from '../../theme/tokens';
 import { CATALOG } from '../data/catalog';
 import { TIMES, formatTimeLabel, toDateStr } from '../data/courses';
 import { ALL_GOLFERS } from '../data/golfers';
-import { slotsFree } from '../logic/bookings';
+import { largestFit, runsAt, slotsFree } from '../logic/bookings';
 import * as cart from '../logic/cart';
 import { dayBookings } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
@@ -129,7 +129,7 @@ export function TeePicker({ is18H }: { is18H?: boolean }) {
       <Box sx={{ mt: 2 }}>
         {shown.map((course) => {
           const open = TIMES.filter(
-            (t) => t.totalMin >= minTime && slotsFree(bookings, course, t.totalMin) >= partySize,
+            (t) => t.totalMin >= minTime && largestFit(bookings, course, t.totalMin) >= partySize,
           );
           return (
             <ModalSection
@@ -212,11 +212,17 @@ export function ReserveConfirm({ payMode }: { payMode: 'now' | 'later' }) {
   const finalize = () => {
     const slot = checkIn.teeTime!;
     const course = state.courses.find((c) => c.id === slot.courseId);
-    const free = slotsFree(dayBookings(state), course ?? state.courses[0], slot.timeMin);
-    if (free < players.length) {
-      toast(`Only ${free} slot${free === 1 ? '' : 's'} left at ${slot.label}`);
+    // The widest opening, not the free-slot total: a party has to sit together.
+    const runs = course ? [...runsAt(dayBookings(state), course, slot.timeMin).values()] : [];
+    const fit = runs.reduce((m, r) => Math.max(m, r.size), 0);
+    if (fit < players.length) {
+      toast(`Only ${fit} slot${fit === 1 ? '' : 's'} together at ${slot.label}`);
       return;
     }
+    // Start at the first opening wide enough. The old `course.slots - free` assumed the free
+    // slots were all at the right-hand end, so a party landed on top of an existing booking
+    // whenever the gap was in the middle or at the left.
+    const startSlot = runs.find((r) => r.size >= players.length)?.start ?? 0;
 
     const playerStates: PlayerState[] = players.map(() => ({
       paid: payMode === 'now',
@@ -228,7 +234,7 @@ export function ReserveConfirm({ payMode }: { payMode: 'now' | 'later' }) {
       id: `new-${Date.now()}`,
       date: toDateStr(state.currentDate),
       course: slot.courseId,
-      slot: course ? course.slots - free : 0,
+      slot: startSlot,
       timeMin: slot.timeMin,
       name: players[0]?.name || 'Reservation',
       players: players.length,
@@ -335,21 +341,33 @@ export function NewBooking({
   courseId,
   timeMin,
   startSlot,
+  players: clickedPlayers,
+  maxPlayers,
 }: {
   courseId: string;
   timeMin: number;
   startSlot: number;
+  /** Party size implied by which open cell was clicked — the Nth open cell seats N. */
+  players?: number;
+  /** Slots in that opening. Caps the picker so a party can't overlap the next booking. */
+  maxPlayers?: number;
 }) {
   const { state, dispatch, toast } = usePos();
   const course = state.courses.find((c) => c.id === courseId);
-  const free = slotsFree(dayBookings(state), course ?? state.courses[0], timeMin);
+  // Fallback for a dialog opened without a run (a deep link, say) — the widest opening.
+  const free = largestFit(dayBookings(state), course ?? state.courses[0], timeMin);
 
   const [step, setStep] = useState(1);
   const [type, setType] = useState<'walkin' | 'reservation'>('walkin');
   const [rate, setRate] = useState<{ name: string; price: number } | null>(null);
   const [golfer, setGolfer] = useState<{ name: string; phone: string } | null>(null);
   const [query, setQuery] = useState('');
-  const [players, setPlayers] = useState(Math.min(2, free));
+  // The opening's own size, not the row's total free slots: with slots 1 and 3 open and 2
+  // taken, each is a run of one and neither can seat a pair.
+  const cap = Math.max(1, Math.min(maxPlayers ?? free, free));
+  // Which cell was clicked decides the party — the Nth open cell seats N. Falls back to the
+  // whole opening, which is the "defaults to the remaining player count" behaviour.
+  const [players, setPlayers] = useState(Math.min(clickedPlayers ?? cap, cap));
   const [transport, setTransport] = useState<'walking' | 'cart' | 'push'>('cart');
 
   const matches = useMemo(() => {
@@ -365,7 +383,7 @@ export function NewBooking({
 
   const confirm = () => {
     if (!golfer?.name.trim()) return toast('Pick or enter a golfer');
-    if (players > free) return toast(`Only ${free} slot${free === 1 ? '' : 's'} free here`);
+    if (players > cap) return toast(`Only ${cap} slot${cap === 1 ? '' : 's'} open here`);
 
     const isMemberRate = /Member/.test(rate?.name ?? '');
     const booking: Booking = {
@@ -599,7 +617,7 @@ export function NewBooking({
               <SelectField
                 label="Players"
                 value={players}
-                options={Array.from({ length: Math.max(1, free) }, (_, i) => ({
+                options={Array.from({ length: cap }, (_, i) => ({
                   label: `${i + 1} player${i === 0 ? '' : 's'}`,
                   value: i + 1,
                 }))}

@@ -1,7 +1,9 @@
 import { Box, ButtonBase, Dialog, InputBase, Typography } from '@mui/material';
+import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { md3, radius } from '../../theme/tokens';
 import { usePos } from '../state/PosProvider';
+import { useModalContainer } from './modal-container';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Stack } from '../components/Stack';
 
@@ -40,16 +42,28 @@ export function ModalFrame({
 }: ModalFrameProps) {
   const { dispatch } = usePos();
   const close = onClose ?? (() => dispatch({ type: 'closeModal' }));
+  // Normally null, meaning `document.body`. Scoped only where a story renders more than
+  // one sheet and the dialog has to belong to one of them.
+  const container = useModalContainer();
 
   return (
     <Dialog
       open
       onClose={close}
+      container={container ?? undefined}
+      // A scoped portal has to paint inside its pane rather than over the window: without
+      // `inset` the root has no size, so the paper's `maxHeight` has nothing to measure
+      // against and the dialog overflows its pane.
+      sx={container ? { position: 'absolute', inset: 0 } : undefined}
       slotProps={{
+        // The backdrop is fixed by default, which would dim the whole page around a
+        // scoped dialog rather than just the surface it belongs to.
+        ...(container && { backdrop: { sx: { position: 'absolute' } } }),
         paper: {
           sx: {
             width,
-            maxWidth: '92vw',
+            maxWidth: container ? '94%' : '92vw',
+            ...(container && { maxHeight: '88%' }),
             ...(tall && { height: 'min(720px, 88vh)' }),
             display: 'flex',
             flexDirection: 'column',
@@ -267,15 +281,30 @@ export function SelectField<T extends string | number>({
   options: Array<{ label: string; value: T }>;
   onChange: (v: T) => void;
 }) {
+  // The visible label is the select's accessible name, so it has to be a real `<label>`
+  // bound by id — as a bare `Typography` sibling it looked labelled but announced as an
+  // unnamed combobox.
+  const id = useId();
   return (
     <Box sx={{ flex: 1, minWidth: 0 }}>
       {label && (
-        <Typography sx={{ fontSize: 11, fontWeight: 700, color: md3.onSurfaceVariant, mb: 0.5 }}>
+        <Typography
+          component="label"
+          htmlFor={id}
+          sx={{
+            display: 'block',
+            fontSize: 11,
+            fontWeight: 700,
+            color: md3.onSurfaceVariant,
+            mb: 0.5,
+          }}
+        >
           {label}
         </Typography>
       )}
       <Box
         component="select"
+        id={id}
         value={String(value)}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
           const raw = e.target.value;
