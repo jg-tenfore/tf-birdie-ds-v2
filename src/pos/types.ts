@@ -140,10 +140,11 @@ export type Transport = 'walking' | 'cart' | 'push';
 /**
  * Per-player round state.
  *
- * `step` is an index into the progress rail
- * `['Pending','Checked In','Teed Off','At Turn','Finished']`, where `-1` means
- * not yet checked in. The generated fixtures also use `6` for "round finished
- * on a past day", which renders as the final step.
+ * `step` is how far the player's round has got: `-1` not arrived, `0` checked in,
+ * `1` teed off, `2` at the turn, `3` finished. The generated fixtures also use `6`
+ * for "round finished on a past day", which reads as Finished. The meanings live in
+ * `ROUND_STEPS` (`data/config.ts`); resolve a value with `roundStepOf`, never by
+ * indexing, and treat `step >= 0` as checked in.
  */
 export interface PlayerState {
   paid: boolean;

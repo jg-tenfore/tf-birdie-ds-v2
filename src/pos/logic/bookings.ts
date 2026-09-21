@@ -2,7 +2,8 @@ import { TIMES, formatTimeLabel } from '../data/courses';
 import { findMemberByPhone } from '../data/golfers';
 import type { ListFilters } from '../state/pos-store';
 import { openRuns } from './openings';
-import type { Booking, Course } from '../types';
+import { ROUND_STEP } from '../data/config';
+import type { Booking, Course, PlayerState } from '../types';
 
 /**
  * Booking queries: filtering, sorting, grouping, and the capacity rules that the
@@ -292,3 +293,14 @@ export function describeBooking(b: Booking, courses: Course[]): string {
   const course = courses.find((c) => c.id === b.course)?.name ?? b.course;
   return `${b.name} · ${formatTimeLabel(b.timeMin)} · ${course} · ${b.players}P`;
 }
+
+/**
+ * A player checked in: arrived, not a no-show, and never moved *backwards* — someone
+ * already teed off or finished keeps their progress. The original's "Check in all" reset
+ * everyone to checked in; both apps now use this instead.
+ */
+export const checkInPlayer = (p: PlayerState): PlayerState => ({
+  ...p,
+  step: Math.max(p.step, ROUND_STEP.checkedIn),
+  noShow: false,
+});

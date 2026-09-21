@@ -16,7 +16,7 @@ import type { ReactNode } from 'react';
  * iframe, which is a poor way to look at a 1366×840 terminal.
  */
 
-/** The three published prototypes, and the read-only original. */
+/** The published prototypes — three terminal clubs and the phone — and the read-only original. */
 export const SURFACES = {
   prototype: {
     dir: 'prototype',
@@ -35,6 +35,25 @@ export const SURFACES = {
     venue: 'nine',
     label: 'Single nine',
     detail: 'One nine-hole course — four cells a row, the sparsest of the three.',
+  },
+  mobile: {
+    dir: 'mobile',
+    venue: 'three-nines',
+    label: 'Mobile · Three nines',
+    detail:
+      'The phone app at 402×797 — every Mobile Screens story as a live, linked screen, plus a free-running app.',
+  },
+  'mobile-18': {
+    dir: 'mobile-18',
+    venue: 'eighteen',
+    label: 'Mobile · 18-hole course',
+    detail: 'The same phone screens against the championship course and its two nines.',
+  },
+  'mobile-9': {
+    dir: 'mobile-9',
+    venue: 'nine',
+    label: 'Mobile · Single nine',
+    detail: 'The same phone screens against one nine-hole course.',
   },
   reference: {
     dir: 'reference',
@@ -72,6 +91,11 @@ function surfaceUrl(id: SurfaceId, path = ''): string {
     // The reference HTML is only assembled by the site build, so in dev it points at the
     // deployed copy rather than a path that doesn't exist yet.
     if (id === 'reference') return 'https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/';
+
+    // The mobile prototypes are the same dev server on its own path; `?venue=` picks the club.
+    if (id === 'mobile' || id === 'mobile-18' || id === 'mobile-9') {
+      return `${DEV_PROTOTYPE_ORIGIN}/mobile/?venue=${surface.venue}${path}`;
+    }
 
     // One dev server serves whichever venue it was started with; `?venue=` picks another.
     const hash = path.startsWith('#') ? path : '';
@@ -121,9 +145,11 @@ export function DeepLink({
   );
 }
 
-/** The three prototypes as a linked list — used by the Introduction and Deep Links pages. */
-export function PrototypeLinks() {
-  const ids: SurfaceId[] = ['prototype', 'prototype-18', 'prototype-9'];
+/** The prototypes as a linked list — used by the Introduction and Deep Links pages. */
+export function PrototypeLinks({ mobile = false }: { mobile?: boolean } = {}) {
+  const ids: SurfaceId[] = mobile
+    ? ['mobile', 'mobile-18', 'mobile-9']
+    : ['prototype', 'prototype-18', 'prototype-9'];
   return (
     <ul>
       {ids.map((id) => (

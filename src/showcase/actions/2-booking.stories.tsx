@@ -88,7 +88,7 @@ export const CheckInAllPlayers: Story = {
 /**
  * **Mark teed off.**
  *
- * Step 1. Used when a group leaves the first tee without stopping at the counter, which is
+ * Step 1 (Teed Off). Used when a group leaves the first tee without stopping at the counter, which is
  * why every step on the rail is reachable directly rather than only the next one — staff
  * correct the record after the fact far more often than they walk it forward.
  */
@@ -108,7 +108,8 @@ export const MarkTeedOff: Story = {
 /**
  * **Mark finished.**
  *
- * Step 4, the end of the rail. The tee time stays on the sheet — it is a record of the day,
+ * Step 3 (Finished), the end of the rail — `ROUND_STEPS` in `data/config.ts`; the fixtures'
+ * past-day `6` reads as Finished too. The tee time stays on the sheet — it is a record of the day,
  * not a queue — so a finished round looks the same as a checked-in one apart from its step.
  */
 export const MarkFinished: Story = {
@@ -117,7 +118,7 @@ export const MarkFinished: Story = {
       note="The group is in. The chip remains on the sheet as the day's record."
       before={{ ...arriving(), ...chipMenu('four') }}
       apply={[
-        { type: 'patchBooking', bookingId: 'four', patch: { playerStates: states(4, { step: 4 }) } },
+        { type: 'patchBooking', bookingId: 'four', patch: { playerStates: states(4, { step: 3 }) } },
       ]}
     />
   ),

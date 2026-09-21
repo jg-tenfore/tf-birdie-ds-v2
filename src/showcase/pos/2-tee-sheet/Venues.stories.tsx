@@ -14,7 +14,7 @@ import { Screen, atVenue, screenParams } from '../screen-helpers';
  */
 const meta = {
   title: 'POS Screens/2 · Tee Sheet/Club Layouts',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;

@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Box, ButtonBase, Tab, Tabs, Typography } from '@mui/material';
 import { md3, playerAccents, radius } from '../../theme/tokens';
-import { STATUS_STEPS, STATUS_STEP_ICONS, TRANSPORT_META } from '../data/config';
+import { ROUND_STEP, ROUND_STEPS, TRANSPORT_META, roundStepOf } from '../data/config';
 import { formatTimeLabel } from '../data/courses';
 import { findMemberByPhone } from '../data/golfers';
-import { usePos } from '../state/PosProvider';
+import { money, moneyShort } from '../logic/cart';
+import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
 import { Icon, MemberDot, PayBadge, SectionLabel } from '../components/primitives';
 import { Callout, Field, FilledButton, ModalFrame, ModalSection, OutlineButton, PillGroup } from './ModalFrame';
 import { Stack } from '../components/Stack';
+import { checkInPlayer } from '../logic/bookings';
 
 /**
  * Booking detail — the full record behind one tee time, in five tabs.
@@ -21,11 +23,12 @@ import { Stack } from '../components/Stack';
 export function BookingDetail({ bookingId, initialTab = 0 }: { bookingId: string; initialTab?: number }) {
   const { state, dispatch } = usePos();
   const [tab, setTab] = useState(initialTab);
+  const roster = useGolferRoster();
   const b = state.bookings.find((x) => x.id === bookingId);
 
   if (!b) return null;
   const course = state.courses.find((c) => c.id === b.course);
-  const member = findMemberByPhone(b.phone);
+  const member = findMemberByPhone(b.phone, roster);
 
   const TABS = ['Details', 'Players & Status', 'Financial', 'Group Notes', 'Activity'];
 
@@ -99,7 +102,7 @@ export function BookingDetail({ bookingId, initialTab = 0 }: { bookingId: string
 function DetailsTab({ booking: b }: { booking: Booking }) {
   const { state, dispatch, toast } = usePos();
   const course = state.courses.find((c) => c.id === b.course);
-  const member = findMemberByPhone(b.phone);
+  const member = findMemberByPhone(b.phone, useGolferRoster());
   const dateStr = state.currentDate.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -116,7 +119,7 @@ function DetailsTab({ booking: b }: { booking: Booking }) {
     ['Players', `${b.players}`],
     ['Transport', TRANSPORT_META[b.cart]?.label ?? b.cart],
     ['Phone', b.phone || '—'],
-    ['Rate', b.price ? `$${b.price}` : 'Member · $0'],
+    ['Rate', b.price ? money(b.price) : `Member · ${moneyShort(0)}`],
     [
       'Membership',
       member ? (
@@ -186,6 +189,10 @@ function DetailsTab({ booking: b }: { booking: Booking }) {
  * The progress rail is clickable at every step, not just the next one — staff
  * routinely correct a mis-tap or jump a group straight to Finished after the fact,
  * so forcing a linear walk would be worse than allowing the jump.
+ *
+ * The rail's five dots are `ROUND_STEPS` (Not Arrived → Checked In → Teed Off → At Turn →
+ * Finished), shared with the phone, so a value reads the same on both. Tapping Not
+ * Arrived un-checks a player in (step -1).
  */
 function PlayersTab({ booking: b }: { booking: Booking }) {
   const { dispatch, toast } = usePos();
@@ -203,14 +210,14 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
       patch: { playerStates: states.map((p, i) => (i === idx ? { ...p, ...patch } : p)) },
     });
 
-  const patchAll = (patch: Partial<(typeof states)[number]>, msg: string) => {
-    dispatch({
-      type: 'patchBooking',
-      bookingId: b.id,
-      patch: { playerStates: states.map((p) => ({ ...p, ...patch })) },
-    });
+  const patchStates = (playerStates: typeof states, msg: string) => {
+    dispatch({ type: 'patchBooking', bookingId: b.id, patch: { playerStates } });
     toast(msg);
   };
+  const patchAll = (patch: Partial<(typeof states)[number]>, msg: string) =>
+    patchStates(states.map((p) => ({ ...p, ...patch })), msg);
+  // Check-in never moves anyone backwards: a player already out on the course keeps their step.
+  const checkInAll = () => patchStates(states.map(checkInPlayer), 'All checked in');
 
   return (
     <>
@@ -222,13 +229,13 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
       </Stack>
 
       <Stack direction="row" gap={0.75} sx={{ mb: 2.25, flexWrap: 'wrap' }}>
-        <OutlineButton onClick={() => patchAll({ step: 0, noShow: false }, 'All checked in')}>
+        <OutlineButton onClick={() => checkInAll()}>
           Check in all
         </OutlineButton>
         <OutlineButton onClick={() => patchAll({ paid: true }, 'All marked paid')}>
           Mark all paid
         </OutlineButton>
-        <OutlineButton onClick={() => patchAll({ step: 4 }, 'Round complete')}>
+        <OutlineButton onClick={() => patchAll({ step: ROUND_STEP.finished }, 'Round complete')}>
           Mark finished
         </OutlineButton>
       </Stack>
@@ -280,8 +287,7 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
                     <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{name}</Typography>
                   </Stack>
                   <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>
-                    {p.noShow ? 'No-show' : STATUS_STEPS[Math.min(Math.max(p.step, 0), 4)] ?? 'Pending'}
-                    {p.step < 0 && !p.noShow ? ' · not arrived' : ''}
+                    {p.noShow ? 'No-show' : roundStepOf(p).railLabel}
                   </Typography>
                 </Box>
                 <ButtonBase
@@ -310,17 +316,18 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
 
               {!p.noShow && (
                 <Stack direction="row" sx={{ mt: 1.25 }}>
-                  {STATUS_STEPS.map((label, si) => {
-                    const done = p.step > si;
-                    const active = p.step === si;
+                  {ROUND_STEPS.map((r, si) => {
+                    const at = ROUND_STEPS.indexOf(roundStepOf(p));
+                    const done = at > si;
+                    const active = at === si;
                     return (
                       <Stack
-                        key={label}
+                        key={r.step}
                         alignItems="center"
                         gap={0.5}
                         sx={{ flex: 1, position: 'relative' }}
                       >
-                        {si < STATUS_STEPS.length - 1 && (
+                        {si < ROUND_STEPS.length - 1 && (
                           <Box
                             sx={{
                               position: 'absolute',
@@ -333,7 +340,7 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
                           />
                         )}
                         <ButtonBase
-                          onClick={() => patchPlayer(i, { step: si })}
+                          onClick={() => patchPlayer(i, { step: r.step })}
                           sx={{
                             width: 28,
                             height: 28,
@@ -345,7 +352,7 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
                             '&:hover': { borderColor: md3.primary },
                           }}
                         >
-                          <Icon name={STATUS_STEP_ICONS[si]} size={14} />
+                          <Icon name={r.icon} size={14} />
                         </ButtonBase>
                         <Typography
                           sx={{
@@ -355,7 +362,7 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
                             textAlign: 'center',
                           }}
                         >
-                          {label}
+                          {r.railLabel}
                         </Typography>
                       </Stack>
                     );
@@ -439,12 +446,12 @@ function FinancialTab({ booking: b }: { booking: Booking }) {
           <Box>
             <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>Outstanding</Typography>
             <Typography sx={{ fontSize: 22, fontWeight: 800, color: owed > 0 ? md3.error : '#16a34a' }}>
-              ${owed.toFixed(2)}
+              {money(owed)}
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'right' }}>
             <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>Rate per player</Typography>
-            <Typography sx={{ fontSize: 15, fontWeight: 700 }}>${b.price.toFixed(2)}</Typography>
+            <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{money(b.price)}</Typography>
           </Box>
         </Stack>
       </ModalSection>
@@ -465,7 +472,7 @@ function FinancialTab({ booking: b }: { booking: Booking }) {
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: accent, flexShrink: 0 }} />
                 <Typography sx={{ flex: 1, fontSize: 12.5, fontWeight: 600 }}>{name}</Typography>
                 <Typography sx={{ fontSize: 12, fontWeight: 700, color: p.paid ? '#16a34a' : md3.error }}>
-                  {p.noShow ? '—' : p.paid ? 'Paid' : `$${b.price.toFixed(2)}`}
+                  {p.noShow ? '—' : p.paid ? 'Paid' : money(b.price)}
                 </Typography>
                 <ButtonBase
                   onClick={() => log(i, 'refund')}
@@ -621,7 +628,7 @@ function ActivityTab({ booking: b }: { booking: Booking }) {
                 {
                   time: formatTimeLabel(Math.max(0, b.timeMin - 30)),
                   label: 'Payment taken',
-                  detail: `$${b.price.toFixed(2)} per player`,
+                  detail: `${money(b.price)} per player`,
                   icon: 'paid',
                   color: '#16a34a',
                 },

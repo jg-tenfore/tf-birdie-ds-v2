@@ -3,6 +3,7 @@ import { Box, ButtonBase, Checkbox, Typography } from '@mui/material';
 import { md3, noteColors, radius } from '../../theme/tokens';
 import type { NoteColorKey } from '../../theme/tokens';
 import { RATE_PRICING, TIMES, formatTimeLabel, toDateStr } from '../data/courses';
+import * as cart from '../logic/cart';
 import {
   conflictsIn,
   formatDuration,
@@ -1135,10 +1136,10 @@ export function CourseRates({ courseId }: { courseId: string }) {
               )}
             </Stack>
             <Typography sx={{ width: 80, textAlign: 'right', fontSize: 12.5, fontWeight: 700 }}>
-              ${r.p18.toFixed(2)}
+              {cart.money(r.p18)}
             </Typography>
             <Typography sx={{ width: 80, textAlign: 'right', fontSize: 12.5, fontWeight: 700 }}>
-              ${r.p9.toFixed(2)}
+              {cart.money(r.p9)}
             </Typography>
           </Stack>
         ))}

@@ -1,10 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import { elevation, md3, radius } from '../../theme/tokens';
+import { ROUND_STEP } from '../data/config';
 import { formatTimeLabel } from '../data/courses';
 import { dayBookings } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import { Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
+import { checkInPlayer } from '../logic/bookings';
 
 /**
  * The two right-click menus on the tee sheet.
@@ -167,11 +169,13 @@ function BookingMenu() {
   const isEvent = b.pay === 'event' || b.groupEvent;
   const isBlock = b.pay === 'block';
 
-  const setAllPlayers = (patch: { paid?: boolean; step?: number; noShow?: boolean }) =>
+  // Round progress moves only the players who turned up — as the original's "All Teed Off" /
+  // "All Finished" did — so a no-show seat stays a no-show rather than reading "Teed off".
+  const advanceAll = (step: number) =>
     dispatch({
       type: 'patchBooking',
       bookingId: b.id,
-      patch: { playerStates: b.playerStates.map((p) => ({ ...p, ...patch })) },
+      patch: { playerStates: b.playerStates.map((p) => (p.noShow ? p : { ...p, step })) },
     });
 
   const header = (
@@ -279,7 +283,7 @@ function BookingMenu() {
           label: 'Check in all players',
           badge: `${checkedIn}/${b.players}`,
           run: () => {
-            setAllPlayers({ step: 0, noShow: false });
+            dispatch({ type: 'patchBooking', bookingId: b.id, patch: { playerStates: b.playerStates.map(checkInPlayer) } });
             toast(`${b.name} · all checked in`);
           },
         },
@@ -287,7 +291,7 @@ function BookingMenu() {
           icon: 'sports_golf',
           label: 'Mark teed off',
           run: () => {
-            setAllPlayers({ step: 1 });
+            advanceAll(ROUND_STEP.teedOff);
             toast(`${b.name} · teed off`);
           },
         },
@@ -295,7 +299,7 @@ function BookingMenu() {
           icon: 'flag',
           label: 'Mark finished',
           run: () => {
-            setAllPlayers({ step: 4 });
+            advanceAll(ROUND_STEP.finished);
             toast(`${b.name} · finished`);
           },
         },
@@ -480,7 +484,7 @@ function TimeLabelMenu() {
               dispatch({
                 type: 'patchBooking',
                 bookingId: b.id,
-                patch: { playerStates: b.playerStates.map((p) => ({ ...p, step: 0, noShow: false })) },
+                patch: { playerStates: b.playerStates.map(checkInPlayer) },
               }),
             );
             toast(`${formatTimeLabel(timeMin)} · checked in`);

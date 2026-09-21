@@ -10,7 +10,7 @@ import { Screen, screenParams, withWalkInOrder } from '../screen-helpers';
  */
 const meta = {
   title: 'POS Screens/4 · Tee Time Selection',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;

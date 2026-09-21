@@ -35,7 +35,7 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      # Mounts all ~280 stories in a real browser and fails on any runtime error.
+      # Mounts all ~370 stories in a real browser and fails on any runtime error.
       - name: Story tests
         run: npm run test:stories
 

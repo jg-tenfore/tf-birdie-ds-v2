@@ -11,9 +11,17 @@ import { theme } from '../src/theme';
  * the viewport control offers the neighbouring hardware sizes rather than phones.
  */
 const POS_VIEWPORTS = {
+  // Mobile Screens only — each of those story files selects it; nothing else defaults to it.
+  mobile402: {
+    name: 'Mobile · 402×797',
+    styles: { width: '402px', height: '797px' },
+    type: 'mobile' as const,
+  },
+  // The 1366×840 frame plus the 8px of dark ground `Screen` draws around it, so the whole
+  // terminal — its bottom edge included — is visible without scrolling.
   counterTerminal: {
     name: 'Counter terminal · 1366×840',
-    styles: { width: '1366px', height: '840px' },
+    styles: { width: '1382px', height: '856px' },
     type: 'desktop' as const,
   },
   tabletLandscape: {
@@ -80,6 +88,17 @@ const preview: Preview = {
             ['Block Time', 'Time Note', 'Price Override', 'League & Outing', 'Move Players', 'Rate Card', 'Multi-select'],
             '7 · People',
             ['Member Lookup', 'Golfer Search', 'Guest Detail', 'New Customer', 'Action Panel'],
+          ],
+          'Mobile Screens',
+          [
+            '0 · Navigation',
+            '1 · Register & Order',
+            '2 · Tee Sheet',
+            '3 · Booking & Check-in',
+            '4 · Tee Time Selection',
+            '5 · Payment',
+            '6 · Operations',
+            '7 · People',
           ],
           '*',
         ],

@@ -1,55 +1,132 @@
 # ⛳ Birdie POS — Design System (tf-birdie-ds-v2)
 
 A **React 19 + MUI v9 + Emotion** design system for the TenFore golf-course point of sale, and
-the working prototype built from it — a register, a tee sheet, check-in, and payments.
+the working prototypes built from it: a register, a tee sheet, check-in and payments, on a
+counter terminal and on a phone.
 
 ## 🔗 Live links
 
-### ⛳ Open a prototype
+Everything is published to GitHub Pages from `main`, as one site:
 
-The POS as a running React app — ring up a walk-in, work the tee sheet, take a payment. Three
-clubs, one codebase:
+| | Link | What it is |
+|---|---|---|
+| 📚 | [**Design system (Storybook)**](https://jg-tenfore.github.io/tf-birdie-ds-v2/) | Foundations, components, and every terminal and mobile screen as a story |
+| 🖥️ | [**Tablet · Three nines**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) | Counter-terminal POS, the original club |
+| 🖥️ | [**Tablet · 18-hole course**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-18/) | Counter-terminal POS, a championship course |
+| 🖥️ | [**Tablet · Single nine**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/) | Counter-terminal POS, one nine-hole course |
+| 📱 | [**Mobile · Three nines**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) | Phone POS, the original club |
+| 📱 | [**Mobile · 18-hole course**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-18/) | Phone POS, a championship course |
+| 📱 | [**Mobile · Single nine**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-9/) | Phone POS, one nine-hole course |
+| 📄 | [**The original**](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/) | The single-file HTML prototype this was ported from, read-only |
 
-- [**Three nines →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) Ponds, Valley and
-  Rolling as independent nine-hole tracks — twelve cells a row
-- [**18-hole course →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-18/) one
-  championship course split into front and back nines — eight cells a row
-- [**Single nine →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/) one nine-hole
-  course — four cells a row
+### 📚 Design system: Storybook
 
-### 📚 [Open the Design System →](https://jg-tenfore.github.io/tf-birdie-ds-v2/)
+[jg-tenfore.github.io/tf-birdie-ds-v2](https://jg-tenfore.github.io/tf-birdie-ds-v2/)
 
-Storybook: foundations, the component library, and all 65 POS screens as stories.
+The front door, and the place to review anything in isolation. It holds:
 
-### 📄 [Open the Original →](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/)
+- **Foundations**: MD3 colour roles, type, spacing, radius and elevation.
+- **Components**: the MUI component library, grouped by purpose.
+- **POS Screens** (69 stories, sections 1–7): the counter terminal, one story per state
+  worth reviewing: register, tee sheet, booking and check-in, tee-time selection, payment,
+  operations and people.
+- **Mobile Screens** (84 stories, sections 0–7, numbered to match): the phone version.
+  **0 · Navigation** has a click-through app and a **Navigation Map**, which lists every
+  screen, how you reach it and how you get out.
+- **Tee Sheet Actions** (35 stories): every action that writes to the tee sheet, before and
+  after.
 
-The single-file HTML prototype this port came from. Read-only, kept for comparison.
+Every story is built from plain state, so the screen you review is exactly the one the
+prototypes render.
+
+### 🖥️ Tablet prototypes: the counter terminal
+
+[Three nines](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) ·
+[18-hole course](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-18/) ·
+[Single nine](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/)
+
+The full pro-shop POS as a running app on a fixed **1366×840** landscape terminal, built for a
+mouse, with dense 12–14px controls. A persistent order panel sits on the left, with the
+register catalog or the tee sheet beside it. You can ring up a walk-in, load a booking from the
+sheet, check players in, block times, run a league and take a payment.
+
+The three are the same app with a different course layout:
+
+- **Three nines**: Ponds, Front Valley and Rolling as independent nine-hole tracks, twelve
+  cells a row. The original club.
+- **18-hole course**: one championship course split into its front and back nines, eight
+  cells a row. An 18-hole booking crosses over at the turn.
+- **Single nine**: one nine-hole course, four cells a row. The sparsest sheet.
+
+Every screen and dialog has its own URL (see [Deep links](#deep-links)), so you can send someone
+the exact state you want reviewed.
+
+### 📱 Mobile prototypes: the phone
+
+[Three nines](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) ·
+[18-hole course](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-18/) ·
+[Single nine](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-9/)
+
+The same POS on a **402×797** phone, designed as a native Material Design 3 Android app with
+touch sizing: 16px text and 48px tap targets.
+
+- **Four destinations** on a bottom navigation bar: **Tee Sheet** (home), **Register**,
+  **People** and **More**.
+- **One level down** for everything else:
+  - Drill-down pages slide in with a back arrow.
+  - Create and edit forms open as full-screen dialogs with ✕ and Save.
+  - The card reader and receipt are no-exit takeovers, so a stray swipe can't abandon a
+    payment.
+- **Its own back history per tab**, so a half-built order survives a trip to the tee sheet. The
+  Register tab badge shows how many lines are on it.
+
+Each prototype has an index of every Mobile Screens story (84 screens), each with its own link
+and the story's description. Every screen stays fully clickable, and prev/next steps through
+them in Storybook's order. A sidebar switcher moves between the three clubs and keeps you on
+the same screen. The home link (`#/`) is the free-running app. The clubs differ the same way as
+the tablet ones.
+
+The phone uses the same state, data and pricing as the terminal. An order totals the same on
+both, and a customer added on one exists on the other.
+
+### 📄 The original
+
+[jg-tenfore.github.io/tf-birdie-ds-v2/reference](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/)
+
+The single-file HTML prototype this port came from, published unmodified. It's the answer to
+"is this what the original did". Deliberate differences are listed under
+[Known divergences](#known-divergences-from-the-original).
 
 <details>
 <summary>All URLs</summary>
 
 | Directory | Surface |
 |---|---|
-| `/` | Storybook — the design system |
-| `/prototype/` | Three nines (the original club) |
-| `/prototype-18/` | One 18-hole course, front and back nines |
-| `/prototype-9/` | A single nine-hole course |
+| `/` | Storybook: the design system |
+| `/prototype/` | Tablet: three nines (the original club) |
+| `/prototype-18/` | Tablet: one 18-hole course, front and back nines |
+| `/prototype-9/` | Tablet: a single nine-hole course |
+| `/mobile/` | Mobile: three nines |
+| `/mobile-18/` | Mobile: the 18-hole course |
+| `/mobile-9/` | Mobile: a single nine |
 | `/reference/` | The original single-file HTML prototype |
 
-GitHub Pages serves one site per repository, so they share one tree — Storybook at the root,
-the rest in subdirectories. See [`scripts/build-site.mjs`](scripts/build-site.mjs).
+GitHub Pages serves one site per repository, so they share one tree, with Storybook at the root
+and the rest in subdirectories. See [`scripts/build-site.mjs`](scripts/build-site.mjs).
 
 </details>
 
-## Why three prototypes, and why they're one codebase
+## Why six prototypes, and why they're one codebase
 
-The prototypes and Storybook import the *same* components from `src/pos`. Refining a component
-changes all of them, so the design system and the things it describes can't drift.
+The tablet prototypes and Storybook import the *same* components from `src/pos`. Refining a
+component changes all of them, so the design system and the things it describes can't drift.
+The mobile prototypes go one step further: their screen list *is* the Mobile Screens story
+files, so a new story appears in them automatically.
 
 The three clubs differ only in **course layout**. The tee sheet renders one column group per
 course, so a club's shape *is* its `courses` array — see
 [`src/pos/data/venues.ts`](src/pos/data/venues.ts). Each prototype is the same build run with a
-different `VITE_VENUE`; nothing is forked.
+different `VITE_VENUE` (and the mobile ones with `VITE_APP=mobile` too); nothing is forked.
 
 Any prototype can show another club without a rebuild: append `?venue=eighteen`, `?venue=nine`
 or `?venue=three-nines` to a deep link. That's how you compare them side by side, and how the
@@ -64,6 +141,7 @@ design is visible rather than assumed.
 npm install
 npm run storybook   # design system  → http://localhost:6006
 npm run dev         # prototype      → http://localhost:5173
+                    # mobile         → http://localhost:5173/mobile/  (?venue=eighteen / nine)
 ```
 
 Other scripts:
@@ -78,8 +156,8 @@ npm run build        # prototype → dist/
 npm run build:site   # the full Pages tree → site/
 ```
 
-`npm run test` is the useful guard here: 254 tests across two projects — the story suite mounts
-all 280 stories in a real browser and fails on any runtime error, and the unit suite covers the
+`npm run test` is the useful guard here: 530 tests across two projects — the story suite mounts
+all 367 stories in a real browser and fails on any runtime error, and the unit suite covers the
 pure logic.
 
 ## Deep links
@@ -181,7 +259,8 @@ Two decisions shape everything:
 src/
 ├── theme/
 │   ├── tokens.ts          MD3 tokens, ported 1:1 from the prototype's :root block
-│   └── theme.ts           how those tokens map onto MUI
+│   ├── theme.ts           how those tokens map onto MUI
+│   └── mobile-theme.ts    the same tokens at MD3 touch density, for the phone only
 ├── pos/
 │   ├── types.ts           domain types (Booking, CartItem, Course, …)
 │   ├── icons.ts           Material Symbols name → MUI icon component
@@ -190,11 +269,14 @@ src/
 │   ├── state/             one reducer + provider; the whole app is a function of it
 │   ├── components/        the shell, order panel, register, tee sheet
 │   ├── modals/            22 dialogs and the host that switches between them
+│   ├── mobile/            the phone app: navigation map, MD3 chrome, screens per destination
 │   └── PosApp.tsx         the assembled app
 ├── showcase/              Storybook stories
 │   ├── foundations/       colors, type, spacing, radius, icons, logos
 │   ├── base/  application/  auth/     the generic MUI component library
-│   └── pos/               POS screens, in seven numbered sections
+│   ├── pos/               POS screens, in seven numbered sections
+│   └── pos-mobile/        Mobile Screens, numbered to match, plus 0 · Navigation
+├── mobile-prototype/      the hosted mobile prototype — its screen list is read from pos-mobile
 └── App.tsx                the hosted prototype entry
 ```
 
@@ -243,6 +325,14 @@ Deliberate, and worth knowing:
   practice. That's preserved, and the dialog says so.
 - **Independent per-column scrolling** is not ported. The original has a second full grid
   renderer for it; the value it adds over Focus This Course didn't justify a parallel layout.
+- **Round-status labels on Booking Detail.** A player's `step` is -1 not arrived, 0 checked in,
+  1 teed off, 2 at the turn, 3 finished (6 on past days) — the encoding the original's own
+  booking menu (All Checked In = 0 … All Finished = 3), its demo data and every "checked in"
+  count use. Its Booking Detail rail alone labelled index 0 "Pending", so every player read one
+  step behind (teed off showed "Checked In", a finished round "At Turn"). The rail now reads
+  Not Arrived → Checked In → Teed Off → At Turn → Finished, from `ROUND_STEPS` in
+  `src/pos/data/config.ts`, which the phone shares. Mark finished writes 3 (not 4), and Mark
+  teed off / Mark finished leave no-show seats alone, as the original's menu did.
 
 ## Stack
 

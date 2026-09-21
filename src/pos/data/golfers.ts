@@ -71,19 +71,25 @@ export const ALL_GOLFERS: Golfer[] = [
 /** Digits-only phone, for matching numbers written in inconsistent formats. */
 export const normalizePhone = (phone: string): string => phone.replace(/\D/g, '');
 
-/** Find a member by phone number, ignoring punctuation and spacing. */
-export function findMemberByPhone(phone: string): Golfer | undefined {
+/**
+ * Find a member by phone number, ignoring punctuation and spacing.
+ *
+ * `roster` defaults to the fixed demo data. Screens pass `golferRoster(state)` so that a
+ * customer created this session resolves too; pure logic keeps the default.
+ */
+export function findMemberByPhone(phone: string, roster: readonly Golfer[] = MEMBER_DB): Golfer | undefined {
   const digits = normalizePhone(phone);
   if (!digits) return undefined;
-  return MEMBER_DB.find((m) => normalizePhone(m.phone) === digits);
+  return roster.find((m) => normalizePhone(m.phone) === digits);
 }
 
 /**
  * Find a member by display name, tolerating the abbreviated forms the tee sheet
  * uses: chips render `'Blake, E.'` where the CRM holds `'Blake, Ethan'`. An exact
- * match wins; otherwise a surname match plus a first-initial prefix counts.
+ * match wins; otherwise a surname match plus a first-initial prefix counts. `roster` as
+ * for `findMemberByPhone`.
  */
-export function findMemberByName(playerName: string): Golfer | undefined {
+export function findMemberByName(playerName: string, roster: readonly Golfer[] = MEMBER_DB): Golfer | undefined {
   const norm = (s: string) =>
     s
       .toLowerCase()
@@ -92,12 +98,12 @@ export function findMemberByName(playerName: string): Golfer | undefined {
   const target = norm(playerName);
   if (!target) return undefined;
 
-  const exact = MEMBER_DB.find((m) => norm(m.name) === target);
+  const exact = roster.find((m) => norm(m.name) === target);
   if (exact) return exact;
 
   const [lastName, firstPart] = target.split(' ');
   if (!lastName) return undefined;
-  return MEMBER_DB.find((m) => {
+  return roster.find((m) => {
     const [mLast, mFirst = ''] = norm(m.name).split(' ');
     if (mLast !== lastName) return false;
     if (!firstPart) return true;

@@ -14,7 +14,7 @@ import { DEMO_BOOKINGS, Screen, onTeeSheet, screenParams } from '../screen-helpe
  */
 const meta = {
   title: 'POS Screens/2 · Tee Sheet',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;

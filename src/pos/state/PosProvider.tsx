@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react';
 import type { Dispatch, ReactNode } from 'react';
+import { ALL_GOLFERS } from '../data/golfers';
+import type { Golfer } from '../types';
 import type { Action, PosState } from './pos-store';
-import { createInitialState, reducer } from './pos-store';
+import { createInitialState, golferRoster, reducer } from './pos-store';
 
 /**
  * Wires the POS reducer into React and exposes it through context.
@@ -54,3 +56,22 @@ export function usePos(): PosContextValue {
   if (!ctx) throw new Error('usePos must be used inside a <PosProvider>');
   return ctx;
 }
+
+/**
+ * Every customer — `golferRoster(state)` — for components that look people up.
+ *
+ * Unlike `usePos` this does not throw outside a provider: the lookup primitives (`MemberDot`)
+ * also render in plain component stories, where the fixed roster is the right answer. The
+ * sorted list is cached per `addedGolfers` array, so a tee sheet full of member dots sorts
+ * it once rather than once per cell.
+ */
+export function useGolferRoster(): Golfer[] {
+  const state = useContext(PosContext)?.state;
+  if (!state?.addedGolfers.length) return ALL_GOLFERS;
+  if (rosterCache.added !== state.addedGolfers) {
+    rosterCache = { added: state.addedGolfers, roster: golferRoster(state) };
+  }
+  return rosterCache.roster;
+}
+
+let rosterCache: { added: Golfer[] | null; roster: Golfer[] } = { added: null, roster: ALL_GOLFERS };

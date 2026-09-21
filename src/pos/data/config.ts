@@ -68,17 +68,44 @@ export const STATUS_COLORS: Record<string, { bg: string; border: string; dot: st
   group: { bg: '#fff', border: md3.primary, dot: md3.primary },
 };
 
-/** Progress rail for a player's round. Index matches `PlayerState.step`. */
-export const STATUS_STEPS = ['Pending', 'Checked In', 'Teed Off', 'At Turn', 'Finished'] as const;
+// ─── Round progress ─────────────────────────────────────────────────────────
 
-/** Material Symbols names for each step in `STATUS_STEPS`. */
-export const STATUS_STEP_ICONS = [
-  'person',
-  'how_to_reg',
-  'sports_golf',
-  'repeat',
-  'flag',
+/**
+ * What `PlayerState.step` means — the one definition the terminal and the phone share.
+ *
+ * The encoding is the one the demo fixtures, the original's booking context menu
+ * (All Checked In = 0 · All Teed Off = 1 · All At Turn = 2 · All Finished = 3) and every
+ * "checked in" counter (`step >= 0`) already agree on:
+ *
+ *   -1 not arrived · 0 checked in · 1 teed off · 2 at the turn · 3+ finished
+ *
+ * The fixtures also write `6` for a round finished on a past day, which is why a value is
+ * resolved with `roundStepOf` (the last step it has reached) and never by indexing.
+ * The original's Booking Detail rail was the odd one out: it labelled index 0 "Pending",
+ * so every value read one step behind (see the README's Known divergences).
+ */
+export const ROUND_STEP = { notArrived: -1, checkedIn: 0, teedOff: 1, atTurn: 2, finished: 3 } as const;
+
+/**
+ * The round's steps in order. `label` is the phone's sentence-case wording; `railLabel` is
+ * the terminal rail's title case, matching the rest of the terminal chrome.
+ */
+export const ROUND_STEPS = [
+  { step: ROUND_STEP.notArrived, label: 'Not arrived', railLabel: 'Not Arrived', icon: 'person' },
+  { step: ROUND_STEP.checkedIn, label: 'Checked in', railLabel: 'Checked In', icon: 'how_to_reg' },
+  { step: ROUND_STEP.teedOff, label: 'Teed off', railLabel: 'Teed Off', icon: 'sports_golf' },
+  { step: ROUND_STEP.atTurn, label: 'At the turn', railLabel: 'At Turn', icon: 'repeat' },
+  { step: ROUND_STEP.finished, label: 'Finished', railLabel: 'Finished', icon: 'flag' },
 ] as const;
+
+export type RoundStep = (typeof ROUND_STEPS)[number];
+
+/** The `ROUND_STEPS` entry a `PlayerState.step` has reached (`6` → Finished). */
+export function roundStepOf(p: { step: number }): RoundStep {
+  let at: RoundStep = ROUND_STEPS[0];
+  for (const r of ROUND_STEPS) if (p.step >= r.step) at = r;
+  return at;
+}
 
 /** Transport mode → icon name and label, as rendered on cards and chips. */
 export const TRANSPORT_META: Record<string, { icon: string; label: string }> = {

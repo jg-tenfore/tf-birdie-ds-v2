@@ -430,10 +430,11 @@ function applyDateWindow(srcBookings: Booking[]): Booking[] {
         return;
       }
 
-      // Morning activity buckets, distributed by hash:
-      //   ~55% completed round (paid, step=6, all checked in)
-      //   ~15% on the course (mixed step 1-3)
-      //   ~10% checked in / teed off (step 0-1, paid)
+      // Morning activity buckets, distributed by hash. Steps are ROUND_STEPS in
+      // config.ts: 0 checked in · 1 teed off · 2 at the turn · 3 finished.
+      //   ~55% completed round (paid, step 3, all checked in)
+      //   ~15% on the course (step 1-2)
+      //   ~10% just checked in (step 0, paid)
       //   ~ 6% cancelled (refunded)
       //   ~ 7% no-show
       //   ~ 7% completed but tab open

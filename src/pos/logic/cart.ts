@@ -466,5 +466,45 @@ export function buildTeeTimeCart(b: Booking): CartItem[] {
   ];
 }
 
-/** Format a dollar amount the way the POS does everywhere. */
-export const money = (n: number): string => `$${n.toFixed(2)}`;
+// ─── Money formatting ───────────────────────────────────────────────────────
+
+/** One formatter for the whole app, terminal and phone. Built once, not per call. */
+const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+/** U+2212, the typographic minus — the width of `+`, so signed columns line up. */
+export const MINUS = '\u2212';
+
+/**
+ * Format a dollar amount the way the POS does everywhere: `$6,632.00`, `−$12.50`.
+ *
+ * Every price, total and balance on screen goes through this — never a hand-rolled
+ * `` `$${n.toFixed(2)}` ``, which drops the thousands separator. Rounds to the cent
+ * first so a float like `-0.001` shows `$0.00`, not `−$0.00`. Negatives take the true
+ * minus (U+2212) rather than a hyphen, on the terminal and the phone alike. Editable
+ * amount fields are the exception: they hold plain numbers the operator types into.
+ */
+export const money = (n: number): string =>
+  USD.format(Math.round(n * 100) / 100 || 0).replace(/^-/, MINUS);
+
+/**
+ * `money()` without a trailing `.00` on whole dollars: `$45`, `$1,200`, `$12.50`. For
+ * compact labels (quick-tender buttons, list balances, price-override chips) that have
+ * always shown whole dollars — same formatter, so the separator still appears.
+ */
+export const moneyShort = (n: number): string => money(n).replace(/\.00$/, '');
+
+/**
+ * A price difference, always signed: `+$20.00`, `−$3.00`, or `Free` at zero. For rate and
+ * modifier choices, where the sign is the point.
+ */
+export const deltaMoney = (n: number): string => {
+  const s = money(n);
+  if (s === '$0.00') return 'Free';
+  return s.startsWith(MINUS) ? s : `+${s}`;
+};
+
+/**
+ * A credit — a discount line: `−$10.00`. Takes the magnitude, so a discount stored as a
+ * negative or positive number reads the same.
+ */
+export const creditMoney = (n: number): string => `${MINUS}${money(Math.abs(n))}`;

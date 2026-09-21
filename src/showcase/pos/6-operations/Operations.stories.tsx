@@ -12,7 +12,7 @@ import { Screen, onTeeSheet, screenParams } from '../screen-helpers';
  */
 const meta = {
   title: 'POS Screens/6 · Operations',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;
