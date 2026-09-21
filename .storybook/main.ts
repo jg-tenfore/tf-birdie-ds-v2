@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite';
+import remarkGfm from 'remark-gfm';
 
 /**
  * Storybook configuration.
@@ -12,7 +13,12 @@ const config: StorybookConfig = {
     '@chromatic-com/storybook',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
-    '@storybook/addon-docs',
+    // GitHub-flavoured Markdown, so the docs pages' tables render as tables. MDX 3 leaves
+    // GFM out, and without it every `| a | b |` block prints as literal pipes.
+    {
+      name: '@storybook/addon-docs',
+      options: { mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } } },
+    },
     '@storybook/addon-mcp',
   ],
   framework: '@storybook/react-vite',
