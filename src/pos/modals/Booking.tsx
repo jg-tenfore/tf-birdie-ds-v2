@@ -3,11 +3,10 @@ import { Box, ButtonBase, Divider, Typography } from '@mui/material';
 import { md3, playerAccents, radius, shifts } from '../../theme/tokens';
 import { CATALOG } from '../data/catalog';
 import { TIMES, formatTimeLabel, toDateStr } from '../data/courses';
-import { ALL_GOLFERS } from '../data/golfers';
 import { largestFit, runsAt, slotsFree } from '../logic/bookings';
 import * as cart from '../logic/cart';
 import { dayBookings } from '../state/pos-store';
-import { usePos } from '../state/PosProvider';
+import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking, CartTeeTime, PlayerState } from '../types';
 import { Icon, MemberDot } from '../components/primitives';
 import {
@@ -369,14 +368,15 @@ export function NewBooking({
   // whole opening, which is the "defaults to the remaining player count" behaviour.
   const [players, setPlayers] = useState(Math.min(clickedPlayers ?? cap, cap));
   const [transport, setTransport] = useState<'walking' | 'cart' | 'push'>('cart');
+  const roster = useGolferRoster();
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return ALL_GOLFERS.slice(0, 6);
-    return ALL_GOLFERS.filter(
+    if (!q) return roster.slice(0, 6);
+    return roster.filter(
       (g) => g.name.toLowerCase().includes(q) || g.phone.includes(q),
     ).slice(0, 8);
-  }, [query]);
+  }, [query, roster]);
 
   const rates = CATALOG['CHECK IN'].items;
   const is18 = /18/.test(rate?.name ?? '');

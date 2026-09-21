@@ -5,6 +5,8 @@ import { md3, memberTypes, payBadges, radius } from '../../theme/tokens';
 import type { MemberTypeKey } from '../../theme/tokens';
 import { findMemberByName, findMemberByPhone } from '../data/golfers';
 import { iconFor } from '../icons';
+import { deltaMoney, money } from '../logic/cart';
+import { useGolferRoster } from '../state/PosProvider';
 import type { Booking, PayStatus } from '../types';
 import { Stack } from './Stack';
 
@@ -92,7 +94,8 @@ export function SectionLabel({
  *
  * Pass `memberType` when it's known. Otherwise pass a `phone` or a `name` and the
  * tier is resolved from the CRM — phone is the reliable key, name is the fallback
- * for chips that only carry an abbreviated label.
+ * for chips that only carry an abbreviated label. The CRM is the session roster, so a
+ * member created at the counter gets their dot like everyone else.
  */
 export function MemberDot({
   memberType,
@@ -105,9 +108,10 @@ export function MemberDot({
   name?: string;
   size?: number;
 }) {
+  const roster = useGolferRoster();
   let tier = memberType ?? null;
-  if (!tier && phone) tier = findMemberByPhone(phone)?.memberType ?? null;
-  if (!tier && name) tier = findMemberByName(name)?.memberType ?? null;
+  if (!tier && phone) tier = findMemberByPhone(phone, roster)?.memberType ?? null;
+  if (!tier && name) tier = findMemberByName(name, roster)?.memberType ?? null;
   if (!tier) return null;
 
   const cfg = memberTypes[tier];
@@ -262,13 +266,11 @@ export function Well({ children, sx, ...rest }: BoxProps) {
   );
 }
 
-/** Signed currency, with a leading minus rather than parentheses: `-$12.50`. */
-export function signedMoney(n: number): string {
-  return n < 0 ? `-$${Math.abs(n).toFixed(2)}` : `$${n.toFixed(2)}`;
-}
+/**
+ * Signed currency, with a leading minus rather than parentheses: `−$1,212.50`. The same
+ * thing as `money()` — kept as a name because it says what the call site means.
+ */
+export const signedMoney = (n: number): string => money(n);
 
-/** Delta currency, always signed: `+$20.00`, `-$3.00`, or `Free` at zero. */
-export function deltaMoney(n: number): string {
-  if (n === 0) return 'Free';
-  return n < 0 ? `-$${Math.abs(n).toFixed(2)}` : `+$${n.toFixed(2)}`;
-}
+/** Delta currency, always signed: `+$20.00`, `−$3.00`, or `Free` at zero. See `logic/cart`. */
+export { deltaMoney };

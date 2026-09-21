@@ -17,9 +17,21 @@ clubs, one codebase:
 - [**Single nine →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/) one nine-hole
   course — four cells a row
 
+### 📱 Open a mobile prototype
+
+The phone app at 402×797, in Material Design 3 native style — every **Mobile Screens** story
+as a live screen you can step through, plus a free-running app from the Tee Sheet. Four
+destinations (Tee Sheet, Register, People, More), everything else one level down. The same
+three clubs as the terminal:
+
+- [**Three nines →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/)
+- [**18-hole course →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-18/)
+- [**Single nine →**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-9/)
+
 ### 📚 [Open the Design System →](https://jg-tenfore.github.io/tf-birdie-ds-v2/)
 
-Storybook: foundations, the component library, and all 65 POS screens as stories.
+Storybook: foundations, the component library, all 65 POS screens as stories, and the
+Mobile Screens drafts.
 
 ### 📄 [Open the Original →](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/)
 
@@ -34,6 +46,9 @@ The single-file HTML prototype this port came from. Read-only, kept for comparis
 | `/prototype/` | Three nines (the original club) |
 | `/prototype-18/` | One 18-hole course, front and back nines |
 | `/prototype-9/` | A single nine-hole course |
+| `/mobile/` | Mobile prototype — three nines |
+| `/mobile-18/` | Mobile prototype — the 18-hole course |
+| `/mobile-9/` | Mobile prototype — a single nine |
 | `/reference/` | The original single-file HTML prototype |
 
 GitHub Pages serves one site per repository, so they share one tree — Storybook at the root,
@@ -64,6 +79,7 @@ design is visible rather than assumed.
 npm install
 npm run storybook   # design system  → http://localhost:6006
 npm run dev         # prototype      → http://localhost:5173
+                    # mobile         → http://localhost:5173/mobile/  (?venue=eighteen / nine)
 ```
 
 Other scripts:
@@ -78,8 +94,8 @@ npm run build        # prototype → dist/
 npm run build:site   # the full Pages tree → site/
 ```
 
-`npm run test` is the useful guard here: 254 tests across two projects — the story suite mounts
-all 280 stories in a real browser and fails on any runtime error, and the unit suite covers the
+`npm run test` is the useful guard here: 530 tests across two projects — the story suite mounts
+all 367 stories in a real browser and fails on any runtime error, and the unit suite covers the
 pure logic.
 
 ## Deep links
@@ -181,7 +197,8 @@ Two decisions shape everything:
 src/
 ├── theme/
 │   ├── tokens.ts          MD3 tokens, ported 1:1 from the prototype's :root block
-│   └── theme.ts           how those tokens map onto MUI
+│   ├── theme.ts           how those tokens map onto MUI
+│   └── mobile-theme.ts    the same tokens at MD3 touch density, for the phone only
 ├── pos/
 │   ├── types.ts           domain types (Booking, CartItem, Course, …)
 │   ├── icons.ts           Material Symbols name → MUI icon component
@@ -190,11 +207,14 @@ src/
 │   ├── state/             one reducer + provider; the whole app is a function of it
 │   ├── components/        the shell, order panel, register, tee sheet
 │   ├── modals/            22 dialogs and the host that switches between them
+│   ├── mobile/            the phone app: navigation map, MD3 chrome, screens per destination
 │   └── PosApp.tsx         the assembled app
 ├── showcase/              Storybook stories
 │   ├── foundations/       colors, type, spacing, radius, icons, logos
 │   ├── base/  application/  auth/     the generic MUI component library
-│   └── pos/               POS screens, in seven numbered sections
+│   ├── pos/               POS screens, in seven numbered sections
+│   └── pos-mobile/        Mobile Screens, numbered to match, plus 0 · Navigation
+├── mobile-prototype/      the hosted mobile prototype — its screen list is read from pos-mobile
 └── App.tsx                the hosted prototype entry
 ```
 
@@ -243,6 +263,14 @@ Deliberate, and worth knowing:
   practice. That's preserved, and the dialog says so.
 - **Independent per-column scrolling** is not ported. The original has a second full grid
   renderer for it; the value it adds over Focus This Course didn't justify a parallel layout.
+- **Round-status labels on Booking Detail.** A player's `step` is -1 not arrived, 0 checked in,
+  1 teed off, 2 at the turn, 3 finished (6 on past days) — the encoding the original's own
+  booking menu (All Checked In = 0 … All Finished = 3), its demo data and every "checked in"
+  count use. Its Booking Detail rail alone labelled index 0 "Pending", so every player read one
+  step behind (teed off showed "Checked In", a finished round "At Turn"). The rail now reads
+  Not Arrived → Checked In → Teed Off → At Turn → Finished, from `ROUND_STEPS` in
+  `src/pos/data/config.ts`, which the phone shares. Mark finished writes 3 (not 4), and Mark
+  teed off / Mark finished leave no-show seats alone, as the original's menu did.
 
 ## Stack
 

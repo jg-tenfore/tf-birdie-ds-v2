@@ -173,3 +173,43 @@ export const grid = {
   topbarH: 56,
   leftPanelW: 320,
 } as const;
+
+/**
+ * Mobile Screens — the phone companion to the counter terminal.
+ *
+ * A separate block rather than edits to the ones above, because the terminal's
+ * density rules (12–14px text, ~34px targets) are exactly wrong on a phone. Everything
+ * here is MD3's touch-first spec: 48dp targets, 16px body, 64dp top app bar, 80dp
+ * navigation bar. Only `src/pos/mobile` and the Mobile Screens stories read it.
+ */
+export const mobile = {
+  /** The device frame every Mobile Screens story renders in. */
+  frame: { width: 402, height: 797 },
+  /** Android status bar and gesture-nav handle, drawn edge-to-edge like a real device. */
+  statusBarH: 28,
+  gestureBarH: 20,
+  topAppBarH: 64,
+  navBarH: 80,
+  /** MD3 minimum touch target. */
+  touchTarget: 48,
+  /** MD3 list item heights: one-line / two-line / three-line. */
+  listItem: { one: 56, two: 72, three: 88 },
+  /**
+   * MD3 roles the terminal never needed. Derived from the same green seed as `md3`:
+   * `secondaryContainer` fills the navigation bar's active pill; `surfaceContainerLow`
+   * is the ground for cards on a scrolling list.
+   */
+  secondaryContainer: '#d0e8d9',
+  onSecondaryContainer: '#0b1f15',
+  surfaceContainerLow: '#f2f5f2',
+  /** MD3 standard easing + durations for shared-axis and container-transform motion. */
+  motion: {
+    easing: 'cubic-bezier(0.2, 0, 0, 1)',
+    emphasized: 'cubic-bezier(0.05, 0.7, 0.1, 1)',
+    push: 300,
+    sheet: 400,
+    /** Exits are shorter and accelerate out (MD3 "emphasized accelerate"). */
+    exit: 200,
+    exitEasing: 'cubic-bezier(0.3, 0, 0.8, 0.15)',
+  },
+} as const;

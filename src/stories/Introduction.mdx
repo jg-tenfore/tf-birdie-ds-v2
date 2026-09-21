@@ -6,7 +6,13 @@ import { SiteLink, PrototypeLinks } from './SiteLink';
 # ⛳ Birdie POS — Design System
 
 A **React + MUI (Material UI) + Emotion** component library for the TenFore golf-course
-point of sale, plus three working prototypes built from it.
+point of sale, plus working prototypes built from it — three counter-terminal clubs, and the
+same three clubs on a phone.
+
+**📱 Mobile prototypes** — every **Mobile Screens** story as a live screen at 402×797,
+linked end to end, one per club like the terminal:
+
+<PrototypeLinks mobile />
 
 ## Everything this repo publishes
 
@@ -18,6 +24,9 @@ This Storybook is the front door. Every other surface is a directory beside it:
 | `/prototype/` | <SiteLink to="prototype">**Three nines →**</SiteLink> the original club: Ponds, Valley and Rolling as independent nine-hole tracks |
 | `/prototype-18/` | <SiteLink to="prototype-18">**18-hole course →**</SiteLink> one championship course, split into front and back nines |
 | `/prototype-9/` | <SiteLink to="prototype-9">**Single nine →**</SiteLink> one nine-hole course |
+| `/mobile/` | <SiteLink to="mobile">**Mobile · Three nines →**</SiteLink> the phone app: every Mobile Screens story as a live screen, plus a free-running app from the Tee Sheet |
+| `/mobile-18/` | <SiteLink to="mobile-18">**Mobile · 18-hole course →**</SiteLink> the same phone screens at the 18-hole club |
+| `/mobile-9/` | <SiteLink to="mobile-9">**Mobile · Single nine →**</SiteLink> the same phone screens at the single nine |
 | `/reference/` | <SiteLink to="reference">**The original →**</SiteLink> the single-file HTML prototype this port came from. Read-only |
 
 ## The three prototypes are one app
@@ -51,6 +60,10 @@ Two things shape everything else:
   the opposite of the Goose KDS system this repo was scaffolded from, where gloved kitchen use
   forced everything large.)
 
+**Mobile Screens are the exception.** A phone is a thumb, not a mouse, so they render in
+their own theme (`src/theme/mobile-theme.ts`) — MD3's touch-first type scale, 48dp targets —
+over the same tokens, so a pay badge or member dot reads identically on both.
+
 ## Structure
 
 - **Foundations** — Colors, Typography, Spacing, Radius, Border, Effect Styles, Icons, Logos
@@ -65,6 +78,12 @@ Two things shape everything else:
   5. **Payment** — checkout, tips and change, the card reader
   6. **Operations** — blocks, notes, price overrides, leagues, moves
   7. **People** — member validation, golfer search, guest details
+- **Mobile Screens** — the phone companion, at a fixed 402×797, in MD3 native style: four
+  destinations on a navigation bar (Tee Sheet, Register, People, More) and everything else
+  one level down — pushed pages with a back arrow, full-screen dialogs with a ✕, and
+  no-exit takeovers for taking payment. Numbered to match POS Screens, with
+  **0 · Navigation** as a click-through. The same stories run as the
+  <SiteLink to="mobile">mobile prototype</SiteLink>.
 - **Tee Sheet Actions** — every action that *writes* to the tee sheet, one story each:
   the sheet before with the action's dialog over it, the sheet after, and the difference
   between them derived from the reducer rather than described. Start at

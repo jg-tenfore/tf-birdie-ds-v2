@@ -1,6 +1,7 @@
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY } from '../data/bookings';
+import { ALL_GOLFERS } from '../data/golfers';
 import type { OrderScenario } from './scenarios';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -114,6 +115,18 @@ export interface PosState {
   /** Additional named golfers attached before a round is on the cart. */
   additionalGolfers: Golfer[];
   /**
+   * The customer picked for a tee time being booked on the phone.
+   *
+   * Deliberately not `selectedGolfer`: that is the open order's customer, and booking a tee
+   * time for someone else must not replace the golfer on an order in progress.
+   */
+  bookingGolfer: Golfer | null;
+  /**
+   * Customers created this session. The roster itself (`ALL_GOLFERS`) is fixed demo data;
+   * read `golferRoster(state)` to get both.
+   */
+  addedGolfers: Golfer[];
+  /**
    * Which named scenario seeded the cart, if any.
    *
    * Carts are far too large for a URL, so a deep link names a scenario instead of
@@ -197,6 +210,8 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     selectedBookingId: null,
     flowMode: '',
     additionalGolfers: [],
+    bookingGolfer: null,
+    addedGolfers: [],
     orderScenario: null,
     currentCategory: null,
     leftPanelCollapsed: false,
@@ -240,6 +255,8 @@ export type Action =
   | { type: 'selectGolfer'; golfer: Golfer | null }
   | { type: 'addAdditionalGolfer'; golfer: Golfer }
   | { type: 'removeAdditionalGolfer'; index: number }
+  | { type: 'setBookingGolfer'; golfer: Golfer | null }
+  | { type: 'addGolfer'; golfer: Golfer }
   | { type: 'recordPayment'; method: string; amount: number }
   // Tee sheet
   | { type: 'setDate'; date: Date }
@@ -424,6 +441,10 @@ export function reducer(state: PosState, action: Action): PosState {
         ...state,
         additionalGolfers: state.additionalGolfers.filter((_, i) => i !== action.index),
       };
+    case 'setBookingGolfer':
+      return { ...state, bookingGolfer: action.golfer };
+    case 'addGolfer':
+      return { ...state, addedGolfers: [...state.addedGolfers, action.golfer] };
     case 'recordPayment':
       return {
         ...state,
@@ -548,6 +569,12 @@ export function reducer(state: PosState, action: Action): PosState {
 }
 
 // ─── Selectors ──────────────────────────────────────────────────────────────
+
+/** Every customer: the demo roster plus anyone created this session, surname-sorted. */
+export const golferRoster = (s: PosState): Golfer[] =>
+  s.addedGolfers.length
+    ? [...ALL_GOLFERS, ...s.addedGolfers].sort((a, b) => a.name.localeCompare(b.name))
+    : ALL_GOLFERS;
 
 /** The booking backing the current order, if it came from the tee sheet. */
 export const selectedBooking = (s: PosState): Booking | null =>

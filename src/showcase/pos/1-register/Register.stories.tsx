@@ -19,7 +19,7 @@ import {
  */
 const meta = {
   title: 'POS Screens/1 · Register & Order',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;

@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { screen, userEvent } from 'storybook/test';
+import type { Golfer } from '../../../pos/types';
 import { DEMO_BOOKINGS, Screen, onTeeSheet, screenParams, withWalkInOrder } from '../screen-helpers';
 
 /**
@@ -9,7 +11,7 @@ import { DEMO_BOOKINGS, Screen, onTeeSheet, screenParams, withWalkInOrder } from
  */
 const meta = {
   title: 'POS Screens/7 · People',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;
@@ -69,6 +71,39 @@ export const NewCustomer: Story = {
   render: () => (
     <Screen initialState={{ bookings: DEMO_BOOKINGS, modal: { kind: 'newCustomer' } }} />
   ),
+};
+
+/** A customer created earlier this session (as New Customer's Save would leave them). */
+const sessionCustomer: Golfer = {
+  id: 'N001',
+  name: 'Abbott, Nora',
+  phone: '(555) 610-4471',
+  email: 'nora.abbott@email.com',
+  type: 'Member',
+  memberType: 'seasonal',
+  hcp: 16,
+  joined: '2026-05',
+};
+
+/**
+ * A customer created earlier this session, found by the golfer search. New Customer saves
+ * into `addedGolfers`; every terminal search (golfer search, walk-in, guest detail, member
+ * lookup, the booking form) reads the session roster, so they turn up — with their tier
+ * dot — like anyone in the demo data.
+ */
+export const GolferSearchSessionCustomer: Story = {
+  render: () => (
+    <Screen
+      initialState={{
+        bookings: DEMO_BOOKINGS,
+        addedGolfers: [sessionCustomer],
+        modal: { kind: 'golferSearch', target: 'primary' },
+      }}
+    />
+  ),
+  play: async () => {
+    await userEvent.type(await screen.findByPlaceholderText('Search name or phone…'), 'Abbott');
+  },
 };
 
 /** The walk-in fast path — name the golfer, then ring their rate. */

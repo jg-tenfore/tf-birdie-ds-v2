@@ -1,5 +1,7 @@
 import { Box } from '@mui/material';
-import { md3 } from '../../theme/tokens';
+import { useEffect, useState } from 'react';
+import { md3, shell } from '../../theme/tokens';
+import { ModalContainerProvider } from '../../pos/modals/modal-container';
 import { DEMO_TODAY } from '../../pos/data/bookings';
 import { PosApp } from '../../pos/PosApp';
 import {
@@ -61,16 +63,49 @@ export const unpaidBooking = (): Booking =>
 /** A member booking, priced at zero through a member-rate override. */
 export const memberBooking = (): Booking => findToday((b) => b.status === 'member');
 
+/** The 8px of dark ground `Screen` draws around the terminal, per side. */
+const GROUND = 8;
+
+/**
+ * The scale that fits the 1366×840 terminal, plus its ground, into the current window.
+ * Never above 1: at the counter-terminal viewport the frame renders at its real size.
+ */
+function useFitScale(): number {
+  const measure = () =>
+    typeof window === 'undefined'
+      ? 1
+      : Math.min(
+          1,
+          (window.innerWidth - GROUND * 2) / shell.width,
+          (window.innerHeight - GROUND * 2) / shell.height,
+        );
+  const [scale, setScale] = useState(measure);
+  useEffect(() => {
+    const onResize = () => setScale(measure());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return scale;
+}
+
 /**
  * Render a screen story.
  *
  * The dark ground matches the prototype and the hosted app — it frames the terminal so a
  * screenshot reads as hardware rather than as a cropped web page.
  *
+ * The terminal is a fixed 1366×840 layout, so on a smaller viewport (the Tablet and iPad
+ * presets) it is scaled down whole rather than cropped: the same design, smaller. Dialogs are
+ * scoped into the scaled frame so they shrink with it instead of opening full-size over it.
+ *
  * URL syncing stays off: Storybook already uses the address bar to track which story is
  * open, and a story rewriting the hash would fight it.
  */
 export function Screen({ initialState }: { initialState?: Partial<PosState> }) {
+  const scale = useFitScale();
+  const [frame, setFrame] = useState<HTMLElement | null>(null);
+  const scaled = scale < 1;
+
   return (
     <Box
       sx={{
@@ -79,10 +114,30 @@ export function Screen({ initialState }: { initialState?: Partial<PosState> }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 1,
+        p: `${GROUND}px`,
       }}
     >
-      <PosApp initialState={initialState} />
+      {scaled ? (
+        <Box sx={{ width: shell.width * scale, height: shell.height * scale, flexShrink: 0 }}>
+          <Box
+            ref={setFrame}
+            sx={{
+              width: shell.width,
+              height: shell.height,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+            }}
+          >
+            {frame && (
+              <ModalContainerProvider container={frame}>
+                <PosApp initialState={initialState} />
+              </ModalContainerProvider>
+            )}
+          </Box>
+        </Box>
+      ) : (
+        <PosApp initialState={initialState} />
+      )}
     </Box>
   );
 }

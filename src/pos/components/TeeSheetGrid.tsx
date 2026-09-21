@@ -3,6 +3,7 @@ import { Box, ButtonBase, Tooltip, Typography } from '@mui/material';
 import { grid as gridTokens, md3, noteColors, radius, shifts } from '../../theme/tokens';
 import { DEMO_TODAY } from '../data/bookings';
 import { TIMES, formatTimeLabel } from '../data/courses';
+import { moneyShort } from '../logic/cart';
 import { openRuns } from '../logic/openings';
 import { dayBookings, timeRowKey, visibleCourses } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
@@ -938,10 +939,10 @@ function PriceOverrideBanner({ timeMin }: { timeMin: number }) {
   const range = end && entry.rangeEnd !== timeMin ? `${start}–${end}` : start;
 
   const parts = [
-    entry.fee != null && `Fee $${entry.fee}`,
-    entry.walking != null && `Walk $${entry.walking}`,
-    entry.cart != null && `Cart $${entry.cart}`,
-    entry.walkingCart != null && `W+C $${entry.walkingCart}`,
+    entry.fee != null && `Fee ${moneyShort(entry.fee)}`,
+    entry.walking != null && `Walk ${moneyShort(entry.walking)}`,
+    entry.cart != null && `Cart ${moneyShort(entry.cart)}`,
+    entry.walkingCart != null && `W+C ${moneyShort(entry.walkingCart)}`,
   ].filter(Boolean);
 
   return (

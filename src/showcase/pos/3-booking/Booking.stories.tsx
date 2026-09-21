@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import {
+  DEMO_BOOKINGS,
   Screen,
   atVenue,
   onTeeSheet,
@@ -20,7 +21,7 @@ import {
  */
 const meta = {
   title: 'POS Screens/3 · Booking & Check-in',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;
@@ -42,6 +43,11 @@ export const BookingDetail: Story = {
  * Players & Status. Every step on the rail is clickable, not just the next one — staff
  * correct mis-taps and jump groups straight to Finished after the fact, so forcing a
  * linear walk would be worse than allowing the jump.
+ *
+ * The rail is Not Arrived → Checked In → Teed Off → At Turn → Finished — `ROUND_STEPS`
+ * in `data/config.ts`, the same steps the phone's Player Detail lists. This foursome went
+ * out this morning and is at the turn (step 2), so every player reads **At Turn** — the old
+ * rail, which labelled step 0 "Pending", showed them one step behind at "Teed Off".
  */
 export const PlayersAndStatus: Story = {
   render: () => {
@@ -49,6 +55,29 @@ export const PlayersAndStatus: Story = {
     return (
       <Screen
         initialState={withLoadedBooking(b, { modal: { kind: 'bookingDetail', bookingId: b.id, tab: 1 } })}
+      />
+    );
+  },
+};
+
+/**
+ * Players & Status with the party spread across the round — one seat per step: not
+ * arrived (-1), checked in (0), teed off (1), at the turn (2). Each row's caption and its
+ * rail agree, and read the same values the same way the phone does.
+ */
+export const PlayersRoundProgress: Story = {
+  render: () => {
+    const src = paidFoursome();
+    const b = {
+      ...src,
+      playerStates: [-1, 0, 1, 2].map((step, i) => ({ ...(src.playerStates[i] ?? { paid: true, noShow: false }), step, noShow: false })),
+    };
+    return (
+      <Screen
+        initialState={withLoadedBooking(b, {
+          bookings: DEMO_BOOKINGS.map((x) => (x.id === b.id ? b : x)),
+          modal: { kind: 'bookingDetail', bookingId: b.id, tab: 1 },
+        })}
       />
     );
   },

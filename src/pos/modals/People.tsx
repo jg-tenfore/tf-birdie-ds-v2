@@ -5,10 +5,10 @@ import type { MemberTypeKey } from '../../theme/tokens';
 import { AP_CONFIGS } from '../data/config';
 import { CATALOG, MODIFIER_ITEMS } from '../data/catalog';
 import { formatTimeLabel } from '../data/courses';
-import { ALL_GOLFERS, MEMBER_DB } from '../data/golfers';
 import * as cart from '../logic/cart';
+import { buildCustomer, nextCustomerId } from '../logic/customers';
 import { dayBookings, selectedBooking } from '../state/pos-store';
-import { usePos } from '../state/PosProvider';
+import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Golfer } from '../types';
 import { Icon, MemberDot, SectionLabel, deltaMoney } from '../components/primitives';
 import {
@@ -24,6 +24,7 @@ import {
   SelectField,
 } from './ModalFrame';
 import { Stack } from '../components/Stack';
+import { checkInPlayer } from '../logic/bookings';
 
 /**
  * People-facing dialogs: member validation, golfer search, guest details, new
@@ -42,6 +43,9 @@ import { Stack } from '../components/Stack';
  */
 export function MemberLookup({ itemName, requiredType }: { itemName: string; requiredType: string }) {
   const { dispatch, toast } = usePos();
+  // The whole roster, not just the demo MEMBER_DB: a member created this session carries a
+  // tier like any other and must be able to buy their rate.
+  const roster = useGolferRoster();
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<Golfer | null>(null);
 
@@ -55,15 +59,15 @@ export function MemberLookup({ itemName, requiredType }: { itemName: string; req
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const pool = q
-      ? MEMBER_DB.filter((g) => g.name.toLowerCase().includes(q) || g.phone.includes(q))
-      : MEMBER_DB.filter((g) => g.memberType === requiredType);
+      ? roster.filter((g) => g.name.toLowerCase().includes(q) || g.phone.includes(q))
+      : roster.filter((g) => g.memberType === requiredType);
     // Eligible members first, so the common case is at the top of the list.
     return [...pool].sort((a, b) => {
       const ae = a.memberType === requiredType ? 0 : 1;
       const be = b.memberType === requiredType ? 0 : 1;
       return ae - be || a.name.localeCompare(b.name);
     });
-  }, [query, requiredType]);
+  }, [query, requiredType, roster]);
 
   const confirm = () => {
     if (!picked) return;
@@ -172,17 +176,18 @@ export function GolferSearch({
   target: 'primary' | { itemIdx: number; playerIdx: number };
 }) {
   const { dispatch, toast } = usePos();
+  const roster = useGolferRoster();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string>('all');
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let pool = ALL_GOLFERS;
+    let pool = roster;
     if (filter === 'members') pool = pool.filter((g) => Boolean(g.memberType));
     else if (filter !== 'all') pool = pool.filter((g) => g.memberType === filter);
     if (q) pool = pool.filter((g) => g.name.toLowerCase().includes(q) || g.phone.includes(q));
     return pool.slice(0, 40);
-  }, [query, filter]);
+  }, [query, filter, roster]);
 
   const choose = (g: Golfer) => {
     if (target === 'primary') {
@@ -267,6 +272,7 @@ export function GolferSearch({
  */
 export function GuestDetail({ guestIndex }: { guestIndex: number }) {
   const { state, dispatch, toast } = usePos();
+  const roster = useGolferRoster();
   const booking = selectedBooking(state);
   const itemIdx = state.cart.findIndex((i) => i.isCheckIn);
   const player = itemIdx >= 0 ? state.cart[itemIdx].players?.[guestIndex] : undefined;
@@ -288,10 +294,10 @@ export function GuestDetail({ guestIndex }: { guestIndex: number }) {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return ALL_GOLFERS.filter(
+    return roster.filter(
       (g) => g.name.toLowerCase().includes(q) || g.phone.includes(q),
     ).slice(0, 8);
-  }, [query]);
+  }, [query, roster]);
 
   const applyName = (name: string, patch: Partial<{ phone: string; memberType: string; crmId: string }> = {}) => {
     if (itemIdx >= 0) {
@@ -427,7 +433,8 @@ export function GuestDetail({ guestIndex }: { guestIndex: number }) {
 
 /** Create a CRM record from the counter. */
 export function NewCustomer() {
-  const { dispatch, toast } = usePos();
+  const { state, dispatch, toast } = usePos();
+  const roster = useGolferRoster();
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [phone, setPhone] = useState('');
@@ -437,21 +444,21 @@ export function NewCustomer() {
   const [notes, setNotes] = useState('');
 
   const save = () => {
-    const name = last ? `${last}, ${first}`.replace(/,\s*$/, '') : first;
-    if (!name.trim()) return toast('Enter a name');
-    const golfer: Golfer = {
-      id: `C${Date.now()}`,
-      name,
-      phone: phone || '—',
+    const golfer = buildCustomer(nextCustomerId(state.addedGolfers, roster), {
+      first,
+      last,
+      phone,
       email,
-      type: member ? 'Member' : 'Guest',
       memberType: (member || null) as MemberTypeKey | null,
-      hcp: parseInt(hcp, 10) || 0,
+      hcp,
       notes,
-    };
+    });
+    if (!golfer.name) return toast('Enter a name');
+    // Into the session roster first, so every search after this finds them.
+    dispatch({ type: 'addGolfer', golfer });
     dispatch({ type: 'selectGolfer', golfer });
     dispatch({ type: 'closeModal' });
-    toast(`${name} created`);
+    toast(`${golfer.name} created`);
   };
 
   return (
@@ -508,13 +515,14 @@ export function NewCustomer() {
 /** The fast path: name a walk-in golfer and start their order. */
 export function WalkIn() {
   const { dispatch, toast } = usePos();
+  const roster = useGolferRoster();
   const [query, setQuery] = useState('');
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return ALL_GOLFERS.filter((g) => g.name.toLowerCase().includes(q) || g.phone.includes(q)).slice(0, 6);
-  }, [query]);
+    return roster.filter((g) => g.name.toLowerCase().includes(q) || g.phone.includes(q)).slice(0, 6);
+  }, [query, roster]);
 
   const start = (name: string, golfer?: Golfer) => {
     if (golfer) dispatch({ type: 'selectGolfer', golfer });
@@ -750,7 +758,7 @@ export function ActionPanel({ action }: { action: 'checkin' | 'refund' | 'rainch
         bookingId: b.id,
         patch: {
           playerStates: b.playerStates.map((p, i) =>
-            i === picked.idx ? { ...p, step: 0, noShow: false } : p,
+            i === picked.idx ? checkInPlayer(p) : p,
           ),
         },
       });

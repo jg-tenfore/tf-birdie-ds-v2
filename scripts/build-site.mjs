@@ -9,6 +9,9 @@
  *   /prototype/      three nines        — the original club
  *   /prototype-18/   one 18-hole course — front and back nines
  *   /prototype-9/    a single nine
+ *   /mobile/         the phone app      — every Mobile Screens story, live, three nines
+ *   /mobile-18/      the phone app      — the 18-hole course
+ *   /mobile-9/       the phone app      — the single nine
  *   /reference/      the original HTML  — read-only, what the port is measured against
  *
  * The three prototypes are the *same build* run three times with a different `VITE_VENUE`.
@@ -74,7 +77,26 @@ for (const { dir, venue } of PROTOTYPES) {
   );
 }
 
-// ── 3. The original single-file prototype at /reference/ ──────────────────
+// ── 3. The three mobile prototypes ────────────────────────────────────────
+// Same entry (`src/main.tsx`), which picks the phone app from `VITE_APP`. Its screens are
+// the Mobile Screens story files themselves (`src/mobile-prototype/screen-index.ts`), so
+// there's nothing to keep in sync. Routing is hash-only — Pages has no SPA fallback.
+// One build per club, exactly like the terminal prototypes above.
+const MOBILE_PROTOTYPES = [
+  { dir: 'mobile', venue: 'three-nines' },
+  { dir: 'mobile-18', venue: 'eighteen' },
+  { dir: 'mobile-9', venue: 'nine' },
+];
+
+for (const { dir, venue } of MOBILE_PROTOTYPES) {
+  run(
+    'npx',
+    ['vite', 'build', '--base', `${BASE}${dir}/`, '--outDir', `site/${dir}`],
+    { VITE_APP: 'mobile', VITE_VENUE: venue },
+  );
+}
+
+// ── 4. The original single-file prototype at /reference/ ──────────────────
 const reference = join(
   root,
   'references',
@@ -113,5 +135,8 @@ console.log(`\n✓ site assembled at ${site}`);
 console.log(`   ${BASE}                 Storybook`);
 for (const { dir, venue } of PROTOTYPES) {
   console.log(`   ${BASE}${dir}/`.padEnd(BASE.length + 21) + venue);
+}
+for (const { dir, venue } of MOBILE_PROTOTYPES) {
+  console.log(`   ${BASE}${dir}/`.padEnd(BASE.length + 21) + `mobile · ${venue}`);
 }
 console.log(`   ${BASE}reference/`.padEnd(BASE.length + 21) + 'original HTML');

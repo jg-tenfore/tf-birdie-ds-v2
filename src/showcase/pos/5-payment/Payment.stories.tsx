@@ -11,7 +11,7 @@ import { Screen, paidFoursome, screenParams, withLoadedBooking, withWalkInOrder 
  */
 const meta = {
   title: 'POS Screens/5 · Payment',
-  parameters: screenParams,
+  parameters: { ...screenParams },
 } satisfies Meta;
 
 export default meta;

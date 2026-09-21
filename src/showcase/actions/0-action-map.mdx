@@ -41,9 +41,9 @@ also drives the real dialog and requires the Before sheet to end up matching the
 |---|---|
 | Load into register | Nothing on the sheet — the booking moves to the order panel |
 | Booking details | Nothing directly; the dialog's own tabs write |
-| Check in all players | `playerStates[].step = 0` |
-| Mark teed off | `playerStates[].step = 1` |
-| Mark finished | `playerStates[].step = 4` |
+| Check in all players | `playerStates[].step = 0` (Checked In) |
+| Mark teed off | `playerStates[].step = 1` (Teed Off), no-show seats untouched |
+| Mark finished | `playerStates[].step = 3` (Finished), no-show seats untouched. Steps are `ROUND_STEPS` in `data/config.ts` |
 | Mark all paid | `pay = 'paid'` and every player's balance |
 | Mark all unpaid | `pay = 'open'` and every player's balance |
 | Refund | `pay = 'refund'` |

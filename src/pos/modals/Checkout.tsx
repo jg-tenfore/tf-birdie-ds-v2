@@ -136,7 +136,7 @@ export function Checkout() {
           </Box>
 
           <Stack gap={0.5} sx={{ fontSize: 12.5 }}>
-            <Row label="Discounts" value={base.discounts > 0 ? `-${cart.money(base.discounts)}` : '$0.00'} color={base.discounts > 0 ? md3.error : undefined} />
+            <Row label="Discounts" value={base.discounts > 0 ? cart.creditMoney(base.discounts) : '$0.00'} color={base.discounts > 0 ? md3.error : undefined} />
             <Row label="Subtotal" value={cart.money(base.subtotal)} />
             <Row label="Tax" value={cart.money(base.tax)} />
             {bakedTip > 0 && <Row label="Tip" value={cart.money(bakedTip)} />}

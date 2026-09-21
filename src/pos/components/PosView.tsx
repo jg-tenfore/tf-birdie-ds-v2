@@ -431,12 +431,10 @@ function ItemTile({
   onClick: () => void;
 }) {
   const priceLabel = item.isDiscount
-    ? `−$${Math.abs(item.p).toFixed(2)}`
+    ? cart.creditMoney(item.p)
     : item.isOverride || item.p === 0
       ? 'Free'
-      : item.p < 0
-        ? `-$${Math.abs(item.p).toFixed(2)}`
-        : `$${item.p.toFixed(2)}`;
+      : cart.money(item.p);
   const priceColor = item.p < 0 || item.isDiscount ? '#c0392b' : item.p === 0 ? md3.outline : 'inherit';
 
   return (

@@ -175,3 +175,24 @@ Three, all deliberate:
    renderer for it; Focus This Course covers the same need.
 
 Anything else that differs from `/reference/` is a bug, not a decision.
+
+## Mobile Screens
+
+The phone companion lives in `src/pos/mobile/`, its stories in `src/showcase/pos-mobile/`
+(numbered to match POS Screens), and the hosted mobile prototypes in `src/mobile-prototype/`
+(`/mobile/`, `/mobile-18/`, `/mobile-9/` — one build per club, like the terminal), whose screen
+list is *read from* those story files — add a story and it appears. Every story must work at
+all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the stories load
+(`setVenueOverride`), so a story that assumes two courses will break at the single nine.
+
+- **Same reducer, data and logic as the terminal; different presentation.** Mobile screens use
+  `usePos()` and `src/pos/logic`, never the terminal's dense components or modals.
+- **`src/pos/mobile/navigation.tsx` is the whole IA.** Four destinations on an MD3
+  navigation bar; every other route declares its presentation — `push` (back arrow),
+  `dialog` (full-screen, ✕ + confirm), `takeover` (no exit; payment only). No centred
+  dialogs on the phone. Short contextual choices use `BottomSheet` from `chrome.tsx`
+  (never MUI `Drawer`/`Dialog`, which portal outside the frame).
+- **402×797, MD3 touch density** via `src/theme/mobile-theme.ts` and the `mobile` token block.
+- **Story metas must write `parameters` inline** (`parameters: { ...mobileMeta.parameters }`).
+  Storybook's docs plugin injects its own `parameters` key and silently overwrites one that
+  arrives by spread or by variable, dropping `layout: 'fullscreen'`.

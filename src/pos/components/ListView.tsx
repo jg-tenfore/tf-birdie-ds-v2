@@ -6,8 +6,9 @@ import { formatTimeLabel } from '../data/courses';
 import { findMemberByPhone } from '../data/golfers';
 import { activeFilterCount, filterBookings, groupBookings, payCounts } from '../logic/bookings';
 import { dayBookings } from '../state/pos-store';
+import { moneyShort } from '../logic/cart';
 import type { ListFilters } from '../state/pos-store';
-import { usePos } from '../state/PosProvider';
+import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
 import { EmptyState, Icon, MemberDot, PayBadge, SectionLabel } from './primitives';
 import { Stack } from './Stack';
@@ -222,7 +223,8 @@ export function ListView() {
 function ListCard({ booking }: { booking: Booking }) {
   const { state, dispatch } = usePos();
   const course = state.courses.find((c) => c.id === booking.course);
-  const member = findMemberByPhone(booking.phone);
+  const roster = useGolferRoster();
+  const member = findMemberByPhone(booking.phone, roster);
   const isNoShow = booking.pay === 'no_show';
 
   const unpaid = (booking.playerStates ?? []).filter((p) => !p.paid && !p.noShow).length;
@@ -259,7 +261,7 @@ function ListCard({ booking }: { booking: Booking }) {
     >
       <Stack alignItems="center" gap={0.5} sx={{ flexShrink: 0, minWidth: 52 }}>
         <Typography sx={{ fontSize: 15, fontWeight: 800 }}>
-          {balance > 0 ? `$${balance}` : '—'}
+          {balance > 0 ? moneyShort(balance) : '—'}
         </Typography>
         <PayBadge pay={booking.pay} size="sm" />
       </Stack>

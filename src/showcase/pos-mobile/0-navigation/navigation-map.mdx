@@ -1,0 +1,88 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import * as NavigationStories from './Navigation.stories';
+import { SiteLink } from '../../../stories/SiteLink';
+
+<Meta of={NavigationStories} name="Navigation Map" />
+
+# Mobile navigation map
+
+The phone app has **four destinations** on an MD3 navigation bar, and everything else is
+**one level down**. The navigation bar only shows on the four roots. Anything opened above a
+root covers the whole screen, so each level owns the phone and has exactly one way out.
+
+Every route declares how it enters, in `PRESENTATION` in `src/pos/mobile/navigation.tsx`. The
+router reads that same table, so the list below can't drift from what the app does:
+
+| Enters as | Looks like | Way out |
+|---|---|---|
+| **root** | A destination's home. Navigation bar visible, no back arrow | Another destination |
+| **push** | Slides in from the right. Small top app bar with ← | ← or back gesture returns to the screen below |
+| **dialog** | Full-screen dialog, rises from the bottom. ✕ + one confirm action ("Save", "Book") | ✕ discards, confirm commits. Both return to the screen below |
+| **takeover** | Full screen, no back affordance | Only by finishing or an explicit Cancel. Payment only |
+| *bottom sheet* | Not a route: a modal sheet over the current screen | Tap outside, or choose an action |
+
+Each destination keeps **its own back stack**. Leaving a half-built order to check the sheet
+and coming back lands you on the order, and the Register tab shows the order's line count as
+a badge. Re-tapping the active destination pops it to its root.
+
+<SiteLink to="mobile">**Open the mobile prototype →**</SiteLink> every story below, live and
+linked, at 402×797.
+
+## Tee Sheet — home destination
+
+| Screen | Enters as | Reached from | Leads to |
+|---|---|---|---|
+| Tee Sheet | root | Navigation bar | Everything below |
+| Search | push | 🔍 in the top app bar | Booking detail (pushed over the results, so ← returns to them) |
+| Filters | dialog | Filter icon | Apply → back to the sheet, filtered |
+| Day summary | push | Summary icon | A course row pops back with that course selected. A balance row opens Booking detail on Financial |
+| Time actions | *bottom sheet* | Long-press or tap a time label | Block time · Time note · Price override · League (dialogs, over the sheet). When the row has parties: Check in row · Mark row paid · **Move everyone** → Move players (whole time; scoped to the course in view) |
+| Booking actions | *bottom sheet* | Long-press a booking card, or ⋮ on detail | Move · Refund · Rain check · No-show · Delete |
+| Booking detail | push | Tap a booking card | Player detail · Check-in / Refund / Rain check · Move players · **Check in & pay → Register › Order** |
+| Player detail | push | A player row | Golfer detail (in People) when the player is linked to a customer record |
+| Check in / Refund / Rain check | dialog | Booking detail | Confirm → back to detail |
+| New tee time | dialog | Tap an open slot | Find a customer → Golfer picker (its own `bookingGolfer` slot, never the Register order's customer). Book or ✕ → back to the sheet, slot cleared |
+| Move players | dialog | Booking actions (one party) · Time actions › Move everyone (every party at the time, blocks and leagues excepted; with all courses in view each party keeps its course) | Move → back to where it opened from |
+
+## Register
+
+| Screen | Enters as | Reached from | Leads to |
+|---|---|---|---|
+| Register | root | Navigation bar | Category · Order (the **View order** bar, once the order has items) |
+| Category | push | A category card | Items add in place, with a snackbar. View order bar stays pinned |
+| Order | push | View order bar, or **Check in & pay** from a booking | Player modifiers · Tee picker · Golfer picker · Checkout · Reserve |
+| Player modifiers | push | A player row on a round line | ← back to the order |
+| Tee picker | push | "Choose tee time" on the order | Pick → back to the order with the tee time attached |
+| Reserve confirmation | push | Reserve on the order | Pay now → Checkout. Pay at counter → booked as an open balance, back to the Register root |
+| Checkout | push | Charge on the order | Card → Tip → Reader. Cash → the reader in its cash form (amount tendered, change due) |
+| Tip | push | Card payment | Reader |
+| Payment reader | **takeover** | Tip, or a non-card method | Approval → Complete (replaces the reader, so there's no way back into a finished charge). Cancel → the step before |
+| Payment complete | **takeover** | Reader | New order → clears it and pops to the Register root |
+
+## People
+
+| Screen | Enters as | Reached from | Leads to |
+|---|---|---|---|
+| People | root | Navigation bar | Golfer detail · New customer (extended FAB) |
+| Golfer detail | push | A list row, or Player detail | **Start order → Register › Order** · **Book tee time → Tee Sheet** · a tee time → Booking detail |
+| Golfer picker | push | Order, New tee time | Pick → attaches and pops. "Add new customer" → New customer |
+| New customer | dialog | FAB, or the picker | Save → the list. From the picker: "Save & add" attaches and closes both |
+
+## More
+
+| Screen | Enters as | Reached from | Leads to |
+|---|---|---|---|
+| More | root | Navigation bar | The four time-row operations (dialogs) · Rate card · Tee sheet & courses |
+| Block time · Time note · Price override · League | dialog | Time actions sheet on the Tee Sheet, or More | Save → back to where they opened from |
+| Rate card | push | More | ← |
+| Tee sheet & courses | push | More | A course → the same screen for that course (changes apply immediately, Android-settings style) |
+
+## Jumps between destinations
+
+A jump switches destination instead of stacking one destination's screen on another's. The
+back arrow then stays inside the destination you're in:
+
+- **Booking detail → Check in & pay** loads the booking into the order, then opens Register › Order.
+- **Golfer detail → Start order** attaches the golfer, then opens Register › Order.
+- **Golfer detail → Book tee time** attaches the golfer, then switches to the Tee Sheet.
+- **Golfer detail → a tee time** opens Tee Sheet › Booking detail.
