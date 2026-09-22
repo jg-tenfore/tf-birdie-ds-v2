@@ -1,11 +1,13 @@
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
-import { DEMO_TODAY } from '../data/bookings';
+import { DEMO_TODAY, demoNow } from '../data/bookings';
 import { ALL_GOLFERS } from '../data/golfers';
 import type { OrderScenario } from './scenarios';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
 import * as cartLogic from '../logic/cart';
+import { timeRowKey } from '../logic/rates';
+import type { RateContext } from '../logic/rates';
 import type {
   Booking,
   CartItem,
@@ -75,9 +77,30 @@ export type Modal =
   | { kind: 'courseTimeSettings'; courseId: string }
   | { kind: 'courseRates'; courseId: string }
   | { kind: 'checkout' }
-  | { kind: 'paymentReader'; method: string }
+  /** `tip` is what checkout recalculated in, so the reader charges the checkout total. */
+  | { kind: 'paymentReader'; method: string; tip?: number }
   | { kind: 'confirm'; title: string; body: string; confirmLabel: string; onConfirm: string }
   | { kind: 'teeSheetSearch' };
+
+/** The reservation panel's tabs, in order. */
+export const RESERVATION_TABS = ['players', 'customer', 'financial', 'notes', 'activity'] as const;
+export type ReservationTab = (typeof RESERVATION_TABS)[number];
+
+/**
+ * The reservation slide-over (Weston Edits): which booking, which tab, and which player the
+ * Customer tab is showing. Not a `Modal` — it sits beside the tee sheet rather than over it,
+ * and a dialog (the roster search, a confirm) can open on top of it.
+ */
+export interface ReservationPanelState {
+  bookingId: string;
+  tab: ReservationTab;
+  playerIndex: number;
+  /**
+   * `'modal'` renders the same content as a centred dialog — Storybook's comparison only,
+   * since Weston "can be convinced either way". Not linkable; the prototype always slides.
+   */
+  presentation?: 'panel' | 'modal';
+}
 
 /** A right-click / long-press menu anchored to a booking chip or a time label. */
 export type ContextMenuState =
@@ -101,6 +124,12 @@ export interface PosState {
 
   /** Every booking across the 11-day demo window. */
   bookings: Booking[];
+  /**
+   * Dates (`YYYY-MM-DD`) that have had a generated demo day added (`fillDemoDay`, Weston
+   * Edits). A date here is never generated again, so clearing every booking on it leaves it
+   * empty for the session rather than refilling it on the next visit.
+   */
+  generatedDates: string[];
   /** Mutable copy of `COURSES` — visibility, locks, and notes are edited at runtime. */
   courses: Course[];
   settings: TeeSheetSettings;
@@ -158,6 +187,8 @@ export interface PosState {
   listFilters: ListFilters;
 
   modal: Modal | null;
+  /** The reservation slide-over (Weston Edits), when open. */
+  reservationPanel: ReservationPanelState | null;
   contextMenu: ContextMenuState;
   toast: string | null;
   /** Set after a successful checkout so the Pay button can show the paid state. */
@@ -203,6 +234,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     view: 'pos',
     venueId,
     bookings: venueBookings(venueId),
+    generatedDates: [],
     courses: config.courses.map((c) => ({ ...c })),
     settings: { ...DEFAULT_TEE_SHEET_SETTINGS },
     cart: [],
@@ -226,6 +258,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     timePrices: {},
     listFilters: { ...emptyListFilters },
     modal: null,
+    reservationPanel: null,
     contextMenu: null,
     toast: null,
     lastPayment: null,
@@ -272,6 +305,11 @@ export type Action =
   | { type: 'closeSidebar' }
   // Bookings
   | { type: 'addBookings'; bookings: Booking[] }
+  /**
+   * A generated demo day (Weston Edits): adds its bookings and records the date in
+   * `generatedDates` in one step, so the day is filled at most once.
+   */
+  | { type: 'fillDemoDay'; date: string; bookings: Booking[] }
   | { type: 'patchBooking'; bookingId: string; patch: Partial<Booking> }
   | { type: 'patchBookings'; bookingIds: string[]; patch: Partial<Booking> }
   | { type: 'deleteBookings'; bookingIds: string[] }
@@ -290,6 +328,16 @@ export type Action =
   // Chrome
   | { type: 'openModal'; modal: Modal }
   | { type: 'closeModal' }
+  // Reservation panel (Weston Edits)
+  | { type: 'openReservation'; bookingId: string; tab?: ReservationTab; playerIndex?: number }
+  /**
+   * Weston Edits: a walk-in as a reservation. Adds the booking `planWalkIn` built, shows
+   * today's tee sheet and opens it in the reservation panel, where the party is set up.
+   */
+  | { type: 'startWalkIn'; booking: Booking }
+  | { type: 'setReservationTab'; tab: ReservationTab; playerIndex?: number }
+  | { type: 'selectReservationPlayer'; playerIndex: number }
+  | { type: 'closeReservation' }
   | { type: 'openContextMenu'; menu: ContextMenuState }
   | { type: 'closeContextMenu' }
   | { type: 'toast'; message: string | null }
@@ -318,29 +366,93 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, modal: action.modal, contextMenu: null };
     case 'closeModal':
       return { ...state, modal: null };
+    case 'openReservation': {
+      // Clicking another booking switches the panel; the same booking keeps its tab.
+      const same = state.reservationPanel?.bookingId === action.bookingId;
+      return {
+        ...state,
+        contextMenu: null,
+        reservationPanel: {
+          bookingId: action.bookingId,
+          tab: action.tab ?? (same ? state.reservationPanel!.tab : 'players'),
+          playerIndex: action.playerIndex ?? (same ? state.reservationPanel!.playerIndex : 0),
+          ...(state.reservationPanel?.presentation && { presentation: state.reservationPanel.presentation }),
+        },
+      };
+    }
+    case 'startWalkIn':
+      return {
+        ...state,
+        bookings: [...state.bookings, action.booking],
+        view: 'tee',
+        currentDate: DEMO_TODAY(),
+        flowMode: '',
+        currentCategory: null,
+        modal: null,
+        contextMenu: null,
+        reservationPanel: {
+          bookingId: action.booking.id,
+          tab: 'players',
+          playerIndex: 0,
+          ...(state.reservationPanel?.presentation && { presentation: state.reservationPanel.presentation }),
+        },
+      };
+    case 'setReservationTab':
+      return state.reservationPanel
+        ? {
+            ...state,
+            reservationPanel: {
+              ...state.reservationPanel,
+              tab: action.tab,
+              playerIndex: action.playerIndex ?? state.reservationPanel.playerIndex,
+            },
+          }
+        : state;
+    case 'selectReservationPlayer':
+      return state.reservationPanel
+        ? { ...state, reservationPanel: { ...state.reservationPanel, playerIndex: action.playerIndex } }
+        : state;
+    case 'closeReservation':
+      return { ...state, reservationPanel: null };
     case 'openContextMenu':
       return { ...state, contextMenu: action.menu };
     case 'closeContextMenu':
       return { ...state, contextMenu: null };
     case 'toast':
       return { ...state, toast: action.message };
-    case 'applyUrl':
+    case 'applyUrl': {
       // A URL never describes the whole app — only what a link can say. Fields the patch
       // omits (chiefly `modal`, which is absent from a link with no dialog) are reset to
       // their neutral value so pressing Back actually closes a dialog rather than leaving
-      // it open. Bookings are preserved: the operator's edits to the sheet outlive
-      // navigation.
+      // it open.
+      //
+      // The sheet is session data, not navigation: on the same club, Back / Forward keeps
+      // `bookings` (moves, check-ins, new tee times, generated days), `generatedDates`,
+      // the course layout, and everything else the patch doesn't name — `addedGolfers`,
+      // `timeNotes`, `timePrices`, the cart. `hashToState(hash, session)` already leaves the
+      // sheet out; this holds the line for any patch that still carries one. Only a patch
+      // for a *different* club re-homes: its bookings and courses replace the session's,
+      // and `generatedDates` resets with them — a day filled on the old club would
+      // otherwise read as generated and stay empty on the new one.
+      const { bookings, courses, generatedDates, ...rest } = action.patch;
+      const rehome = action.patch.venueId !== undefined && action.patch.venueId !== state.venueId;
       return {
         ...state,
         modal: null,
+        reservationPanel: null,
         contextMenu: null,
         sidebarOpen: false,
         sidebarCourse: null,
         multiSelectActive: false,
         multiSelectIds: [],
-        ...action.patch,
-        bookings: action.patch.bookings ?? state.bookings,
+        ...rest,
+        ...(rehome && {
+          bookings: bookings ?? venueBookings(action.patch.venueId!),
+          courses: courses ?? venue(action.patch.venueId!).courses.map((c) => ({ ...c })),
+          generatedDates: generatedDates ?? [],
+        }),
       };
+    }
 
     // ─── Cart ─────────────────────────────────────────────────────────────
     case 'addItem': {
@@ -354,9 +466,9 @@ export function reducer(state: PosState, action: Action): PosState {
     case 'addRawItem':
       return { ...state, cart: [...state.cart, action.item] };
     case 'changeQty':
-      return { ...state, cart: cartLogic.changeQty(state.cart, action.index, action.delta) };
+      return detachEmptyOrder(state, cartLogic.changeQty(state.cart, action.index, action.delta));
     case 'removeItem':
-      return { ...state, cart: cartLogic.removeItem(state.cart, action.index) };
+      return detachEmptyOrder(state, cartLogic.removeItem(state.cart, action.index));
     case 'addPlayer':
       return { ...state, cart: cartLogic.addPlayer(state.cart, action.itemIndex) };
     case 'removePlayer':
@@ -420,6 +532,10 @@ export function reducer(state: PosState, action: Action): PosState {
     case 'loadBooking': {
       const b = state.bookings.find((x) => x.id === action.bookingId);
       if (!b) return state;
+      // Loading the booking that is already on the order again — "Check in & pay" after
+      // "Edit reservation" — rebuilds only its golf: the retail and F&B lines stay.
+      const same = state.selectedBookingId === b.id;
+      const extras = same ? state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes') : [];
       return {
         ...state,
         view: 'pos',
@@ -427,9 +543,10 @@ export function reducer(state: PosState, action: Action): PosState {
         selectedBookingId: b.id,
         selectedGolfer: null,
         flowMode: '',
-        cart: cartLogic.buildTeeTimeCart(b),
-        orderScenario: null,
-        lastPayment: null,
+        cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state)), ...extras],
+        orderScenario: same ? state.orderScenario : null,
+        lastPayment: same ? state.lastPayment : null,
+        reservationPanel: null,
       };
     }
     case 'selectGolfer':
@@ -448,10 +565,15 @@ export function reducer(state: PosState, action: Action): PosState {
     case 'recordPayment':
       return {
         ...state,
+        // The booking behind the order is now paid: every seat that was charged is marked,
+        // so reopening it doesn't ask for the same money twice.
+        bookings: state.selectedBookingId
+          ? state.bookings.map((b) => (b.id === state.selectedBookingId ? markChargedPaid(b, state.cart) : b))
+          : state.bookings,
         lastPayment: {
           method: action.method,
           amount: action.amount,
-          time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+          time: demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
         },
       };
 
@@ -493,6 +615,13 @@ export function reducer(state: PosState, action: Action): PosState {
     // ─── Bookings ─────────────────────────────────────────────────────────
     case 'addBookings':
       return { ...state, bookings: [...state.bookings, ...action.bookings] };
+    case 'fillDemoDay':
+      if (state.generatedDates.includes(action.date)) return state;
+      return {
+        ...state,
+        bookings: [...state.bookings, ...action.bookings],
+        generatedDates: [...state.generatedDates, action.date],
+      };
     case 'patchBooking':
       return {
         ...state,
@@ -516,6 +645,9 @@ export function reducer(state: PosState, action: Action): PosState {
         selectedBookingId: ids.has(state.selectedBookingId ?? '')
           ? null
           : state.selectedBookingId,
+        reservationPanel: ids.has(state.reservationPanel?.bookingId ?? '')
+          ? null
+          : state.reservationPanel,
       };
     }
     case 'deleteWhere':
@@ -568,13 +700,45 @@ export function reducer(state: PosState, action: Action): PosState {
   }
 }
 
+/**
+ * After a line edit: if no round is left on the order, it no longer belongs to the booking
+ * it was loaded from. Without this the order kept `selectedBookingId` (and its tax row) after
+ * the round was removed, so the tee sheet still showed the booking attached and the Pay
+ * button still charged its tax.
+ */
+function detachEmptyOrder(state: PosState, cart: CartItem[]): PosState {
+  if (cart.some((i) => i.isCheckIn) || !state.selectedBookingId) return { ...state, cart };
+  return { ...state, cart: cartLogic.dropOrphanTax(cart), selectedBookingId: null };
+}
+
+/** Mark the seats a payment covered as paid; the booking is paid once nobody owes. */
+function markChargedPaid(b: Booking, cart: CartItem[]): Booking {
+  const round = cart.find((i) => i.isCheckIn);
+  if (!round?.players) return b;
+  const playerStates = b.playerStates.map((p, i) =>
+    round.players![i] && !round.players![i].noShow && !p.noShow ? { ...p, paid: true } : p,
+  );
+  const settled = playerStates.every((p) => p.paid || p.noShow);
+  return { ...b, playerStates, pay: settled ? 'paid' : b.pay };
+}
+
 // ─── Selectors ──────────────────────────────────────────────────────────────
 
-/** Every customer: the demo roster plus anyone created this session, surname-sorted. */
-export const golferRoster = (s: PosState): Golfer[] =>
-  s.addedGolfers.length
-    ? [...ALL_GOLFERS, ...s.addedGolfers].sort((a, b) => a.name.localeCompare(b.name))
-    : ALL_GOLFERS;
+const rosters = new WeakMap<Golfer[], Golfer[]>();
+
+/**
+ * Every customer: the demo roster plus anyone created this session, surname-sorted.
+ * Sorted once per `addedGolfers` array — pricing reads it for every seat on every render.
+ */
+export const golferRoster = (s: Pick<PosState, 'addedGolfers'>): Golfer[] => {
+  if (!s.addedGolfers?.length) return ALL_GOLFERS;
+  let roster = rosters.get(s.addedGolfers);
+  if (!roster) {
+    roster = [...ALL_GOLFERS, ...s.addedGolfers].sort((a, b) => a.name.localeCompare(b.name));
+    rosters.set(s.addedGolfers, roster);
+  }
+  return roster;
+};
 
 /** The booking backing the current order, if it came from the tee sheet. */
 export const selectedBooking = (s: PosState): Booking | null =>
@@ -596,9 +760,18 @@ export const dayGolferCount = (s: PosState): number =>
     0,
   );
 
-/** Key for the time-note and time-price maps. */
-export const timeRowKey = (date: Date, timeMin: number): string =>
-  `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}_${timeMin}`;
+/** Key for the time-note and time-price maps. Lives in `logic/rates`, which prices by it. */
+export { timeRowKey };
+
+/**
+ * What pricing a reservation needs from state beyond the booking — the operator's per-row
+ * price overrides, and the customer roster that says which players are members. Pass it to
+ * `playerFee`, `holesFee`, `buildTeeTimeCart` and friends.
+ */
+export const rateContext = (s: Pick<PosState, 'timePrices' | 'addedGolfers'>): RateContext => ({
+  timePrices: s.timePrices,
+  roster: golferRoster(s),
+});
 
 /** How many players a booking has that are not marked no-show. */
 export const activePlayers = (b: Booking): number =>

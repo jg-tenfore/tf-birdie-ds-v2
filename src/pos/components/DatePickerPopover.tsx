@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { elevation, md3, radius } from '../../theme/tokens';
-import { DEMO_TODAY } from '../data/bookings';
+import { DEMO_TODAY, demoRange, isInDemoRange } from '../data/bookings';
+import { useWestonEdits } from '../edition';
+import { unfilledDemoDay } from '../state/demo-days';
 import { usePos } from '../state/PosProvider';
 import { Icon } from './primitives';
 import { Stack } from './Stack';
@@ -31,9 +33,15 @@ const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
  *
  * Tapping the month header swaps in a year grid, which is how the prototype lets
  * staff jump a season ahead without twelve taps.
+ *
+ * Weston Edits: the tee sheet has a (generated) day for every date within a year of today,
+ * so in-range days are dotted from the generator too — the same count the phone uses — and
+ * days, months and years outside `demoRange()` are greyed and can't be picked. A generated
+ * day that has since been cleared has no dot. The base calendar is unchanged.
  */
 export function DatePickerPopover({ onClose }: { onClose: () => void }) {
   const { state, dispatch } = usePos();
+  const weston = useWestonEdits();
   const [viewYear, setViewYear] = useState(state.currentDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(state.currentDate.getMonth());
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
@@ -46,6 +54,15 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
     () => new Set(state.bookings.map((b) => b.date)),
     [state.bookings],
   );
+  const hasBookings = (dateStr: string) =>
+    datesWithBookings.has(dateStr) || (weston && unfilledDemoDay(state, dateStr).length > 0);
+  /** Weston Edits: outside the demo's year either side of today. */
+  const outOfRange = (dateStr: string) => weston && !isInDemoRange(dateStr);
+  const range = demoRange();
+  const monthKey = (y: number, m: number) => y * 12 + m;
+  const atStart = weston && monthKey(viewYear, viewMonth) <= monthKey(range.start.getFullYear(), range.start.getMonth());
+  const atEnd = weston && monthKey(viewYear, viewMonth) >= monthKey(range.end.getFullYear(), range.end.getMonth());
+  const yearOutOfRange = (y: number) => weston && (y < range.start.getFullYear() || y > range.end.getFullYear());
 
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -102,7 +119,9 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.25 }}>
           <ButtonBase
             onClick={() => shiftMonth(-1)}
-            sx={{ width: 28, height: 28, borderRadius: '50%', '&:hover': { bgcolor: md3.surfaceContainer } }}
+            disabled={atStart}
+            aria-label={weston ? 'Previous month' : undefined}
+            sx={{ width: 28, height: 28, borderRadius: '50%', opacity: atStart ? 0.34 : 1, '&:hover': { bgcolor: md3.surfaceContainer } }}
           >
             <Icon name="chevron_left" size={18} />
           </ButtonBase>
@@ -117,7 +136,9 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
           </ButtonBase>
           <ButtonBase
             onClick={() => shiftMonth(1)}
-            sx={{ width: 28, height: 28, borderRadius: '50%', '&:hover': { bgcolor: md3.surfaceContainer } }}
+            disabled={atEnd}
+            aria-label={weston ? 'Next month' : undefined}
+            sx={{ width: 28, height: 28, borderRadius: '50%', opacity: atEnd ? 0.34 : 1, '&:hover': { bgcolor: md3.surfaceContainer } }}
           >
             <Icon name="chevron_right" size={18} />
           </ButtonBase>
@@ -128,6 +149,7 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
             {Array.from({ length: 9 }, (_, i) => viewYear - 4 + i).map((y) => (
               <ButtonBase
                 key={y}
+                disabled={yearOutOfRange(y)}
                 onClick={() => {
                   setViewYear(y);
                   setYearPickerOpen(false);
@@ -139,6 +161,7 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
                   fontWeight: y === viewYear ? 800 : 500,
                   color: y === viewYear ? md3.primary : md3.onSurface,
                   bgcolor: y === viewYear ? md3.primaryContainer : 'transparent',
+                  opacity: yearOutOfRange(y) ? 0.34 : 1,
                   '&:hover': { bgcolor: md3.surfaceContainer },
                 }}
               >
@@ -177,11 +200,18 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
                   c.m === selected.getMonth() &&
                   c.day === selected.getDate();
                 const dateStr = `${c.y}-${String(c.m + 1).padStart(2, '0')}-${String(c.day).padStart(2, '0')}`;
-                const hasBookings = datesWithBookings.has(dateStr);
+                const dotted = hasBookings(dateStr);
+                const disabled = outOfRange(dateStr);
 
                 return (
                   <ButtonBase
                     key={i}
+                    disabled={disabled}
+                    aria-label={
+                      weston
+                        ? `${new Date(c.y, c.m, c.day).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}${dotted ? ', has tee times' : ''}`
+                        : undefined
+                    }
                     onClick={() => pick(c.y, c.m, c.day)}
                     sx={{
                       height: 34,
@@ -190,7 +220,7 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
                       borderRadius: '50%',
                       fontSize: 12.5,
                       fontWeight: isSelected || isToday ? 800 : 500,
-                      opacity: c.inMonth ? 1 : 0.34,
+                      opacity: disabled ? (c.inMonth ? 0.3 : 0.15) : c.inMonth ? 1 : 0.34,
                       color: isSelected ? '#fff' : isToday ? md3.primary : md3.onSurface,
                       bgcolor: isSelected ? md3.primary : 'transparent',
                       border: isToday && !isSelected ? `1.5px solid ${md3.primary}` : '1.5px solid transparent',
@@ -203,7 +233,7 @@ export function DatePickerPopover({ onClose }: { onClose: () => void }) {
                         width: 4,
                         height: 4,
                         borderRadius: '50%',
-                        bgcolor: hasBookings ? (isSelected ? '#fff' : md3.primary) : 'transparent',
+                        bgcolor: dotted && !disabled ? (isSelected ? '#fff' : md3.primary) : 'transparent',
                       }}
                     />
                   </ButtonBase>

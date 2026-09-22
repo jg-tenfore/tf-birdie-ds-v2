@@ -150,7 +150,21 @@ export interface PlayerState {
   paid: boolean;
   step: number;
   noShow: boolean;
+  /**
+   * Per-player overrides, set from the reservation (Weston Edits). Absent means the
+   * booking's own value: `holes` falls back to `booking.holes`, `fee` to `booking.price`,
+   * `transport` to `booking.cart`. On an 18-hole course a 9-hole player plays the front.
+   */
+  holes?: 9 | 18;
+  fee?: number;
+  transport?: Transport;
 }
+
+/**
+ * ID.me verification groups. Shown as a badge on a player (Weston Edits) — badge only for
+ * now: the verify flow waits on how Birdie presents it today.
+ */
+export type IdMeGroup = 'military' | 'veteran' | 'first_responder' | 'nurse' | 'teacher';
 
 /** A named player on a booking, hydrated from CRM or typed in at the counter. */
 export interface BookingGuest {
@@ -270,6 +284,19 @@ export interface CartPlayer {
   crmId?: string;
   phone?: string;
   memberType?: MemberTypeKey | null;
+  /**
+   * This player's green fee, when it differs from the line's `unitPrice` — set from the
+   * reservation's per-player fee, so a foursome with one 18-hole player prices each seat.
+   */
+  fee?: number;
+  /** Holes this player plays, when loaded from a reservation. Display only. */
+  holes?: 9 | 18;
+  /**
+   * Already settled on the booking — paid earlier, or a no-show. Either way the seat is on
+   * the order (so the operator sees the whole party) but charges nothing.
+   */
+  paid?: boolean;
+  noShow?: boolean;
 }
 
 /** A selected tee time attached to a check-in line. */

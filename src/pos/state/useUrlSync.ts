@@ -12,7 +12,10 @@ import { isNavigation, readUrl, stateToHash } from './url-state';
  * compact rows) replace the current entry instead, so Back isn't buried under dozens of
  * keystrokes.
  *
- * **URL → state.** Back, Forward, and hand-edited links dispatch the parsed patch.
+ * **URL → state.** Back, Forward, and hand-edited links dispatch the parsed patch — parsed
+ * against the running state (`readUrl(state)`), so it navigates the session rather than
+ * reseeding it: booking edits, generated days, the course layout and the cart survive, and
+ * only a link to another club (`?venue=`) re-homes the sheet.
  *
  * The two directions have to be kept from chasing each other: writing the URL fires no
  * event, but *applying* a popstate would otherwise immediately trigger a write of the
@@ -21,6 +24,9 @@ import { isNavigation, readUrl, stateToHash } from './url-state';
  */
 export function useUrlSync(state: PosState, dispatch: Dispatch<Action>) {
   const lastHash = useRef<string | null>(null);
+  // The last state written to the URL — which, once the effect below has run, is the
+  // latest state. The popstate listener parses against it (it is registered once, so it
+  // can't close over `state`).
   const prevState = useRef<PosState>(state);
 
   // ── State → URL ──
@@ -47,7 +53,7 @@ export function useUrlSync(state: PosState, dispatch: Dispatch<Action>) {
       const hash = window.location.hash;
       if (hash === lastHash.current) return;
       lastHash.current = hash;
-      dispatch({ type: 'applyUrl', patch: readUrl() });
+      dispatch({ type: 'applyUrl', patch: readUrl(prevState.current) });
     };
 
     window.addEventListener('popstate', onPopState);

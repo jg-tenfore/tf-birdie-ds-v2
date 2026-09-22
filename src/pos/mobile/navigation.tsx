@@ -38,21 +38,33 @@ export const TABS: Array<{ id: MobileTab; label: string; root: MobileRoute }> = 
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
-export type BookingTab = 'players' | 'financial' | 'notes' | 'activity';
+/** `customer` exists only in the Weston edition (the selected player's profile). */
+export type BookingTab = 'players' | 'customer' | 'financial' | 'notes' | 'activity';
 
 /**
  * Who a golfer picked from the People search gets attached to: the open order's customer
- * (`primary`), the tee time being booked (`booking`), or one seat on a round line.
+ * (`primary`), the tee time being booked (`booking`), one seat on a round line in the
+ * order, or one seat on a booking's reservation (Weston Edits — `assignPlayer`).
  */
-export type GolferPickTarget = 'primary' | 'booking' | { itemIdx: number; playerIdx: number };
+export type GolferPickTarget =
+  | 'primary'
+  | 'booking'
+  | { itemIdx: number; playerIdx: number }
+  | { bookingId: string; playerIndex: number };
 
 export type MobileRoute =
   // ── Tee Sheet (desktop sections 2 · Tee Sheet and 3 · Booking & Check-in)
-  | { name: 'teeSheet' }
+  /**
+   * `calendar` opens the date picker sheet on arrival (Weston Edits) — at a `YYYY-MM`
+   * month and in the day grid or the year → month chooser — so a story can show it
+   * without tapping.
+   */
+  | { name: 'teeSheet'; calendar?: { month?: string; view?: 'days' | 'years' | 'months' } }
   | { name: 'teeSheetFilters' }
   | { name: 'teeSheetSearch' }
   | { name: 'daySummary' }
-  | { name: 'bookingDetail'; bookingId: string; tab?: BookingTab }
+  /** `player` picks whose profile the Customer tab shows (Weston Edits); defaults to the booker. */
+  | { name: 'bookingDetail'; bookingId: string; tab?: BookingTab; player?: number }
   | { name: 'playerDetail'; bookingId: string; playerIndex: number }
   | { name: 'bookingAction'; bookingId: string; action: 'checkin' | 'refund' | 'raincheck' }
   | { name: 'newTeeTime'; courseId: string; timeMin: number; players?: number }

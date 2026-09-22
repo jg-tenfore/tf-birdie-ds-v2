@@ -397,7 +397,8 @@ export function NewBooking({
       cart: transport,
       status: isMemberRate ? 'member' : type === 'walkin' ? 'walkin' : 'booked',
       phone: golfer.phone || '—',
-      conf: `${isMemberRate ? 'M' : 'R'}-${Math.floor(Math.random() * 9000 + 1000)}`,
+      // A walk-in's code says so (`W-`); `R-` is a reservation booked ahead.
+      conf: `${isMemberRate ? 'M' : type === 'walkin' ? 'W' : 'R'}-${Math.floor(Math.random() * 9000 + 1000)}`,
       pay: type === 'walkin' ? 'paid' : 'open',
       price: rate?.price ?? 0,
       holes: is18 ? '18H' : '9H',

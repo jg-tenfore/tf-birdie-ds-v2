@@ -26,7 +26,7 @@ import { buildVenue } from '../pos/data/venues';
 import type { VenueId } from '../pos/data/venues';
 import { md3 } from '../theme/tokens';
 import { PhoneStage } from './PhoneStage';
-import { HOME, SCREENS, SECTIONS, findScreen } from './screen-index';
+import { HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
 import type { ScreenEntry } from './screen-index';
 
 /**
@@ -111,9 +111,26 @@ const clubHref = (id: VenueId) => {
   return DEV ? `/mobile/?venue=${id}${hash}` : `../${club.mobileDir}/${hash}`;
 };
 
-const TABLET_HREF = DEV
-  ? `http://localhost:5173/#/register?venue=${CLUB.id}`
-  : `../${CLUB.tabletDir}/`;
+// Weston Edits pairs with its own tablet prototype, at the 18-hole club.
+const TABLET_HREF = WESTON
+  ? DEV
+    ? 'http://localhost:5173/?edition=weston#/tee-sheet?venue=eighteen'
+    : '../weston-edits/'
+  : DEV
+    ? `http://localhost:5173/#/register?venue=${CLUB.id}`
+    : `../${CLUB.tabletDir}/`;
+
+/**
+ * Weston Edits is one club (18 holes), so its prototype names the edition instead of
+ * offering a club switch — switching would leave the edition.
+ */
+function EditionLabel() {
+  return (
+    <Stack direction="row" gap={0.75} sx={{ mt: 1.25 }}>
+      <Chip label="Weston Edits · 18 holes" size="small" color="primary" variant="filled" />
+    </Stack>
+  );
+}
 
 function ClubSwitcher() {
   return (
@@ -196,10 +213,12 @@ function SidebarHeader() {
   return (
     <Box sx={{ px: 2, pt: 2, pb: 1.5, borderBottom: `1px solid ${md3.outlineVariant}` }}>
       <Typography variant="h6" sx={{ fontWeight: 600, color: md3.onSurface }}>
-        ⛳ Birdie POS · Mobile
+        ⛳ Birdie POS · {WESTON ? 'Weston Edits · Mobile' : 'Mobile'}
       </Typography>
       <Typography variant="body2" sx={{ color: md3.onSurfaceVariant, mb: 1 }}>
-        {SCREENS.length} screens from Storybook's Mobile Screens
+        {WESTON
+          ? `${SCREENS.length} screens — Weston Edits first, then Mobile Screens`
+          : `${SCREENS.length} screens from Storybook's Mobile Screens`}
       </Typography>
       <Stack direction="row" gap={2} flexWrap="wrap">
         <Link href={storybookHref()} target="_blank" rel="noopener" variant="body2" underline="hover">
@@ -209,7 +228,7 @@ function SidebarHeader() {
           Tablet prototype
         </Link>
       </Stack>
-      <ClubSwitcher />
+      {WESTON ? <EditionLabel /> : <ClubSwitcher />}
     </Box>
   );
 }
@@ -380,7 +399,7 @@ export default function MobilePrototype() {
   const onRestart = useCallback(() => setRuns((n) => n + 1), []);
 
   useEffect(() => {
-    document.title = `Birdie POS — Mobile prototype · ${CLUB.label}`;
+    document.title = WESTON ? 'Birdie POS — Weston Edits · Mobile' : `Birdie POS — Mobile prototype · ${CLUB.label}`;
   }, []);
 
   useEffect(() => {

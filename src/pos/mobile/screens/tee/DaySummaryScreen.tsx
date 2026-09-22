@@ -5,7 +5,7 @@ import { formatTimeLabel, generateTimes } from '../../../data/courses';
 import { money } from '../../../logic/cart';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
-import { dayBookings } from '../../../state/pos-store';
+import { dayBookings, rateContext } from '../../../state/pos-store';
 import { usePos } from '../../../state/PosProvider';
 import { MobileScreen, TopAppBar } from '../../chrome';
 import { useMobileNav } from '../../navigation';
@@ -46,8 +46,9 @@ export function DaySummaryScreen(_: ScreenProps<'daySummary'>) {
   // A riding cart seats two, so four riders is two carts.
   const carts = real.filter((b) => b.cart === 'cart').reduce((s, b) => s + Math.ceil(b.players / 2), 0);
   const walkers = real.filter((b) => b.cart !== 'cart').reduce((s, b) => s + b.players, 0);
-  const owing = real.filter((b) => balanceOf(b) > 0 && b.pay !== 'no_show').sort((a, b) => a.timeMin - b.timeMin);
-  const outstanding = owing.reduce((s, b) => s + balanceOf(b), 0);
+  const rates = rateContext(state);
+  const owing = real.filter((b) => balanceOf(b, rates) > 0 && b.pay !== 'no_show').sort((a, b) => a.timeMin - b.timeMin);
+  const outstanding = owing.reduce((s, b) => s + balanceOf(b, rates), 0);
   const noShows = real.filter((b) => b.pay === 'no_show').length;
   const rows = generateTimes(state.settings).length;
 
@@ -124,7 +125,7 @@ export function DaySummaryScreen(_: ScreenProps<'daySummary'>) {
             key={b.id}
             booking={b}
             course={state.courses.find((c) => c.id === b.course)}
-            showTime={`${formatTimeLabel(b.timeMin)} · ${money(balanceOf(b))}`}
+            showTime={`${formatTimeLabel(b.timeMin)} · ${money(balanceOf(b, rates))}`}
             onClick={() => nav.push({ name: 'bookingDetail', bookingId: b.id, tab: 'financial' })}
           />
         ))}

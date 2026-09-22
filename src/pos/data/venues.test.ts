@@ -106,12 +106,12 @@ describe('round length comes from the course, not its label', () => {
     expect(eighteenCourse.holeCount).toBe(18);
   });
 
-  it('labels a walk-in on the 18-hole club as an 18-hole round', () => {
-    const booking = venueBookings('eighteen').find((b) => b.status === 'walkin')!;
-    const label = buildTeeTimeCart(booking)[0].name;
-    // buildTeeTimeCart resolves against the default COURSES, so this asserts the shape of
-    // the label rather than the venue's own count — the parsing bug would show as a label
-    // containing "FRONT" instead of a number.
-    expect(label).toMatch(/^(Walk-in|Tee Time) \d+ holes$/);
+  it("labels a round on the 18-hole club by the booking's holes", () => {
+    const booking = venueBookings('eighteen').find((b) => b.holes === '9H' && b.status === 'booked')!;
+    const label = buildTeeTimeCart(booking, venue('eighteen').courses)[0].name;
+    // The holes come off the booking (per player), never the course label — the parsing bug
+    // would show as a label containing "FRONT" instead of a number. And a booking on the
+    // sheet is a tee time, however it was made: never "Walk-in".
+    expect(label).toBe(`Tee Time ${booking.holes === '18H' ? 18 : 9} holes`);
   });
 });

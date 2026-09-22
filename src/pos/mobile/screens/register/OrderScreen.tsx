@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Button, ButtonBase, IconButton, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
 import Add from '@mui/icons-material/Add';
@@ -23,12 +23,17 @@ import { TRANSPORT_META } from '../../../data/config';
 import { COURSES, formatTimeLabel } from '../../../data/courses';
 import * as cartLogic from '../../../logic/cart';
 import { selectedBooking } from '../../../state/pos-store';
-import { usePos } from '../../../state/PosProvider';
+import { rateContext } from '../../../state/pos-store';
+import { useGolferRoster, usePos } from '../../../state/PosProvider';
 import type { CartItem } from '../../../types';
 import { BookingMemberDot, MemberDot, PayBadge } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { BottomActionBar, BottomSheet, MobileScreen, TopAppBar } from '../../chrome';
 import { useMobileNav } from '../../navigation';
+import { useWestonEdits } from '../../../edition';
+import { IdMeBadge } from '../tee/parts';
+import { partyHoles, partyTransport } from '../tee/reservation-helpers';
+import { seatIdMe } from '../../../logic/seat-customer';
 import {
   Callout,
   SeatAvatar,
@@ -67,6 +72,23 @@ export function OrderScreen() {
   const money = orderMoney(state.cart);
   const isReserve = state.flowMode === 'reserve';
   const needsTeeTime = Boolean(checkIn) && !checkIn?.teeTime && !booking;
+  // Weston Edits: a round loaded from a reservation is golf already decided — the order
+  // shows it read-only and sends edits back to the reservation.
+  const weston = useWestonEdits();
+  const golfSummary = weston && Boolean(booking) && Boolean(checkIn);
+
+  // Weston Edits: the reservation is the source of truth for the golf, and it can change
+  // after the order was opened (Edit reservation → back). When the order's golf lines no
+  // longer match what the booking builds, reload it — `loadBooking` on the same booking
+  // rebuilds only the golf and keeps retail, F&B and any payment already taken.
+  const staleGolf =
+    weston &&
+    booking != null &&
+    state.cart.some((i) => i.isCheckIn) &&
+    JSON.stringify(golfLines(state.cart)) !== JSON.stringify(golfLines(cartLogic.buildTeeTimeCart(booking, state.courses, rateContext(state))));
+  useEffect(() => {
+    if (staleGolf && booking) dispatch({ type: 'loadBooking', bookingId: booking.id });
+  }, [staleGolf, booking, dispatch]);
 
   const subtitle = booking
     ? `${booking.name} · ${booking.conf}`
@@ -138,7 +160,8 @@ export function OrderScreen() {
           )}
 
           {/* ── Round ── */}
-          {checkIn && (
+          {golfSummary && <GolfSummary item={checkIn!} />}
+          {checkIn && !golfSummary && (
             <>
               <Subheader
                 sx={{ mt: 1 }}
@@ -219,7 +242,11 @@ export function OrderScreen() {
           )}
           {money.total <= 0 && !state.lastPayment && (
             <Box sx={{ px: 2, pt: 1 }}>
-              <Callout tone="info">Nothing to charge — this order is covered by member rates.</Callout>
+              <Callout tone="info">
+                {cartLogic.cartIsSettled(state.cart)
+                  ? 'Nothing to charge — this tee time is already paid.'
+                  : 'Nothing to charge — this order is covered by member rates.'}
+              </Callout>
             </Box>
           )}
         </Box>
@@ -235,7 +262,7 @@ export function OrderScreen() {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{ paper: { sx: { minWidth: 220, borderRadius: `${radius.sm}px` } } }}
       >
-        {checkIn && checkIn.qty < 5 && (
+        {checkIn && !golfSummary && checkIn.qty < 5 && (
           <MenuItem onClick={menuAction(() => dispatch({ type: 'addPlayer', itemIndex: checkInIdx }))}>
             <ListItemIcon>
               <PersonAddOutlined />
@@ -299,6 +326,7 @@ function BookingCard() {
   const booking = selectedBooking(state)!;
   const course = state.courses.find((c) => c.id === booking.course) ?? COURSES.find((c) => c.id === booking.course);
   const transport = TRANSPORT_META[booking.cart]?.label ?? 'Walking';
+  const weston = useWestonEdits();
 
   return (
     <Box sx={{ borderRadius: `${radius.md}px`, bgcolor: mobile.surfaceContainerLow, border: `1px solid ${md3.outlineVariant}`, p: 2 }}>
@@ -314,7 +342,7 @@ function BookingCard() {
           {formatTimeLabel(booking.timeMin)} · {course?.name ?? booking.course}
         </Fact>
         <Fact icon={<GroupOutlined fontSize="small" />}>
-          {booking.players} players · {transport} · {booking.conf}
+          {booking.players} players · {weston ? `${partyHoles(booking)} · ${partyTransport(booking)}` : transport} · {booking.conf}
         </Fact>
         {booking.note && (
           <Fact icon={<StickyNote2Outlined fontSize="small" />}>{booking.note}</Fact>
@@ -325,7 +353,7 @@ function BookingCard() {
         sx={{ mt: 1, ml: -1.5 }}
         onClick={() => nav.openIn('tee', { name: 'bookingDetail', bookingId: booking.id })}
       >
-        View booking
+        {weston ? 'View reservation' : 'View booking'}
       </Button>
     </Box>
   );
@@ -495,6 +523,95 @@ function PlayerRows({ item, itemIdx }: { item: CartItem; itemIdx: number }) {
   );
 }
 
+/**
+ * Weston Edits · Register Golf Summary. The golf on the order, read-only: who's playing,
+ * holes, fee and transport, as the reservation set them. Weston: "the order comes after the
+ * golf … modifiers are used for food and beverage" — so golf lines have no per-player
+ * modifier push here, and no player stepper. **Edit reservation** goes back to the
+ * reservation on the Tee Sheet destination (see `editReservation`), and the order follows
+ * whatever is changed there.
+ */
+function GolfSummary({ item }: { item: CartItem }) {
+  const { state } = usePos();
+  const nav = useMobileNav();
+  const roster = useGolferRoster();
+  const booking = selectedBooking(state)!;
+  const unit = item.unitPrice ?? 0;
+  const players = item.players ?? [];
+  return (
+    <>
+      <Subheader
+        sx={{ mt: 1 }}
+        action={
+          <Button size="small" startIcon={<EditOutlined />} onClick={() => editReservation(nav, booking.id)}>
+            Edit reservation
+          </Button>
+        }
+      >
+        Golf · {item.name}
+      </Subheader>
+      <Box sx={{ mx: 2, borderRadius: `${radius.md}px`, border: `1px solid ${md3.outlineVariant}`, overflow: 'hidden' }}>
+        {players.map((p, i) => {
+          const name = seatName(p, i);
+          const settled = p.paid || p.noShow;
+          const transport = TRANSPORT_META[p.transport]?.label ?? 'Walking';
+          const idMe = seatIdMe(booking, i, roster);
+          const bd = cartLogic.playerBreakdown(unit, { ...p, paid: false, noShow: false });
+          return (
+            <Stack
+              key={i}
+              direction="row"
+              alignItems="center"
+              gap={2}
+              sx={{ px: 2, py: 1, minHeight: mobile.listItem.two, borderTop: i ? `1px solid ${md3.outlineVariant}` : 'none' }}
+            >
+              <SeatAvatar name={name} index={i} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" alignItems="center" gap={0.75}>
+                  <Typography variant="body1" noWrap sx={{ color: isNamedSeat(p, i) ? md3.onSurface : md3.onSurfaceVariant }}>
+                    {name}
+                  </Typography>
+                  <MemberDot name={p.name} memberType={p.memberType} />
+                  {idMe && <IdMeBadge group={idMe} compact />}
+                </Stack>
+                <Typography variant="body2" noWrap sx={{ color: md3.onSurfaceVariant }}>
+                  {p.holes ?? (/18/.test(item.name) ? 18 : 9)} holes · {transport}
+                  {p.noShow ? ' · no-show' : p.paid ? ' · paid' : ''}
+                </Typography>
+                <Typography variant="caption" noWrap component="div">
+                  Tee fee {cartLogic.money(bd.fee)}
+                  {bd.transport ? ` + cart ${cartLogic.money(bd.transport)}` : ''}
+                </Typography>
+              </Box>
+              {/* A settled seat shows what it cost, struck through — it's on the order, not on the bill. */}
+              <Typography variant="subtitle2" sx={{ color: settled ? md3.outline : md3.onSurface, textDecoration: settled ? 'line-through' : 'none' }}>
+                {cartLogic.money(bd.total)}
+              </Typography>
+            </Stack>
+          );
+        })}
+      </Box>
+      <Typography variant="caption" component="div" sx={{ px: 2, pt: 1 }}>
+        Players, holes, tee fees and transport come from the reservation. Add food, drinks and retail below.
+      </Typography>
+    </>
+  );
+}
+
+/** The golf part of a cart — check-in and tax lines — for comparing against the booking. */
+const golfLines = (cart: CartItem[]) => cart.filter((i) => i.isCheckIn || i.isTax || i.name === 'Taxes');
+
+/**
+ * Where Edit reservation goes: the reservation on the **Tee Sheet** destination, not a push
+ * over the order. The reservation's home is the tee sheet (Weston's point is not losing the
+ * sheet's context), each destination keeps its own stack, and the order stays put on the
+ * Register destination — badge and all — so "Check in & pay" or the Register tab returns to
+ * it. It's the same jump the order's "View booking" always made.
+ */
+function editReservation(nav: ReturnType<typeof useMobileNav>, bookingId: string) {
+  nav.openIn('tee', { name: 'bookingDetail', bookingId });
+}
+
 /** Retail line: name, unit price, a 48dp stepper, line total. Stepping to zero removes. */
 function RetailRow({ item, index }: { item: CartItem; index: number }) {
   const { dispatch } = usePos();
@@ -611,14 +728,38 @@ function OrderActions({ needsTeeTime, isReserve }: { needsTeeTime: boolean; isRe
     );
   }
 
+  // Bug fix (all editions): an order with nothing due — a paid booking reopened, or a member
+  // at $0 — no longer offers "Charge $0.00". It closes the order instead, which also
+  // detaches the booking so it can't ride along into the next sale.
+  if (total <= 0) {
+    const settled = cartLogic.cartIsSettled(state.cart);
+    return (
+      <BottomActionBar
+        summary={
+          <Typography variant="body2" sx={{ color: md3.onSurfaceVariant }}>
+            {settled ? 'Paid in full — nothing to charge.' : 'Nothing to charge.'}
+          </Typography>
+        }
+      >
+        <Button
+          variant="contained"
+          size="large"
+          fullWidth
+          onClick={() => {
+            dispatch({ type: 'clearOrder' });
+            toast(settled ? 'Order closed · already paid' : 'Order closed');
+            nav.popToRoot();
+          }}
+        >
+          Done
+        </Button>
+      </BottomActionBar>
+    );
+  }
+
   return (
     <BottomActionBar>
-      <Button
-        variant="contained"
-        size="large"
-        fullWidth
-        onClick={() => (total <= 0 ? toast('Nothing to charge') : nav.push({ name: 'checkout' }))}
-      >
+      <Button variant="contained" size="large" fullWidth onClick={() => nav.push({ name: 'checkout' })}>
         Charge {cartLogic.money(total)}
       </Button>
     </BottomActionBar>

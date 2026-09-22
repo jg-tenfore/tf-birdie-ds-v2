@@ -14,7 +14,7 @@ import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { MobileScreen, TopAppBar } from '../../chrome';
 import { useMobileNav } from '../../navigation';
-import { Subheader, ViewOrderBar, categoryColors, isHoleLocked, priceLabel, titleCase, useAddItem } from './parts';
+import { Subheader, ViewOrderBar, categoryColors, isHoleLocked, priceLabel, titleCase, useAddItem, useMobileWalkIn } from './parts';
 
 /**
  * Register — the destination root.
@@ -47,7 +47,11 @@ export function RegisterScreen() {
   const hasCheckIn = state.cart.some((i) => i.isCheckIn);
   const fresh = state.cart.length === 0 && !state.selectedBookingId;
 
+  const walkIn = useMobileWalkIn();
+
   const start = (mode: 'walkin' | 'reserve') => {
+    // Weston Edits: a walk-in goes straight to a reservation at the next open tee time.
+    if (mode === 'walkin' && walkIn.routes) return void walkIn.start();
     dispatch({ type: 'setFlowMode', mode });
     nav.push({ name: 'category', category: 'CHECK IN' });
   };
@@ -93,7 +97,7 @@ export function RegisterScreen() {
                 <StartCard
                   icon={<DirectionsWalk />}
                   label="Walk-in"
-                  hint="Play now"
+                  hint={walkIn.routes ? "Next open tee time" : "Play now"}
                   active={state.flowMode === 'walkin'}
                   onClick={() => start('walkin')}
                 />

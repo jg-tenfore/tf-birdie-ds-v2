@@ -6,6 +6,8 @@ import { mobileTheme } from '../../theme/mobile-theme';
 import { md3, mobile } from '../../theme/tokens';
 import type { PosState } from '../state/pos-store';
 import { PosProvider, usePos } from '../state/PosProvider';
+import { EditionProvider } from '../edition';
+import type { Edition } from '../edition';
 import { MobileFrame, NavigationBar } from './chrome';
 import type { MobileRoute, MobileTab, NavState } from './navigation';
 import { MobileNavProvider, PRESENTATION, createNavState, useMobileNav } from './navigation';
@@ -200,18 +202,22 @@ export interface MobileAppProps {
   stack?: MobileRoute[];
   /** Full navigation state, when a story needs several destinations' stacks. */
   nav?: NavState;
+  /** Which edition renders — see `edition.tsx`. Defaults to the build's own. */
+  edition?: Edition;
 }
 
-export function MobileApp({ initialState, tab = 'tee', stack, nav }: MobileAppProps) {
+export function MobileApp({ initialState, tab = 'tee', stack, nav, edition }: MobileAppProps) {
   return (
     <ThemeProvider theme={mobileTheme}>
-      <PosProvider initialState={initialState}>
-        <MobileNavProvider initial={nav ?? createNavState(tab, stack)}>
-          <MobileFrame>
-            <Router />
-          </MobileFrame>
-        </MobileNavProvider>
-      </PosProvider>
+      <EditionProvider edition={edition}>
+        <PosProvider initialState={initialState}>
+          <MobileNavProvider initial={nav ?? createNavState(tab, stack)}>
+            <MobileFrame>
+              <Router />
+            </MobileFrame>
+          </MobileNavProvider>
+        </PosProvider>
+      </EditionProvider>
     </ThemeProvider>
   );
 }

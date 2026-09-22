@@ -13,6 +13,7 @@ import {
   withWalkInOrder,
 } from '../../pos/state/scenarios';
 import type { PosState } from '../../pos/state/pos-store';
+import type { Edition } from '../../pos/edition';
 import type { VenueId } from '../../pos/data/venues';
 import { venueBookings } from '../../pos/data/venues';
 import type { Booking } from '../../pos/types';
@@ -101,7 +102,14 @@ function useFitScale(): number {
  * URL syncing stays off: Storybook already uses the address bar to track which story is
  * open, and a story rewriting the hash would fight it.
  */
-export function Screen({ initialState }: { initialState?: Partial<PosState> }) {
+export function Screen({
+  initialState,
+  edition,
+}: {
+  initialState?: Partial<PosState>;
+  /** Render Weston's edits (`'weston'`) or the base POS. Defaults to the build's own. */
+  edition?: Edition;
+}) {
   const scale = useFitScale();
   const [frame, setFrame] = useState<HTMLElement | null>(null);
   const scaled = scale < 1;
@@ -130,13 +138,13 @@ export function Screen({ initialState }: { initialState?: Partial<PosState> }) {
           >
             {frame && (
               <ModalContainerProvider container={frame}>
-                <PosApp initialState={initialState} />
+                <PosApp initialState={initialState} edition={edition} />
               </ModalContainerProvider>
             )}
           </Box>
         </Box>
       ) : (
-        <PosApp initialState={initialState} />
+        <PosApp initialState={initialState} edition={edition} />
       )}
     </Box>
   );

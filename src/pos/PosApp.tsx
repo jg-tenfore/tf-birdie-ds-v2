@@ -6,9 +6,13 @@ import { PosView } from './components/PosView';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
+import { ReservationPanel } from './components/ReservationPanel';
 import type { PosState } from './state/pos-store';
 import { PosProvider, usePos } from './state/PosProvider';
 import { useUrlSync } from './state/useUrlSync';
+import { useDemoDayFill } from './state/use-demo-day-fill';
+import { EditionProvider, useWestonEdits } from './edition';
+import type { Edition } from './edition';
 
 /**
  * The Birdie POS prototype.
@@ -28,6 +32,7 @@ import { useUrlSync } from './state/useUrlSync';
 export function PosShell({ children }: { children: React.ReactNode }) {
   return (
     <Box
+      data-pos-shell
       sx={{
         width: shell.width,
         height: shell.height,
@@ -61,6 +66,10 @@ function UrlSync() {
 /** Everything inside the frame — assumes a `PosProvider` above it. */
 export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   const { state, dispatch } = usePos();
+  // Weston Edits: any date within a year of today gets a generated tee sheet. Here rather
+  // than in the tee sheet so everything that reads the viewed day — grid, list, the day
+  // summary, the register's tee-time picker — sees the same filled day.
+  useDemoDayFill(useWestonEdits());
 
   return (
     <PosShell>
@@ -68,6 +77,7 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       <LeftPanel />
       {state.view === 'pos' ? <PosView /> : <TeeSheetView />}
 
+      <ReservationPanel />
       <ModalHost />
       <ContextMenus />
       <TeeSheetSidebar />
@@ -106,14 +116,19 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
 export function PosApp({
   initialState,
   syncUrl,
+  edition,
 }: {
   initialState?: Partial<PosState>;
   syncUrl?: boolean;
+  /** Which edition renders — see `edition.tsx`. Defaults to the build's own. */
+  edition?: Edition;
 }) {
   return (
-    <PosProvider initialState={initialState}>
-      <PosAppBody syncUrl={syncUrl} />
-    </PosProvider>
+    <EditionProvider edition={edition}>
+      <PosProvider initialState={initialState}>
+        <PosAppBody syncUrl={syncUrl} />
+      </PosProvider>
+    </EditionProvider>
   );
 }
 

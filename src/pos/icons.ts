@@ -7,6 +7,8 @@ import Handyman from '@mui/icons-material/Handyman';
 import Speed from '@mui/icons-material/Speed';
 import Inventory2 from '@mui/icons-material/Inventory2';
 import Add from '@mui/icons-material/Add';
+import Remove from '@mui/icons-material/Remove';
+import LinkIcon from '@mui/icons-material/Link';
 import AddCircle from '@mui/icons-material/AddCircle';
 import AddShoppingCart from '@mui/icons-material/AddShoppingCart';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -124,6 +126,8 @@ import WorkspacePremium from '@mui/icons-material/WorkspacePremium';
  */
 export const ICONS: Record<string, SvgIconComponent> = {
   add: Add,
+  remove: Remove,
+  link: LinkIcon,
   add_circle: AddCircle,
   add_shopping_cart: AddShoppingCart,
   arrow_back: ArrowBack,

@@ -8,6 +8,7 @@ import type { ScreenProps } from '../types';
 import { GolferList, GolferSearchHeader } from './parts';
 import { useGolferSearch } from './people-utils';
 import { attachGolfer } from './pick-golfer';
+import { playerName } from '../../../logic/reservation';
 
 /**
  * The People search in picker mode.
@@ -23,10 +24,14 @@ export function GolferPickerScreen({ route }: ScreenProps<'golferPicker'>) {
   const search = useGolferSearch();
   const { target } = route;
 
-  const seatTarget = typeof target === 'object' ? target : null;
+  const seatTarget = typeof target === 'object' && 'itemIdx' in target ? target : null;
   const item = seatTarget ? state.cart[seatTarget.itemIdx] : null;
   const seat = seatTarget ? item?.players?.[seatTarget.playerIdx] : null;
-  const title = target === 'booking' ? 'Customer for tee time' : 'Add golfer';
+  // A seat on a reservation (Weston Edits): swapping or naming a player before checkout.
+  const resTarget = typeof target === 'object' && 'bookingId' in target ? target : null;
+  const resBooking = resTarget ? state.bookings.find((b) => b.id === resTarget.bookingId) : undefined;
+  const resSeat = resTarget && resBooking ? playerName(resBooking, resTarget.playerIndex) : null;
+  const title = target === 'booking' ? 'Customer for tee time' : resTarget ? 'Customer for player' : 'Add golfer';
   const subtitle =
     target === 'primary'
       ? 'Customer for this order'
@@ -34,7 +39,9 @@ export function GolferPickerScreen({ route }: ScreenProps<'golferPicker'>) {
         ? state.bookingGolfer
           ? `Replaces ${state.bookingGolfer.name}`
           : 'Who the tee time is booked for'
-        : `Player ${target.playerIdx + 1}${seat?.name ? ` · replaces ${seat.name}` : ''} · ${item?.name ?? 'round'}`;
+        : resTarget
+          ? `Player ${resTarget.playerIndex + 1}${resSeat && !/^Guest \d+$/.test(resSeat) ? ` · replaces ${resSeat}` : ''} · ${resBooking?.name ?? 'reservation'}`
+          : `Player ${seatTarget!.playerIdx + 1}${seat?.name ? ` · replaces ${seat.name}` : ''} · ${item?.name ?? 'round'}`;
 
   return (
     <MobileScreen
@@ -47,7 +54,7 @@ export function GolferPickerScreen({ route }: ScreenProps<'golferPicker'>) {
       <GolferList
         golfers={search.results}
         onPick={(g) => {
-          attachGolfer(dispatch, target, g);
+          attachGolfer(dispatch, target, g, state.bookings);
           toast(`${g.name} added`);
           nav.pop();
         }}

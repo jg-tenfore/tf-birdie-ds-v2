@@ -1,17 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Box, ButtonBase, Drawer, InputBase, Typography } from '@mui/material';
 import { md3, memberTypes, payBadges, radius, shifts } from '../../theme/tokens';
 import { TRANSPORT_META } from '../data/config';
 import { formatTimeLabel } from '../data/courses';
 import { findMemberByPhone } from '../data/golfers';
 import { activeFilterCount, filterBookings, groupBookings, payCounts } from '../logic/bookings';
-import { dayBookings } from '../state/pos-store';
+import { dayBookings, rateContext } from '../state/pos-store';
+import { reservationDue } from '../logic/reservation';
 import { moneyShort } from '../logic/cart';
 import type { ListFilters } from '../state/pos-store';
 import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
 import { EmptyState, Icon, MemberDot, PayBadge, SectionLabel } from './primitives';
 import { Stack } from './Stack';
+import { useOpenBooking } from './use-open-booking';
+import { usePanelSqueeze, useScrollBookingIntoView } from './use-scroll-booking-into-view';
 
 /**
  * List view — the tee sheet as filterable cards rather than a grid.
@@ -27,6 +30,10 @@ export function ListView() {
   const { state, dispatch } = usePos();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Weston Edits: the list narrows beside the reservation panel, like the grid.
+  const squeeze = usePanelSqueeze();
+  useScrollBookingIntoView(scrollRef, state.reservationPanel?.bookingId);
 
   const all = dayBookings(state);
   const shift = shifts[state.shift] ?? shifts.full;
@@ -54,7 +61,7 @@ export function ListView() {
   ];
 
   return (
-    <Stack sx={{ flex: 1, minHeight: 0, bgcolor: md3.surface, overflow: 'hidden' }}>
+    <Stack data-panel-squeeze sx={{ flex: 1, minHeight: 0, minWidth: 0, bgcolor: md3.surface, overflow: 'hidden', ...squeeze }}>
       {/* ── Filter bar ── */}
       <Stack
         direction="row"
@@ -187,7 +194,17 @@ export function ListView() {
       )}
 
       {/* ── Cards ── */}
-      <Box sx={{ flex: 1, overflowY: 'auto', p: '14px 18px', minHeight: 0 }}>
+      {/* Weston Edits: the opened booking scrolls into view (the list itself narrows beside
+          the panel). */}
+      <Box
+        ref={scrollRef}
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          p: '14px 18px',
+          minHeight: 0,
+        }}
+      >
         {filtered.length === 0 ? (
           <EmptyState icon="search_off" label="No tee times match these filters" />
         ) : (
@@ -222,20 +239,25 @@ export function ListView() {
  */
 function ListCard({ booking }: { booking: Booking }) {
   const { state, dispatch } = usePos();
+  const openBooking = useOpenBooking();
   const course = state.courses.find((c) => c.id === booking.course);
   const roster = useGolferRoster();
   const member = findMemberByPhone(booking.phone, roster);
   const isNoShow = booking.pay === 'no_show';
 
-  const unpaid = (booking.playerStates ?? []).filter((p) => !p.paid && !p.noShow).length;
-  const balance = unpaid * booking.price;
+  // Each unpaid player's own fee — a member in a guest's group owes the member rate.
+  const balance = reservationDue(booking, rateContext(state));
   const checkedIn = (booking.playerStates ?? []).filter((p) => p.step >= 0 && !p.noShow).length;
+
+  // The booking the reservation panel is showing (Weston Edits), outlined as on the grid.
+  const inPanel = state.reservationPanel?.bookingId === booking.id;
 
   return (
     <Stack
+      data-booking-id={booking.id}
       direction="row"
       gap={1.5}
-      onClick={() => dispatch({ type: 'loadBooking', bookingId: booking.id })}
+      onClick={() => openBooking(booking.id)}
       onContextMenu={(e) => {
         e.preventDefault();
         dispatch({
@@ -246,7 +268,8 @@ function ListCard({ booking }: { booking: Booking }) {
       sx={{
         alignItems: 'flex-start',
         bgcolor: '#fff',
-        border: `1.5px solid ${md3.outlineVariant}`,
+        border: `1.5px solid ${inPanel ? md3.onSurface : md3.outlineVariant}`,
+        outline: inPanel ? `1px solid ${md3.onSurface}` : 'none',
         borderRadius: `${radius.lg}px`,
         p: '12px 14px',
         cursor: 'pointer',

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { buildEdition } from '../pos/edition';
 import { parseStoryExports, storyId, storyNameFromExport } from './story-meta';
 
 /**
@@ -51,17 +52,38 @@ const sources = import.meta.glob<string>('../showcase/pos-mobile/*/*.stories.tsx
   eager: true,
 });
 
-function buildIndex(): ScreenEntry[] {
+/**
+ * Weston Edits' phone stories (`/weston-edits-mobile/` only). Globbed eagerly in every build
+ * — Vite needs a static glob — but only indexed when the build's edition is `weston`, so the
+ * base mobile prototypes list exactly what they did before.
+ */
+const WESTON_PREFIX = 'Weston Edits/';
+const westonModules = import.meta.glob<StoryModule>('../showcase/weston-edits/*/Mobile.stories.tsx', { eager: true });
+const westonSources = import.meta.glob<string>('../showcase/weston-edits/*/Mobile.stories.tsx', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+/** `Weston Edits/1 · Reservation Panel/Mobile` → `Weston Edits · 1 · Reservation Panel`. */
+const westonSection = (title: string) =>
+  `Weston Edits · ${title.slice(WESTON_PREFIX.length).replace(/\/Mobile$/, '')}`;
+
+function buildIndex(
+  mods: Record<string, StoryModule>,
+  srcs: Record<string, string>,
+  sectionOf: (title: string) => string,
+): ScreenEntry[] {
   // Paths start with the numbered section folder (`0-navigation`, `1-register` …), so a
   // path sort is Storybook's sidebar order too.
-  const paths = Object.keys(modules).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+  const paths = Object.keys(mods).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
   const entries: ScreenEntry[] = [];
   for (const path of paths) {
-    const mod = modules[path];
+    const mod = mods[path];
     const title = mod.default?.title;
     if (!title) continue;
-    const section = title.startsWith(PREFIX) ? title.slice(PREFIX.length) : title;
-    for (const { exportName, description } of parseStoryExports(sources[path] ?? '')) {
+    const section = sectionOf(title);
+    for (const { exportName, description } of parseStoryExports(srcs[path] ?? '')) {
       if (exportName === 'default' || exportName === '__namedExportsOrder') continue;
       const story = mod[exportName] as StoryExport | undefined;
       if (!story || typeof story !== 'object' || typeof story.render !== 'function') continue;
@@ -79,7 +101,17 @@ function buildIndex(): ScreenEntry[] {
   return entries;
 }
 
-export const SCREENS: ScreenEntry[] = buildIndex();
+/** True in the Weston Edits mobile prototype. */
+export const WESTON = buildEdition() === 'weston';
+
+const MOBILE_SCREENS = buildIndex(modules, sources, (title) =>
+  title.startsWith(PREFIX) ? title.slice(PREFIX.length) : title,
+);
+
+/** The Weston Edits screens come first in their prototype, then every Mobile Screens story. */
+export const SCREENS: ScreenEntry[] = WESTON
+  ? [...buildIndex(westonModules, westonSources, westonSection), ...MOBILE_SCREENS]
+  : MOBILE_SCREENS;
 
 export const SECTIONS: ScreenSection[] = SCREENS.reduce<ScreenSection[]>((acc, entry) => {
   const last = acc[acc.length - 1];
@@ -88,8 +120,14 @@ export const SECTIONS: ScreenSection[] = SCREENS.reduce<ScreenSection[]>((acc, e
   return acc;
 }, []);
 
-/** `#/` — the live app from the Tee Sheet root: the 0 · Navigation / Interactive story. */
-export const HOME_ID = 'mobile-screens-0-·-navigation--interactive';
+/**
+ * `#/` — the live app from the Tee Sheet root: the 0 · Navigation / Interactive story, or in
+ * the Weston Edits prototype its own free-running app (1 · Reservation Panel / From The Tee
+ * Sheet), which renders the weston edition at the 18-hole club.
+ */
+export const HOME_ID = WESTON
+  ? 'weston-edits-1-·-reservation-panel-mobile--from-the-tee-sheet'
+  : 'mobile-screens-0-·-navigation--interactive';
 
 export const HOME: ScreenEntry = SCREENS.find((s) => s.id === HOME_ID) ?? SCREENS[0];
 

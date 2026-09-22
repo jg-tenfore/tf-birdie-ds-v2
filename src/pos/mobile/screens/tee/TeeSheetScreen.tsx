@@ -17,12 +17,16 @@ import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { dayBookings, timeRowKey } from '../../../state/pos-store';
 import { moneyShort } from '../../../logic/cart';
+import { useWestonEdits } from '../../../edition';
 import { usePos } from '../../../state/PosProvider';
 import type { Booking, Course } from '../../../types';
 import { BottomSheet, MobileScreen, TopAppBar } from '../../chrome';
 import { useMobileNav } from '../../navigation';
 import type { ScreenProps } from '../types';
 import { BookingCard, FilterChip } from './parts';
+import { CalendarSheet, WeekStrip } from './DateNavigation';
+import { useDemoDayFill } from '../../../state/use-demo-day-fill';
+import { clampToDemoRange } from '../../../state/demo-days';
 import { bandMeta, bandOf, checkedInCount, dayLabel, isSlotHolder, parseDateStr, plural, shortCourse, useLongPress } from './tee-helpers';
 
 /**
@@ -38,10 +42,14 @@ import { bandMeta, bandOf, checkedInCount, dayLabel, isSlotHolder, parseDateStr,
  * its quick actions. Both sheets are driven by `state.contextMenu`, the same slot the
  * terminal's menus use, so a story can open either declaratively.
  */
-export function TeeSheetScreen(_: ScreenProps<'teeSheet'>) {
+export function TeeSheetScreen({ route }: ScreenProps<'teeSheet'>) {
   const { state, dispatch } = usePos();
   const nav = useMobileNav();
-  const [datesOpen, setDatesOpen] = useState(false);
+  const weston = useWestonEdits();
+  // Weston Edits: the route can open the calendar sheet on arrival (stories).
+  const [datesOpen, setDatesOpen] = useState(() => weston && Boolean(route.calendar));
+  // Weston Edits: any date within a year of today gets a generated tee sheet.
+  useDemoDayFill(weston);
 
   const f = state.listFilters;
   const filterCount = activeFilterCount(f);
@@ -94,7 +102,11 @@ export function TeeSheetScreen(_: ScreenProps<'teeSheet'>) {
         >
           {/* Date navigation: prev / date chip / next. */}
           <Stack direction="row" alignItems="center" gap={0.5} sx={{ px: 1, pb: 1 }}>
-            <IconButton aria-label="Previous day" onClick={() => dispatch({ type: 'shiftDate', days: -1 })}>
+            {/* Weston Edits: the week strip covers day-by-day, so ‹ › move a week. */}
+            <IconButton
+              aria-label={weston ? 'Previous week' : 'Previous day'}
+              onClick={() => dispatch(weston ? { type: 'setDate', date: clampToDemoRange(shiftedDate(state.currentDate, -7)) } : { type: 'shiftDate', days: -1 })}
+            >
               <ChevronLeft />
             </IconButton>
             <ButtonBase
@@ -114,10 +126,14 @@ export function TeeSheetScreen(_: ScreenProps<'teeSheet'>) {
               {dayLabel(state.currentDate)}
               <ArrowDropDown sx={{ color: md3.onSurfaceVariant }} />
             </ButtonBase>
-            <IconButton aria-label="Next day" onClick={() => dispatch({ type: 'shiftDate', days: 1 })}>
+            <IconButton
+              aria-label={weston ? 'Next week' : 'Next day'}
+              onClick={() => dispatch(weston ? { type: 'setDate', date: clampToDemoRange(shiftedDate(state.currentDate, 7)) } : { type: 'shiftDate', days: 1 })}
+            >
               <ChevronRight />
             </IconButton>
           </Stack>
+          {weston && <WeekStrip />}
           {/* Course scope: all, or exactly one. */}
           <Stack
             direction="row"
@@ -214,7 +230,8 @@ export function TeeSheetScreen(_: ScreenProps<'teeSheet'>) {
       })}
       <Box sx={{ height: 24 }} />
 
-      <BottomSheet open={datesOpen} onClose={() => setDatesOpen(false)} title="Go to date">
+      {weston && datesOpen && <CalendarSheet initial={route.calendar} onClose={() => setDatesOpen(false)} />}
+      <BottomSheet open={!weston && datesOpen} onClose={() => setDatesOpen(false)} title="Go to date">
         <List disablePadding>
           {days.map((ds) => {
             const d = parseDateStr(ds);
@@ -246,6 +263,9 @@ export function TeeSheetScreen(_: ScreenProps<'teeSheet'>) {
     </MobileScreen>
   );
 }
+
+/** A date `n` days on, at midnight. */
+const shiftedDate = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 
 /** Bookings keyed by tee time, each row in course order then slot order. */
 function groupByTime(list: Booking[], courses: Course[]): Map<number, Booking[]> {
@@ -519,6 +539,7 @@ function TimeActionsSheet({ timeMin, course, onClose }: { timeMin: number; cours
 function BookingActionsSheet({ bookingId, onClose }: { bookingId: string; onClose: () => void }) {
   const { state, dispatch, toast } = usePos();
   const nav = useMobileNav();
+  const weston = useWestonEdits();
   const b = state.bookings.find((x) => x.id === bookingId);
   if (!b) return null;
   const course = state.courses.find((c) => c.id === b.course);
@@ -533,16 +554,29 @@ function BookingActionsSheet({ bookingId, onClose }: { bookingId: string; onClos
         { icon: 'edit', label: b.pay === 'event' ? 'Edit league' : 'Edit block', run: go(() => nav.push(b.pay === 'event' ? { name: 'league', timeMin: b.groupMeta?.startMin ?? b.timeMin } : { name: 'blockTime', timeMin: b.timeMin, courseId: b.course })) },
       ]
     : [
-        { icon: 'open_in_full', label: 'Booking details', run: go(() => nav.push({ name: 'bookingDetail', bookingId: b.id })) },
-        {
-          icon: 'point_of_sale',
-          label: 'Check in & pay',
-          secondary: 'Opens the order in Register',
-          run: go(() => {
-            dispatch({ type: 'loadBooking', bookingId: b.id });
-            nav.openIn('register', { name: 'order' });
-          }),
-        },
+        // Weston Edits: the golf is set up on the reservation first, so the shortcut opens
+        // it rather than skipping straight to the register — Check in & pay lives there.
+        ...(weston
+          ? [
+              {
+                icon: 'event_available',
+                label: 'Open reservation',
+                secondary: 'Players, holes, tee fees, transport',
+                run: go(() => nav.push({ name: 'bookingDetail', bookingId: b.id })),
+              },
+            ]
+          : [
+              { icon: 'open_in_full', label: 'Booking details', run: go(() => nav.push({ name: 'bookingDetail', bookingId: b.id })) },
+              {
+                icon: 'point_of_sale',
+                label: 'Check in & pay',
+                secondary: 'Opens the order in Register',
+                run: go(() => {
+                  dispatch({ type: 'loadBooking', bookingId: b.id });
+                  nav.openIn('register', { name: 'order' });
+                }),
+              },
+            ]),
         {
           icon: 'how_to_reg',
           label: 'Check in all players',

@@ -6,6 +6,7 @@ import { dayBookings } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import { Icon, MemberDot, PayBadge, SectionLabel } from './primitives';
 import { Stack } from './Stack';
+import { useOpenBooking } from './use-open-booking';
 
 /**
  * The day / course summary drawer.
@@ -17,6 +18,7 @@ import { Stack } from './Stack';
  */
 export function TeeSheetSidebar() {
   const { state, dispatch } = usePos();
+  const openBooking = useOpenBooking();
   const course = state.sidebarCourse
     ? state.courses.find((c) => c.id === state.sidebarCourse)
     : null;
@@ -104,7 +106,7 @@ export function TeeSheetSidebar() {
                 gap={1.25}
                 onClick={() => {
                   dispatch({ type: 'closeSidebar' });
-                  dispatch({ type: 'loadBooking', bookingId: b.id });
+                  openBooking(b.id);
                 }}
                 sx={{
                   p: '9px 11px',

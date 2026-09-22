@@ -29,9 +29,26 @@ import type { ScreenProps } from '../types';
 import { BookingGone, Callout, FilterChip, MemberBadge, PlayerAvatar, SectionHeader, Segmented, StatusBadge } from './parts';
 import { balanceOf, checkedInCount, dayLabel, isSlotHolder, parseDateStr, playerName, plural, roundStepOf, seatMemberType } from './tee-helpers';
 import { checkInPlayer } from '../../../logic/bookings';
+import { useWestonEdits } from '../../../edition';
+import { playerFee, playerHoles, playerIsAdjusted, playerTransport } from '../../../logic/reservation';
+import { ReservationCustomerTab } from './ReservationCustomer';
+import { ReservationPlayersTab } from './ReservationPlayers';
+import { partyHoles, partyTransport, reservationCharge, transportMeta, useRates } from './reservation-helpers';
 
 const TABS: Array<{ id: BookingTab; label: string }> = [
   { id: 'players', label: 'Players' },
+  { id: 'financial', label: 'Financial' },
+  { id: 'notes', label: 'Notes' },
+  { id: 'activity', label: 'Activity' },
+];
+
+/**
+ * Weston Edits: the reservation's tabs. Customer sits beside Players because it's the same
+ * people seen as customers — the profile Weston wanted to open without leaving the booking.
+ */
+const WESTON_TABS: Array<{ id: BookingTab; label: string }> = [
+  { id: 'players', label: 'Players' },
+  { id: 'customer', label: 'Customer' },
   { id: 'financial', label: 'Financial' },
   { id: 'notes', label: 'Notes' },
   { id: 'activity', label: 'Activity' },
@@ -51,25 +68,42 @@ const TABS: Array<{ id: BookingTab; label: string }> = [
 export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
   const { state, dispatch, toast } = usePos();
   const nav = useMobileNav();
+  const weston = useWestonEdits();
   const [sheet, setSheet] = useState<null | 'actions' | 'delete'>(null);
   const roster = useGolferRoster();
   const b = state.bookings.find((x) => x.id === route.bookingId);
   if (!b) return <BookingGone />;
 
   const course = state.courses.find((c) => c.id === b.course);
-  const tab = route.tab ?? 'players';
+  // `customer` is a Weston tab; a base-edition route that names it falls back to Players.
+  const tab = route.tab === 'customer' && !weston ? 'players' : (route.tab ?? 'players');
+  const tabs = weston ? WESTON_TABS : TABS;
   const holder = isSlotHolder(b);
   const unpaid = (b.playerStates ?? []).filter((p) => !p.paid && !p.noShow).length;
-  const balance = balanceOf(b);
+  // Bug fix (all editions): the button's amount is what the order will charge — fees,
+  // transport and tax — not unpaid players × rate, which left out carts and tax.
+  const due = reservationCharge(b, state).total;
   const closed = b.pay === 'no_show' || b.pay === 'refund';
   const memberType = seatMemberType(b, 0, roster);
 
   const checkInAndPay = () => {
+    // Weston Edits: "Check in & pay" checks everyone in (no-shows aside), as the tablet
+    // panel's does — the base edition's button only opens the order.
+    const settled = b.playerStates.every((p) => p.paid || p.noShow);
+    if (weston && !settled && !closed) {
+      dispatch({
+        type: 'patchBooking',
+        bookingId: b.id,
+        patch: { playerStates: b.playerStates.map((p) => (p.noShow ? p : checkInPlayer(p))) },
+      });
+    }
     dispatch({ type: 'loadBooking', bookingId: b.id });
     nav.openIn('register', { name: 'order' });
   };
 
-  const bottomBar = holder ? undefined : closed ? (
+  const bottomBar = holder ? undefined : weston ? (
+    <ReservationActions booking={b} onCheckInAndPay={checkInAndPay} />
+  ) : closed ? (
     <BottomActionBar>
       <Button variant="outlined" fullWidth onClick={checkInAndPay}>
         Open in Register
@@ -83,7 +117,7 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
         </Button>
       )}
       <Button variant="contained" disableElevation fullWidth onClick={checkInAndPay}>
-        Check in & pay{balance > 0 ? ` · ${money(balance)}` : ''}
+        Check in & pay{due > 0 ? ` · ${money(due)}` : ''}
       </Button>
     </BottomActionBar>
   ) : (
@@ -147,7 +181,7 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
             {memberType && <MemberBadge type={memberType} />}
             {!holder && (
               <Typography variant="body2" sx={{ color: md3.onSurfaceVariant }}>
-                {plural(b.players, 'player')} · {b.holes} · {TRANSPORT_META[b.cart]?.label}
+                {plural(b.players, 'player')} · {weston ? partyHoles(b) : b.holes} · {weston ? partyTransport(b) : TRANSPORT_META[b.cart]?.label}
               </Typography>
             )}
           </Stack>
@@ -158,12 +192,12 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
               onChange={(_, v: BookingTab) => nav.replace({ ...route, tab: v })}
               sx={{
                 borderBottom: `1px solid ${md3.outlineVariant}`,
-                '& .MuiTab-root': { color: md3.onSurfaceVariant, px: 0.5, minWidth: 0 },
+                '& .MuiTab-root': { color: md3.onSurfaceVariant, px: weston ? 0.25 : 0.5, minWidth: 0, ...(weston && { fontSize: 13, letterSpacing: 0 }) },
                 '& .MuiTab-root.Mui-selected': { color: md3.primary },
                 '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' },
               }}
             >
-              {TABS.map((t) => (
+              {tabs.map((t) => (
                 <Tab key={t.id} value={t.id} label={t.label} />
               ))}
             </Tabs>
@@ -176,7 +210,8 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
         <HolderBody booking={b} />
       ) : (
         <>
-          {tab === 'players' && <PlayersTab booking={b} />}
+          {tab === 'players' && (weston ? <ReservationPlayersTab booking={b} /> : <PlayersTab booking={b} />)}
+          {tab === 'customer' && <ReservationCustomerTab booking={b} player={route.player} />}
           {tab === 'financial' && <FinancialTab booking={b} />}
           {tab === 'notes' && <NotesTab key={b.id} booking={b} />}
           {tab === 'activity' && <ActivityTab booking={b} />}
@@ -351,12 +386,17 @@ function PlayersTab({ booking: b }: { booking: Booking }) {
  */
 function FinancialTab({ booking: b }: { booking: Booking }) {
   const nav = useMobileNav();
+  const weston = useWestonEdits();
+  const rates = useRates();
   const states = b.playerStates ?? [];
-  const owed = balanceOf(b);
+  const owed = balanceOf(b, rates);
   const trail = b.financialActions ?? [];
 
   return (
     <Box sx={{ p: 2 }}>
+      {weston ? (
+        <ReservationMoney booking={b} />
+      ) : (
       <Stack
         direction="row"
         alignItems="flex-end"
@@ -374,6 +414,7 @@ function FinancialTab({ booking: b }: { booking: Booking }) {
           <Typography variant="subtitle1">{money(b.price)}</Typography>
         </Box>
       </Stack>
+      )}
       {b.paymentRecord && (
         <Typography variant="body2" sx={{ mt: 1, color: md3.onSurfaceVariant }}>
           Paid {money(b.paymentRecord.amount)} by {b.paymentRecord.method} at {b.paymentRecord.time}
@@ -384,12 +425,25 @@ function FinancialTab({ booking: b }: { booking: Booking }) {
       {states.map((p, i) => (
         <Stack key={i} direction="row" alignItems="center" gap={1.5} sx={{ minHeight: 48, borderBottom: `1px solid ${md3.outlineVariant}` }}>
           <PlayerAvatar name={playerName(b, i)} index={i} size={28} dim={p.noShow} />
-          <Typography variant="body1" noWrap sx={{ flex: 1, minWidth: 0 }}>
-            {playerName(b, i)}
-          </Typography>
-          <Typography variant="subtitle2" sx={{ color: p.noShow || (!p.paid && !b.price) ? md3.outline : p.paid ? payBadges.paid.text : md3.error }}>
-            {p.noShow ? 'No-show' : p.paid ? 'Paid' : b.price ? money(b.price) : 'No charge'}
-          </Typography>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body1" noWrap>
+              {playerName(b, i)}
+            </Typography>
+            {weston && (
+              <Typography variant="caption" component="div" noWrap>
+                {playerHoles(b, i)} holes · {transportMeta(playerTransport(b, i)).long}
+                {playerIsAdjusted(b, i) ? ' · adjusted' : ''}
+              </Typography>
+            )}
+          </Box>
+          {(() => {
+            const fee = playerFee(b, i, rates);
+            return (
+              <Typography variant="subtitle2" sx={{ color: p.noShow || (!p.paid && !fee) ? md3.outline : p.paid ? payBadges.paid.text : md3.error }}>
+                {p.noShow ? 'No-show' : p.paid ? 'Paid' : fee ? money(fee) : 'No charge'}
+              </Typography>
+            );
+          })()}
         </Stack>
       ))}
 
@@ -423,6 +477,105 @@ function FinancialTab({ booking: b }: { booking: Booking }) {
         </>
       )}
     </Box>
+  );
+}
+
+/**
+ * Weston Edits: what the register will charge for this reservation as it stands — the
+ * adjusted fees, transport and tax, priced by the same functions the order uses, so the
+ * Financial tab, the Check in & pay button and the order total are one number.
+ */
+function ReservationMoney({ booking: b }: { booking: Booking }) {
+  const { state } = usePos();
+  const m = reservationCharge(b, state);
+  const row = (label: string, value: string, color?: string) => (
+    <Stack direction="row" justifyContent="space-between" sx={{ py: 0.25 }}>
+      <Typography variant="body2" sx={{ color: md3.onSurfaceVariant }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 500, color }}>
+        {value}
+      </Typography>
+    </Stack>
+  );
+  return (
+    <Box sx={{ p: 2, borderRadius: `${radius.lg}px`, bgcolor: md3.surfaceContainer }}>
+      <Stack direction="row" alignItems="flex-end" justifyContent="space-between">
+        <Box>
+          <Typography variant="caption">{m.total > 0 ? 'Due at check-in' : 'Nothing due'}</Typography>
+          <Typography variant="h3" sx={{ color: m.total > 0 ? md3.error : payBadges.paid.text, fontWeight: 500 }}>
+            {money(m.total)}
+          </Typography>
+        </Box>
+        <Box sx={{ textAlign: 'right' }}>
+          <Typography variant="caption">Booking rate</Typography>
+          <Typography variant="subtitle1">{money(b.price)}</Typography>
+        </Box>
+      </Stack>
+      {m.total > 0 && (
+        <Box sx={{ mt: 1.5, pt: 1, borderTop: `1px solid ${md3.outlineVariant}` }}>
+          {row('Tee fees & transport', money(m.subtotal))}
+          {m.discount < 0 && row('Discounts', money(m.discount), md3.error)}
+          {row('Tax', money(m.tax))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+/**
+ * Weston Edits: the pinned action. "Check in & pay" carries the amount the register will
+ * charge for the reservation as adjusted; when nothing is due (paid in full, or a member at
+ * $0) it doesn't ask for money at all — it checks the party in, with the register one tap
+ * away for anything they buy.
+ */
+function ReservationActions({ booking: b, onCheckInAndPay }: { booking: Booking; onCheckInAndPay: () => void }) {
+  const { state } = usePos();
+  const nav = useMobileNav();
+  const closed = b.pay === 'no_show' || b.pay === 'refund';
+  const { total } = reservationCharge(b, state);
+  const allIn = checkedInCount(b) === b.players;
+  const checkIn = () => nav.push({ name: 'bookingAction', bookingId: b.id, action: 'checkin' });
+  const settled = (b.playerStates ?? []).every((p) => p.paid || p.noShow);
+
+  if (closed) {
+    return (
+      <BottomActionBar>
+        <Button variant="outlined" fullWidth onClick={onCheckInAndPay}>
+          Open in Register
+        </Button>
+      </BottomActionBar>
+    );
+  }
+  if (total > 0) {
+    return (
+      <BottomActionBar>
+        {!allIn && (
+          <Button variant="outlined" sx={{ flexShrink: 0, whiteSpace: 'nowrap' }} onClick={checkIn}>
+            Check in
+          </Button>
+        )}
+        <Button variant="contained" disableElevation fullWidth onClick={onCheckInAndPay}>
+          Check in & pay · {money(total)}
+        </Button>
+      </BottomActionBar>
+    );
+  }
+  return (
+    <BottomActionBar
+      summary={
+        <Typography variant="body2" sx={{ color: md3.onSurfaceVariant }}>
+          {settled ? 'Paid in full — nothing to charge.' : 'No charge at this rate.'}
+        </Typography>
+      }
+    >
+      <Button variant="outlined" sx={{ flexShrink: 0, whiteSpace: 'nowrap' }} onClick={onCheckInAndPay}>
+        Register
+      </Button>
+      <Button variant="contained" disableElevation fullWidth disabled={allIn} onClick={checkIn}>
+        {allIn ? 'All checked in' : 'Check in'}
+      </Button>
+    </BottomActionBar>
   );
 }
 

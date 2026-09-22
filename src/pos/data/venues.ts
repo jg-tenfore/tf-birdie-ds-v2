@@ -1,5 +1,5 @@
 import type { Booking, Course } from '../types';
-import { createBookings } from './bookings';
+import { createBookings, generateDayBookings } from './bookings';
 
 /**
  * Venue configurations — the three shapes of club this POS is shown against.
@@ -144,11 +144,31 @@ export function venueBookings(id: VenueId): Booking[] {
   const cached = cache.get(id);
   if (cached) return cached;
 
-  const { courseMap } = venue(id);
-  const remapped = createBookings()
-    .filter((b) => courseMap[b.course])
-    .map((b) => (courseMap[b.course] === b.course ? b : { ...b, course: courseMap[b.course] }));
-
+  const remapped = rehome(createBookings(), id);
   cache.set(id, remapped);
   return remapped;
+}
+
+/** Fixtures authored against the three-nines club, moved onto a venue's courses (or dropped). */
+function rehome(list: Booking[], id: VenueId): Booking[] {
+  const { courseMap } = venue(id);
+  return list
+    .filter((b) => courseMap[b.course])
+    .map((b) => (courseMap[b.course] === b.course ? b : { ...b, course: courseMap[b.course] }));
+}
+
+const dayCache = new Map<string, Booking[]>();
+
+/**
+ * A generated demo day (`generateDayBookings`) re-homed onto a venue's courses — the same
+ * `courseMap` as `venueBookings`, so a generated day fits the club exactly as the window
+ * does. Memoized per venue and date; `[]` for window days and out-of-range dates.
+ */
+export function venueDayBookings(id: VenueId, dateStr: string): Booking[] {
+  const key = `${id}|${dateStr}`;
+  const cached = dayCache.get(key);
+  if (cached) return cached;
+  const out = rehome(generateDayBookings(dateStr), id);
+  dayCache.set(key, out);
+  return out;
 }

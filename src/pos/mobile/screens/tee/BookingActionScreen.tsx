@@ -14,6 +14,7 @@ import type { ScreenProps } from '../types';
 import { BookingGone, Callout, PlayerAvatar, SectionHeader, StatusBadge } from './parts';
 import { playerName, plural, roundStepOf, useBooking } from './tee-helpers';
 import { checkInPlayer } from '../../../logic/bookings';
+import { demoNow } from '../../../data/bookings';
 
 /** Which seats each action starts with ticked — the likely answer, so one tap confirms. */
 function initialPick(action: 'checkin' | 'refund' | 'raincheck', states: PlayerState[]): number[] {
@@ -62,7 +63,7 @@ export function BookingActionScreen({ route }: ScreenProps<'bookingAction'>) {
       });
       toast(`${plural(picked.length, 'player')} checked in · ${b.name}`);
     } else {
-      const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const time = demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       const whole = picked.length === states.length;
       const entries: FinancialAction[] = whole
         ? [{ time, label: route.action === 'refund' ? 'Refund (group)' : 'Rain check (all)', player: 'Entire group', type: route.action === 'refund' ? 'refund' : 'raincheck_all' }]

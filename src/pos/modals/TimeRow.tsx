@@ -27,6 +27,8 @@ import {
   SelectField,
 } from './ModalFrame';
 import { Stack } from '../components/Stack';
+import { demoNow, minutesOfDay } from '../data/bookings';
+import { rateBand } from '../logic/rates';
 
 /**
  * Time-row operations — everything reachable from the tee sheet's time gutter, plus
@@ -1046,10 +1048,8 @@ export function CourseRates({ courseId }: { courseId: string }) {
   const { state, dispatch } = usePos();
   const course = state.courses.find((c) => c.id === courseId);
   const dayName = state.currentDate.toLocaleDateString('en-US', { weekday: 'long' });
-  const nowH = new Date().getHours();
-  const [band, setBand] = useState<'early' | 'peak' | 'twilight'>(
-    nowH < 10 ? 'early' : nowH < 14 ? 'peak' : 'twilight',
-  );
+  // Opens on the band the demo clock is in (`demoNow`), like the rest of the sheet.
+  const [band, setBand] = useState<'early' | 'peak' | 'twilight'>(() => rateBand(minutesOfDay(demoNow())));
 
   const rows = RATE_PRICING[band] ?? [];
 

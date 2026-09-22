@@ -2,14 +2,15 @@ import type { ReactNode } from 'react';
 import { Box, ButtonBase, Chip, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import Check from '@mui/icons-material/Check';
-import { md3, memberTypes, mobile, noteColors, payBadges, playerAccents, radius } from '../../../../theme/tokens';
+import VerifiedUser from '@mui/icons-material/VerifiedUser';
+import { idMeGroups, md3, memberTypes, mobile, noteColors, payBadges, playerAccents, radius } from '../../../../theme/tokens';
 import type { MemberTypeKey } from '../../../../theme/tokens';
 import { TRANSPORT_META } from '../../../data/config';
 import { findMemberByPhone } from '../../../data/golfers';
 import { useGolferRoster } from '../../../state/PosProvider';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
-import type { Booking, Course, PayStatus } from '../../../types';
+import type { Booking, Course, IdMeGroup, PayStatus } from '../../../types';
 import { MobileScreen, TopAppBar } from '../../chrome';
 import { checkedInCount, initials, isSlotHolder, shortCourse, useLongPress } from './tee-helpers';
 
@@ -63,6 +64,28 @@ export function MemberBadge({ type }: { type: MemberTypeKey }) {
     >
       <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: cfg.color }} />
       {cfg.label}
+    </Stack>
+  );
+}
+
+/**
+ * ID.me verification badge (Weston Edits) at phone size: a shield and the group. Same 22dp
+ * height as the pay and member badges so a player row's badges line up. `compact` drops the
+ * "ID.me" prefix for tight rows — the shield carries it.
+ */
+export function IdMeBadge({ group, compact }: { group: IdMeGroup; compact?: boolean }) {
+  const cfg = idMeGroups[group];
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      gap={0.5}
+      component="span"
+      aria-label={`ID.me verified · ${cfg.label}`}
+      sx={{ height: 22, px: 0.75, borderRadius: `${radius.sm / 2}px`, bgcolor: cfg.bg, color: cfg.text, fontSize: 11, fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}
+    >
+      <VerifiedUser sx={{ fontSize: 14 }} />
+      {compact ? cfg.label : `ID.me · ${cfg.label}`}
     </Stack>
   );
 }
