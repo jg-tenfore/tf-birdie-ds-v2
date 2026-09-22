@@ -1,0 +1,210 @@
+import { describe, expect, it } from 'vitest';
+import { TRANSPORT_RATES } from '../data/rate-catalog';
+import { roster } from '../data/roster';
+import { availableCarts, signedOutCarts } from '../data/carts';
+import type { Booking } from '../types';
+import {
+  clearPlayerDiscount,
+  playerFee,
+  playerTransport,
+  resetPlayerRate,
+  returnCart,
+  setGroupRate,
+  setPlayerDiscount,
+  setPlayerHoles,
+  setPlayerRate,
+  setPlayerTransportFee,
+  setPlayerTransportRate,
+  signOutCart,
+} from './reservation';
+import { seatPrice, seatRate, seatRateGrid, seatRecord, seatTransportFee, seatUsesPunch } from './seat-pricing';
+
+/**
+ * Weston Edits follow-ups (3): a seat is sold on a named rate, transport is priced, and a
+ * discount leaves a reason behind.
+ *
+ * The load-bearing property is the last group: a booking nobody has touched must price exactly
+ * as it did before the catalog existed. Two hundred authored bookings and every test written
+ * against them depend on it.
+ */
+
+const apply = (b: Booking, patch: Partial<Booking>): Booking => ({ ...b, ...patch });
+const seat = () => ({ paid: false, step: -1, noShow: false });
+
+/** A guest foursome at 11:00 AM on Thursday May 21 — peak, 18 holes, rack rate. */
+const foursome = (over: Partial<Booking> = {}): Booking => ({
+  id: 'b1',
+  date: '2026-05-21',
+  course: 'champ-front',
+  slot: 0,
+  timeMin: 660,
+  name: 'Nobody, X.',
+  players: 4,
+  cart: 'cart',
+  status: 'booked',
+  phone: '(555)000-0000',
+  conf: 'R-9001',
+  pay: 'open',
+  price: 72,
+  holes: '18H',
+  playerStates: [seat(), seat(), seat(), seat()],
+  ...over,
+});
+
+describe('the rate grid', () => {
+  it('offers what this slot sells, and pre-picks rack for a seat nobody is identified on', () => {
+    const b = foursome();
+    const grid = seatRateGrid(b, 18);
+    expect(grid.length).toBeGreaterThan(0);
+    expect(seatRate(b, 1)?.rack).toBe(true);
+  });
+
+  it('pre-picks a member their membership rate once the seat is linked', () => {
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const b = foursome({ guests: [{ name: 'x' }, { name: member.displayName, crmId: member.id }] });
+    expect(seatRecord(b, 1)?.id).toBe(member.id);
+    expect(seatRate(b, 1)?.name).toBe('Membership 7 Days');
+  });
+
+  it('never prices a seat off its name alone', () => {
+    // The seat is called exactly what a member is called, but nothing is linked. It pays rack.
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const b = foursome({ guests: [{ name: 'x' }, { name: member.displayName }] });
+    expect(seatRecord(b, 1)).toBeNull();
+    expect(seatRate(b, 1)?.rack).toBe(true);
+  });
+});
+
+describe('choosing a rate', () => {
+  it('reprices the seat from the catalog', () => {
+    const b = foursome();
+    const junior = seatRateGrid(b, 18).find((r) => r.name === 'Weekday Junior')!;
+    const next = apply(b, setPlayerRate(b, 1, junior.id));
+    expect(playerFee(next, 1)).toBe(junior.p18);
+    expect(playerFee(next, 2)).toBe(72); // everyone else is untouched
+  });
+
+  it('does not pin a choice that matches what the system already picked', () => {
+    const b = foursome();
+    const auto = seatRate(b, 1)!;
+    const next = apply(b, setPlayerRate(b, 1, auto.id));
+    expect(next.playerStates[1].rateId).toBeUndefined();
+  });
+
+  it('keeps the rate across a 9 ↔ 18 switch and charges that rate for the new length', () => {
+    const b = foursome();
+    const junior = seatRateGrid(b, 18).find((r) => r.name === 'Weekday Junior')!;
+    const chosen = apply(b, setPlayerRate(b, 1, junior.id));
+    const switched = apply(chosen, setPlayerHoles(chosen, 1, 9));
+    expect(seatRate(switched, 1)?.name).toBe('Weekday Junior');
+    expect(playerFee(switched, 1)).toBe(junior.p9);
+  });
+
+  it('lets staff type over the rate, and reset comes back to it', () => {
+    const b = foursome();
+    const junior = seatRateGrid(b, 18).find((r) => r.name === 'Weekday Junior')!;
+    let next = apply(b, setPlayerRate(b, 1, junior.id));
+    next = apply(next, { playerStates: next.playerStates.map((p, j) => (j === 1 ? { ...p, fee: 12 } : p)) });
+    expect(playerFee(next, 1)).toBe(12);
+    next = apply(next, resetPlayerRate(next, 1));
+    expect(playerFee(next, 1)).toBe(72); // back to what the system picks
+  });
+
+  it('puts the whole group on one rate, skipping paid seats', () => {
+    const b = foursome({
+      playerStates: [seat(), { ...seat(), paid: true }, seat(), seat()],
+    });
+    const junior = seatRateGrid(b, 18).find((r) => r.name === 'Weekday Junior')!;
+    const next = apply(b, setGroupRate(b, junior.id));
+    expect(next.playerStates[0].rateId).toBe(junior.id);
+    expect(next.playerStates[1].rateId).toBeUndefined();
+    expect(next.playerStates[3].rateId).toBe(junior.id);
+  });
+});
+
+describe('transport', () => {
+  it('charges a trail fee for walking — the case a walk/ride toggle cannot express', () => {
+    const b = foursome({ cart: 'walking' });
+    expect(seatTransportFee(b, 0)).toBeGreaterThan(0);
+  });
+
+  it('moves the seat to the row s mode, so the toggle and the tiles cannot disagree', () => {
+    const b = foursome({ cart: 'cart' });
+    const walking = TRANSPORT_RATES.find((t) => t.id === 'tr-walking')!;
+    const next = apply(b, setPlayerTransportRate(b, 1, walking.id));
+    expect(playerTransport(next, 1)).toBe('walking');
+    expect(seatTransportFee(next, 1)).toBe(walking.price);
+  });
+
+  it('spends a punch instead of money', () => {
+    const b = foursome();
+    const next = apply(b, setPlayerTransportRate(b, 1, 'tr-punch-cart'));
+    expect(seatUsesPunch(next, 1)).toBe(true);
+    expect(seatTransportFee(next, 1)).toBe(0);
+  });
+
+  it('lets staff type over the transport price', () => {
+    const b = foursome();
+    const next = apply(b, setPlayerTransportFee(b, 1, 10));
+    expect(seatTransportFee(next, 1)).toBe(10);
+  });
+});
+
+describe('discounts', () => {
+  it('comps a seat to nothing and says why', () => {
+    const b = foursome();
+    const next = apply(b, setPlayerDiscount(b, 1, 'disc-comp'));
+    const p = seatPrice(next, 1, playerFee(next, 1));
+    expect(p.greenFee).toBe(0);
+    expect(p.reason).toBe('Comped');
+  });
+
+  it('takes a percentage off the seat s own fee', () => {
+    const b = foursome();
+    const next = apply(b, setPlayerDiscount(b, 1, 'disc-50'));
+    expect(seatPrice(next, 1, playerFee(next, 1)).greenFee).toBe(36);
+  });
+
+  it('clears cleanly', () => {
+    const b = foursome();
+    let next = apply(b, setPlayerDiscount(b, 1, 'disc-comp'));
+    next = apply(next, clearPlayerDiscount(next, 1));
+    expect(seatPrice(next, 1, playerFee(next, 1)).greenFee).toBe(72);
+  });
+});
+
+describe('cart signout', () => {
+  it('hands out a key and puts the player in a cart', () => {
+    const b = foursome({ cart: 'walking' });
+    const next = apply(b, signOutCart(b, 1, 14));
+    expect(next.playerStates[1].cartKey).toBe(14);
+    expect(playerTransport(next, 1)).toBe('cart');
+  });
+
+  it('takes the cart out of circulation until it is returned', () => {
+    const b = foursome();
+    const out = apply(b, signOutCart(b, 1, 14));
+    expect(availableCarts([out])).not.toContain(14);
+    const back = apply(out, returnCart(out, 1));
+    expect(signedOutCarts([back])).toEqual([]);
+  });
+});
+
+describe('a booking nobody has touched', () => {
+  it('prices exactly as it did before the catalog existed', () => {
+    // The load-bearing case. No rateId anywhere means the booking's own rate, not the
+    // catalog's idea of what this person should pay.
+    const b = foursome();
+    for (let i = 0; i < 4; i++) expect(playerFee(b, i)).toBe(72);
+  });
+
+  it('still shows a rate name, so the row can print one', () => {
+    const b = foursome();
+    expect(seatRate(b, 0)?.name).toBeTruthy();
+  });
+
+  it('keeps a comped booking comped', () => {
+    const b = foursome({ price: 0 });
+    expect(playerFee(b, 0)).toBe(0);
+  });
+});
