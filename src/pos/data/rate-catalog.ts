@@ -103,7 +103,7 @@ function buildHeavy(): Record<RateBand, Array<Omit<GreenFeeRate, 'id'>>> {
     { name: 'Military', base18: 44, base9: 28, rule: { customerTypes: ['Military'] } },
     { name: 'First Responder', base18: 44, base9: 28, rule: { customerTypes: ['Hero'] } },
     { name: 'Employee', base18: 0, base9: 0, rule: { customerTypes: ['Employee'] } },
-    { name: 'Employee Guest', base18: 30, base9: 18, rule: { customerTypes: ['Employee', 'Guest of Members'] } },
+    { name: 'Employee Guest', base18: 30, base9: 18, rule: { customerTypes: ['Guest of Members'] } },
     { name: 'Membership 7 Days', base18: 0, base9: 0, rule: { memberships: ['Full Golf', 'Corporate — 4 seat'] } },
     { name: 'Membership Weekday', base18: 0, base9: 0, rule: { memberships: ['Weekday Golf'], days: [1, 2, 3, 4, 5] } },
     { name: 'Membership Trial', base18: 18, base9: 11, rule: { memberships: ['Trial Month'] } },
@@ -193,7 +193,10 @@ export function isEligible(rate: { eligibility: RateEligibility }, customer: Cus
   if (!customer) return false;
   if (e.membersOnly && isMember(customer)) return true;
   if (e.memberships?.some((m) => customer.memberships.some((h) => h.name === m))) return true;
-  if (e.customerTypes?.every((t) => customer.customerTypes.includes(t))) return true;
+  // Any, not all — the same reading as `memberships` above. Requiring every listed type meant
+  // a customer carrying plain `Resident` failed the Weekday Resident row, which lists two
+  // spellings of the same thing.
+  if (e.customerTypes?.some((t) => customer.customerTypes.includes(t))) return true;
   return false;
 }
 

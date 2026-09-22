@@ -7,6 +7,7 @@ import type { RateContext } from './rates';
 import {
   seatCanSwitchHoles,
   seatCatalogFee,
+  seatNetGreenFee,
   seatRate,
   seatRateIsChosen,
   seatTransportRate,
@@ -217,9 +218,17 @@ export function setGroupTransport(b: Booking, transport: Transport): Partial<Boo
   };
 }
 
-/** What is still owed on the reservation: unpaid players still playing. */
+/**
+ * What is still owed on the reservation: unpaid players still playing.
+ *
+ * The **net** fee, so a comped or punch-paid seat reduces it. Summing `playerFee` here was how
+ * the panel footer came to disagree with the row above it.
+ */
 export function reservationDue(b: Booking, rates?: RateContext): number {
-  return b.playerStates.reduce((sum, p, i) => (p.noShow || p.paid ? sum : sum + playerFee(b, i, rates)), 0);
+  return b.playerStates.reduce(
+    (sum, p, i) => (p.noShow || p.paid ? sum : sum + seatNetGreenFee(b, i, playerFee(b, i, rates))),
+    0,
+  );
 }
 
 /** True when nobody on the booking owes anything — everyone paid, or a no-show. */
@@ -241,7 +250,10 @@ export function roundLabel(b: Booking): string {
 
 /** Everyone's fees, summed, over the players still playing (no-shows excluded). */
 export function reservationGreenFees(b: Booking, rates?: RateContext): number {
-  return b.playerStates.reduce((sum, p, i) => (p.noShow ? sum : sum + playerFee(b, i, rates)), 0);
+  return b.playerStates.reduce(
+    (sum, p, i) => (p.noShow ? sum : sum + seatNetGreenFee(b, i, playerFee(b, i, rates))),
+    0,
+  );
 }
 
 // ─── Phone reservation screen (appended by the mobile half) ─────────────────

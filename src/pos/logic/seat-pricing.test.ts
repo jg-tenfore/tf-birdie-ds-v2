@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TRANSPORT_RATES, transportById } from '../data/rate-catalog';
 import { roster } from '../data/roster';
+import { buildTeeTimeCart, orderTotals } from './cart';
 import { availableCarts, signedOutCarts } from '../data/carts';
 import type { Booking } from '../types';
 import {
@@ -14,6 +15,7 @@ import {
   setGroupRate,
   setPlayerDiscount,
   setPlayerHoles,
+  reservationDue,
   setPlayerRate,
   setPlayerTransportFee,
   setPlayerTransportRate,
@@ -258,5 +260,57 @@ describe('a booking nobody has touched', () => {
   it('keeps a comped booking comped', () => {
     const b = foursome({ price: 0 });
     expect(playerFee(b, 0)).toBe(0);
+  });
+});
+
+describe('what the row says and what the register charges', () => {
+  /**
+   * The bug this group exists to prevent.
+   *
+   * Round 3 added three ways for a seat's price to move — a discount, a punch card, a chosen
+   * transport row — and all three were display-only when first built: the player row read
+   * $0.00 while Check in & pay and the register's Pay still charged the full green fee. The
+   * reservation's own "due" figure disagreed with the row directly above it.
+   *
+   * So every one of them is asserted end to end here: the row, the reservation total, and the
+   * order the register would actually take.
+   */
+  const orderTotal = (x: Booking) => orderTotals(buildTeeTimeCart(x)).total;
+
+  it('takes a comped seat off the order, not just off the row', () => {
+    const b = foursome();
+    const comped = apply(b, setPlayerDiscount(b, 1, 'disc-comp'));
+    expect(seatPrice(comped, 1, playerFee(comped, 1)).greenFee).toBe(0);
+    expect(reservationDue(comped)).toBe(reservationDue(b) - 72);
+    expect(orderTotal(comped)).toBeLessThan(orderTotal(b));
+  });
+
+  it('takes a punch-paid round off the order', () => {
+    const b = foursome();
+    const holder = roster.find((c) => c.punchCards.some((p) => p.remaining > 0))!;
+    const punched = apply(b, applyPunchCard(b, 1, holder.id, holder.punchCards[0].name));
+    expect(reservationDue(punched)).toBe(reservationDue(b) - 72);
+    expect(orderTotal(punched)).toBeLessThan(orderTotal(b));
+  });
+
+  it('charges no green-fee tax on a seat with no green fee', () => {
+    const b = foursome();
+    const comped = apply(b, setPlayerDiscount(b, 1, 'disc-comp'));
+    expect(orderTotals(buildTeeTimeCart(comped)).tax).toBeLessThan(
+      orderTotals(buildTeeTimeCart(b)).tax,
+    );
+  });
+
+  it('bills the transport row the counter actually picked', () => {
+    const b = foursome();
+    const plus = apply(b, setPlayerTransportRate(b, 1, 'tr-cart-plus'));
+    expect(orderTotal(plus)).toBeGreaterThan(orderTotal(b));
+  });
+
+  it('leaves an untouched booking priced exactly as before', () => {
+    // The other half of the rule: the catalog takes over only once someone picks something.
+    const b = foursome();
+    expect(orderTotal(b)).toBe(orderTotal(foursome()));
+    expect(reservationDue(b)).toBe(72 * 4);
   });
 });

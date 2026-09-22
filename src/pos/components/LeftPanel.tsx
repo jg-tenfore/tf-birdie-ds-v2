@@ -42,7 +42,11 @@ export function LeftPanel() {
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();
-  const orderCount = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
+  // Tax is a line on the order, not a thing anyone added, so counting it made clearing a
+  // threesome's golf read "4 items will be removed".
+  const orderCount = state.cart
+    .filter((item) => !item.isTax && item.name !== 'Taxes')
+    .reduce((n, item) => n + (item.qty ?? 1), 0);
   const hasOrder = orderCount > 0;
   const runQuickAction = useQuickAction();
 

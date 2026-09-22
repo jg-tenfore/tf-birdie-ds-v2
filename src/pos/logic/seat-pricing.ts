@@ -210,3 +210,32 @@ export function seatPrice(b: Booking, i: number, baseFee: number, ctx: SeatPrici
     total: +(greenFee + transportFee).toFixed(2),
   };
 }
+
+// ─── The seam the order prices through ──────────────────────────────────────
+
+/**
+ * What seat `i` actually owes for the round, after a discount or a punch card.
+ *
+ * `playerFee` answers a narrower question — what the *rate* charges — and the row, the
+ * reservation's total, the cart line and the tax all have to agree with what the counter is
+ * about to take. Round 3 added three ways for those to diverge (a discount, a punch, a typed
+ * transport price), and every one of them was a display-only change until this existed: the row
+ * read $0 while Check in & pay still charged the green fee.
+ */
+export const seatNetGreenFee = (b: Booking, i: number, baseFee: number, ctx: SeatPricingContext = {}): number =>
+  seatPrice(b, i, baseFee, ctx).greenFee;
+
+/**
+ * The transport price the seat was explicitly put on, or `undefined` to leave it alone.
+ *
+ * Deliberately not "the catalog price always". A booking nobody has touched carries no
+ * transport row, and repricing it from the catalog would move two hundred authored bookings and
+ * every total written against them. The catalog takes over only once someone picks a row or
+ * types a price — the same rule the green fee follows.
+ */
+export function seatTransportOverride(b: Booking, i: number): number | undefined {
+  const p = b.playerStates[i];
+  if (p?.transportFee != null) return p.transportFee;
+  if (p?.transportRateId != null) return seatTransportRate(b, i).price;
+  return undefined;
+}

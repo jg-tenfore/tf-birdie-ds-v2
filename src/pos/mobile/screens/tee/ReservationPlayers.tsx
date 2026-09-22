@@ -329,7 +329,10 @@ function PlayerRow({
         )}
         <ControlChip
           disabled={locked}
-          label={`Rate ${sp.rate?.name ?? ''} ${money(sp.greenFee)}`}
+          // The label stays the fee, which is what the chip shows; the rate's *name* is on the
+          // meta line right below it, so putting it here too would only make the chip harder to
+          // read aloud and harder to find.
+          label={`Tee fee ${money(sp.greenFee)}`}
           onClick={() => nav.push({ name: 'seatRate', bookingId: b.id, seat: i })}
           strong={b.playerStates[i]?.fee != null || b.playerStates[i]?.rateId != null}
         >

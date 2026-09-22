@@ -431,9 +431,19 @@ const Amount = ({ children }: { children: React.ReactNode }) => (
   </Box>
 );
 
+/**
+ * Uppercased by CSS, not by `String()`.
+ *
+ * `String(children)` looked equivalent for a plain string, but JSX hands an *array* for
+ * anything interpolated — `<Label>Green fee · {holes} holes</Label>` became
+ * "GREEN FEE · ,9, HOLES" on screen. Letting the browser do the casing also leaves the text
+ * selectable and searchable as written.
+ */
 const Label = ({ children, sx }: { children: React.ReactNode; sx?: object }) => (
-  <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.4, color: md3.outline, ...sx }}>
-    {String(children).toUpperCase()}
+  <Typography
+    sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.4, color: md3.outline, textTransform: 'uppercase', ...sx }}
+  >
+    {children}
   </Typography>
 );
 
