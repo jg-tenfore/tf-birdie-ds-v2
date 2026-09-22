@@ -5,6 +5,7 @@ import type { ShiftKey } from '../../theme/tokens';
 import { DEMO_TODAY } from '../data/bookings';
 import { dayGolferCount, timeRowKey } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
+import { useWestonEdits } from '../edition';
 import { DatePickerPopover } from './DatePickerPopover';
 import { ListView } from './ListView';
 import { SwitchButton } from './PosView';
@@ -22,6 +23,7 @@ import { Stack } from './Stack';
  */
 export function TeeSheetView() {
   const { state, dispatch } = usePos();
+  const weston = useWestonEdits();
 
   return (
     <Stack sx={{ flex: 1, minWidth: 0, height: '100%' }}>
@@ -29,8 +31,13 @@ export function TeeSheetView() {
       {state.multiSelectActive && <MultiSelectBar />}
       {state.teeSheetMode === 'cal' ? <TeeSheetGrid /> : <ListView />}
 
-      {/* The collapsed left panel leaves a rail to bring it back. */}
-      {state.leftPanelCollapsed && (
+      {/*
+        The collapsed left panel leaves a floating control to bring it back — but only in the
+        base edition, where the rail collapses to nothing and there would otherwise be no way
+        back. Weston's edition collapses to a strip that carries its own hamburger, so this
+        would be a second control for one job, floating over the first.
+      */}
+      {state.leftPanelCollapsed && !weston && (
         <ButtonBase
           onClick={() => dispatch({ type: 'toggleLeftPanel', collapsed: false })}
           title="Show order panel"
