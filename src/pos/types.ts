@@ -158,6 +158,27 @@ export interface PlayerState {
   holes?: 9 | 18;
   fee?: number;
   transport?: Transport;
+  /**
+   * The rate this seat is sold on (`rate-catalog.ts`), chosen from the tile grid.
+   *
+   * Absent means nobody has picked one, and the seat reads the rate the system would pick
+   * from the player's own record (`autoRate`). Storing the choice rather than the number is
+   * what lets the row print "Course Level Fee : $26.00" instead of a bare amount, and what
+   * keeps a switched 9 ↔ 18 on the same *rate* rather than resetting to rack.
+   */
+  rateId?: string;
+  /**
+   * The transport row this seat is sold on. Absent falls back to the default row for the
+   * booking's mode, so a booking made before transport had a catalog still prices correctly.
+   */
+  transportRateId?: string;
+  /** A typed-over transport price, the way `fee` overrides the green fee. */
+  transportFee?: number;
+  /** A discount preset applied to the seat, and the amount when it is a manual one. */
+  discountId?: string;
+  discountManual?: number;
+  /** The cart signed out to this player, if any. Drives the key glyph on the chip. */
+  cartKey?: number;
 }
 
 /**
