@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MoreVert from '@mui/icons-material/MoreVert';
 import { md3, memberTypes, payBadges, radius } from '../../../../theme/tokens';
@@ -21,6 +22,7 @@ import { money, moneyShort } from '../../../logic/cart';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
+import { dayBookings } from '../../../state/pos-store';
 import type { Booking, PlayerState, Transport } from '../../../types';
 import { BottomActionBar, BottomSheet, MobileScreen, TopAppBar } from '../../chrome';
 import type { BookingTab } from '../../navigation';
@@ -31,7 +33,6 @@ import { balanceOf, checkedInCount, dayLabel, isSlotHolder, parseDateStr, player
 import { checkInPlayer } from '../../../logic/bookings';
 import { useWestonEdits } from '../../../edition';
 import { playerFee, playerHoles, playerIsAdjusted, playerTransport } from '../../../logic/reservation';
-import { ReservationCustomerTab } from './ReservationCustomer';
 import { ReservationPlayersTab } from './ReservationPlayers';
 import { partyHoles, partyTransport, reservationCharge, transportMeta, useRates } from './reservation-helpers';
 
@@ -43,12 +44,15 @@ const TABS: Array<{ id: BookingTab; label: string }> = [
 ];
 
 /**
- * Weston Edits: the reservation's tabs. Customer sits beside Players because it's the same
- * people seen as customers — the profile Weston wanted to open without leaving the booking.
+ * Weston Edits: the reservation's tabs.
+ *
+ * Four, not five. The Customer tab went in Weston's third round — "I don't think it needs to be
+ * a tab on the reservation, I wonder if it's its own thing" — so tapping a player's name opens
+ * their record as its own screen instead. That leaves this list identical to the base one, but
+ * it is kept separate because the tabs render different bodies in each edition.
  */
 const WESTON_TABS: Array<{ id: BookingTab; label: string }> = [
   { id: 'players', label: 'Players' },
-  { id: 'customer', label: 'Customer' },
   { id: 'financial', label: 'Financial' },
   { id: 'notes', label: 'Notes' },
   { id: 'activity', label: 'Activity' },
@@ -75,8 +79,7 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
   if (!b) return <BookingGone />;
 
   const course = state.courses.find((c) => c.id === b.course);
-  // `customer` is a Weston tab; a base-edition route that names it falls back to Players.
-  const tab = route.tab === 'customer' && !weston ? 'players' : (route.tab ?? 'players');
+  const tab = route.tab ?? 'players';
   const tabs = weston ? WESTON_TABS : TABS;
   const holder = isSlotHolder(b);
   const unpaid = (b.playerStates ?? []).filter((p) => !p.paid && !p.noShow).length;
@@ -176,6 +179,10 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
             </IconButton>
           }
         >
+          {/* "Next in line" — step to the next tee time without leaving the reservation. The
+              phone is arguably where this matters most: you are walking the sheet, not standing
+              at a counter with it in front of you. */}
+          {weston && !holder && <NextInLine booking={b} />}
           <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap" sx={{ px: 2, pb: 1.5 }}>
             <StatusBadge pay={b.pay} />
             {memberType && <MemberBadge type={memberType} />}
@@ -211,7 +218,6 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
       ) : (
         <>
           {tab === 'players' && (weston ? <ReservationPlayersTab booking={b} /> : <PlayersTab booking={b} />)}
-          {tab === 'customer' && <ReservationCustomerTab booking={b} player={route.player} />}
           {tab === 'financial' && <FinancialTab booking={b} />}
           {tab === 'notes' && <NotesTab key={b.id} booking={b} />}
           {tab === 'activity' && <ActivityTab booking={b} />}
@@ -737,5 +743,48 @@ function HolderBody({ booking: b }: { booking: Booking }) {
         {b.conf}
       </Typography>
     </Box>
+  );
+}
+
+/**
+ * ‹ n of m › through the day's bookings, in tee-time order.
+ *
+ * Justin's idea on the call, which Weston took: after working one reservation you are usually
+ * going to work the next, and backing out to the sheet to tap a card two rows down buys
+ * nothing. Blocks and league holds are skipped — there is nothing to open — and the arrows stop
+ * at the ends rather than wrapping, because a silent jump back to the morning is disorienting
+ * when you are moving fast.
+ */
+function NextInLine({ booking: b }: { booking: Booking }) {
+  const { state } = usePos();
+  const nav = useMobileNav();
+  const day = dayBookings(state)
+    .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+    .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
+  const at = day.findIndex((x) => x.id === b.id);
+  if (at < 0 || day.length < 2) return null;
+
+  const go = (delta: 1 | -1) => {
+    const next = day[at + delta];
+    if (next) nav.replace({ name: 'bookingDetail', bookingId: next.id });
+  };
+
+  return (
+    <Stack direction="row" alignItems="center" justifyContent="center" gap={0.5} sx={{ pb: 0.5 }}>
+      <IconButton aria-label="Previous tee time" disabled={at === 0} onClick={() => go(-1)} size="small">
+        <ChevronLeftIcon fontSize="small" />
+      </IconButton>
+      <Typography variant="caption" sx={{ color: md3.onSurfaceVariant, minWidth: 64, textAlign: 'center' }}>
+        {at + 1} of {day.length}
+      </Typography>
+      <IconButton
+        aria-label="Next tee time"
+        disabled={at === day.length - 1}
+        onClick={() => go(1)}
+        size="small"
+      >
+        <ChevronRightIcon fontSize="small" />
+      </IconButton>
+    </Stack>
   );
 }

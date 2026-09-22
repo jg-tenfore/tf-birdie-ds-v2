@@ -1,4 +1,5 @@
 import { ALL_GOLFERS } from '../../pos/data/golfers';
+import { seatRecord } from '../../pos/logic/seat-pricing';
 import { TEE_PRICES } from '../../pos/data/courses';
 import { venue, venueBookings } from '../../pos/data/venues';
 import { buildTeeTimeCart } from '../../pos/logic/cart';
@@ -157,3 +158,14 @@ export function loadedOrder(b: Booking, opts: { extras?: boolean } = {}): Partia
  */
 export const offRateParty = (): Booking =>
   find((b) => sellable(b) && b.price > 0 && b.price !== TEE_PRICES[b.status]?.basePrice && b.pay === 'open');
+
+/**
+ * A booking whose **booker resolves to a customer record** — by the booking's phone, the only
+ * reliable key for seat 0.
+ *
+ * Most demo bookings do not: a name on a sheet is just a string until someone links it, which
+ * is the rule this round exists to enforce. So a story that wants to show a *record* rather
+ * than the assign-a-customer state has to pick a booking that actually has one, instead of
+ * assuming any party will do.
+ */
+export const bookerWithRecord = (): Booking => find((b) => sellable(b) && seatRecord(b, 0) != null);

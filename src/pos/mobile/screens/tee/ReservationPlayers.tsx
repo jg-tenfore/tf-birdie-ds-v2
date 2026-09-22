@@ -41,6 +41,7 @@ import {
   setPlayerHoles,
   setPlayerTransport,
 } from '../../../logic/reservation';
+import { seatPrice, seatRecord } from '../../../logic/seat-pricing';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
@@ -258,7 +259,7 @@ function PlayerRow({
   onSheet: (kind: 'fee' | 'transport' | 'row') => void;
 }) {
   const nav = useMobileNav();
-  const { dispatch, toast } = usePos();
+  const { state, dispatch, toast } = usePos();
   const roster = useGolferRoster();
   const rates = useRates();
   const name = playerName(b, i);
@@ -269,6 +270,9 @@ function PlayerRow({
   const holes = playerHoles(b, i);
   const t = transportMeta(playerTransport(b, i));
   const adjusted = playerIsAdjusted(b, i);
+  const sp = seatPrice(b, i, fee, { catalog: state.weston.rateCatalog });
+  const record = seatRecord(b, i);
+  const inOrder = state.selectedBookingId === b.id && (state.orderSeats?.includes(i) ?? false);
   const status = p.noShow ? 'No-show' : roundStepOf(p).label;
 
   return (
@@ -323,18 +327,48 @@ function PlayerRow({
             {holes} holes
           </Typography>
         )}
-        <ControlChip disabled={locked} label={`Tee fee ${money(fee)}`} onClick={() => onSheet('fee')} strong={b.playerStates[i]?.fee != null}>
-          {money(fee)}
+        <ControlChip
+          disabled={locked}
+          label={`Rate ${sp.rate?.name ?? ''} ${money(sp.greenFee)}`}
+          onClick={() => nav.push({ name: 'seatRate', bookingId: b.id, seat: i })}
+          strong={b.playerStates[i]?.fee != null || b.playerStates[i]?.rateId != null}
+        >
+          {money(sp.greenFee)}
         </ControlChip>
         <ControlChip disabled={locked} label={`Transport ${t.long}`} onClick={() => onSheet('transport')} strong={b.playerStates[i]?.transport != null}>
           <Icon name={t.icon} size={16} />
           {t.label}
         </ControlChip>
         <Box sx={{ flex: 1 }} />
+        {/* Weston: "you hit add to cart for each player, and then you hit save." The pinned
+            Check in & pay stays; this is for a group splitting the bill. */}
+        {!locked && (
+          <ControlChip
+            label={inOrder ? `${name} is on the order` : `Add ${name} to the order`}
+            onClick={() => dispatch({ type: 'addSeatToOrder', bookingId: b.id, seat: i })}
+            strong={inOrder}
+          >
+            <Icon name={inOrder ? 'shopping_cart' : 'add_shopping_cart'} size={16} />
+          </ControlChip>
+        )}
         <IconButton aria-label={`More for ${name}`} onClick={() => onSheet('row')}>
           <MoreVert />
         </IconButton>
       </Stack>
+      <Typography
+        variant="caption"
+        component="div"
+        sx={{ px: 1.5, pb: 0.75, mt: -0.25, color: md3.onSurfaceVariant }}
+      >
+        {[
+          sp.rate && `${sp.rate.name} : ${money(sp.greenFee)}`,
+          `${sp.transport.name} : ${money(sp.transportFee)}`,
+          record && `ID ${record.id}`,
+          p.cartKey != null && `cart ${p.cartKey}`,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      </Typography>
       {locked && p.paid && (
         <Typography variant="caption" component="div" sx={{ px: 1.5, pb: 1, mt: -0.5 }}>
           Paid — refund on the Financial tab to change this player
@@ -502,14 +536,30 @@ function RowActions({ booking: b, index: i, onDone, onRemove }: { booking: Booki
     {
       icon: 'manage_accounts',
       label: golfer ? 'Customer profile' : 'Link a customer',
-      secondary: golfer ? 'On the Customer tab' : 'Pick from People',
+      // Weston, round 3: the record is the person's, not the reservation's, so it opens as its
+      // own screen rather than as a tab on the booking. An empty seat opens it in assign mode.
+      secondary: golfer ? 'Their record' : 'Search or create',
       run: () =>
-        golfer
-          ? nav.replace({ name: 'bookingDetail', bookingId: b.id, tab: 'customer', player: i })
-          : nav.push({ name: 'golferPicker', target: { bookingId: b.id, playerIndex: i } }),
+        nav.push({
+          name: 'customerRecord',
+          customerId: seatRecord(b, i)?.id ?? null,
+          bookingId: b.id,
+          seat: i,
+        }),
     },
     ...(golfer
       ? [{ icon: 'swap_horiz', label: 'Swap customer', secondary: `Replace ${playerName(b, i)}`, run: () => nav.push({ name: 'golferPicker', target: { bookingId: b.id, playerIndex: i } }) }]
+      : []),
+    // Keys are handed out at the cart barn, where the phone is the device in hand.
+    ...(editable
+      ? [
+          {
+            icon: 'vpn_key',
+            label: p.cartKey != null ? `Cart ${p.cartKey}` : 'Cart signout',
+            secondary: p.cartKey != null ? 'Change or return it' : 'Hand over a key',
+            run: () => nav.push({ name: 'cartSignout', bookingId: b.id, seat: i }),
+          },
+        ]
       : []),
     ...(editable && playerIsAdjusted(b, i)
       ? [

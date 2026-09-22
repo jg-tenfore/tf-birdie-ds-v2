@@ -39,7 +39,14 @@ export const TABS: Array<{ id: MobileTab; label: string; root: MobileRoute }> = 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 /** `customer` exists only in the Weston edition (the selected player's profile). */
-export type BookingTab = 'players' | 'customer' | 'financial' | 'notes' | 'activity';
+/**
+ * The reservation's tabs.
+ *
+ * Four, not five. The Customer tab went in Weston's third round — "I don't think it needs to be
+ * a tab on the reservation, I wonder if it's its own thing" — because a customer record is not
+ * a property of a tee time. Tapping the player's name opens it as its own screen.
+ */
+export type BookingTab = 'players' | 'financial' | 'notes' | 'activity';
 
 /**
  * Who a golfer picked from the People search gets attached to: the open order's customer
@@ -66,6 +73,24 @@ export type MobileRoute =
   /** `player` picks whose profile the Customer tab shows (Weston Edits); defaults to the booker. */
   | { name: 'bookingDetail'; bookingId: string; tab?: BookingTab; player?: number }
   | { name: 'playerDetail'; bookingId: string; playerIndex: number }
+  /**
+   * One seat's rate editor (Weston Edits, round 3).
+   *
+   * A full-screen dialog rather than the tablet's in-place expand: four rows of tiles do not
+   * fit beside a 402px player row, and burying the group under an open row is worse than
+   * leaving it for a moment. ✕ discards, Save commits — the phone build's pattern for editing
+   * one thing.
+   */
+  | { name: 'seatRate'; bookingId: string; seat: number }
+  /**
+   * A customer's record, opened from a player's name (Weston Edits, round 3).
+   *
+   * `seat` is carried so an empty chair opens in assign mode and linking knows which one it is
+   * filling. Without a booking it is just the record, reached from anywhere.
+   */
+  | { name: 'customerRecord'; customerId: string | null; bookingId?: string; seat?: number }
+  /** Handing a cart key to one player — the fleet, with what is already out. */
+  | { name: 'cartSignout'; bookingId: string; seat: number }
   | { name: 'bookingAction'; bookingId: string; action: 'checkin' | 'refund' | 'raincheck' }
   | { name: 'newTeeTime'; courseId: string; timeMin: number; players?: number }
   /** One booking (`bookingId`), or everyone at a tee time (`timeMin`, optionally one course). */
@@ -111,6 +136,9 @@ export const PRESENTATION: Record<RouteName, Presentation> = {
   daySummary: 'push',
   bookingDetail: 'push',
   playerDetail: 'push',
+  seatRate: 'dialog',
+  customerRecord: 'dialog',
+  cartSignout: 'push',
   bookingAction: 'dialog',
   newTeeTime: 'dialog',
   movePlayers: 'dialog',

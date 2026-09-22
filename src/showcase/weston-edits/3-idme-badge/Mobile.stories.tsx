@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, loadedOrder, withBookings } from '../mobile-scenarios';
+import { seatRecord } from '../../../pos/logic/seat-pricing';
 
 /**
  * Weston Edits / 3 · ID.me Badge / Mobile
@@ -54,11 +55,21 @@ export const OnPlayerDetail: Story = {
   },
 };
 
-/** On the Customer tab, beside the membership tier. */
-export const OnCustomerTab: Story = {
+/** On the customer's own record, opened from the player's name. */
+export const OnTheCustomerRecord: Story = {
   render: () => {
     const { b, state } = party();
-    return <MobileStory edition="weston" initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'customer', player: 1 }]} />;
+    return (
+      <MobileStory
+        edition="weston"
+        initialState={state}
+        tab="tee"
+        stack={[
+          { name: 'bookingDetail', bookingId: b.id },
+          { name: 'customerRecord', customerId: seatRecord(b, 0)?.id ?? null, bookingId: b.id, seat: 0 },
+        ]}
+      />
+    );
   },
 };
 
