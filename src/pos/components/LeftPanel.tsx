@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/material';
+import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import { elevation, grid, md3, payBadges, radius } from '../../theme/tokens';
 import { SETTINGS_MENU_ITEMS, TRANSPORT_META } from '../data/config';
 import { COURSES, TIMES } from '../data/courses';
@@ -100,6 +100,12 @@ export function LeftPanel() {
     }
   };
 
+  // Weston: "this takes up a lot of space if there's nothing in it… on the tee sheet we always
+  // want to maximise the space we have." Collapsing is the operator's call, not automatic, so
+  // the rail keeps a strip with the control on it rather than vanishing to nothing — a panel you
+  // cannot get back is worse than one that is too wide.
+  if (weston && state.leftPanelCollapsed) return <RailStrip />;
+
   return (
     <Box
       sx={{
@@ -116,6 +122,28 @@ export function LeftPanel() {
         pointerEvents: state.leftPanelCollapsed ? 'none' : 'auto',
       }}
     >
+      {weston && (
+        <Tooltip title="Collapse the order rail">
+          <ButtonBase
+            aria-label="Collapse the order rail"
+            onClick={() => dispatch({ type: 'toggleLeftPanel', collapsed: true })}
+            sx={{
+              position: 'absolute',
+              left: grid.leftPanelW - 26,
+              top: 8,
+              zIndex: 3,
+              width: 22,
+              height: 22,
+              borderRadius: '50%',
+              bgcolor: md3.surfaceContainer,
+              color: md3.onSurfaceVariant,
+              '&:hover': { bgcolor: md3.primaryContainer, color: md3.onPrimaryContainer },
+            }}
+          >
+            <Icon name="chevron_left" size={15} />
+          </ButtonBase>
+        </Tooltip>
+      )}
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.25 }}>
@@ -1006,3 +1034,113 @@ function PayButton({ payable }: { payable: number }) {
 
 /** Re-exported so the tee sheet can show the dominant-transport summary too. */
 export { dominantTransport };
+
+/**
+ * The order rail, collapsed.
+ *
+ * A 56px strip rather than nothing at all. Weston wanted the tee sheet to get the space back
+ * when the order is empty, but collapsing the rail to zero takes Walk-in and Reserve with it —
+ * and the two things staff reach for most cannot live behind a panel that is gone. So the strip
+ * keeps them, plus the count of whatever is in the order, and one tap brings the rail back.
+ *
+ * Adding anything to the order re-expands automatically: an order you cannot see is one nobody
+ * checks before charging it.
+ */
+function RailStrip() {
+  const { state, dispatch } = usePos();
+  const count = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
+  const expand = () => dispatch({ type: 'toggleLeftPanel', collapsed: false });
+
+  return (
+    <Box
+      data-order-rail="collapsed"
+      sx={{
+        width: 56,
+        flexShrink: 0,
+        bgcolor: '#fff',
+        borderRight: `1px solid ${md3.outlineVariant}`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 1,
+        pt: 1.25,
+        zIndex: 2,
+        transition: 'width .25s cubic-bezier(.4,0,.2,1)',
+      }}
+    >
+      <Tooltip title="Expand the order rail" placement="right">
+        <ButtonBase
+          aria-label="Expand the order rail"
+          onClick={expand}
+          sx={{ width: 34, height: 34, borderRadius: `${radius.sm}px`, color: md3.onSurfaceVariant }}
+        >
+          <Icon name="chevron_right" size={18} />
+        </ButtonBase>
+      </Tooltip>
+
+      <StripButton icon="directions_walk" label="Walk-in" onClick={() => dispatch({ type: 'openModal', modal: { kind: 'walkIn' } })} />
+      <StripButton icon="event" label="Reserve tee time" onClick={() => dispatch({ type: 'setFlowMode', mode: 'reserve' })} />
+
+      <Box sx={{ flex: 1 }} />
+
+      <Tooltip title={count ? `${count} in the order` : 'Order is empty'} placement="right">
+        <ButtonBase
+          aria-label={count ? `Order · ${count} items` : 'Order is empty'}
+          onClick={expand}
+          sx={{
+            width: 34,
+            height: 34,
+            mb: 1.5,
+            borderRadius: `${radius.sm}px`,
+            color: count ? md3.primary : md3.outline,
+            position: 'relative',
+          }}
+        >
+          <Icon name="shopping_cart" size={18} />
+          {count > 0 && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 1,
+                right: 1,
+                minWidth: 15,
+                height: 15,
+                px: '3px',
+                borderRadius: 999,
+                bgcolor: md3.primary,
+                color: md3.onPrimary,
+                fontSize: 9,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {count}
+            </Box>
+          )}
+        </ButtonBase>
+      </Tooltip>
+    </Box>
+  );
+}
+
+function StripButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+  return (
+    <Tooltip title={label} placement="right">
+      <ButtonBase
+        aria-label={label}
+        onClick={onClick}
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: `${radius.sm}px`,
+          color: md3.onSurfaceVariant,
+          '&:hover': { bgcolor: md3.primaryContainer, color: md3.onPrimaryContainer },
+        }}
+      >
+        <Icon name={icon} size={18} />
+      </ButtonBase>
+    </Tooltip>
+  );
+}

@@ -7,7 +7,7 @@ import { buildTeeTimeCart, money, orderTotals } from '../logic/cart';
 import { playerHoles, reservationDue, reservationSettled, roundLabel } from '../logic/reservation';
 import { useModalContainer } from '../modals/modal-container';
 import { FilledButton, OutlineButton } from '../modals/ModalFrame';
-import { RESERVATION_TABS, rateContext } from '../state/pos-store';
+import { PANEL_WIDTHS, RESERVATION_TABS, rateContext } from '../state/pos-store';
 import type { ReservationTab } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
@@ -34,6 +34,7 @@ import { isFreshWalkIn } from '../logic/walk-in';
 export function ReservationPanel() {
   const { state } = usePos();
   const panel = state.reservationPanel;
+  const panelWidth = panel?.width ?? state.weston.panelWidth;
   const b = panel && state.bookings.find((x) => x.id === panel.bookingId);
   if (!panel || !b) return null;
 
@@ -50,7 +51,10 @@ export function ReservationPanel() {
         top: 0,
         right: 0,
         bottom: 0,
-        width: reservationPanel.width,
+        // Weston: "I wonder if it should take up more space… I think it's more important to
+        // have this bigger than to show more of the tee sheet." Three sizes to choose between
+        // on the tablet; `cover` takes the sheet entirely and still exits with one ✕.
+        width: panelWidth === 'cover' ? '100%' : PANEL_WIDTHS[panelWidth],
         // Over the tee-sheet toolbar (40) and multi-select bar (60); under popovers and dialogs.
         zIndex: 80,
         bgcolor: md3.onPrimary,

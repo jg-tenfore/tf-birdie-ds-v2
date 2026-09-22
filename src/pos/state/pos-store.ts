@@ -107,6 +107,11 @@ export interface ReservationPanelState {
    * since Weston "can be convinced either way". Not linkable; the prototype always slides.
    */
   presentation?: 'panel' | 'modal';
+  /**
+   * Overrides the edition's default width for this one panel — a story's switch, so a single
+   * page can show the same booking at three sizes.
+   */
+  width?: PanelWidth;
 }
 
 /**

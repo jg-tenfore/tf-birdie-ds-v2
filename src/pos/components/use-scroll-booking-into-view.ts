@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import type { SxProps, Theme } from '@mui/material';
 import { reservationPanel } from '../../theme/tokens';
 import { usePos } from '../state/PosProvider';
+import { PANEL_WIDTHS } from '../state/pos-store';
 
 /** Breathing room kept between the booking and the edge it was scrolled to. */
 const MARGIN = 16;
@@ -14,12 +15,17 @@ const MARGIN = 16;
  * tightens, no chip is hidden under the panel, and there is nothing to scroll sideways to.
  * Nothing changes without a panel (the base edition has none) or when it opens as a dialog.
  * Put `data-panel-squeeze` on the element that takes it, so the scroll below can wait for it.
+ *
+ * The margin follows the panel's chosen width. At `cover` the panel takes the sheet entirely,
+ * so there is nothing left to squeeze and the margin stays at zero — squeezing to nothing would
+ * collapse the sheet's own layout on the way.
  */
 export function usePanelSqueeze(): SxProps<Theme> {
   const { state } = usePos();
   const open = Boolean(state.reservationPanel) && state.reservationPanel?.presentation !== 'modal';
+  const width = state.reservationPanel?.width ?? state.weston.panelWidth;
   return {
-    mr: open ? `${reservationPanel.width}px` : 0,
+    mr: open && width !== 'cover' ? `${PANEL_WIDTHS[width]}px` : 0,
     transition: `margin-right ${reservationPanel.motion}`,
   };
 }

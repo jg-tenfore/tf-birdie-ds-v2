@@ -23,11 +23,13 @@ import {
   setPlayerTransport,
 } from '../logic/reservation';
 import { seatCustomer, seatIdMe } from '../logic/seat-customer';
-import { seatRecord } from '../logic/seat-pricing';
+import { seatCanSwitchHoles, seatPrice, seatRecord } from '../logic/seat-pricing';
+import type { SeatPrice } from '../logic/seat-pricing';
 import { dayBookings, rateContext } from '../state/pos-store';
 import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking, Transport } from '../types';
 import { RoundRail } from './BookingTabs';
+import { RateExpand } from './RateExpand';
 import { IdMeBadge } from './IdMeBadge';
 import { Icon, MemberDot, SectionLabel } from './primitives';
 import { Stack } from './Stack';
@@ -43,6 +45,7 @@ import { Stack } from './Stack';
  * refund or a rain check (Financial tab), not an edit.
  */
 export function PlayerRows({ booking: b }: { booking: Booking }) {
+  const [expandedSeat, setExpandedSeat] = useState<number | null>(null);
   const { state, dispatch, toast } = usePos();
   const course = state.courses.find((c) => c.id === b.course);
   const cap = maxPlayers(b, course, dayBookings(state));
@@ -93,7 +96,14 @@ export function PlayerRows({ booking: b }: { booking: Booking }) {
 
       <Stack gap={1}>
         {b.playerStates.map((_, i) => (
-          <PlayerRow key={i} booking={b} index={i} is18Course={course?.holeCount === 18} />
+          <PlayerRow
+            key={i}
+            booking={b}
+            index={i}
+            is18Course={course?.holeCount === 18}
+            expanded={expandedSeat === i}
+            onToggleExpand={setExpandedSeat}
+          />
         ))}
       </Stack>
 
@@ -132,11 +142,16 @@ export function PlayerRow({
   booking: b,
   index: i,
   is18Course,
+  expanded = false,
+  onToggleExpand = () => {},
 }: {
   booking: Booking;
   index: number;
   /** An 18-hole course sells 9 and 18; a nine-hole course sells 9 only. */
   is18Course: boolean;
+  /** Whether this row's rate editor is open. One at a time, held by the list. */
+  expanded?: boolean;
+  onToggleExpand?: (seat: number | null) => void;
 }) {
   const { state, dispatch, toast } = usePos();
   const roster = useGolferRoster();
@@ -156,6 +171,9 @@ export function PlayerRow({
   const feeIsDefault = p.fee == null;
 
   const patch = (x: Partial<Booking>) => dispatch({ type: 'patchBooking', bookingId: b.id, patch: x });
+  const ctx = { catalog: state.weston.rateCatalog };
+  const money9 = seatPrice(b, i, fee, ctx);
+  const dense = state.weston.rowDensity === 'dense';
   // Weston, round 3: "if I click on Michael Thompson… does something else open?" The record is
   // the person's, not the reservation's, so it opens over everything rather than as a tab.
   // A seat with nobody in it opens the same surface in assign mode.
@@ -267,17 +285,35 @@ export function PlayerRow({
               value: h as 9 | 18,
               label: `${h}`,
             }))}
+            optionDisabled={(h) => !seatCanSwitchHoles(b, i, h as 9 | 18, ctx)}
+            optionTitle={(h) =>
+              seatCanSwitchHoles(b, i, h as 9 | 18, ctx)
+                ? undefined
+                : `${money9.rate?.name} is ${h === 9 ? 18 : 9} holes only — change the rate first`
+            }
             onChange={(h) => patch(setPlayerHoles(b, i, h))}
           />
           <FeeField
             label={`${name} tee fee`}
-            value={fee}
+            value={money9.greenFee}
             disabled={!editable}
-            isDefault={feeIsDefault}
+            isDefault={feeIsDefault && !money9.usesPunch && money9.discount === 0}
             defaultFee={holesFee(b, i, holes, rates)}
             onCommit={(v) => patch(setPlayerFee(b, i, v, rates))}
             onReset={() => patch(resetPlayerFee(b, i))}
           />
+          {/* Weston: "maybe you click and this expands, instead of taking over a full screen." */}
+          <Tooltip title={expanded ? 'Close rates' : 'Choose a rate'}>
+            <ButtonBase
+              aria-label={`${name} rates`}
+              aria-expanded={expanded}
+              disabled={!editable}
+              onClick={() => onToggleExpand(expanded ? null : i)}
+              sx={{ p: 0.4, borderRadius: `${radius.sm}px`, color: expanded ? md3.primary : md3.outline }}
+            >
+              <Icon name={expanded ? 'expand_less' : 'tune'} size={16} />
+            </ButtonBase>
+          </Tooltip>
           <Box sx={{ flex: 1 }} />
           <Segmented
             ariaLabel={`${name} transport`}
@@ -293,6 +329,12 @@ export function PlayerRow({
         </Stack>
       )}
 
+      {/* ── What they're sold on ── */}
+      {!p.noShow && <SeatMeta booking={b} seat={i} price={money9} dense={dense} />}
+
+      {/* ── The rate editor, in place ── */}
+      {expanded && !p.noShow && <RateExpand booking={b} seat={i} />}
+
       {/* ── Where they are ── */}
       {!p.noShow && (
         <RoundRail
@@ -304,6 +346,92 @@ export function PlayerRow({
         />
       )}
     </Box>
+  );
+}
+
+/**
+ * The line under the name: what this seat is actually sold on.
+ *
+ * Weston, on the old screen: "we want to display that there… we displayed those for a reason."
+ * A bare dollar amount cannot answer "why is he paying that", and the rate's *name* is the
+ * answer. The customer id, rewards and rounds come along because that is the line the counter
+ * reads back to the golfer.
+ *
+ * Two densities, as agreed: comfortable gives the rate and the ride their own lines so a long
+ * rate name never truncates; dense packs it the way the old prototype did, which fits four
+ * seats at 640 without scrolling.
+ */
+function SeatMeta({
+  booking: b,
+  seat: i,
+  price: sp,
+  dense,
+}: {
+  booking: Booking;
+  seat: number;
+  price: SeatPrice;
+  dense: boolean;
+}) {
+  const record = seatRecord(b, i);
+  const bits = [
+    record && `ID ${record.id}`,
+    record && record.rewardsBalance > 0 && `+${record.rewardsBalance}`,
+    record && record.teeTimes.length > 0 && `${record.teeTimes.length} rounds`,
+    b.playerStates[i]?.cartKey != null && `cart ${b.playerStates[i]?.cartKey}`,
+  ].filter(Boolean) as string[];
+
+  if (dense) {
+    return (
+      <Typography
+        sx={{
+          fontSize: 10.5,
+          color: md3.onSurfaceVariant,
+          mt: 0.5,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {[
+          sp.rate && `${sp.rate.name} : ${money(sp.greenFee)}`,
+          `${sp.transport.name} : ${money(sp.transportFee)}`,
+          ...bits,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      </Typography>
+    );
+  }
+
+  return (
+    <Box sx={{ mt: 0.5 }}>
+      <MetaLine
+        left={sp.rate?.name ?? 'Green fee'}
+        right={money(sp.greenFee)}
+        note={sp.usesPunch ? sp.reason : sp.discount > 0 ? `${sp.reason} · was ${money(sp.gross)}` : null}
+      />
+      <MetaLine left={sp.transport.name} right={money(sp.transportFee)} />
+      {bits.length > 0 && (
+        <Typography sx={{ fontSize: 10.5, color: md3.outline, mt: 0.125 }}>{bits.join(' · ')}</Typography>
+      )}
+    </Box>
+  );
+}
+
+function MetaLine({ left, right, note }: { left: string; right: string; note?: string | null }) {
+  return (
+    <Stack direction="row" alignItems="baseline" gap={0.75}>
+      <Typography
+        sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      >
+        {left}
+      </Typography>
+      {note && (
+        <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: md3.primary, flexShrink: 0 }}>{note}</Typography>
+      )}
+      <Box sx={{ flex: 1, borderBottom: `1px dotted ${md3.outlineVariant}`, mx: 0.25 }} />
+      <Typography sx={{ fontSize: 11.5, fontWeight: 700, flexShrink: 0 }}>{right}</Typography>
+    </Stack>
   );
 }
 
@@ -347,12 +475,17 @@ export function Segmented<T extends string | number>({
   onChange,
   disabled,
   ariaLabel,
+  optionDisabled,
+  optionTitle,
 }: {
   value: T;
   options: Array<{ value: T; label: React.ReactNode; title?: string }>;
   onChange: (v: T) => void;
   disabled?: boolean;
   ariaLabel: string;
+  /** Disables one option — a rate sold for 18 only blocks the 9, rather than repricing. */
+  optionDisabled?: (v: T) => boolean;
+  optionTitle?: (v: T) => string | undefined;
 }) {
   return (
     <Stack
@@ -370,14 +503,15 @@ export function Segmented<T extends string | number>({
     >
       {options.map((o, k) => {
         const on = o.value === value;
+        const off = Boolean(optionDisabled?.(o.value));
         return (
           <ButtonBase
             key={String(o.value)}
             role="radio"
             aria-checked={on}
-            title={o.title}
-            disabled={disabled}
-            onClick={() => !on && onChange(o.value)}
+            title={optionTitle?.(o.value) ?? o.title}
+            disabled={disabled || off}
+            onClick={() => !on && !off && onChange(o.value)}
             sx={{
               minWidth: 34,
               height: 28,
