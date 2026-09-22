@@ -37,11 +37,18 @@ The front door, and the place to review anything in isolation. It holds:
   screen, how you reach it and how you get out.
 - **Tee Sheet Actions** (35 stories): every action that writes to the tee sheet, before and
   after.
-- **Weston Edits**: an overview of Weston's feedback and decisions, then each changed
-  component with a **Tablet** and a **Mobile** story.
+- **Weston Edits** (sections 1–18): an overview of Weston's three rounds of feedback and the
+  decisions behind each one, then each changed component with a **Tablet** story and a
+  **Mobile** one wherever the phone does it differently. **18 · Rate Catalog** is a doc page
+  rather than a screen — the eligibility model the rate tiles are built on.
 
 Every story is built from plain state, so the screen you review is exactly the one the
 prototypes render.
+
+Four questions Weston asked to *see* rather than decide from a description are on the
+Storybook **toolbar** — panel width, row density, transport style and rate catalog. They feed
+every story in the library, so you can flip one while looking at any screen; a story that pins
+a switch itself keeps it.
 
 ### 🖥️ Tablet prototypes: the counter terminal
 
@@ -102,20 +109,52 @@ both, and a customer added on one exists on the other.
 Weston's feedback on the tablet prototype
 ([Loom](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b)): clicking a tee time
 shouldn't turn it straight into an order. These are the **18-hole** prototypes with his edits
-switched on:
+switched on, across three rounds of review.
+
+**Round 1 — golf first, order second:**
 
 - **Clicking a tee time opens the reservation**, in a slide-over panel on the tablet so you keep
   your place on the tee sheet. On the phone it's the reservation screen.
 - **You work the golf there first:** players and player count, 9 or 18 holes per player, tee
-  fees, riding or walking, check-in status, an ID.me badge, and a Customer tab for the
-  selected player's profile.
+  fees, riding or walking, check-in status and an ID.me badge.
 - **Only Check in & pay sends it to the register.** In the order, golf lines are a read-only
   summary with **Edit reservation**. Modifiers stay for food and beverage.
 
-Storybook's **Weston Edits** category documents each change component by component, with a
-Tablet and a Mobile story for each. The bugs the recording turned up (a reserved tee time
-labelled "Walk-in", mismatched rates, a paid booking asking to be paid, tax on $0) are fixed in
-every prototype, not just this one.
+**Round 2 — date navigation** ([Loom](https://www.loom.com/share/a0d4ed98b7344746b5a4bf8a9d7ee4fb)):
+a swipeable week strip and a real calendar sheet on the phone, and a deterministic demo tee
+sheet on any date within a year of today.
+
+**Round 3 — the reservation decides the money** (a call on 22 September 2026):
+
+- **A player's fee is a rate, not a number.** Tapping the fee opens a grid of every rate *this
+  tee time on this date* sells, narrowed by band, day and hole count. The system pre-picks what
+  the player is owed from their own record; every other tile is dimmed but still one tap away,
+  because the counter's job includes overriding it. The editor expands **in place on the row**
+  on the tablet, and is a full-screen dialog on the phone.
+- **Transport is a priced catalog**, including a trail fee for walking — the case a walk/ride
+  toggle can't express. **Punch cards** pay for rounds, not rides: applying one settles the
+  green fee and the cart is still billed. **Discounts** (comp, 50%, 25%, employee, typed) each
+  carry a reason onto the row and the register line.
+- **Tapping a player's name opens their customer record** over everything — the Customer *tab*
+  is gone, because a customer isn't a property of a tee time. Contact details edit in place;
+  memberships, punch cards, rain checks and gift cards are read-only, since taking money stays
+  the register's job. An empty seat opens the same surface in assign mode.
+- **A customer database behind it:** 340 records, so every name that can appear on a tee sheet
+  resolves to somebody with memberships, cards, credits and history. A seat is matched by a
+  linked record or the booker's phone — never by name.
+- **Cart signout** over a 35-cart fleet, with availability derived from the day's bookings;
+  **per-seat Add to cart** for a group splitting the bill, with Check in & pay topping the order
+  up rather than rebuilding it; and **‹ n of m ›** in the panel header to step through the day's
+  reservations without closing it.
+- **More room to work:** the panel ships at 640 with 820 and full-cover to compare, and the
+  order rail's one button clears the order (behind a confirm) and then collapses the rail to a
+  56px strip once there's nothing left to clear.
+
+Storybook's **Weston Edits** category documents each change component by component, with the
+decisions and Weston's own words behind them. The bugs the first recording turned up (a reserved
+tee time labelled "Walk-in", mismatched rates, a paid booking asking to be paid, tax on $0) are
+fixed in every prototype, not just this one — as are round 3's confirm-before-clear and the
+three icon names that were rendering as dots.
 
 It's an *edition* of the same app, not a copy: components branch on `useEdition()`
 ([`src/pos/edition.tsx`](src/pos/edition.tsx)), and a build picks one with `VITE_EDITION=weston`.
@@ -193,9 +232,10 @@ npm run build        # prototype → dist/
 npm run build:site   # the full Pages tree → site/
 ```
 
-`npm run test` is the useful guard here: 530 tests across two projects — the story suite mounts
-all 367 stories in a real browser and fails on any runtime error, and the unit suite covers the
-pure logic.
+`npm run test` is the useful guard here: 911 tests across two projects — the story suite mounts
+all 539 stories in a real browser and fails on any runtime error, and the unit suite covers the
+pure logic (372 tests: pricing, seat rates, eligibility, scheduling, the URL codec, and a scan
+of every icon name in `src` against the registry).
 
 ## Deep links
 
@@ -301,10 +341,14 @@ src/
 ├── pos/
 │   ├── types.ts           domain types (Booking, CartItem, Course, …)
 │   ├── icons.ts           Material Symbols name → MUI icon component
-│   ├── data/              catalog, golfers, courses, bookings, config — ported verbatim
-│   ├── logic/             cart pricing, booking filters, league/block/move planning
+│   ├── data/              catalog, golfers, courses, bookings, config — ported verbatim;
+│   │                      plus the customer database (customers, roster), the rate and
+│   │                      transport catalog, the cart fleet and the rain-check ledger
+│   ├── logic/             cart pricing, seat pricing, booking filters, league/block/move planning
 │   ├── state/             one reducer + provider; the whole app is a function of it
-│   ├── components/        the shell, order panel, register, tee sheet
+│   ├── components/        the shell, order panel, register, tee sheet, and the Weston
+│   │                      surfaces: ReservationPanel, PlayerRows, RateExpand,
+│   │                      CustomerModal, CartSignout
 │   ├── modals/            22 dialogs and the host that switches between them
 │   ├── mobile/            the phone app: navigation map, MD3 chrome, screens per destination
 │   └── PosApp.tsx         the assembled app
@@ -312,7 +356,9 @@ src/
 │   ├── foundations/       colors, type, spacing, radius, icons, logos
 │   ├── base/  application/  auth/     the generic MUI component library
 │   ├── pos/               POS screens, in seven numbered sections
-│   └── pos-mobile/        Mobile Screens, numbered to match, plus 0 · Navigation
+│   ├── pos-mobile/        Mobile Screens, numbered to match, plus 0 · Navigation
+│   └── weston-edits/      Weston's three rounds: the overview, sections 1–17 and the
+│                          Rate Catalog doc page
 ├── mobile-prototype/      the hosted mobile prototype — its screen list is read from pos-mobile
 └── App.tsx                the hosted prototype entry
 ```
@@ -338,6 +384,14 @@ So there are stories for states that would otherwise take a dozen interactions t
 Deterministic. `DEMO_TODAY()` is pinned to **Thursday, May 21, 2026**, and the 11-day booking
 window is generated by hashing booking ids rather than calling `Math.random()` — the sheet
 looks identical on every load and in every screenshot.
+
+The customer side is the same discipline. A hundred records are **committed** to
+`src/pos/data/customers.json` — households sharing a phone, three Brennevins, names long enough
+to truncate — and the roster rounds that out to **340** by synthesising a record per tee-sheet
+name from the name itself, so the same golfer reads the same way on every run. Only 93 of the
+18-hole club's 853 demo bookings have a booker who resolves to a record: a name on a sheet is a
+string until somebody links it, and the pricing is deliberately built to say so rather than
+guess.
 
 ## Refining components and prototype together
 

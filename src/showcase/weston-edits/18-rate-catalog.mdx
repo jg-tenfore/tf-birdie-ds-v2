@@ -37,11 +37,11 @@ Two notes on that table, both of which matter at the counter:
 
 - A rate with **no rule** is open to anyone. That is the right default: an unknown rate should
   be offerable, not hidden.
-- `customerTypes` is matched **strictly** — the customer must carry *every* type listed, where
-  `memberships` needs only one of them. The standard card's *Weekday Resident* lists two
-  (`Resident` and `Resident 22 Test`), so today only a customer holding both matches it. That
-  is one to confirm against Birdie's own data before launch: if those rows are meant to read
-  "either", the match wants loosening.
+- `customerTypes` and `memberships` both match on **any** of the values listed, not all. The
+  standard card's *Weekday Resident* lists two spellings of one idea (`Resident` and
+  `Resident 22 Test`), so a customer carrying either qualifies. It read "every" when first
+  built, which meant a plain `Resident` did not qualify for the resident rate — the kind of
+  fault that is invisible until someone is charged the wrong price at a counter.
 
 ## The grid is the slot's rates, not the system's
 

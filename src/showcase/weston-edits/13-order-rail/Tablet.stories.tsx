@@ -73,7 +73,10 @@ export const EmptyAndSoCollapsible: Story = {
 /**
  * **With a party's golf on it, the same button clears.** Check in & pay has built the order —
  * three green fees and the tax line — so the control is a **back arrow**, and because it is
- * destructive it asks first: "4 items will be removed. This cannot be undone."
+ * destructive it asks first: "3 items will be removed. This cannot be undone."
+ *
+ * Three, not four: tax is a line on the order but not a thing anyone added, so it is not
+ * counted. It read "4 items" until that was fixed.
  *
  * Note what is *not* offered here: there is no way to collapse the rail while an order is
  * live. That is the point of folding both jobs into one button — the rail cannot be hidden
