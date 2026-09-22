@@ -227,8 +227,6 @@ export interface TransportRate {
   price: number;
   /** Which of the three modes the row counts as, for the group toggles and the chip glyph. */
   mode: Transport;
-  /** Consumes one punch from a card of this name instead of charging. */
-  punchCard?: string;
   /** The course's default for its mode — what the walk / ride / push toggle picks. */
   default?: boolean;
   eligibility: RateEligibility;
@@ -240,19 +238,16 @@ export interface TransportRate {
  * Note the walking row costs money. A trail fee is common and a walk/ride boolean cannot
  * express it, which is why transport had to become a catalog rather than an enum — and why the
  * icon toggle now selects a *default rate* for a mode rather than a mode itself.
+ *
+ * There is no punch-card row here. A punch card holds prepaid **rounds**, so it pays the green
+ * fee and the cart is billed separately (`PlayerState.punch`) — the old prototype's "Free Punch
+ * Cart" conflated the two, and a walker and a rider would have spent the same punch for
+ * different value.
  */
 export const TRANSPORT_RATES: TransportRate[] = [
   { id: 'tr-riding-cart', name: 'Riding Cart', price: 26.82, mode: 'cart', default: true, eligibility: { open: true } },
   { id: 'tr-cart-plus', name: 'Cart Plus', price: 32, mode: 'cart', eligibility: { open: true } },
   { id: 'tr-member-cart', name: 'Member Cart', price: 0, mode: 'cart', eligibility: { membersOnly: true } },
-  {
-    id: 'tr-punch-cart',
-    name: 'Free Punch Cart',
-    price: 0,
-    mode: 'cart',
-    punchCard: 'any',
-    eligibility: { open: true },
-  },
   { id: 'tr-walking', name: 'Walking', price: 8.58, mode: 'walking', default: true, eligibility: { open: true } },
   { id: 'tr-walking-member', name: 'Walking, member', price: 0, mode: 'walking', eligibility: { membersOnly: true } },
   { id: 'tr-push-cart', name: 'Push Cart', price: 6, mode: 'push', default: true, eligibility: { open: true } },
@@ -275,13 +270,26 @@ export const defaultTransportFor = (mode: Transport): TransportRate =>
  */
 export function autoTransport(mode: Transport, customer: Customer | null): TransportRate {
   const inMode = TRANSPORT_RATES.filter((t) => t.mode === mode);
-  const usable = inMode.filter((t) => (t.punchCard ? hasPunchCard(customer) : isEligible(t, customer)));
+  const usable = inMode.filter((t) => isEligible(t, customer));
   return usable.sort((a, b) => a.price - b.price)[0] ?? defaultTransportFor(mode);
 }
 
+/** The punch cards this customer still has rounds on — what the tile offers. */
+export const usablePunchCards = (c: Customer | null) =>
+  (c?.punchCards ?? []).filter((p) => p.remaining > 0);
+
 /** Does this customer hold a punch card with anything left on it? */
-export const hasPunchCard = (c: Customer | null): boolean =>
-  Boolean(c?.punchCards.some((p) => p.remaining > 0));
+export const hasPunchCard = (c: Customer | null): boolean => usablePunchCards(c).length > 0;
+
+/**
+ * Is this rate sold for that hole count?
+ *
+ * Used to block the 9 ↔ 18 toggle rather than reprice behind the counter's back: a seat on an
+ * 18-only rate cannot be switched to nine until someone changes the rate, and the toggle says
+ * so instead of silently dropping them somewhere else.
+ */
+export const rateAllowsHoles = (rate: GreenFeeRate | null, holes: 9 | 18): boolean =>
+  !rate?.eligibility.holes || rate.eligibility.holes.includes(holes);
 
 // ─── Discounts ──────────────────────────────────────────────────────────────
 

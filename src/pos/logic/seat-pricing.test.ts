@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { TRANSPORT_RATES } from '../data/rate-catalog';
+import { TRANSPORT_RATES, transportById } from '../data/rate-catalog';
 import { roster } from '../data/roster';
 import { availableCarts, signedOutCarts } from '../data/carts';
 import type { Booking } from '../types';
 import {
+  applyPunchCard,
+  clearPunchCard,
   clearPlayerDiscount,
   playerFee,
   playerTransport,
@@ -17,7 +19,15 @@ import {
   setPlayerTransportRate,
   signOutCart,
 } from './reservation';
-import { seatPrice, seatRate, seatRateGrid, seatRecord, seatTransportFee, seatUsesPunch } from './seat-pricing';
+import {
+  seatCanSwitchHoles,
+  seatPrice,
+  seatRate,
+  seatRateGrid,
+  seatRecord,
+  seatTransportFee,
+  seatUsesPunch,
+} from './seat-pricing';
 
 /**
  * Weston Edits follow-ups (3): a seat is sold on a named rate, transport is priced, and a
@@ -136,17 +146,59 @@ describe('transport', () => {
     expect(seatTransportFee(next, 1)).toBe(walking.price);
   });
 
-  it('spends a punch instead of money', () => {
-    const b = foursome();
-    const next = apply(b, setPlayerTransportRate(b, 1, 'tr-punch-cart'));
-    expect(seatUsesPunch(next, 1)).toBe(true);
-    expect(seatTransportFee(next, 1)).toBe(0);
+  it('does not sell a punch-card transport row — a punch buys the round, not the ride', () => {
+    expect(transportById('tr-punch-cart')).toBeNull();
   });
 
   it('lets staff type over the transport price', () => {
     const b = foursome();
     const next = apply(b, setPlayerTransportFee(b, 1, 10));
     expect(seatTransportFee(next, 1)).toBe(10);
+  });
+});
+
+describe('punch cards', () => {
+  it('settles the round and leaves transport on the bill', () => {
+    const b = foursome();
+    const holder = roster.find((c) => c.punchCards.some((p) => p.remaining > 0))!;
+    const card = holder.punchCards[0];
+    const next = apply(b, applyPunchCard(b, 1, holder.id, card.name));
+    const p = seatPrice(next, 1, playerFee(next, 1));
+    expect(seatUsesPunch(next, 1)).toBe(true);
+    expect(p.greenFee).toBe(0);
+    // The ride is still charged — this is the half the old "Free Punch Cart" row conflated.
+    expect(p.transportFee).toBeGreaterThan(0);
+    expect(p.total).toBe(p.transportFee);
+  });
+
+  it('carries whose card paid, so a member can cover a guest', () => {
+    const b = foursome();
+    const holder = roster.find((c) => c.punchCards.some((x) => x.remaining > 0))!;
+    const next = apply(b, applyPunchCard(b, 1, holder.id, holder.punchCards[0].name));
+    expect(seatPrice(next, 1, playerFee(next, 1)).punch?.customerId).toBe(holder.id);
+  });
+
+  it('reprices to its rate when the punch is taken back off', () => {
+    const b = foursome();
+    const holder = roster.find((c) => c.punchCards.some((x) => x.remaining > 0))!;
+    let next = apply(b, applyPunchCard(b, 1, holder.id, holder.punchCards[0].name));
+    next = apply(next, clearPunchCard(next, 1));
+    expect(seatPrice(next, 1, playerFee(next, 1)).greenFee).toBe(72);
+  });
+});
+
+describe('a rate sold for one length only', () => {
+  it('blocks the switch rather than dropping the player somewhere else', () => {
+    const b = foursome();
+    const premium = seatRateGrid(b, 18, { catalog: 'heavy' }).find((r) => r.name === 'Premium Single')!;
+    const on = apply(b, { playerStates: b.playerStates.map((p, j) => (j === 1 ? { ...p, rateId: premium.id } : p)) });
+    expect(seatCanSwitchHoles(on, 1, 9, { catalog: 'heavy' })).toBe(false);
+    expect(seatCanSwitchHoles(on, 1, 18, { catalog: 'heavy' })).toBe(true);
+  });
+
+  it('leaves a seat on an unrestricted rate free to switch', () => {
+    const b = foursome();
+    expect(seatCanSwitchHoles(b, 1, 9)).toBe(true);
   });
 });
 

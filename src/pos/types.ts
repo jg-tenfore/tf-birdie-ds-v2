@@ -179,6 +179,19 @@ export interface PlayerState {
   discountManual?: number;
   /** The cart signed out to this player, if any. Drives the key glyph on the chip. */
   cartKey?: number;
+  /**
+   * The green fee paid with a punch card instead of money.
+   *
+   * A punch card holds prepaid **rounds** — "20-Round Punch Card" — so a punch buys the round,
+   * not the ride: the green fee goes to zero and transport is still billed at its own rate.
+   * `customerId` is carried because the card need not be the player's own; a member can put a
+   * guest's round on theirs, which is the whole reason the old prototype had "use other
+   * customer's punchcards".
+   *
+   * The punch is spent when the round checks in, not when it is applied — an applied punch on
+   * a reservation nobody checked in has not been used.
+   */
+  punch?: { customerId: string; cardName: string };
 }
 
 /**

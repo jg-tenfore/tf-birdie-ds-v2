@@ -166,9 +166,12 @@ describe('transport', () => {
     expect(walking.price).toBeGreaterThan(0);
   });
 
-  it('keeps a member cart at nothing and a punch cart off the bill', () => {
+  it('keeps a member cart at nothing', () => {
     expect(transportById('tr-member-cart')?.price).toBe(0);
-    expect(transportById('tr-punch-cart')?.punchCard).toBe('any');
+  });
+
+  it('sells no punch-card transport row — a punch buys the round, not the ride', () => {
+    expect(TRANSPORT_RATES.every((t) => !/punch/i.test(t.name))).toBe(true);
   });
 
   it('has exactly one default per mode, so the toggle is never ambiguous', () => {

@@ -4,7 +4,13 @@ import { largestFit } from './bookings';
 import { openRuns } from './openings';
 import { bookingRateClass, rateBand, rateCardFee, seatRateClass } from './rates';
 import type { RateContext } from './rates';
-import { seatCatalogFee, seatRate, seatRateIsChosen, seatTransportRate } from './seat-pricing';
+import {
+  seatCanSwitchHoles,
+  seatCatalogFee,
+  seatRate,
+  seatRateIsChosen,
+  seatTransportRate,
+} from './seat-pricing';
 import { transportById } from '../data/rate-catalog';
 
 export type { RateContext } from './rates';
@@ -80,6 +86,7 @@ export type SeatPatch = Partial<
     | 'discountId'
     | 'discountManual'
     | 'cartKey'
+    | 'punch'
   >
 >;
 
@@ -176,6 +183,10 @@ export function holesFee(b: Booking, i: number, holes: 9 | 18, rates?: RateConte
  * not the fee for eighteen.
  */
 export function setPlayerHoles(b: Booking, i: number, holes: 9 | 18): Partial<Booking> {
+  // A rate that isn't sold for that length blocks the switch rather than repricing behind the
+  // counter's back. The toggle is disabled in the UI too; this is the guard for anything that
+  // dispatches directly.
+  if (!seatCanSwitchHoles(b, i, holes)) return {};
   // The chosen rate is kept: switching a player from nine to eighteen does not put them on a
   // different rate, it charges that rate's eighteen-hole price. Only the typed-over fee goes,
   // because a number typed for nine holes is not the fee for eighteen.
@@ -353,3 +364,19 @@ export const returnCart = (b: Booking, i: number): Partial<Booking> => setPlayer
 /** Everyone on the same rate — the old prototype's "Save fees to all", minus paid seats. */
 export const setGroupRate = (b: Booking, rateId: string): Partial<Booking> =>
   patchEachPlayer(b, (x, i) => setPlayerRate(x, i, rateId), isEditableSeat);
+
+/**
+ * Put a seat's round on a punch card.
+ *
+ * A punch buys the round, not the ride: the green fee goes to zero and transport keeps its own
+ * price. The card need not be the player's own — `customerId` carries whose it is, which is how
+ * a member puts a guest's round on theirs.
+ *
+ * The punch is not spent here. It comes off the card when the round checks in, because an
+ * applied punch on a reservation nobody showed up for has not been used.
+ */
+export const applyPunchCard = (b: Booking, i: number, customerId: string, cardName: string): Partial<Booking> =>
+  setPlayer(b, i, { punch: { customerId, cardName }, discountId: undefined, discountManual: undefined });
+
+/** Take the round back off the punch card — it reprices to whatever its rate says. */
+export const clearPunchCard = (b: Booking, i: number): Partial<Booking> => setPlayer(b, i, { punch: undefined });

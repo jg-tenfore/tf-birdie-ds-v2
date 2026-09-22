@@ -6,6 +6,7 @@ import {
   discountById,
   price as ratePrice,
   ratesForTeeTime,
+  rateAllowsHoles,
   transportById,
   type DiscountPreset,
   type GreenFeeRate,
@@ -114,15 +115,32 @@ export function seatTransportRate(b: Booking, i: number): TransportRate {
 export function seatTransportFee(b: Booking, i: number): number {
   const override = b.playerStates[i]?.transportFee;
   if (override != null) return override;
-  const rate = seatTransportRate(b, i);
-  // A punch-card cart charges nothing and spends a punch instead. The punch is deducted when
-  // the round is checked in, not here — pricing must stay a pure read.
-  return rate.punchCard ? 0 : rate.price;
+  return seatTransportRate(b, i).price;
 }
 
-/** Does this seat's transport spend a punch rather than money? */
-export const seatUsesPunch = (b: Booking, i: number): boolean =>
-  Boolean(b.playerStates[i]?.transportFee == null && seatTransportRate(b, i).punchCard);
+// ─── Punch cards ────────────────────────────────────────────────────────────
+
+/**
+ * Is this seat's round on a punch card?
+ *
+ * A punch buys the **round**, not the ride: the green fee goes to zero and transport is still
+ * billed. The punch itself is spent at check-in, not here — pricing stays a pure read, and an
+ * applied punch on a reservation nobody checked in has not been used.
+ */
+export const seatUsesPunch = (b: Booking, i: number): boolean => b.playerStates[i]?.punch != null;
+
+/** Whose card is paying, and which one — it need not be the player's own. */
+export const seatPunch = (b: Booking, i: number) => b.playerStates[i]?.punch ?? null;
+
+/**
+ * Can this seat switch to `holes`?
+ *
+ * False when the rate it is on is not sold for that length. The toggle is blocked rather than
+ * repriced: dropping a player from Premium Single to whatever comes next, silently, is a price
+ * change nobody asked for.
+ */
+export const seatCanSwitchHoles = (b: Booking, i: number, holes: 9 | 18, ctx: SeatPricingContext = {}): boolean =>
+  rateAllowsHoles(seatRate(b, i, ctx), holes);
 
 // ─── Discounts ──────────────────────────────────────────────────────────────
 
@@ -153,6 +171,8 @@ export interface SeatPrice {
   transport: TransportRate;
   transportFee: number;
   usesPunch: boolean;
+  /** Whose punch card settled the round, when one did. */
+  punch: { customerId: string; cardName: string } | null;
   reason: string | null;
   /** Green fee plus transport, after the discount — the number on the right of the row. */
   total: number;
@@ -171,7 +191,10 @@ export function seatPrice(b: Booking, i: number, baseFee: number, ctx: SeatPrici
   const catalog = seatCatalogFee(b, i, ctx);
   const gross = manual ?? (seatRateIsChosen(b, i) && catalog != null ? catalog : baseFee);
   const discount = seatDiscount(b, i, gross);
-  const greenFee = +(gross - discount).toFixed(2);
+  // A punch settles the round outright, so the green fee is zero however it was priced — but
+  // `gross` is kept so the row can still show what the round was worth.
+  const usesPunch = seatUsesPunch(b, i);
+  const greenFee = usesPunch ? 0 : +(gross - discount).toFixed(2);
   const transport = seatTransportRate(b, i);
   const transportFee = seatTransportFee(b, i);
   return {
@@ -181,8 +204,9 @@ export function seatPrice(b: Booking, i: number, baseFee: number, ctx: SeatPrici
     greenFee,
     transport,
     transportFee,
-    usesPunch: seatUsesPunch(b, i),
-    reason: seatDiscountReason(b, i),
+    usesPunch,
+    punch: seatPunch(b, i),
+    reason: usesPunch ? (b.playerStates[i]?.punch?.cardName ?? 'Punch card') : seatDiscountReason(b, i),
     total: +(greenFee + transportFee).toFixed(2),
   };
 }
