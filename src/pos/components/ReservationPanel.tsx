@@ -7,7 +7,7 @@ import { buildTeeTimeCart, money, orderTotals } from '../logic/cart';
 import { playerHoles, reservationDue, reservationSettled, roundLabel } from '../logic/reservation';
 import { useModalContainer } from '../modals/modal-container';
 import { FilledButton, OutlineButton } from '../modals/ModalFrame';
-import { PANEL_WIDTHS, RESERVATION_TABS, rateContext } from '../state/pos-store';
+import { PANEL_WIDTHS, RESERVATION_TABS, dayBookings, rateContext } from '../state/pos-store';
 import type { ReservationTab } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
@@ -154,6 +154,9 @@ export function ReservationContent({
             </Typography>
             {isFreshWalkIn(b) && <WalkInTimePicker booking={b} />}
           </Box>
+          {/* "Next in line" — step to the next tee time without closing the panel. Weston on the
+              idea: "if you're just moving fast, you're boom, boom, boom, going through." */}
+          <NextInLine booking={b} />
           <ButtonBase
             onClick={close}
             aria-label="Close reservation"
@@ -273,5 +276,49 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
         </FilledButton>
       </Stack>
     </Box>
+  );
+}
+
+/**
+ * ‹ › through the day's bookings, in tee-time order.
+ *
+ * Justin's suggestion on the call, which Weston took: after working one reservation you are
+ * usually going to work the next one, and closing the panel to click a chip two rows down is a
+ * step that buys nothing. Empty slots are skipped because there is nothing to open, and the
+ * arrows stop at the ends rather than wrapping — a silent jump back to the morning is
+ * disorienting when you are moving fast.
+ */
+function NextInLine({ booking: b }: { booking: Booking }) {
+  const { state, dispatch } = usePos();
+  const day = dayBookings(state)
+    .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+    .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
+  const at = day.findIndex((x) => x.id === b.id);
+  if (at < 0 || day.length < 2) return null;
+
+  const step = (delta: 1 | -1) => dispatch({ type: 'stepReservation', delta });
+
+  return (
+    <Stack direction="row" alignItems="center" gap={0.25} sx={{ flexShrink: 0, mt: 0.25 }}>
+      <ButtonBase
+        aria-label="Previous tee time"
+        disabled={at === 0}
+        onClick={() => step(-1)}
+        sx={{ p: 0.5, borderRadius: '50%', color: md3.onSurfaceVariant, '&:disabled': { opacity: 0.3 } }}
+      >
+        <Icon name="chevron_left" size={18} />
+      </ButtonBase>
+      <Typography sx={{ fontSize: 10.5, color: md3.outline, fontWeight: 700, minWidth: 34, textAlign: 'center' }}>
+        {at + 1} of {day.length}
+      </Typography>
+      <ButtonBase
+        aria-label="Next tee time"
+        disabled={at === day.length - 1}
+        onClick={() => step(1)}
+        sx={{ p: 0.5, borderRadius: '50%', color: md3.onSurfaceVariant, '&:disabled': { opacity: 0.3 } }}
+      >
+        <Icon name="chevron_right" size={18} />
+      </ButtonBase>
+    </Stack>
   );
 }

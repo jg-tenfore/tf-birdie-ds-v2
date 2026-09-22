@@ -174,6 +174,7 @@ export function PlayerRow({
   const ctx = { catalog: state.weston.rateCatalog };
   const money9 = seatPrice(b, i, fee, ctx);
   const dense = state.weston.rowDensity === 'dense';
+  const inOrder = state.selectedBookingId === b.id && (state.orderSeats?.includes(i) ?? false);
   // Weston, round 3: "if I click on Michael Thompson… does something else open?" The record is
   // the person's, not the reservation's, so it opens over everything rather than as a tab.
   // A seat with nobody in it opens the same surface in assign mode.
@@ -243,6 +244,32 @@ export function PlayerRow({
           )}
         </ButtonBase>
 
+        {/* Weston: "you hit add to cart for each player, and then you hit save." The fast path
+            (Check in & pay) stays; this is for a group splitting the bill. */}
+        {editable && (
+          <Tooltip title={inOrder ? 'On the order' : 'Add this player to the order'}>
+            <ButtonBase
+              aria-label={`Add ${name} to the order`}
+              aria-pressed={inOrder}
+              onClick={() => dispatch({ type: 'addSeatToOrder', bookingId: b.id, seat: i })}
+              sx={{
+                px: 0.75,
+                py: 0.25,
+                gap: 0.375,
+                borderRadius: `${radius.sm}px`,
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: inOrder ? md3.primary : md3.onSurfaceVariant,
+                bgcolor: inOrder ? md3.primaryContainer : 'transparent',
+                '&:hover': { bgcolor: md3.primaryContainer },
+              }}
+            >
+              <Icon name={inOrder ? 'shopping_cart' : 'add_shopping_cart'} size={13} />
+              {inOrder ? 'In order' : 'Add'}
+            </ButtonBase>
+          </Tooltip>
+        )}
+
         <PaidPill paid={p.paid} noShow={p.noShow} />
 
         <Tooltip title={p.noShow ? 'Undo no-show' : 'Mark no-show'}>
@@ -304,17 +331,43 @@ export function PlayerRow({
           />
           {/* Weston: "maybe you click and this expands, instead of taking over a full screen." */}
           <Tooltip title={expanded ? 'Close rates' : 'Choose a rate'}>
-            <ButtonBase
-              aria-label={`${name} rates`}
-              aria-expanded={expanded}
-              disabled={!editable}
-              onClick={() => onToggleExpand(expanded ? null : i)}
-              sx={{ p: 0.4, borderRadius: `${radius.sm}px`, color: expanded ? md3.primary : md3.outline }}
-            >
-              <Icon name={expanded ? 'expand_less' : 'tune'} size={16} />
-            </ButtonBase>
+            <Box component="span" sx={{ display: 'inline-flex' }}>
+              <ButtonBase
+                aria-label={`${name} rates`}
+                aria-expanded={expanded}
+                disabled={!editable}
+                onClick={() => onToggleExpand(expanded ? null : i)}
+                sx={{ p: 0.4, borderRadius: `${radius.sm}px`, color: expanded ? md3.primary : md3.outline }}
+              >
+                <Icon name={expanded ? 'expand_less' : 'tune'} size={16} />
+              </ButtonBase>
+            </Box>
           </Tooltip>
           <Box sx={{ flex: 1 }} />
+          {/* Cart signout — a key glyph once one is out, so the row says what the player has. */}
+          <Tooltip title={p.cartKey != null ? `Cart ${p.cartKey} — tap to change` : 'Sign out a cart'}>
+            <Box component="span" sx={{ display: 'inline-flex' }}>
+              <ButtonBase
+                aria-label={`${name} cart signout`}
+                disabled={!editable}
+                onClick={() =>
+                  dispatch({ type: 'openModal', modal: { kind: 'cartSignout', bookingId: b.id, seat: i } })
+                }
+                sx={{
+                  px: 0.5,
+                  py: 0.25,
+                  gap: 0.25,
+                  borderRadius: `${radius.sm}px`,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: p.cartKey != null ? md3.primary : md3.outline,
+                }}
+              >
+                <Icon name="vpn_key" size={14} />
+                {p.cartKey != null ? p.cartKey : ''}
+              </ButtonBase>
+            </Box>
+          </Tooltip>
           <Segmented
             ariaLabel={`${name} transport`}
             disabled={!editable}

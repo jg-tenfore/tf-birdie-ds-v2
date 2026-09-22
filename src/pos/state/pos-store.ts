@@ -80,7 +80,9 @@ export type Modal =
   /** `tip` is what checkout recalculated in, so the reader charges the checkout total. */
   | { kind: 'paymentReader'; method: string; tip?: number }
   | { kind: 'confirm'; title: string; body: string; confirmLabel: string; onConfirm: string }
-  | { kind: 'teeSheetSearch' };
+  | { kind: 'teeSheetSearch' }
+  /** Handing a cart key to one player (Weston Edits, round 3). */
+  | { kind: 'cartSignout'; bookingId: string; seat: number };
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -261,6 +263,14 @@ export interface PosState {
   reservationPanel: ReservationPanelState | null;
   /** The customer record, layered over everything (Weston Edits, round 3). */
   customerModal: CustomerModalState | null;
+  /**
+   * Which seats of `selectedBookingId` are on the order.
+   *
+   * Weston's third round put an **Add to cart** on each player row, so a foursome splitting the
+   * bill rings up two seats now and two later. Empty means the whole booking — which is what
+   * Check in & pay loads, and what every surface did before per-seat existed.
+   */
+  orderSeats: number[] | null;
   /** Variant switches for the comparisons Weston asked to see. Story-driven. */
   weston: WestonOptions;
   contextMenu: ContextMenuState;
@@ -334,6 +344,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     modal: null,
     reservationPanel: null,
     customerModal: null,
+    orderSeats: null,
     weston: { ...DEFAULT_WESTON_OPTIONS },
     contextMenu: null,
     toast: null,
@@ -354,6 +365,8 @@ export type Action =
       assigning?: boolean;
     }
   | { type: 'closeCustomerModal' }
+  | { type: 'addSeatToOrder'; bookingId: string; seat: number }
+  | { type: 'stepReservation'; delta: 1 | -1 }
   | { type: 'setWestonOption'; patch: Partial<WestonOptions> }
   | { type: 'setCategory'; category: string | null }
   | { type: 'toggleLeftPanel'; collapsed?: boolean }
@@ -614,9 +627,11 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, cart };
     }
     case 'clearOrder':
+      // Seats go with the order they were on.
       return {
         ...state,
         cart: [],
+        orderSeats: null,
         selectedGolfer: null,
         selectedBookingId: null,
         flowMode: '',
@@ -628,6 +643,41 @@ export function reducer(state: PosState, action: Action): PosState {
       };
     case 'setFlowMode':
       return { ...state, flowMode: action.mode };
+    case 'stepReservation': {
+      // "Next in line" — Weston liked the idea of moving booking to booking without closing
+      // the panel: "if you're just moving fast, you're boom, boom, boom, going through."
+      // Ordered by tee time across the courses in view, empty slots skipped, stopping at the
+      // ends rather than wrapping — a silent jump back to the morning is disorienting.
+      const panel = state.reservationPanel;
+      if (!panel) return state;
+      const day = dayBookings(state)
+        .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+        .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
+      const at = day.findIndex((x) => x.id === panel.bookingId);
+      const next = day[at + action.delta];
+      if (at < 0 || !next) return state;
+      return { ...state, reservationPanel: { ...panel, bookingId: next.id, tab: 'players', playerIndex: 0 } };
+    }
+    case 'addSeatToOrder': {
+      const b = state.bookings.find((x) => x.id === action.bookingId);
+      if (!b) return state;
+      // Adding a seat to a different booking's order starts a fresh one; adding to the same
+      // booking tops it up and keeps the retail and F&B lines alone.
+      const same = state.selectedBookingId === b.id;
+      const seats = [...new Set([...(same ? (state.orderSeats ?? []) : []), action.seat])];
+      const extras = same ? state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes') : [];
+      return {
+        ...state,
+        // The rail comes back the moment something lands in the order: an order you cannot see
+        // is one nobody checks before charging it.
+        leftPanelCollapsed: false,
+        selectedBookingId: b.id,
+        orderSeats: seats,
+        cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state), seats), ...extras],
+        orderScenario: same ? state.orderScenario : null,
+        lastPayment: same ? state.lastPayment : null,
+      };
+    }
     case 'loadBooking': {
       const b = state.bookings.find((x) => x.id === action.bookingId);
       if (!b) return state;
@@ -642,6 +692,9 @@ export function reducer(state: PosState, action: Action): PosState {
         selectedBookingId: b.id,
         selectedGolfer: null,
         flowMode: '',
+        // Check in & pay tops the order up to the whole booking rather than rebuilding it, so
+        // seats added one at a time keep whatever was done to them.
+        orderSeats: null,
         cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state)), ...extras],
         orderScenario: same ? state.orderScenario : null,
         lastPayment: same ? state.lastPayment : null,

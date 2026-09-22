@@ -8,6 +8,7 @@ import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
 import { ReservationPanel } from './components/ReservationPanel';
 import { CustomerModal } from './components/CustomerModal';
+import { CartSignoutModal } from './components/CartSignout';
 import type { PosState } from './state/pos-store';
 import { PosProvider, usePos } from './state/PosProvider';
 import { useUrlSync } from './state/useUrlSync';
@@ -81,6 +82,7 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       <ReservationPanel />
       {/* The customer record layers over everything, including the reservation. */}
       <CustomerModal />
+      <CartSignoutModal />
       <ModalHost />
       <ContextMenus />
       <TeeSheetSidebar />

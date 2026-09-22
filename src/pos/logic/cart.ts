@@ -524,11 +524,21 @@ export function seatCharges(b: Booking, i: number, rates?: RateContext): SeatCha
  * carries the operator's per-row price overrides and the customer roster (`holesFee`) —
  * pass `rateContext(state)`.
  */
-export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: RateContext): CartItem[] {
+export function buildTeeTimeCart(
+  b: Booking,
+  courses: Course[] = [],
+  rates?: RateContext,
+  seats?: readonly number[],
+): CartItem[] {
   const course = courses.find((c) => c.id === b.course) ?? ALL_COURSES.find((c) => c.id === b.course);
   let taxTotal = 0;
 
-  const players: CartPlayer[] = Array.from({ length: b.players }, (_, i) => {
+  // `seats` limits the order to the players added so far — Weston's third round put an **Add to
+  // cart** on each row, so a foursome splitting the bill rings up two seats now and two later.
+  // Omitted means the whole booking, which is what Check in & pay does.
+  const indices = seats ? [...seats].sort((x, y) => x - y) : Array.from({ length: b.players }, (_, i) => i);
+
+  const players: CartPlayer[] = indices.map((i) => {
     const modifierTags: ModifierTag[] = [];
     const transport = playerTransport(b, i);
     const state = b.playerStates[i];
@@ -580,6 +590,7 @@ export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: Rat
   });
 
   const chargeable = players.filter((p) => !p.paid && !p.noShow).length;
+  const seatCount = players.length;
   const teeTime = {
     label: TIMES.find((x) => x.totalMin === b.timeMin)?.label ?? '?',
     courseName: course?.name ?? '',
@@ -591,8 +602,8 @@ export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: Rat
     {
       name: roundLabel(b),
       unitPrice: b.price,
-      price: b.price * b.players,
-      qty: b.players,
+      price: b.price * seatCount,
+      qty: seatCount,
       isCheckIn: true,
       teeTime,
       players,
