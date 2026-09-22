@@ -98,8 +98,11 @@ export const MixedMemberGuestGroup: Story = {
 };
 
 /**
- * The tee fee sheet: type a fee, or take the default for the player's holes or a comp.
- * Weston: "adjust their tee fees". The default is what Reset returns to.
+ * Tapping the fee opens the **rate editor** (11 · Rate Selector), not a number pad.
+ *
+ * Weston's third round moved this: staff "do want to select what's available", so the thing
+ * being chosen is the rate, and the amount follows from it. Typing a number over the top is
+ * still possible inside the editor — it is just no longer the first thing offered.
  */
 export const TeeFeeSheet: Story = {
   render: PlayerRows.render,

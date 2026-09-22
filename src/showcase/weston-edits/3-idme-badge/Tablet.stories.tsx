@@ -45,7 +45,7 @@ export const OnALinkedGuest: Story = {
 
 /** In the Customer tab the badge spells out the group. */
 export const InTheCustomerTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(idMeParty(), 'customer')} />,
+  render: () => <Screen edition="weston" initialState={sheetWithPanel(idMeParty(), 'players')} />,
 };
 
 /**

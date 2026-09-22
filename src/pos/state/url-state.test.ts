@@ -288,7 +288,6 @@ describe('reservation panel (Weston Edits)', () => {
 
   it.each([
     ['players', 0],
-    ['customer', 1],
     ['financial', 0],
     ['notes', 0],
     ['activity', 0],
@@ -301,9 +300,17 @@ describe('reservation panel (Weston Edits)', () => {
   });
 
   it('survives a dialog opened on top of it', () => {
-    const patch = hashToState(`#/tee-sheet?res=${id}&res-tab=customer&modal=new-customer`);
-    expect(patch.reservationPanel?.tab).toBe('customer');
+    const patch = hashToState(`#/tee-sheet?res=${id}&res-tab=financial&modal=new-customer`);
+    expect(patch.reservationPanel?.tab).toBe('financial');
     expect(patch.modal).toEqual({ kind: 'newCustomer' });
+  });
+
+  it('degrades an old link to the Customer tab rather than breaking on it', () => {
+    // The tab went in Weston's third round — the record opens from the player's name now. A
+    // link someone saved before then still opens the right booking, just on Players.
+    const patch = hashToState(`#/tee-sheet?res=${id}&res-tab=customer`);
+    expect(patch.reservationPanel?.bookingId).toBe(id);
+    expect(patch.reservationPanel?.tab).toBe('players');
   });
 
   it('drops a panel for a booking the club does not have, and a bogus tab', () => {

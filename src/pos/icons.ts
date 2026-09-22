@@ -59,7 +59,9 @@ import LocalOffer from '@mui/icons-material/LocalOffer';
 import Lock from '@mui/icons-material/Lock';
 import Mail from '@mui/icons-material/Mail';
 import ManageAccounts from '@mui/icons-material/ManageAccounts';
+import Menu from '@mui/icons-material/Menu';
 import MenuOpen from '@mui/icons-material/MenuOpen';
+import VpnKey from '@mui/icons-material/VpnKey';
 import MoreHoriz from '@mui/icons-material/MoreHoriz';
 import MoreVert from '@mui/icons-material/MoreVert';
 import Nightlight from '@mui/icons-material/Nightlight';
@@ -70,6 +72,7 @@ import Payments from '@mui/icons-material/Payments';
 import Person from '@mui/icons-material/Person';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonOff from '@mui/icons-material/PersonOff';
+import PersonSearch from '@mui/icons-material/PersonSearch';
 import Phone from '@mui/icons-material/Phone';
 import PointOfSale from '@mui/icons-material/PointOfSale';
 import Print from '@mui/icons-material/Print';
@@ -178,6 +181,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   lock: Lock,
   mail: Mail,
   manage_accounts: ManageAccounts,
+  menu: Menu,
   menu_open: MenuOpen,
   more_horiz: MoreHoriz,
   more_vert: MoreVert,
@@ -189,6 +193,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   person: Person,
   person_add: PersonAdd,
   person_off: PersonOff,
+  person_search: PersonSearch,
   phone: Phone,
   point_of_sale: PointOfSale,
   print: Print,
@@ -215,6 +220,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   touch_app: TouchApp,
   trolley: Trolley,
   tune: Tune,
+  vpn_key: VpnKey,
   verified_user: VerifiedUser,
   vertical_align_bottom: VerticalAlignBottom,
   vertical_align_top: VerticalAlignTop,

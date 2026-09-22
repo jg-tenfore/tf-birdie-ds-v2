@@ -1,0 +1,6398 @@
+[
+    {
+        "id": "458336",
+        "courseId": "313489",
+        "firstName": "Oda",
+        "lastName": "Brennevin",
+        "displayName": "Oda Brennevin - Full Golf",
+        "email": "oda.brennevin@att.net",
+        "phone": "8017084153",
+        "birthday": "02/09/1959",
+        "notes": "has a standing Saturday foursome",
+        "street": "77 Greenside Ct",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "09/12/2027"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024700",
+                "date": "02/03/2026 4:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024701",
+                "date": "09/06/2026 1:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9024702",
+                "date": "12/15/2026 12:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9024703",
+                "date": "06/16/2026 10:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024704",
+                "date": "03/07/2026 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024705",
+                "date": "01/12/2026 8:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024706",
+                "date": "09/06/2026 11:45 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 852,
+        "balance": 0,
+        "cardOnFile": "4165",
+        "cardExpires": "05/2035"
+    },
+    {
+        "id": "458337",
+        "courseId": "313490",
+        "firstName": "Ivar",
+        "lastName": "Brennevin",
+        "displayName": "Ivar Brennevin - Full Golf",
+        "email": "ivar.brennevin+1@tenfore.golf",
+        "phone": "8017084153",
+        "birthday": "02/02/1984",
+        "street": "9 Dogleg Dr",
+        "city": "Silver Spring",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "07/24/2027"
+            }
+        ],
+        "customerTypes": ["Senior"],
+        "giftCards": [
+            {
+                "id": "261900",
+                "type": "Purchased",
+                "expires": "01/16/2032",
+                "awarded": 50,
+                "spent": 12.4,
+                "balance": 37.6,
+                "upc": ""
+            },
+            {
+                "id": "261901",
+                "type": "Winnings",
+                "expires": "09/13/2030",
+                "awarded": 200,
+                "spent": 75.16,
+                "balance": 124.84,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024707",
+                "date": "03/14/2026 5:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024708",
+                "date": "06/18/2025 10:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024709",
+                "date": "09/13/2025 12:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024710",
+                "date": "05/21/2025 9:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024711",
+                "date": "07/05/2025 8:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024712",
+                "date": "06/02/2026 8:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024713",
+                "date": "01/25/2025 4:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9024714",
+                "date": "07/10/2025 7:00 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1808,
+        "balance": 861,
+        "cardOnFile": "2983",
+        "cardExpires": "11/2039"
+    },
+    {
+        "id": "458338",
+        "courseId": "313491",
+        "firstName": "Rufus",
+        "lastName": "Brennevin",
+        "displayName": "Rufus Brennevin - Junior",
+        "email": "rufus.brennevin+2@tenfore.golf",
+        "phone": "8017084153",
+        "birthday": "10/10/1958",
+        "notes": "left-handed rental clubs",
+        "street": "1201 Tee Box Way",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": ["Junior"],
+        "giftCards": [
+            {
+                "id": "261902",
+                "type": "Winnings",
+                "expires": "06/27/2028",
+                "awarded": 200,
+                "spent": 0,
+                "balance": 200,
+                "upc": "269989807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024715",
+                "date": "07/23/2025 10:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024716",
+                "date": "11/18/2025 10:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9024717",
+                "date": "08/09/2025 7:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024718",
+                "date": "07/03/2026 11:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024719",
+                "date": "08/28/2025 3:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024720",
+                "date": "05/13/2026 10:00 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2935,
+        "balance": 0,
+        "cardOnFile": "7250",
+        "cardExpires": "04/2030"
+    },
+    {
+        "id": "458339",
+        "courseId": "313492",
+        "firstName": "Oda",
+        "lastName": "Brennevin",
+        "displayName": "G-Oda Brennevin - Guest of Members",
+        "sheetName": "G-Oda Brennevin",
+        "email": "oda.brennevin@yahoo.com",
+        "phone": "8017084153",
+        "birthday": "08/16/1972",
+        "notes": "has a standing Saturday foursome",
+        "street": "1201 Tee Box Way",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": ["Guest of Members"],
+        "giftCards": [
+            {
+                "id": "261903",
+                "type": "Purchased",
+                "expires": "05/28/2027",
+                "awarded": 175,
+                "spent": 8.86,
+                "balance": 166.14,
+                "upc": "742766807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024721",
+                "date": "06/03/2025 5:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024722",
+                "date": "07/20/2025 5:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024723",
+                "date": "04/05/2026 11:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024724",
+                "date": "03/05/2025 10:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024725",
+                "date": "07/07/2026 3:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024726",
+                "date": "11/03/2025 5:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024727",
+                "date": "11/04/2025 10:45 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2100,
+        "balance": 0
+    },
+    {
+        "id": "458340",
+        "courseId": "313493",
+        "firstName": "Igor",
+        "lastName": "Kuznetsov",
+        "displayName": "Igor Kuznetsov - Weekday Golf",
+        "email": "igor.kuznetsov@gmail.com",
+        "phone": "8015540982",
+        "birthday": "10/19/2005",
+        "notes": "prefers the 7:40 time",
+        "street": "402 Bunker Rd",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [
+            {
+                "name": "Weekday Golf",
+                "expires": "01/06/2026"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024728",
+                "date": "05/19/2025 4:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024729",
+                "date": "02/07/2026 11:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024730",
+                "date": "03/09/2025 9:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9024731",
+                "date": "05/15/2025 8:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024732",
+                "date": "01/22/2025 6:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024733",
+                "date": "09/19/2025 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024734",
+                "date": "07/07/2025 12:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9024735",
+                "date": "06/22/2026 2:30 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 312,
+        "balance": 0
+    },
+    {
+        "id": "458341",
+        "courseId": "313494",
+        "firstName": "Igor",
+        "lastName": "Kuznetsov",
+        "displayName": "G-Igor Kuznetsov - Guest of Members",
+        "sheetName": "G-Igor Kuznetsov",
+        "email": "igor.kuznetsov+5@tenfore.golf",
+        "phone": "8015540982",
+        "birthday": "12/16/1949",
+        "notes": "has a standing Saturday foursome",
+        "street": "77 Greenside Ct",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Guest of Members"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024736",
+                "date": "07/20/2025 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024737",
+                "date": "09/23/2026 4:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024738",
+                "date": "11/09/2026 5:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024739",
+                "date": "02/12/2025 12:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024740",
+                "date": "11/10/2025 8:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024741",
+                "date": "09/18/2026 10:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024742",
+                "date": "11/09/2025 9:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024743",
+                "date": "04/19/2026 1:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024744",
+                "date": "06/10/2025 9:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9024745",
+                "date": "04/03/2026 6:00 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2512,
+        "balance": 0
+    },
+    {
+        "id": "458342",
+        "courseId": "313495",
+        "firstName": "Weston",
+        "lastName": "Farnsworth",
+        "displayName": "Weston Farnsworth - 30 Day booking window",
+        "tag": "(tr456)",
+        "email": "weston.farnsworth@tenfore.golf",
+        "phone": "8017084153",
+        "birthday": "08/18/1969",
+        "notes": "free golf for life",
+        "street": "402 Bunker Rd",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "30 Day booking window",
+                "expires": "01/08/2026"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [
+            {
+                "id": "261904",
+                "type": "Winnings",
+                "expires": "11/02/2030",
+                "awarded": 100,
+                "spent": 0,
+                "balance": 100,
+                "upc": "263782807261"
+            },
+            {
+                "id": "261905",
+                "type": "Winnings",
+                "expires": "12/08/2031",
+                "awarded": 175,
+                "spent": 0,
+                "balance": 175,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024746",
+                "date": "01/20/2026 1:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024747",
+                "date": "09/16/2026 12:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024748",
+                "date": "08/04/2025 9:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024749",
+                "date": "02/28/2026 11:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024750",
+                "date": "12/07/2026 2:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9024751",
+                "date": "12/02/2025 1:30 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1783,
+        "balance": 0,
+        "cardOnFile": "8243",
+        "cardExpires": "05/2038"
+    },
+    {
+        "id": "458343",
+        "courseId": "313496",
+        "firstName": "Tony",
+        "lastName": "Finau",
+        "displayName": "Tony Finau - Diamond",
+        "email": "tony.finau+7@tenfore.golf",
+        "phone": "8013758144",
+        "birthday": "09/03/1962",
+        "notes": "prefers the 7:40 time",
+        "street": "402 Bunker Rd",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["Diamond"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024752",
+                "date": "04/18/2026 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024753",
+                "date": "09/15/2025 6:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024754",
+                "date": "08/06/2026 10:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9024755",
+                "date": "03/08/2026 7:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9024756",
+                "date": "01/23/2026 7:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024757",
+                "date": "03/11/2025 7:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024758",
+                "date": "08/25/2026 2:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9024759",
+                "date": "11/23/2026 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024760",
+                "date": "10/25/2026 12:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9024761",
+                "date": "10/14/2026 9:15 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 114,
+        "balance": 0,
+        "cardOnFile": "2797",
+        "cardExpires": "09/2032"
+    },
+    {
+        "id": "458344",
+        "courseId": "313497",
+        "firstName": "Randy",
+        "lastName": "Orton",
+        "displayName": "Randy Orton - Social",
+        "email": "randy.orton+8@tenfore.golf",
+        "phone": "8019457787",
+        "birthday": "07/07/1982",
+        "notes": "prefers the 7:40 time",
+        "street": "402 Bunker Rd",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "Social",
+                "expires": "10/03/2028"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024762",
+                "date": "07/02/2025 11:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024763",
+                "date": "08/08/2026 10:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9024764",
+                "date": "08/10/2025 4:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9024765",
+                "date": "01/16/2025 10:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024766",
+                "date": "11/04/2026 9:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9024767",
+                "date": "10/12/2026 8:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 497,
+        "balance": 0,
+        "cardOnFile": "8642",
+        "cardExpires": "08/2037"
+    },
+    {
+        "id": "458345",
+        "courseId": "313498",
+        "firstName": "Tom",
+        "lastName": "Watson",
+        "displayName": "Tom Watson - Senior",
+        "email": "tom.watson@yahoo.com",
+        "phone": "8012630392",
+        "birthday": "09/25/1962",
+        "notes": "do not seat near the bar",
+        "street": "9 Dogleg Dr",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Senior", "Hero"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024768",
+                "date": "02/22/2025 7:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024769",
+                "date": "08/04/2026 1:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024770",
+                "date": "10/12/2026 9:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024771",
+                "date": "04/11/2025 5:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024772",
+                "date": "03/20/2026 7:45 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1608,
+        "balance": 0,
+        "cardOnFile": "9397",
+        "cardExpires": "07/2035"
+    },
+    {
+        "id": "458346",
+        "courseId": "313499",
+        "firstName": "Marissa",
+        "lastName": "Chen",
+        "displayName": "Marissa Chen - Weekday Golf",
+        "email": "marissa.chen+10@tenfore.golf",
+        "phone": "8014402219",
+        "birthday": "03/19/1990",
+        "street": "18 Fairway Ln",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [
+            {
+                "name": "Weekday Golf",
+                "expires": "06/05/2026"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024773",
+                "date": "01/15/2025 4:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024774",
+                "date": "10/05/2026 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024775",
+                "date": "02/13/2026 2:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024776",
+                "date": "09/19/2025 4:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9024777",
+                "date": "02/23/2025 2:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024778",
+                "date": "06/28/2025 2:00 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 17,
+                "total": 20,
+                "expires": "03/04/2027"
+            }
+        ],
+        "rewardsBalance": 872,
+        "balance": 0,
+        "cardOnFile": "5646",
+        "cardExpires": "02/2035"
+    },
+    {
+        "id": "458347",
+        "courseId": "313500",
+        "firstName": "Priya",
+        "lastName": "Raman",
+        "displayName": "Priya Raman - Resident",
+        "email": "priya.raman@att.net",
+        "phone": "8018871046",
+        "birthday": "04/06/2001",
+        "notes": "walks — never wants a cart",
+        "street": "N/A",
+        "city": "Rockville",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Resident"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024779",
+                "date": "12/04/2025 3:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024780",
+                "date": "07/15/2025 9:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024781",
+                "date": "10/15/2026 4:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024782",
+                "date": "11/03/2026 10:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024783",
+                "date": "04/24/2025 5:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024784",
+                "date": "05/12/2025 2:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9024785",
+                "date": "12/28/2026 10:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024786",
+                "date": "12/08/2025 4:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9024787",
+                "date": "10/19/2026 12:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024788",
+                "date": "08/23/2025 10:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024789",
+                "date": "04/14/2026 9:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024790",
+                "date": "01/05/2025 1:30 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2938,
+        "balance": 0,
+        "cardOnFile": "1479",
+        "cardExpires": "03/2030"
+    },
+    {
+        "id": "458348",
+        "courseId": "313501",
+        "firstName": "Chris",
+        "lastName": "Moreno",
+        "displayName": "Chris Moreno - Employee",
+        "email": "chris.moreno@aol.com",
+        "phone": "8013320765",
+        "birthday": "12/03/1965",
+        "notes": "always pays on account",
+        "street": "402 Bunker Rd",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["Employee"],
+        "giftCards": [
+            {
+                "id": "261906",
+                "type": "Purchased",
+                "expires": "09/10/2027",
+                "awarded": 25,
+                "spent": 0,
+                "balance": 25,
+                "upc": "738759807261"
+            },
+            {
+                "id": "261907",
+                "type": "Winnings",
+                "expires": "04/16/2030",
+                "awarded": 50,
+                "spent": 25.76,
+                "balance": 24.24,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024791",
+                "date": "09/06/2025 12:45 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 504,
+        "balance": 0,
+        "cardOnFile": "3043",
+        "cardExpires": "11/2038"
+    },
+    {
+        "id": "458349",
+        "courseId": "313502",
+        "firstName": "Kelsey",
+        "lastName": "Sutton",
+        "displayName": "Kelsey Sutton - Corporate — 4 seat",
+        "sheetName": "Sutton, K.",
+        "email": "kelsey.sutton@att.net",
+        "phone": "8016604417",
+        "birthday": "01/09/2002",
+        "street": "N/A",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "05/18/2027"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [
+            {
+                "id": "261908",
+                "type": "Purchased",
+                "expires": "07/22/2031",
+                "awarded": 200,
+                "spent": 99.56,
+                "balance": 100.44,
+                "upc": "796071807261"
+            },
+            {
+                "id": "261909",
+                "type": "Winnings",
+                "expires": "09/08/2027",
+                "awarded": 175,
+                "spent": 173.73,
+                "balance": 1.27,
+                "upc": "364526807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024792",
+                "date": "06/28/2025 2:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9024793",
+                "date": "06/14/2026 4:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024794",
+                "date": "02/15/2026 8:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024795",
+                "date": "04/19/2026 8:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024796",
+                "date": "08/03/2026 12:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024797",
+                "date": "02/24/2025 4:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024798",
+                "date": "06/20/2026 2:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024799",
+                "date": "09/27/2025 12:00 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 18,
+                "total": 20,
+                "expires": "03/16/2026"
+            }
+        ],
+        "rewardsBalance": 1296,
+        "balance": 0
+    },
+    {
+        "id": "458350",
+        "courseId": "313503",
+        "firstName": "Fiona",
+        "lastName": "Doyle",
+        "displayName": "Fiona Doyle - Resident",
+        "sheetName": "Doyle, F.",
+        "email": "fiona.doyle@sbcglobal.net",
+        "phone": "8012248830",
+        "birthday": "06/01/1969",
+        "notes": "walks — never wants a cart",
+        "street": "1201 Tee Box Way",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Resident", "Military"],
+        "giftCards": [
+            {
+                "id": "261910",
+                "type": "Purchased",
+                "expires": "06/17/2032",
+                "awarded": 175,
+                "spent": 166.55,
+                "balance": 8.45,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024800",
+                "date": "10/03/2025 8:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024801",
+                "date": "04/24/2025 4:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024802",
+                "date": "01/13/2025 4:00 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "10-Round Punch Card",
+                "remaining": 4,
+                "total": 10,
+                "expires": "02/01/2026"
+            }
+        ],
+        "rewardsBalance": 29,
+        "balance": 0
+    },
+    {
+        "id": "458351",
+        "courseId": "313504",
+        "firstName": "Jonah",
+        "lastName": "Hamlet",
+        "displayName": "Jonah Hamlet - Trial Month",
+        "sheetName": "Hamlet, J.",
+        "email": "jonah.hamlet@hotmail.com",
+        "phone": "8017719305",
+        "birthday": "01/08/1948",
+        "notes": "left-handed rental clubs",
+        "street": "18 Fairway Ln",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [
+            {
+                "name": "Trial Month",
+                "expires": "05/09/2028"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024803",
+                "date": "08/06/2026 1:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024804",
+                "date": "01/03/2025 1:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024805",
+                "date": "03/21/2026 4:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024806",
+                "date": "04/08/2026 3:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024807",
+                "date": "11/22/2025 6:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024808",
+                "date": "05/03/2026 10:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024809",
+                "date": "07/11/2026 9:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024810",
+                "date": "11/20/2026 3:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024811",
+                "date": "03/17/2025 12:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024812",
+                "date": "10/28/2025 11:30 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1181,
+        "balance": 0
+    },
+    {
+        "id": "458352",
+        "courseId": "313505",
+        "firstName": "Weston",
+        "lastName": "Senior",
+        "displayName": "Weston Senior",
+        "email": "weston.farnsworth+senior@tenfore.golf",
+        "phone": "8015550142",
+        "birthday": "11/13/1992",
+        "notes": "prefers the 7:40 time",
+        "street": "18 Fairway Ln",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "09/10/2026"
+            }
+        ],
+        "customerTypes": ["Senior"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024813",
+                "date": "03/01/2026 4:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024814",
+                "date": "07/17/2025 1:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024815",
+                "date": "02/13/2026 8:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024816",
+                "date": "04/23/2025 1:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024817",
+                "date": "10/11/2026 2:30 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1268,
+        "balance": 0,
+        "cardOnFile": "3200",
+        "cardExpires": "11/2028"
+    },
+    {
+        "id": "458353",
+        "courseId": "313506",
+        "firstName": "Quinn",
+        "lastName": "Zeller",
+        "displayName": "Quinn Zeller - 30 Day booking window",
+        "email": "quinn.zeller+17@tenfore.golf",
+        "phone": "8013155910",
+        "birthday": "08/01/1977",
+        "notes": "has a standing Saturday foursome",
+        "street": "N/A",
+        "city": "N/A",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [
+            {
+                "name": "30 Day booking window",
+                "expires": "11/07/2027"
+            }
+        ],
+        "customerTypes": ["Hero", "Test percent off"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024818",
+                "date": "08/26/2025 7:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024819",
+                "date": "06/11/2026 11:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024820",
+                "date": "05/02/2025 11:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024821",
+                "date": "02/17/2026 1:00 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 113,
+        "balance": 0,
+        "cardOnFile": "4393",
+        "cardExpires": "09/2040"
+    },
+    {
+        "id": "458354",
+        "courseId": "313507",
+        "firstName": "Rosa",
+        "lastName": "Ito",
+        "displayName": "Rosa Ito - Junior",
+        "email": "rosa.ito@att.net",
+        "phone": "8014998441",
+        "birthday": "08/15/2003",
+        "notes": "has a standing Saturday foursome",
+        "street": "1201 Tee Box Way",
+        "city": "Rockville",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Junior",
+                "expires": "10/20/2027"
+            }
+        ],
+        "customerTypes": ["Senior", "New Deal"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024822",
+                "date": "02/10/2026 8:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9024823",
+                "date": "11/12/2026 2:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9024824",
+                "date": "10/26/2026 10:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9024825",
+                "date": "11/03/2025 12:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024826",
+                "date": "01/27/2026 7:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9024827",
+                "date": "01/28/2026 6:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024828",
+                "date": "12/01/2026 5:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024829",
+                "date": "05/22/2025 3:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024830",
+                "date": "08/15/2026 11:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024831",
+                "date": "12/08/2026 6:30 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1405,
+        "balance": 0
+    },
+    {
+        "id": "458355",
+        "courseId": "313508",
+        "firstName": "Simone",
+        "lastName": "Okafor",
+        "displayName": "Simone Okafor - Guest of Members",
+        "email": "simone.okafor@gmail.com",
+        "phone": "8010015904",
+        "birthday": "09/16/1984",
+        "street": "18 Fairway Ln",
+        "city": "Arlington",
+        "state": "VA",
+        "memberships": [],
+        "customerTypes": ["Guest of Members", "Hero", "Campaign Testers"],
+        "giftCards": [
+            {
+                "id": "261911",
+                "type": "Purchased",
+                "expires": "01/05/2027",
+                "awarded": 200,
+                "spent": 5.57,
+                "balance": 194.43,
+                "upc": "254831807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024832",
+                "date": "03/10/2025 12:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024833",
+                "date": "08/02/2026 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024834",
+                "date": "02/21/2026 7:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024835",
+                "date": "04/15/2026 7:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024836",
+                "date": "03/06/2025 12:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024837",
+                "date": "08/22/2025 1:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024838",
+                "date": "03/05/2026 6:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024839",
+                "date": "02/20/2025 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024840",
+                "date": "09/20/2025 10:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024841",
+                "date": "01/20/2025 6:30 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 11,
+                "total": 20,
+                "expires": "12/20/2026"
+            }
+        ],
+        "rewardsBalance": 40,
+        "balance": 0
+    },
+    {
+        "id": "458356",
+        "courseId": "313509",
+        "firstName": "Teo",
+        "lastName": "Achebe",
+        "displayName": "Teo Achebe - Military",
+        "email": "teo.achebe@yahoo.com",
+        "phone": "8012365077",
+        "birthday": "07/14/2001",
+        "notes": "do not seat near the bar",
+        "street": "N/A",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": ["Military"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024842",
+                "date": "04/28/2026 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024843",
+                "date": "02/22/2025 6:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024844",
+                "date": "12/01/2026 1:30 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 596,
+        "balance": 0,
+        "cardOnFile": "3988",
+        "cardExpires": "06/2031"
+    },
+    {
+        "id": "458357",
+        "courseId": "313510",
+        "firstName": "Ursula",
+        "lastName": "Kaur",
+        "displayName": "Ursula Kaur - Guest of Members",
+        "email": "ursula.kaur@gmail.com",
+        "phone": "8019989027",
+        "birthday": "11/10/1948",
+        "notes": "free golf for life",
+        "street": "1201 Tee Box Way",
+        "city": "Alexandria",
+        "state": "VA",
+        "memberships": [],
+        "customerTypes": ["Guest of Members", "Resident 22 Test", "Employee"],
+        "giftCards": [
+            {
+                "id": "261912",
+                "type": "Purchased",
+                "expires": "08/22/2028",
+                "awarded": 200,
+                "spent": 42.24,
+                "balance": 157.76,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024845",
+                "date": "11/24/2026 2:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024846",
+                "date": "05/15/2025 4:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024847",
+                "date": "06/27/2026 11:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9024848",
+                "date": "07/08/2025 5:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024849",
+                "date": "09/13/2026 6:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9024850",
+                "date": "08/07/2025 7:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9024851",
+                "date": "02/15/2026 10:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9024852",
+                "date": "04/20/2026 3:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9024853",
+                "date": "03/24/2025 5:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9024854",
+                "date": "03/11/2025 4:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024855",
+                "date": "02/10/2026 1:45 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 789,
+        "balance": 0
+    },
+    {
+        "id": "458358",
+        "courseId": "313511",
+        "firstName": "Viggo",
+        "lastName": "Osei",
+        "displayName": "Viggo Osei - Junior",
+        "email": "viggo.osei@gmail.com",
+        "phone": "8019340237",
+        "birthday": "09/26/1988",
+        "street": "77 Greenside Ct",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [
+            {
+                "name": "Junior",
+                "expires": "09/20/2027"
+            }
+        ],
+        "customerTypes": ["Military", "New Deal"],
+        "giftCards": [],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 572,
+        "balance": 808.7,
+        "cardOnFile": "1148",
+        "cardExpires": "10/2029"
+    },
+    {
+        "id": "458359",
+        "courseId": "313512",
+        "firstName": "Wren",
+        "lastName": "Baptiste",
+        "displayName": "Wren Baptiste - Trial Month",
+        "email": "wren.baptiste+23@tenfore.golf",
+        "birthday": "10/10/1966",
+        "street": "N/A",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "Trial Month",
+                "expires": "07/20/2028"
+            }
+        ],
+        "customerTypes": ["Resident 22 Test", "Campaign Testers"],
+        "giftCards": [
+            {
+                "id": "261913",
+                "type": "Purchased",
+                "expires": "08/09/2027",
+                "awarded": 25,
+                "spent": 0,
+                "balance": 25,
+                "upc": "389255807261"
+            },
+            {
+                "id": "261914",
+                "type": "Purchased",
+                "expires": "06/20/2032",
+                "awarded": 100,
+                "spent": 72.51,
+                "balance": 27.49,
+                "upc": "784667807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024856",
+                "date": "12/26/2026 1:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024857",
+                "date": "09/07/2025 12:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024858",
+                "date": "09/16/2026 12:30 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 2,
+                "total": 20,
+                "expires": "06/25/2027"
+            }
+        ],
+        "rewardsBalance": 2806,
+        "balance": 0,
+        "cardOnFile": "4031",
+        "cardExpires": "01/2032"
+    },
+    {
+        "id": "458360",
+        "courseId": "313513",
+        "firstName": "Xiomara",
+        "lastName": "Lindqvist",
+        "displayName": "Xiomara Lindqvist - Resident 22 Test",
+        "email": "xiomara.lindqvist+24@tenfore.golf",
+        "birthday": "04/27/1996",
+        "notes": "left-handed rental clubs",
+        "street": "77 Greenside Ct",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [],
+        "customerTypes": ["Resident 22 Test", "Campaign Testers", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024859",
+                "date": "03/19/2025 5:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024860",
+                "date": "10/20/2026 10:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9024861",
+                "date": "10/15/2026 10:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9024862",
+                "date": "08/19/2026 12:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024863",
+                "date": "08/01/2025 5:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9024864",
+                "date": "01/09/2025 11:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9024865",
+                "date": "09/16/2026 2:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024866",
+                "date": "03/18/2026 6:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024867",
+                "date": "10/07/2025 6:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024868",
+                "date": "02/07/2026 9:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024869",
+                "date": "03/12/2026 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024870",
+                "date": "04/15/2025 8:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024871",
+                "date": "12/08/2025 8:00 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1687,
+        "balance": 1193.73,
+        "cardOnFile": "2769",
+        "cardExpires": "01/2038"
+    },
+    {
+        "id": "458361",
+        "courseId": "313514",
+        "firstName": "Yusuf",
+        "lastName": "Petrov",
+        "displayName": "Yusuf Petrov",
+        "email": "yusuf.petrov+25@tenfore.golf",
+        "phone": "8014908661",
+        "birthday": "07/18/1970",
+        "notes": "left-handed rental clubs",
+        "street": "N/A",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024872",
+                "date": "09/10/2025 10:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024873",
+                "date": "12/22/2026 9:30 AM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "10-Round Punch Card",
+                "remaining": 6,
+                "total": 10,
+                "expires": "11/18/2027"
+            }
+        ],
+        "rewardsBalance": 1750,
+        "balance": 0,
+        "cardOnFile": "8527",
+        "cardExpires": "09/2036"
+    },
+    {
+        "id": "458362",
+        "courseId": "313515",
+        "firstName": "Zara",
+        "lastName": "Bergstrom",
+        "displayName": "Zara Bergstrom - Full Golf",
+        "email": "zara.bergstrom@gmail.com",
+        "phone": "8014712146",
+        "birthday": "03/23/1981",
+        "notes": "walks — never wants a cart",
+        "street": "402 Bunker Rd",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "01/06/2027"
+            }
+        ],
+        "customerTypes": ["Test percent off", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024874",
+                "date": "05/06/2025 6:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024875",
+                "date": "02/08/2026 10:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024876",
+                "date": "07/21/2025 7:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024877",
+                "date": "01/25/2025 6:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024878",
+                "date": "01/03/2026 3:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024879",
+                "date": "11/21/2026 10:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024880",
+                "date": "10/18/2026 10:30 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 30,
+        "balance": 0
+    },
+    {
+        "id": "458363",
+        "courseId": "313516",
+        "firstName": "Anders",
+        "lastName": "Marchetti",
+        "displayName": "Anders Marchetti - Military",
+        "email": "anders.marchetti@sbcglobal.net",
+        "phone": "8019905027",
+        "birthday": "05/12/1950",
+        "notes": "free golf for life",
+        "street": "1201 Tee Box Way",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["Military", "Wonderful Person"],
+        "giftCards": [
+            {
+                "id": "261915",
+                "type": "Purchased",
+                "expires": "10/24/2027",
+                "awarded": 25,
+                "spent": 0,
+                "balance": 25,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024881",
+                "date": "02/19/2025 3:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024882",
+                "date": "12/09/2026 2:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024883",
+                "date": "04/26/2025 9:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024884",
+                "date": "01/07/2025 7:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024885",
+                "date": "04/11/2025 12:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024886",
+                "date": "02/10/2025 7:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024887",
+                "date": "02/28/2025 12:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024888",
+                "date": "08/26/2026 2:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024889",
+                "date": "02/05/2026 1:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9024890",
+                "date": "06/27/2026 6:45 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1028,
+        "balance": 0,
+        "cardOnFile": "3660",
+        "cardExpires": "07/2040"
+    },
+    {
+        "id": "458364",
+        "courseId": "313517",
+        "firstName": "Beatriz",
+        "lastName": "Salvatore",
+        "displayName": "Beatriz Salvatore - New Deal",
+        "email": "beatriz.salvatore@yahoo.com",
+        "phone": "8015069465",
+        "birthday": "06/27/1987",
+        "notes": "do not seat near the bar",
+        "street": "18 Fairway Ln",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["New Deal"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024891",
+                "date": "08/21/2025 2:45 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 29,
+        "balance": 415.31,
+        "cardOnFile": "7218",
+        "cardExpires": "08/2041"
+    },
+    {
+        "id": "458365",
+        "courseId": "313518",
+        "firstName": "Caleb",
+        "lastName": "Delgado",
+        "displayName": "Caleb Delgado - Private Cart",
+        "email": "caleb.delgado@gmail.com",
+        "phone": "8012660534",
+        "birthday": "01/24/1986",
+        "notes": "prefers the 7:40 time",
+        "street": "9 Dogleg Dr",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": ["Private Cart"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024892",
+                "date": "07/05/2026 9:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024893",
+                "date": "09/21/2026 5:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024894",
+                "date": "07/01/2026 7:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024895",
+                "date": "07/10/2025 10:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024896",
+                "date": "06/03/2025 8:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024897",
+                "date": "09/10/2025 11:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024898",
+                "date": "11/23/2026 8:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024899",
+                "date": "06/13/2025 7:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024900",
+                "date": "10/03/2026 7:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024901",
+                "date": "05/17/2025 10:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2371,
+        "balance": 0,
+        "cardOnFile": "2819",
+        "cardExpires": "12/2028"
+    },
+    {
+        "id": "458366",
+        "courseId": "313519",
+        "firstName": "Amara",
+        "lastName": "Nakamura",
+        "displayName": "Amara Nakamura - Full Golf",
+        "email": "amara.nakamura+30@tenfore.golf",
+        "phone": "8019118391",
+        "birthday": "02/20/1967",
+        "notes": "has a standing Saturday foursome",
+        "street": "N/A",
+        "city": "Silver Spring",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "09/02/2027"
+            }
+        ],
+        "customerTypes": ["Average Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024902",
+                "date": "04/06/2025 12:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024903",
+                "date": "02/16/2025 3:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024904",
+                "date": "02/02/2025 10:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024905",
+                "date": "12/07/2026 8:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024906",
+                "date": "10/26/2025 8:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9024907",
+                "date": "01/09/2025 12:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024908",
+                "date": "11/05/2026 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024909",
+                "date": "04/05/2026 6:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024910",
+                "date": "09/03/2025 5:30 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1575,
+        "balance": 0,
+        "cardOnFile": "8629",
+        "cardExpires": "07/2038"
+    },
+    {
+        "id": "458367",
+        "courseId": "313520",
+        "firstName": "Bao",
+        "lastName": "Whitfield",
+        "displayName": "Bao Whitfield - Military",
+        "email": "bao.whitfield@aol.com",
+        "phone": "8018560919",
+        "birthday": "01/19/1994",
+        "notes": "left-handed rental clubs",
+        "street": "9 Dogleg Dr",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [],
+        "customerTypes": ["Military", "Simp"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024911",
+                "date": "07/09/2026 5:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9024912",
+                "date": "01/23/2026 10:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9024913",
+                "date": "07/21/2026 1:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024914",
+                "date": "08/23/2026 4:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024915",
+                "date": "02/21/2026 1:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024916",
+                "date": "05/28/2026 3:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9024917",
+                "date": "08/02/2025 11:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024918",
+                "date": "04/06/2026 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024919",
+                "date": "09/25/2025 2:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024920",
+                "date": "06/23/2026 10:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2371,
+        "balance": 0,
+        "cardOnFile": "1998",
+        "cardExpires": "09/2032"
+    },
+    {
+        "id": "458368",
+        "courseId": "313521",
+        "firstName": "Callum",
+        "lastName": "Halloran",
+        "displayName": "Callum Halloran - Resident 22 Test",
+        "email": "callum.halloran@hotmail.com",
+        "phone": "8011156550",
+        "birthday": "12/11/1962",
+        "street": "402 Bunker Rd",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Resident 22 Test", "Campaign Testers"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024921",
+                "date": "04/15/2025 6:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 5,
+                "total": 20,
+                "expires": "05/08/2027"
+            }
+        ],
+        "rewardsBalance": 781,
+        "balance": 0,
+        "cardOnFile": "2289",
+        "cardExpires": "03/2029"
+    },
+    {
+        "id": "458369",
+        "courseId": "313522",
+        "firstName": "Dermot",
+        "lastName": "Nguyen",
+        "displayName": "Dermot Nguyen - Weekday Golf",
+        "email": "dermot.nguyen@gmail.com",
+        "phone": "8018190282",
+        "birthday": "02/05/1957",
+        "street": "402 Bunker Rd",
+        "city": "N/A",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "Weekday Golf",
+                "expires": "08/27/2028"
+            }
+        ],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024922",
+                "date": "09/02/2026 2:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024923",
+                "date": "10/20/2026 3:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024924",
+                "date": "10/14/2025 11:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024925",
+                "date": "07/10/2026 6:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9024926",
+                "date": "10/20/2026 12:00 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1143,
+        "balance": 0
+    },
+    {
+        "id": "458370",
+        "courseId": "313523",
+        "firstName": "Dov",
+        "lastName": "Zeller",
+        "displayName": "Dov Zeller - Junior",
+        "email": "dov.zeller+34@tenfore.golf",
+        "birthday": "02/26/1950",
+        "notes": "left-handed rental clubs",
+        "street": "1201 Tee Box Way",
+        "city": "N/A",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "Junior",
+                "expires": "12/17/2027"
+            }
+        ],
+        "customerTypes": ["Austin Test"],
+        "giftCards": [
+            {
+                "id": "261916",
+                "type": "Winnings",
+                "expires": "01/15/2032",
+                "awarded": 25,
+                "spent": 20.15,
+                "balance": 4.85,
+                "upc": "619389807261"
+            },
+            {
+                "id": "261917",
+                "type": "Winnings",
+                "expires": "09/05/2028",
+                "awarded": 175,
+                "spent": 0,
+                "balance": 175,
+                "upc": "201132807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024927",
+                "date": "07/27/2026 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024928",
+                "date": "04/12/2026 5:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9024929",
+                "date": "11/23/2025 12:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9024930",
+                "date": "10/24/2025 7:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024931",
+                "date": "04/08/2026 12:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024932",
+                "date": "12/02/2025 12:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024933",
+                "date": "07/09/2026 11:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024934",
+                "date": "09/26/2025 11:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024935",
+                "date": "07/11/2026 1:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9024936",
+                "date": "03/11/2026 8:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024937",
+                "date": "12/10/2026 2:45 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1744,
+        "balance": 0,
+        "cardOnFile": "3128",
+        "cardExpires": "12/2033"
+    },
+    {
+        "id": "458371",
+        "courseId": "313524",
+        "firstName": "Elena",
+        "lastName": "Ito",
+        "displayName": "Elena Ito - Military",
+        "email": "elena.ito@sbcglobal.net",
+        "phone": "8010581198",
+        "birthday": "05/25/1995",
+        "street": "18 Fairway Ln",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Military", "Hero", "Test percent off"],
+        "giftCards": [],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 2039,
+        "balance": 0
+    },
+    {
+        "id": "458372",
+        "courseId": "313525",
+        "firstName": "Fionn",
+        "lastName": "Okafor",
+        "displayName": "Fionn Okafor - Senior",
+        "email": "fionn.okafor+36@tenfore.golf",
+        "phone": "8015985408",
+        "birthday": "08/13/1963",
+        "notes": "free golf for life",
+        "street": "1201 Tee Box Way",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Senior", "Resident", "Resident 22 Test", "Campaign Testers"],
+        "giftCards": [
+            {
+                "id": "261918",
+                "type": "Purchased",
+                "expires": "01/08/2027",
+                "awarded": 25,
+                "spent": 0,
+                "balance": 25,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024938",
+                "date": "01/09/2026 2:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024939",
+                "date": "12/02/2026 11:30 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 13,
+                "total": 20,
+                "expires": "12/15/2027"
+            }
+        ],
+        "rewardsBalance": 1894,
+        "balance": 0,
+        "cardOnFile": "4468",
+        "cardExpires": "04/2039"
+    },
+    {
+        "id": "458373",
+        "courseId": "313526",
+        "firstName": "Grete",
+        "lastName": "Achebe",
+        "displayName": "Grete Achebe - Diamond",
+        "email": "grete.achebe@att.net",
+        "phone": "8018282035",
+        "birthday": "02/26/1971",
+        "notes": "walks — never wants a cart",
+        "street": "1201 Tee Box Way",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["Diamond", "Guest of Members", "Campaign Testers", "Average Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024940",
+                "date": "01/05/2025 1:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024941",
+                "date": "08/07/2026 6:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024942",
+                "date": "12/17/2026 9:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024943",
+                "date": "10/10/2026 5:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9024944",
+                "date": "02/26/2025 7:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024945",
+                "date": "05/16/2026 7:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024946",
+                "date": "04/25/2026 7:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024947",
+                "date": "11/02/2026 11:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024948",
+                "date": "09/02/2025 9:00 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 82,
+        "balance": 2485.82,
+        "cardOnFile": "8300",
+        "cardExpires": "09/2034"
+    },
+    {
+        "id": "458374",
+        "courseId": "313527",
+        "firstName": "Hugh",
+        "lastName": "Kaur",
+        "displayName": "Hugh Kaur - Weekday Golf",
+        "email": "hugh.kaur@hotmail.com",
+        "phone": "8011301906",
+        "birthday": "11/12/1985",
+        "notes": "do not seat near the bar",
+        "street": "N/A",
+        "city": "N/A",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [
+            {
+                "name": "Weekday Golf",
+                "expires": "12/23/2028"
+            }
+        ],
+        "customerTypes": ["Guest of Members"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024949",
+                "date": "01/15/2025 12:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9024950",
+                "date": "03/26/2026 11:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024951",
+                "date": "04/28/2025 9:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9024952",
+                "date": "11/19/2025 12:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024953",
+                "date": "08/14/2026 4:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024954",
+                "date": "08/26/2026 2:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9024955",
+                "date": "03/06/2026 7:00 AM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2783,
+        "balance": 0,
+        "cardOnFile": "5469",
+        "cardExpires": "04/2034"
+    },
+    {
+        "id": "458375",
+        "courseId": "313528",
+        "firstName": "Ines",
+        "lastName": "Osei",
+        "displayName": "Ines Osei - Corporate — 4 seat",
+        "email": "ines.osei@sbcglobal.net",
+        "birthday": "06/15/1973",
+        "street": "N/A",
+        "city": "Potomac",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "01/16/2026"
+            }
+        ],
+        "customerTypes": ["Senior", "Private Cart", "Average Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024956",
+                "date": "11/22/2025 7:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024957",
+                "date": "11/02/2025 7:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9024958",
+                "date": "07/06/2025 6:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9024959",
+                "date": "01/15/2025 5:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024960",
+                "date": "12/06/2025 10:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024961",
+                "date": "12/10/2025 7:30 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 223,
+        "balance": 489.77
+    },
+    {
+        "id": "458376",
+        "courseId": "313529",
+        "firstName": "Jonas",
+        "lastName": "Baptiste",
+        "displayName": "Jonas Baptiste - Senior",
+        "email": "jonas.baptiste@yahoo.com",
+        "phone": "8010753881",
+        "birthday": "05/02/1993",
+        "notes": "do not seat near the bar",
+        "street": "77 Greenside Ct",
+        "city": "Silver Spring",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Senior", "Guest of Members", "Hero"],
+        "giftCards": [
+            {
+                "id": "261919",
+                "type": "Winnings",
+                "expires": "08/26/2030",
+                "awarded": 50,
+                "spent": 0,
+                "balance": 50,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9024962",
+                "date": "11/09/2025 2:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024963",
+                "date": "05/03/2026 5:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9024964",
+                "date": "11/05/2025 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024965",
+                "date": "11/21/2026 6:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024966",
+                "date": "09/23/2026 2:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024967",
+                "date": "07/04/2026 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024968",
+                "date": "09/11/2026 3:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024969",
+                "date": "06/01/2025 8:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024970",
+                "date": "11/14/2026 6:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024971",
+                "date": "03/06/2026 2:00 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1014,
+        "balance": 0
+    },
+    {
+        "id": "458377",
+        "courseId": "313530",
+        "firstName": "Kelsey",
+        "lastName": "Lindqvist",
+        "displayName": "Kelsey Lindqvist - New Deal",
+        "email": "kelsey.lindqvist@gmail.com",
+        "phone": "8016711809",
+        "birthday": "05/01/1999",
+        "notes": "walks — never wants a cart",
+        "street": "9 Dogleg Dr",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["New Deal", "Simp"],
+        "giftCards": [
+            {
+                "id": "261920",
+                "type": "Winnings",
+                "expires": "03/02/2027",
+                "awarded": 175,
+                "spent": 111.34,
+                "balance": 63.66,
+                "upc": "284194807261"
+            },
+            {
+                "id": "261921",
+                "type": "Winnings",
+                "expires": "03/07/2028",
+                "awarded": 25,
+                "spent": 16.6,
+                "balance": 8.4,
+                "upc": "378875807261"
+            }
+        ],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 2744,
+        "balance": 0,
+        "cardOnFile": "6483",
+        "cardExpires": "12/2040"
+    },
+    {
+        "id": "458378",
+        "courseId": "313531",
+        "firstName": "Lars",
+        "lastName": "Petrov",
+        "displayName": "Lars Petrov - Trial Month",
+        "email": "lars.petrov+42@tenfore.golf",
+        "phone": "8014244109",
+        "birthday": "07/16/1984",
+        "notes": "left-handed rental clubs",
+        "street": "18 Fairway Ln",
+        "city": "Bethesda",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Trial Month",
+                "expires": "12/08/2028"
+            }
+        ],
+        "customerTypes": ["Hero"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024972",
+                "date": "10/01/2025 3:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9024973",
+                "date": "02/28/2025 6:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9024974",
+                "date": "03/13/2026 10:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9024975",
+                "date": "11/20/2025 4:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024976",
+                "date": "02/17/2025 6:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9024977",
+                "date": "10/25/2026 1:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9024978",
+                "date": "05/20/2026 6:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024979",
+                "date": "01/19/2026 1:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024980",
+                "date": "10/17/2026 9:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9024981",
+                "date": "03/10/2026 1:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9024982",
+                "date": "09/22/2026 12:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9024983",
+                "date": "01/01/2026 5:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9024984",
+                "date": "09/10/2026 9:45 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2051,
+        "balance": 0,
+        "cardOnFile": "4299",
+        "cardExpires": "01/2036"
+    },
+    {
+        "id": "458379",
+        "courseId": "313532",
+        "firstName": "Milo",
+        "lastName": "Bergstrom",
+        "displayName": "Milo Bergstrom - Private Cart",
+        "email": "milo.bergstrom@hotmail.com",
+        "phone": "8010306581",
+        "birthday": "04/09/1959",
+        "street": "1201 Tee Box Way",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Private Cart", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024985",
+                "date": "04/14/2025 11:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9024986",
+                "date": "11/26/2026 3:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9024987",
+                "date": "11/26/2025 1:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9024988",
+                "date": "08/01/2026 2:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9024989",
+                "date": "02/26/2026 4:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9024990",
+                "date": "03/27/2025 3:00 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 947,
+        "balance": 0,
+        "cardOnFile": "1385",
+        "cardExpires": "03/2027"
+    },
+    {
+        "id": "458380",
+        "courseId": "313533",
+        "firstName": "Nadia",
+        "lastName": "Marchetti",
+        "displayName": "Nadia Marchetti - Full Golf",
+        "email": "nadia.marchetti+44@tenfore.golf",
+        "phone": "8018058233",
+        "birthday": "02/18/1973",
+        "notes": "walks — never wants a cart",
+        "street": "77 Greenside Ct",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "02/09/2027"
+            }
+        ],
+        "customerTypes": ["Resident", "Austin Test", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9024991",
+                "date": "04/12/2026 10:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9024992",
+                "date": "01/04/2025 11:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9024993",
+                "date": "06/06/2026 7:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9024994",
+                "date": "05/27/2026 5:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9024995",
+                "date": "07/20/2026 7:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9024996",
+                "date": "11/20/2025 10:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9024997",
+                "date": "01/13/2026 2:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9024998",
+                "date": "09/05/2026 11:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9024999",
+                "date": "08/10/2025 9:00 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 599,
+        "balance": 19.91,
+        "cardOnFile": "6952",
+        "cardExpires": "05/2038"
+    },
+    {
+        "id": "458381",
+        "courseId": "313534",
+        "firstName": "Owen",
+        "lastName": "Salvatore",
+        "displayName": "Owen Salvatore - Corporate — 4 seat",
+        "email": "owen.salvatore@yahoo.com",
+        "phone": "8013762186",
+        "birthday": "01/12/1970",
+        "notes": "prefers the 7:40 time",
+        "street": "N/A",
+        "city": "Bethesda",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "01/26/2028"
+            }
+        ],
+        "customerTypes": ["Austin Test", "Campaign Testers"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025000",
+                "date": "01/14/2026 11:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025001",
+                "date": "11/02/2025 12:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025002",
+                "date": "09/18/2025 7:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025003",
+                "date": "08/21/2025 11:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025004",
+                "date": "03/03/2025 12:30 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 20,
+                "total": 20,
+                "expires": "04/10/2027"
+            }
+        ],
+        "rewardsBalance": 2141,
+        "balance": 2493.09,
+        "cardOnFile": "5708",
+        "cardExpires": "04/2029"
+    },
+    {
+        "id": "458382",
+        "courseId": "313535",
+        "firstName": "Petra",
+        "lastName": "Delgado",
+        "displayName": "Petra Delgado - Wonderful Person",
+        "email": "petra.delgado@gmail.com",
+        "phone": "8017922172",
+        "birthday": "11/12/1966",
+        "notes": "free golf for life",
+        "street": "18 Fairway Ln",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [],
+        "customerTypes": ["Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025005",
+                "date": "11/04/2026 1:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025006",
+                "date": "03/07/2026 7:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 195,
+        "balance": 0
+    },
+    {
+        "id": "458383",
+        "courseId": "313536",
+        "firstName": "Quinn",
+        "lastName": "Mbeki",
+        "displayName": "Quinn Mbeki - 30 Day booking window",
+        "email": "quinn.mbeki@att.net",
+        "phone": "8019521167",
+        "birthday": "03/27/1963",
+        "street": "9 Dogleg Dr",
+        "city": "Rockville",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "30 Day booking window",
+                "expires": "09/25/2028"
+            }
+        ],
+        "customerTypes": ["Diamond"],
+        "giftCards": [],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 2232,
+        "balance": 0,
+        "cardOnFile": "7819",
+        "cardExpires": "03/2030"
+    },
+    {
+        "id": "458384",
+        "courseId": "313537",
+        "firstName": "Rosa",
+        "lastName": "Vasquez",
+        "displayName": "Rosa Vasquez - Full Golf",
+        "email": "rosa.vasquez@att.net",
+        "phone": "8013229990",
+        "birthday": "02/21/1990",
+        "street": "N/A",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "01/17/2026"
+            }
+        ],
+        "customerTypes": ["Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025007",
+                "date": "08/06/2026 6:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025008",
+                "date": "03/06/2025 10:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025009",
+                "date": "06/20/2025 7:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025010",
+                "date": "03/16/2026 12:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025011",
+                "date": "06/24/2026 10:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025012",
+                "date": "09/03/2026 2:00 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 953,
+        "balance": 0,
+        "cardOnFile": "5984",
+        "cardExpires": "01/2032"
+    },
+    {
+        "id": "458385",
+        "courseId": "313538",
+        "firstName": "Simone",
+        "lastName": "Ferreira",
+        "displayName": "Simone Ferreira - Full Golf",
+        "email": "simone.ferreira@aol.com",
+        "phone": "8014319895",
+        "birthday": "10/27/1990",
+        "street": "402 Bunker Rd",
+        "city": "N/A",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "07/18/2026"
+            }
+        ],
+        "customerTypes": ["Senior", "Resident 22 Test"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025013",
+                "date": "04/07/2026 11:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9025014",
+                "date": "08/08/2025 5:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025015",
+                "date": "01/21/2025 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025016",
+                "date": "07/25/2026 11:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025017",
+                "date": "10/19/2026 11:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025018",
+                "date": "07/28/2026 2:00 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 404,
+        "balance": 0,
+        "cardOnFile": "1090",
+        "cardExpires": "06/2034"
+    },
+    {
+        "id": "458386",
+        "courseId": "313539",
+        "firstName": "Teo",
+        "lastName": "Nakamura",
+        "displayName": "Teo Nakamura - Military",
+        "email": "teo.nakamura@att.net",
+        "phone": "8013758687",
+        "birthday": "12/27/1970",
+        "street": "9 Dogleg Dr",
+        "city": "Potomac",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Military"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025019",
+                "date": "08/03/2025 1:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025020",
+                "date": "08/27/2025 10:45 AM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 671,
+        "balance": 0
+    },
+    {
+        "id": "458387",
+        "courseId": "313540",
+        "firstName": "Ursula",
+        "lastName": "Whitfield",
+        "displayName": "Ursula Whitfield - Trial Month",
+        "email": "ursula.whitfield@att.net",
+        "birthday": "10/10/1965",
+        "street": "18 Fairway Ln",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "Trial Month",
+                "expires": "06/25/2028"
+            }
+        ],
+        "customerTypes": ["Simp"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025021",
+                "date": "02/21/2026 5:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025022",
+                "date": "11/11/2026 12:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025023",
+                "date": "03/20/2025 3:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025024",
+                "date": "09/10/2026 2:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025025",
+                "date": "01/09/2026 12:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025026",
+                "date": "04/03/2026 4:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025027",
+                "date": "04/12/2026 7:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025028",
+                "date": "11/05/2026 6:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025029",
+                "date": "04/21/2026 11:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2705,
+        "balance": 0,
+        "cardOnFile": "8247",
+        "cardExpires": "05/2028"
+    },
+    {
+        "id": "458388",
+        "courseId": "313541",
+        "firstName": "Viggo",
+        "lastName": "Halloran",
+        "displayName": "Viggo Halloran - Trial Month",
+        "email": "viggo.halloran+52@tenfore.golf",
+        "birthday": "06/27/1974",
+        "notes": "has a standing Saturday foursome",
+        "street": "77 Greenside Ct",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "Trial Month",
+                "expires": "05/19/2027"
+            }
+        ],
+        "customerTypes": ["Campaign Testers"],
+        "giftCards": [
+            {
+                "id": "261922",
+                "type": "Winnings",
+                "expires": "08/15/2031",
+                "awarded": 25,
+                "spent": 18.21,
+                "balance": 6.79,
+                "upc": "851664807261"
+            }
+        ],
+        "teeTimes": [],
+        "punchCards": [
+            {
+                "name": "10-Round Punch Card",
+                "remaining": 7,
+                "total": 10,
+                "expires": "11/22/2026"
+            }
+        ],
+        "rewardsBalance": 2121,
+        "balance": 0,
+        "cardOnFile": "7574",
+        "cardExpires": "06/2040"
+    },
+    {
+        "id": "458389",
+        "courseId": "313542",
+        "firstName": "Wren",
+        "lastName": "Nguyen",
+        "displayName": "Wren Nguyen - Diamond",
+        "email": "wren.nguyen@hotmail.com",
+        "phone": "8014627799",
+        "birthday": "09/03/1979",
+        "notes": "has a standing Saturday foursome",
+        "street": "402 Bunker Rd",
+        "city": "Bethesda",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Diamond", "Guest of Members"],
+        "giftCards": [
+            {
+                "id": "261923",
+                "type": "Winnings",
+                "expires": "04/05/2031",
+                "awarded": 200,
+                "spent": 72.49,
+                "balance": 127.51,
+                "upc": "626192807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025030",
+                "date": "02/24/2025 4:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025031",
+                "date": "06/27/2026 7:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025032",
+                "date": "12/25/2026 11:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025033",
+                "date": "01/09/2026 5:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025034",
+                "date": "01/28/2026 10:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025035",
+                "date": "03/15/2026 6:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025036",
+                "date": "12/27/2026 6:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025037",
+                "date": "04/15/2026 7:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025038",
+                "date": "03/08/2025 12:00 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 130,
+        "balance": 0,
+        "cardOnFile": "6152",
+        "cardExpires": "05/2036"
+    },
+    {
+        "id": "458390",
+        "courseId": "313543",
+        "firstName": "Xiomara",
+        "lastName": "Zeller",
+        "displayName": "Xiomara Zeller - Trial Month",
+        "email": "xiomara.zeller@att.net",
+        "phone": "8017817761",
+        "birthday": "12/24/1986",
+        "notes": "wife's birthday in June — comp dessert",
+        "street": "N/A",
+        "city": "Arlington",
+        "state": "VA",
+        "memberships": [
+            {
+                "name": "Trial Month",
+                "expires": "01/15/2027"
+            }
+        ],
+        "customerTypes": ["Private Cart", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025039",
+                "date": "12/16/2026 5:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9025040",
+                "date": "01/22/2026 5:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025041",
+                "date": "08/12/2026 9:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9025042",
+                "date": "11/06/2026 4:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025043",
+                "date": "11/24/2025 3:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025044",
+                "date": "05/26/2025 1:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025045",
+                "date": "04/25/2025 12:45 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1546,
+        "balance": 0,
+        "cardOnFile": "2012",
+        "cardExpires": "07/2027"
+    },
+    {
+        "id": "458391",
+        "courseId": "313544",
+        "firstName": "Yusuf",
+        "lastName": "Ito",
+        "displayName": "Yusuf Ito - Test percent off",
+        "email": "yusuf.ito@hotmail.com",
+        "phone": "8015199626",
+        "birthday": "06/08/1971",
+        "street": "1201 Tee Box Way",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [],
+        "customerTypes": ["Test percent off"],
+        "giftCards": [
+            {
+                "id": "261924",
+                "type": "Purchased",
+                "expires": "06/24/2027",
+                "awarded": 200,
+                "spent": 25.47,
+                "balance": 174.53,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025046",
+                "date": "02/21/2026 11:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025047",
+                "date": "01/08/2025 1:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025048",
+                "date": "09/13/2026 10:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025049",
+                "date": "07/17/2026 12:45 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 0,
+                "total": 5,
+                "expires": "09/04/2026"
+            }
+        ],
+        "rewardsBalance": 365,
+        "balance": 0,
+        "cardOnFile": "4212",
+        "cardExpires": "08/2034"
+    },
+    {
+        "id": "458392",
+        "courseId": "313545",
+        "firstName": "Zara",
+        "lastName": "Okafor",
+        "displayName": "Zara Okafor - New Deal",
+        "email": "zara.okafor@sbcglobal.net",
+        "birthday": "06/02/1978",
+        "notes": "walks — never wants a cart",
+        "street": "402 Bunker Rd",
+        "city": "Alexandria",
+        "state": "VA",
+        "memberships": [],
+        "customerTypes": ["New Deal", "Hero"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025050",
+                "date": "02/10/2026 1:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025051",
+                "date": "06/12/2025 6:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025052",
+                "date": "11/15/2025 5:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025053",
+                "date": "11/09/2026 2:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025054",
+                "date": "02/19/2025 5:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025055",
+                "date": "05/27/2025 2:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025056",
+                "date": "11/03/2025 6:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025057",
+                "date": "10/10/2026 3:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025058",
+                "date": "09/22/2025 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025059",
+                "date": "01/17/2025 5:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025060",
+                "date": "11/14/2026 9:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1439,
+        "balance": 1673.32
+    },
+    {
+        "id": "458393",
+        "courseId": "313546",
+        "firstName": "Anders",
+        "lastName": "Achebe",
+        "displayName": "Anders Achebe",
+        "email": "anders.achebe@hotmail.com",
+        "phone": "8019242005",
+        "birthday": "08/26/1967",
+        "notes": "walks — never wants a cart",
+        "street": "1201 Tee Box Way",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025061",
+                "date": "09/26/2026 11:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9025062",
+                "date": "01/05/2025 9:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025063",
+                "date": "02/07/2025 5:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025064",
+                "date": "10/10/2025 3:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025065",
+                "date": "10/19/2025 2:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025066",
+                "date": "01/10/2026 5:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025067",
+                "date": "08/20/2026 10:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025068",
+                "date": "07/13/2026 4:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025069",
+                "date": "05/15/2025 7:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025070",
+                "date": "07/25/2025 6:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025071",
+                "date": "02/19/2025 6:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025072",
+                "date": "10/01/2026 3:00 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 224,
+        "balance": 0,
+        "cardOnFile": "8634",
+        "cardExpires": "03/2029"
+    },
+    {
+        "id": "458394",
+        "courseId": "313547",
+        "firstName": "Beatriz",
+        "lastName": "Kaur",
+        "displayName": "Beatriz Kaur - Full Golf",
+        "email": "beatriz.kaur+58@tenfore.golf",
+        "phone": "8016655346",
+        "birthday": "03/26/1950",
+        "street": "18 Fairway Ln",
+        "city": "N/A",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "08/02/2026"
+            }
+        ],
+        "customerTypes": ["Senior", "Military", "Average Person"],
+        "giftCards": [
+            {
+                "id": "261925",
+                "type": "Purchased",
+                "expires": "03/27/2029",
+                "awarded": 800,
+                "spent": 30.42,
+                "balance": 769.58,
+                "upc": "317544807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025073",
+                "date": "07/19/2025 2:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025074",
+                "date": "11/27/2026 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025075",
+                "date": "11/15/2025 2:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025076",
+                "date": "08/07/2025 3:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025077",
+                "date": "05/20/2025 3:30 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 17,
+                "total": 20,
+                "expires": "01/08/2027"
+            }
+        ],
+        "rewardsBalance": 2162,
+        "balance": 915.88,
+        "cardOnFile": "3190",
+        "cardExpires": "02/2034"
+    },
+    {
+        "id": "458395",
+        "courseId": "313548",
+        "firstName": "Caleb",
+        "lastName": "Osei",
+        "displayName": "Caleb Osei - premium single",
+        "email": "caleb.osei@att.net",
+        "phone": "8011017930",
+        "birthday": "05/21/2004",
+        "notes": "left-handed rental clubs",
+        "street": "9 Dogleg Dr",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": ["premium single", "Test percent off"],
+        "giftCards": [
+            {
+                "id": "261926",
+                "type": "Purchased",
+                "expires": "11/05/2031",
+                "awarded": 800,
+                "spent": 0,
+                "balance": 800,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025078",
+                "date": "04/20/2025 11:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025079",
+                "date": "02/02/2025 4:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025080",
+                "date": "02/02/2025 10:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025081",
+                "date": "04/20/2026 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025082",
+                "date": "11/13/2025 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025083",
+                "date": "02/25/2025 12:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025084",
+                "date": "07/10/2025 2:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025085",
+                "date": "02/27/2025 3:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025086",
+                "date": "01/19/2026 5:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025087",
+                "date": "06/27/2025 12:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025088",
+                "date": "12/17/2025 12:15 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 2,
+                "total": 20,
+                "expires": "04/03/2026"
+            }
+        ],
+        "rewardsBalance": 1204,
+        "balance": 0,
+        "cardOnFile": "6579",
+        "cardExpires": "04/2032"
+    },
+    {
+        "id": "458396",
+        "courseId": "313549",
+        "firstName": "Amara",
+        "lastName": "Bergstrom",
+        "displayName": "Amara Bergstrom - Resident",
+        "email": "amara.bergstrom@sbcglobal.net",
+        "phone": "8011007017",
+        "birthday": "09/04/1958",
+        "notes": "walks — never wants a cart",
+        "street": "18 Fairway Ln",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [],
+        "customerTypes": ["Resident", "Resident 22 Test"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025089",
+                "date": "12/03/2026 11:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025090",
+                "date": "01/07/2026 3:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025091",
+                "date": "12/07/2026 5:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025092",
+                "date": "02/22/2025 7:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025093",
+                "date": "04/17/2025 11:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025094",
+                "date": "02/27/2025 6:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025095",
+                "date": "05/10/2026 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025096",
+                "date": "05/01/2025 4:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9025097",
+                "date": "07/17/2025 12:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025098",
+                "date": "04/15/2025 5:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025099",
+                "date": "04/25/2025 6:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025100",
+                "date": "03/05/2026 8:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025101",
+                "date": "05/09/2026 5:00 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1253,
+        "balance": 0
+    },
+    {
+        "id": "458397",
+        "courseId": "313550",
+        "firstName": "Bao",
+        "lastName": "Marchetti",
+        "displayName": "Bao Marchetti - Junior",
+        "email": "bao.marchetti+61@tenfore.golf",
+        "phone": "8017017214",
+        "birthday": "07/07/1992",
+        "street": "9 Dogleg Dr",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [
+            {
+                "name": "Junior",
+                "expires": "12/21/2027"
+            }
+        ],
+        "customerTypes": ["Senior", "Guest of Members", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025102",
+                "date": "10/04/2026 8:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025103",
+                "date": "08/01/2025 6:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025104",
+                "date": "11/06/2025 10:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025105",
+                "date": "07/14/2025 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025106",
+                "date": "12/02/2026 10:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025107",
+                "date": "09/05/2026 1:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025108",
+                "date": "11/26/2025 11:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 960,
+        "balance": 1201.09
+    },
+    {
+        "id": "458398",
+        "courseId": "313551",
+        "firstName": "Callum",
+        "lastName": "Salvatore",
+        "displayName": "Callum Salvatore - Military",
+        "email": "callum.salvatore@aol.com",
+        "phone": "8010617775",
+        "birthday": "03/16/1960",
+        "street": "9 Dogleg Dr",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [],
+        "customerTypes": ["Military", "Test percent off", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025109",
+                "date": "01/08/2025 2:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025110",
+                "date": "07/28/2025 2:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025111",
+                "date": "11/25/2025 6:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025112",
+                "date": "10/14/2026 12:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025113",
+                "date": "01/10/2025 11:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025114",
+                "date": "04/16/2026 6:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025115",
+                "date": "01/12/2025 8:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9025116",
+                "date": "05/03/2025 11:45 AM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 914,
+        "balance": 0,
+        "cardOnFile": "6703",
+        "cardExpires": "04/2033"
+    },
+    {
+        "id": "458399",
+        "courseId": "313552",
+        "firstName": "Dermot",
+        "lastName": "Delgado",
+        "displayName": "Dermot Delgado - Senior",
+        "email": "dermot.delgado@hotmail.com",
+        "phone": "8014816107",
+        "birthday": "05/19/2003",
+        "street": "402 Bunker Rd",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["Senior", "New Deal", "Austin Test", "Test percent off", "Average Person"],
+        "giftCards": [
+            {
+                "id": "261927",
+                "type": "Winnings",
+                "expires": "05/27/2028",
+                "awarded": 175,
+                "spent": 0,
+                "balance": 175,
+                "upc": "500979807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025117",
+                "date": "04/20/2026 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025118",
+                "date": "05/27/2026 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025119",
+                "date": "06/13/2026 3:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025120",
+                "date": "07/26/2026 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025121",
+                "date": "02/06/2025 6:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025122",
+                "date": "12/22/2026 9:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025123",
+                "date": "07/08/2025 4:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025124",
+                "date": "09/20/2026 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025125",
+                "date": "07/28/2026 8:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025126",
+                "date": "05/04/2025 1:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025127",
+                "date": "06/22/2026 8:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025128",
+                "date": "08/07/2026 4:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025129",
+                "date": "08/27/2025 7:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 19,
+                "total": 20,
+                "expires": "05/18/2027"
+            }
+        ],
+        "rewardsBalance": 69,
+        "balance": 0,
+        "cardOnFile": "6757",
+        "cardExpires": "10/2033"
+    },
+    {
+        "id": "458400",
+        "courseId": "313553",
+        "firstName": "Dov",
+        "lastName": "Mbeki",
+        "displayName": "Dov Mbeki - Military",
+        "email": "dov.mbeki@att.net",
+        "phone": "8016486125",
+        "birthday": "11/21/1988",
+        "street": "N/A",
+        "city": "N/A",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Military", "Resident", "Private Cart", "New Deal", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025130",
+                "date": "06/21/2026 3:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025131",
+                "date": "02/07/2025 10:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025132",
+                "date": "07/10/2025 8:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025133",
+                "date": "12/10/2025 4:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025134",
+                "date": "04/04/2026 9:00 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1530,
+        "balance": 0
+    },
+    {
+        "id": "458401",
+        "courseId": "313554",
+        "firstName": "Elena",
+        "lastName": "Vasquez",
+        "displayName": "Elena Vasquez - Senior",
+        "email": "elena.vasquez@att.net",
+        "phone": "8011170909",
+        "birthday": "11/17/1965",
+        "notes": "left-handed rental clubs",
+        "street": "402 Bunker Rd",
+        "city": "N/A",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Senior", "Hero", "Austin Test"],
+        "giftCards": [],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 1916,
+        "balance": 0,
+        "cardOnFile": "7821",
+        "cardExpires": "02/2034"
+    },
+    {
+        "id": "458402",
+        "courseId": "313555",
+        "firstName": "Fionn",
+        "lastName": "Ferreira",
+        "displayName": "Fionn Ferreira - Weekday Golf",
+        "email": "fionn.ferreira@gmail.com",
+        "phone": "8010099760",
+        "birthday": "07/09/1984",
+        "street": "9 Dogleg Dr",
+        "city": "Rockville",
+        "state": "MD",
+        "zip": "20850",
+        "memberships": [
+            {
+                "name": "Weekday Golf",
+                "expires": "01/27/2026"
+            }
+        ],
+        "customerTypes": ["Senior", "New Deal", "Hero", "Simp", "Average Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025135",
+                "date": "12/17/2025 3:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025136",
+                "date": "01/07/2025 7:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025137",
+                "date": "02/24/2026 2:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025138",
+                "date": "03/20/2026 7:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025139",
+                "date": "04/01/2025 4:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025140",
+                "date": "04/04/2026 2:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025141",
+                "date": "06/01/2025 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025142",
+                "date": "03/01/2025 1:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025143",
+                "date": "09/05/2026 8:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025144",
+                "date": "12/27/2026 2:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025145",
+                "date": "02/28/2026 5:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025146",
+                "date": "05/14/2025 10:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025147",
+                "date": "03/10/2025 1:00 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 9,
+                "total": 20,
+                "expires": "05/05/2027"
+            }
+        ],
+        "rewardsBalance": 767,
+        "balance": 0,
+        "cardOnFile": "1394",
+        "cardExpires": "11/2034"
+    },
+    {
+        "id": "458403",
+        "courseId": "313556",
+        "firstName": "Grete",
+        "lastName": "Nakamura",
+        "displayName": "Grete Nakamura - Simp",
+        "email": "grete.nakamura@gmail.com",
+        "phone": "8018568049",
+        "birthday": "12/12/1975",
+        "notes": "has a standing Saturday foursome",
+        "street": "1201 Tee Box Way",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Simp"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025148",
+                "date": "12/01/2025 8:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025149",
+                "date": "09/11/2025 12:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025150",
+                "date": "12/13/2025 4:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025151",
+                "date": "04/17/2025 7:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025152",
+                "date": "06/28/2025 7:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025153",
+                "date": "05/21/2025 9:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025154",
+                "date": "08/13/2025 5:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025155",
+                "date": "11/27/2025 5:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025156",
+                "date": "06/22/2025 9:45 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 4,
+                "total": 20,
+                "expires": "02/26/2027"
+            }
+        ],
+        "rewardsBalance": 2727,
+        "balance": 0,
+        "cardOnFile": "8030",
+        "cardExpires": "01/2040"
+    },
+    {
+        "id": "458404",
+        "courseId": "313557",
+        "firstName": "Hugh",
+        "lastName": "Whitfield",
+        "displayName": "Hugh Whitfield - New Deal",
+        "email": "hugh.whitfield@yahoo.com",
+        "phone": "8010863972",
+        "birthday": "02/10/1972",
+        "notes": "walks — never wants a cart",
+        "street": "9 Dogleg Dr",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [],
+        "customerTypes": ["New Deal"],
+        "giftCards": [
+            {
+                "id": "261928",
+                "type": "Winnings",
+                "expires": "01/12/2027",
+                "awarded": 200,
+                "spent": 0,
+                "balance": 200,
+                "upc": "722040807261"
+            },
+            {
+                "id": "261929",
+                "type": "Winnings",
+                "expires": "01/20/2029",
+                "awarded": 100,
+                "spent": 62.84,
+                "balance": 37.16,
+                "upc": "423358807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025157",
+                "date": "06/05/2026 1:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025158",
+                "date": "12/14/2026 1:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025159",
+                "date": "05/14/2026 8:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025160",
+                "date": "06/16/2025 6:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025161",
+                "date": "12/15/2025 7:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025162",
+                "date": "06/21/2025 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025163",
+                "date": "11/14/2025 6:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025164",
+                "date": "03/16/2025 5:00 PM",
+                "players": 4
+            },
+            {
+                "id": "9025165",
+                "date": "04/11/2026 2:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025166",
+                "date": "07/23/2025 8:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025167",
+                "date": "10/09/2026 12:45 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 1,
+                "total": 5,
+                "expires": "05/07/2027"
+            }
+        ],
+        "rewardsBalance": 461,
+        "balance": 816.58,
+        "cardOnFile": "6161",
+        "cardExpires": "01/2027"
+    },
+    {
+        "id": "458405",
+        "courseId": "313558",
+        "firstName": "Ines",
+        "lastName": "Halloran",
+        "displayName": "Ines Halloran - Military",
+        "email": "ines.halloran@aol.com",
+        "phone": "8013376992",
+        "birthday": "04/27/1999",
+        "notes": "left-handed rental clubs",
+        "street": "402 Bunker Rd",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [],
+        "customerTypes": ["Military", "Test percent off"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025168",
+                "date": "08/16/2026 10:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025169",
+                "date": "06/12/2026 4:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025170",
+                "date": "06/13/2025 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025171",
+                "date": "12/08/2025 9:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025172",
+                "date": "05/25/2025 5:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025173",
+                "date": "11/15/2025 6:45 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 4,
+                "total": 5,
+                "expires": "01/21/2027"
+            }
+        ],
+        "rewardsBalance": 2485,
+        "balance": 0
+    },
+    {
+        "id": "458406",
+        "courseId": "313559",
+        "firstName": "Jonas",
+        "lastName": "Nguyen",
+        "displayName": "Jonas Nguyen - New Deal",
+        "email": "jonas.nguyen@aol.com",
+        "phone": "8017357467",
+        "birthday": "06/07/1997",
+        "street": "9 Dogleg Dr",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["New Deal", "premium single", "Resident 22 Test"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025174",
+                "date": "07/11/2025 8:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025175",
+                "date": "08/25/2026 9:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025176",
+                "date": "06/06/2025 7:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025177",
+                "date": "01/18/2026 3:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025178",
+                "date": "03/23/2026 10:30 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 484,
+        "balance": 0,
+        "cardOnFile": "2073",
+        "cardExpires": "09/2036"
+    },
+    {
+        "id": "458407",
+        "courseId": "313560",
+        "firstName": "Kelsey",
+        "lastName": "Zeller",
+        "displayName": "Kelsey Zeller - 30 Day booking window",
+        "email": "kelsey.zeller@gmail.com",
+        "phone": "8014486825",
+        "birthday": "05/16/1957",
+        "street": "1201 Tee Box Way",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [
+            {
+                "name": "30 Day booking window",
+                "expires": "01/13/2027"
+            }
+        ],
+        "customerTypes": ["Private Cart", "New Deal"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025179",
+                "date": "04/21/2025 4:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025180",
+                "date": "07/14/2026 2:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025181",
+                "date": "05/10/2026 11:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025182",
+                "date": "07/01/2025 6:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025183",
+                "date": "04/09/2025 3:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025184",
+                "date": "12/16/2025 6:45 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 0,
+                "total": 5,
+                "expires": "04/08/2026"
+            }
+        ],
+        "rewardsBalance": 2758,
+        "balance": 0
+    },
+    {
+        "id": "458408",
+        "courseId": "313561",
+        "firstName": "Lars",
+        "lastName": "Ito",
+        "displayName": "Lars Ito - Weekday Golf",
+        "email": "lars.ito@hotmail.com",
+        "phone": "8013756299",
+        "birthday": "02/18/1984",
+        "notes": "walks — never wants a cart",
+        "street": "77 Greenside Ct",
+        "city": "Alexandria",
+        "state": "VA",
+        "memberships": [
+            {
+                "name": "Weekday Golf",
+                "expires": "02/11/2026"
+            }
+        ],
+        "customerTypes": ["Military"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025185",
+                "date": "01/03/2025 1:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025186",
+                "date": "05/20/2025 7:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025187",
+                "date": "04/12/2025 7:00 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2758,
+        "balance": 0,
+        "cardOnFile": "6686",
+        "cardExpires": "11/2030"
+    },
+    {
+        "id": "458409",
+        "courseId": "313562",
+        "firstName": "Milo",
+        "lastName": "Okafor",
+        "displayName": "Milo Okafor - Full Golf",
+        "email": "milo.okafor@yahoo.com",
+        "birthday": "04/14/1951",
+        "notes": "always pays on account",
+        "street": "18 Fairway Ln",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [
+            {
+                "name": "Full Golf",
+                "expires": "11/22/2026"
+            }
+        ],
+        "customerTypes": ["Resident", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025188",
+                "date": "04/18/2025 11:30 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2449,
+        "balance": 0,
+        "cardOnFile": "1493",
+        "cardExpires": "06/2032"
+    },
+    {
+        "id": "458410",
+        "courseId": "313563",
+        "firstName": "Nadia",
+        "lastName": "Achebe",
+        "displayName": "Nadia Achebe - 30 Day booking window",
+        "email": "nadia.achebe@att.net",
+        "phone": "8018445317",
+        "birthday": "01/24/1948",
+        "notes": "prefers the 7:40 time",
+        "street": "402 Bunker Rd",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [
+            {
+                "name": "30 Day booking window",
+                "expires": "05/05/2027"
+            }
+        ],
+        "customerTypes": ["Private Cart", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025189",
+                "date": "05/01/2025 4:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025190",
+                "date": "05/07/2025 4:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025191",
+                "date": "06/23/2026 4:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025192",
+                "date": "02/26/2026 6:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025193",
+                "date": "08/05/2025 1:30 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1276,
+        "balance": 0
+    },
+    {
+        "id": "458411",
+        "courseId": "313564",
+        "firstName": "Owen",
+        "lastName": "Kaur",
+        "displayName": "Owen Kaur - Corporate — 4 seat",
+        "email": "owen.kaur@hotmail.com",
+        "phone": "8012389402",
+        "birthday": "04/20/1958",
+        "notes": "free golf for life",
+        "street": "77 Greenside Ct",
+        "city": "Potomac",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "12/26/2026"
+            }
+        ],
+        "customerTypes": ["Military", "Private Cart"],
+        "giftCards": [],
+        "teeTimes": [],
+        "punchCards": [
+            {
+                "name": "10-Round Punch Card",
+                "remaining": 2,
+                "total": 10,
+                "expires": "07/22/2027"
+            }
+        ],
+        "rewardsBalance": 824,
+        "balance": 0,
+        "cardOnFile": "1511",
+        "cardExpires": "07/2030"
+    },
+    {
+        "id": "458412",
+        "courseId": "313565",
+        "firstName": "Petra",
+        "lastName": "Osei",
+        "displayName": "Petra Osei - Simp",
+        "email": "petra.osei@sbcglobal.net",
+        "phone": "8013309397",
+        "birthday": "02/01/1959",
+        "notes": "wife's birthday in June — comp dessert",
+        "street": "77 Greenside Ct",
+        "city": "Alexandria",
+        "state": "VA",
+        "memberships": [],
+        "customerTypes": ["Simp"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025194",
+                "date": "01/28/2025 5:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025195",
+                "date": "05/05/2025 2:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025196",
+                "date": "02/06/2025 7:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025197",
+                "date": "03/20/2025 7:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025198",
+                "date": "03/13/2026 10:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025199",
+                "date": "04/10/2025 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025200",
+                "date": "10/17/2026 9:30 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1185,
+        "balance": 0
+    },
+    {
+        "id": "458413",
+        "courseId": "313566",
+        "firstName": "Quinn",
+        "lastName": "Baptiste",
+        "displayName": "Quinn Baptiste - 30 Day booking window",
+        "email": "quinn.baptiste@sbcglobal.net",
+        "phone": "8010861998",
+        "birthday": "04/09/1972",
+        "notes": "has a standing Saturday foursome",
+        "street": "402 Bunker Rd",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "30 Day booking window",
+                "expires": "05/23/2028"
+            }
+        ],
+        "customerTypes": ["premium single"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025201",
+                "date": "01/12/2025 6:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9025202",
+                "date": "09/25/2026 10:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025203",
+                "date": "04/10/2026 2:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025204",
+                "date": "11/05/2025 3:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025205",
+                "date": "03/05/2025 10:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025206",
+                "date": "08/19/2026 8:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025207",
+                "date": "01/18/2025 6:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 379,
+        "balance": 0
+    },
+    {
+        "id": "458414",
+        "courseId": "313567",
+        "firstName": "Rosa",
+        "lastName": "Lindqvist",
+        "displayName": "Rosa Lindqvist - Military",
+        "email": "rosa.lindqvist@yahoo.com",
+        "phone": "8016511495",
+        "birthday": "06/02/1974",
+        "street": "18 Fairway Ln",
+        "city": "Potomac",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["Military", "Diamond"],
+        "giftCards": [
+            {
+                "id": "261930",
+                "type": "Purchased",
+                "expires": "12/28/2027",
+                "awarded": 200,
+                "spent": 0,
+                "balance": 200,
+                "upc": "813971807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025208",
+                "date": "07/15/2025 7:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025209",
+                "date": "02/26/2026 4:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025210",
+                "date": "12/18/2025 6:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025211",
+                "date": "11/16/2025 7:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9025212",
+                "date": "10/25/2026 8:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025213",
+                "date": "06/12/2025 10:15 AM",
+                "players": 2
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 614,
+        "balance": 0,
+        "cardOnFile": "3281",
+        "cardExpires": "01/2039"
+    },
+    {
+        "id": "458415",
+        "courseId": "313568",
+        "firstName": "Simone",
+        "lastName": "Petrov",
+        "displayName": "Simone Petrov - Military",
+        "email": "simone.petrov@sbcglobal.net",
+        "phone": "8012607848",
+        "birthday": "07/01/1960",
+        "notes": "prefers the 7:40 time",
+        "street": "1201 Tee Box Way",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [],
+        "customerTypes": ["Military", "Resident", "Resident 22 Test", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025214",
+                "date": "01/16/2026 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025215",
+                "date": "09/10/2026 9:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025216",
+                "date": "01/13/2026 12:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025217",
+                "date": "02/15/2025 2:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025218",
+                "date": "10/10/2025 12:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025219",
+                "date": "12/14/2025 6:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025220",
+                "date": "04/03/2026 1:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025221",
+                "date": "06/15/2026 10:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025222",
+                "date": "04/02/2026 10:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025223",
+                "date": "11/22/2025 5:15 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2506,
+        "balance": 0,
+        "cardOnFile": "5394",
+        "cardExpires": "12/2030"
+    },
+    {
+        "id": "458416",
+        "courseId": "313569",
+        "firstName": "Teo",
+        "lastName": "Bergstrom",
+        "displayName": "Teo Bergstrom - premium single",
+        "email": "teo.bergstrom@gmail.com",
+        "phone": "8016119016",
+        "birthday": "02/05/1996",
+        "street": "N/A",
+        "city": "Bethesda",
+        "state": "MD",
+        "memberships": [],
+        "customerTypes": ["premium single", "Resident 22 Test", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025224",
+                "date": "07/16/2025 9:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025225",
+                "date": "07/05/2025 3:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025226",
+                "date": "11/09/2025 8:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025227",
+                "date": "01/01/2025 2:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025228",
+                "date": "07/10/2026 10:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025229",
+                "date": "10/18/2026 8:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025230",
+                "date": "07/03/2026 2:15 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 3,
+                "total": 5,
+                "expires": "04/22/2027"
+            }
+        ],
+        "rewardsBalance": 2042,
+        "balance": 0
+    },
+    {
+        "id": "458417",
+        "courseId": "313570",
+        "firstName": "Ursula",
+        "lastName": "Marchetti",
+        "displayName": "Ursula Marchetti - Private Cart",
+        "email": "ursula.marchetti+81@tenfore.golf",
+        "phone": "8012901533",
+        "birthday": "11/17/2000",
+        "street": "N/A",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Private Cart", "Average Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025231",
+                "date": "09/27/2026 10:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025232",
+                "date": "01/14/2025 8:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025233",
+                "date": "07/15/2025 4:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025234",
+                "date": "04/17/2025 3:15 PM",
+                "players": 4
+            },
+            {
+                "id": "9025235",
+                "date": "02/12/2026 9:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025236",
+                "date": "10/02/2025 6:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025237",
+                "date": "10/23/2025 6:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025238",
+                "date": "04/28/2026 1:30 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 2,
+                "total": 5,
+                "expires": "07/01/2026"
+            }
+        ],
+        "rewardsBalance": 2452,
+        "balance": 0,
+        "cardOnFile": "7937",
+        "cardExpires": "02/2040"
+    },
+    {
+        "id": "458418",
+        "courseId": "313571",
+        "firstName": "Viggo",
+        "lastName": "Salvatore",
+        "displayName": "Viggo Salvatore - Hero",
+        "email": "viggo.salvatore@hotmail.com",
+        "phone": "8017171821",
+        "birthday": "05/11/2003",
+        "notes": "walks — never wants a cart",
+        "street": "18 Fairway Ln",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Hero", "Employee"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025239",
+                "date": "03/26/2026 9:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025240",
+                "date": "09/18/2025 7:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025241",
+                "date": "06/27/2025 10:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025242",
+                "date": "05/01/2026 10:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025243",
+                "date": "03/13/2025 1:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025244",
+                "date": "06/05/2026 3:00 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "10-Round Punch Card",
+                "remaining": 8,
+                "total": 10,
+                "expires": "12/24/2026"
+            }
+        ],
+        "rewardsBalance": 1538,
+        "balance": 0
+    },
+    {
+        "id": "458419",
+        "courseId": "313572",
+        "firstName": "Wren",
+        "lastName": "Delgado",
+        "displayName": "Wren Delgado - Campaign Testers",
+        "email": "wren.delgado+83@tenfore.golf",
+        "phone": "8015632686",
+        "birthday": "12/16/1957",
+        "notes": "left-handed rental clubs",
+        "street": "9 Dogleg Dr",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [],
+        "customerTypes": ["Campaign Testers"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025245",
+                "date": "07/12/2025 11:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025246",
+                "date": "06/23/2026 1:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025247",
+                "date": "10/06/2025 11:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025248",
+                "date": "03/23/2025 11:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025249",
+                "date": "07/11/2026 9:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025250",
+                "date": "03/22/2026 6:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025251",
+                "date": "03/27/2026 1:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025252",
+                "date": "09/15/2025 5:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9025253",
+                "date": "05/15/2025 10:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025254",
+                "date": "09/24/2026 11:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9025255",
+                "date": "05/27/2026 12:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025256",
+                "date": "07/02/2025 5:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025257",
+                "date": "02/24/2026 2:30 PM",
+                "players": 2
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 13,
+                "total": 20,
+                "expires": "05/13/2027"
+            }
+        ],
+        "rewardsBalance": 438,
+        "balance": 0,
+        "cardOnFile": "5020",
+        "cardExpires": "03/2028"
+    },
+    {
+        "id": "458420",
+        "courseId": "313573",
+        "firstName": "Xiomara",
+        "lastName": "Mbeki",
+        "displayName": "Xiomara Mbeki - Corporate — 4 seat",
+        "email": "xiomara.mbeki@att.net",
+        "phone": "8015854457",
+        "birthday": "02/21/1960",
+        "notes": "wife's birthday in June — comp dessert",
+        "street": "N/A",
+        "city": "Alexandria",
+        "state": "VA",
+        "zip": "22314",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "03/15/2026"
+            }
+        ],
+        "customerTypes": ["Senior", "Private Cart", "Diamond", "Average Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025258",
+                "date": "09/24/2026 7:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025259",
+                "date": "06/22/2026 9:30 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 283,
+        "balance": 0,
+        "cardOnFile": "7186",
+        "cardExpires": "03/2030"
+    },
+    {
+        "id": "458421",
+        "courseId": "313574",
+        "firstName": "Yusuf",
+        "lastName": "Vasquez",
+        "displayName": "Yusuf Vasquez - Private Cart",
+        "email": "yusuf.vasquez@sbcglobal.net",
+        "phone": "8015753266",
+        "birthday": "06/05/2005",
+        "street": "N/A",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": ["Private Cart", "Average Person"],
+        "giftCards": [
+            {
+                "id": "261931",
+                "type": "Winnings",
+                "expires": "01/25/2031",
+                "awarded": 175,
+                "spent": 0,
+                "balance": 175,
+                "upc": ""
+            },
+            {
+                "id": "261932",
+                "type": "Purchased",
+                "expires": "10/23/2030",
+                "awarded": 25,
+                "spent": 9.95,
+                "balance": 15.05,
+                "upc": "478949807261"
+            }
+        ],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 1422,
+        "balance": 0
+    },
+    {
+        "id": "458422",
+        "courseId": "313575",
+        "firstName": "Zara",
+        "lastName": "Ferreira",
+        "displayName": "Zara Ferreira - Diamond",
+        "email": "zara.ferreira+86@tenfore.golf",
+        "phone": "8012092477",
+        "birthday": "02/11/1966",
+        "notes": "walks — never wants a cart",
+        "street": "402 Bunker Rd",
+        "city": "Potomac",
+        "state": "MD",
+        "zip": "20854",
+        "memberships": [],
+        "customerTypes": ["Diamond", "Guest of Members"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025260",
+                "date": "10/23/2025 7:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025261",
+                "date": "04/24/2025 3:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025262",
+                "date": "03/05/2026 9:45 AM",
+                "players": 4
+            },
+            {
+                "id": "9025263",
+                "date": "04/02/2025 8:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9025264",
+                "date": "08/14/2026 6:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025265",
+                "date": "01/09/2026 5:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025266",
+                "date": "01/10/2026 4:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025267",
+                "date": "11/27/2025 5:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025268",
+                "date": "06/06/2025 4:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025269",
+                "date": "04/12/2026 5:00 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1642,
+        "balance": 0,
+        "cardOnFile": "9827",
+        "cardExpires": "04/2038"
+    },
+    {
+        "id": "458423",
+        "courseId": "313576",
+        "firstName": "Anders",
+        "lastName": "Nakamura",
+        "displayName": "Anders Nakamura - Test percent off",
+        "email": "anders.nakamura@hotmail.com",
+        "phone": "8014714283",
+        "birthday": "01/15/1999",
+        "notes": "walks — never wants a cart",
+        "street": "1201 Tee Box Way",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Test percent off", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025270",
+                "date": "07/26/2026 8:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025271",
+                "date": "11/17/2025 4:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9025272",
+                "date": "10/28/2025 4:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025273",
+                "date": "01/09/2025 10:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025274",
+                "date": "09/26/2026 6:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025275",
+                "date": "11/26/2025 11:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025276",
+                "date": "03/20/2025 12:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025277",
+                "date": "09/06/2026 3:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025278",
+                "date": "07/26/2026 8:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025279",
+                "date": "03/03/2025 11:00 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "20-Round Punch Card",
+                "remaining": 16,
+                "total": 20,
+                "expires": "04/10/2027"
+            }
+        ],
+        "rewardsBalance": 2837,
+        "balance": 134.76,
+        "cardOnFile": "3410",
+        "cardExpires": "11/2039"
+    },
+    {
+        "id": "458424",
+        "courseId": "313577",
+        "firstName": "Beatriz",
+        "lastName": "Whitfield",
+        "displayName": "Beatriz Whitfield - Corporate — 4 seat",
+        "email": "beatriz.whitfield+88@tenfore.golf",
+        "phone": "8017526910",
+        "birthday": "09/16/1999",
+        "notes": "do not seat near the bar",
+        "street": "N/A",
+        "city": "N/A",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "04/17/2026"
+            }
+        ],
+        "customerTypes": ["Resident 22 Test"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025280",
+                "date": "06/11/2025 5:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025281",
+                "date": "07/01/2025 5:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025282",
+                "date": "06/12/2025 1:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025283",
+                "date": "10/02/2026 6:15 AM",
+                "players": 1
+            },
+            {
+                "id": "9025284",
+                "date": "01/22/2025 8:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025285",
+                "date": "06/03/2026 12:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025286",
+                "date": "04/12/2026 8:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 1400,
+        "balance": 0
+    },
+    {
+        "id": "458425",
+        "courseId": "313578",
+        "firstName": "Caleb",
+        "lastName": "Halloran",
+        "displayName": "Caleb Halloran - Diamond",
+        "email": "caleb.halloran@gmail.com",
+        "phone": "8017757604",
+        "birthday": "05/11/1998",
+        "notes": "has a standing Saturday foursome",
+        "street": "9 Dogleg Dr",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [],
+        "customerTypes": ["Diamond", "New Deal"],
+        "giftCards": [
+            {
+                "id": "261933",
+                "type": "Purchased",
+                "expires": "02/04/2030",
+                "awarded": 800,
+                "spent": 797.47,
+                "balance": 2.53,
+                "upc": "265973807261"
+            },
+            {
+                "id": "261934",
+                "type": "Winnings",
+                "expires": "02/18/2027",
+                "awarded": 100,
+                "spent": 0,
+                "balance": 100,
+                "upc": "979802807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025287",
+                "date": "08/01/2025 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025288",
+                "date": "09/22/2026 12:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025289",
+                "date": "10/04/2026 12:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025290",
+                "date": "11/11/2025 11:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025291",
+                "date": "11/02/2025 11:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025292",
+                "date": "12/01/2026 8:30 AM",
+                "players": 3
+            },
+            {
+                "id": "9025293",
+                "date": "05/05/2025 3:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025294",
+                "date": "12/06/2026 9:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 126,
+        "balance": 1590.94
+    },
+    {
+        "id": "458426",
+        "courseId": "313579",
+        "firstName": "Amara",
+        "lastName": "Okafor",
+        "displayName": "Amara Okafor - New Deal",
+        "email": "amara.okafor@gmail.com",
+        "phone": "8013296735",
+        "birthday": "10/14/1953",
+        "notes": "always pays on account",
+        "street": "77 Greenside Ct",
+        "city": "Arlington",
+        "state": "VA",
+        "memberships": [],
+        "customerTypes": ["New Deal", "Hero", "Employee", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025295",
+                "date": "09/14/2026 4:30 PM",
+                "players": 2
+            },
+            {
+                "id": "9025296",
+                "date": "02/24/2026 9:15 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 5,
+                "total": 5,
+                "expires": "06/28/2027"
+            }
+        ],
+        "rewardsBalance": 1743,
+        "balance": 1409.23
+    },
+    {
+        "id": "458427",
+        "courseId": "313580",
+        "firstName": "Bao",
+        "lastName": "Achebe",
+        "displayName": "Bao Achebe - Junior",
+        "email": "bao.achebe@hotmail.com",
+        "phone": "8019124812",
+        "birthday": "06/21/1961",
+        "notes": "wife's birthday in June — comp dessert",
+        "street": "402 Bunker Rd",
+        "city": "Bethesda",
+        "state": "MD",
+        "memberships": [
+            {
+                "name": "Junior",
+                "expires": "04/08/2028"
+            }
+        ],
+        "customerTypes": ["Private Cart", "Diamond", "Test percent off"],
+        "giftCards": [
+            {
+                "id": "261935",
+                "type": "Winnings",
+                "expires": "06/12/2030",
+                "awarded": 200,
+                "spent": 0,
+                "balance": 200,
+                "upc": "722365807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025297",
+                "date": "12/25/2026 10:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025298",
+                "date": "09/14/2025 6:15 AM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 352,
+        "balance": 0
+    },
+    {
+        "id": "458428",
+        "courseId": "313581",
+        "firstName": "Callum",
+        "lastName": "Kaur",
+        "displayName": "Callum Kaur - Private Cart",
+        "email": "callum.kaur+92@tenfore.golf",
+        "phone": "8013605028",
+        "birthday": "10/22/1955",
+        "street": "9 Dogleg Dr",
+        "city": "Alexandria",
+        "state": "VA",
+        "memberships": [],
+        "customerTypes": ["Private Cart", "Guest of Members"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025299",
+                "date": "02/04/2026 3:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025300",
+                "date": "04/16/2025 5:15 PM",
+                "players": 2
+            },
+            {
+                "id": "9025301",
+                "date": "08/28/2026 7:00 AM",
+                "players": 3
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "5-Round Punch Card",
+                "remaining": 4,
+                "total": 5,
+                "expires": "08/15/2027"
+            }
+        ],
+        "rewardsBalance": 277,
+        "balance": 0
+    },
+    {
+        "id": "458429",
+        "courseId": "313582",
+        "firstName": "Dermot",
+        "lastName": "Osei",
+        "displayName": "Dermot Osei - Diamond",
+        "email": "dermot.osei@hotmail.com",
+        "phone": "8015921833",
+        "birthday": "03/27/1949",
+        "notes": "free golf for life",
+        "street": "9 Dogleg Dr",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [],
+        "customerTypes": ["Diamond", "Resident 22 Test", "Test percent off"],
+        "giftCards": [
+            {
+                "id": "261936",
+                "type": "Purchased",
+                "expires": "11/20/2031",
+                "awarded": 25,
+                "spent": 0,
+                "balance": 25,
+                "upc": ""
+            },
+            {
+                "id": "261937",
+                "type": "Winnings",
+                "expires": "09/22/2027",
+                "awarded": 175,
+                "spent": 25.2,
+                "balance": 149.8,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025302",
+                "date": "10/01/2025 4:00 PM",
+                "players": 4
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 330,
+        "balance": 0,
+        "cardOnFile": "8909",
+        "cardExpires": "11/2032"
+    },
+    {
+        "id": "458430",
+        "courseId": "313583",
+        "firstName": "Dov",
+        "lastName": "Baptiste",
+        "displayName": "Dov Baptiste - Resident 22 Test",
+        "email": "dov.baptiste@aol.com",
+        "birthday": "02/04/2002",
+        "street": "402 Bunker Rd",
+        "city": "N/A",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Resident 22 Test", "Average Person"],
+        "giftCards": [
+            {
+                "id": "261938",
+                "type": "Winnings",
+                "expires": "06/14/2029",
+                "awarded": 175,
+                "spent": 40.24,
+                "balance": 134.76,
+                "upc": "997024807261"
+            },
+            {
+                "id": "261939",
+                "type": "Purchased",
+                "expires": "01/04/2029",
+                "awarded": 200,
+                "spent": 0,
+                "balance": 200,
+                "upc": "284544807261"
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025303",
+                "date": "01/28/2026 5:15 PM",
+                "players": 3
+            },
+            {
+                "id": "9025304",
+                "date": "04/19/2026 4:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025305",
+                "date": "06/21/2026 8:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025306",
+                "date": "01/28/2025 2:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025307",
+                "date": "01/17/2026 1:15 PM",
+                "players": 1
+            },
+            {
+                "id": "9025308",
+                "date": "01/01/2025 7:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025309",
+                "date": "01/03/2026 4:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025310",
+                "date": "10/23/2026 9:00 AM",
+                "players": 4
+            },
+            {
+                "id": "9025311",
+                "date": "04/07/2025 9:45 AM",
+                "players": 1
+            },
+            {
+                "id": "9025312",
+                "date": "06/09/2025 3:30 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 378,
+        "balance": 0,
+        "cardOnFile": "5423",
+        "cardExpires": "05/2033"
+    },
+    {
+        "id": "458431",
+        "courseId": "313584",
+        "firstName": "Elena",
+        "lastName": "Lindqvist",
+        "displayName": "Elena Lindqvist - premium single",
+        "email": "elena.lindqvist+95@tenfore.golf",
+        "phone": "8014074337",
+        "birthday": "07/14/1967",
+        "notes": "always pays on account",
+        "street": "9 Dogleg Dr",
+        "city": "Silver Spring",
+        "state": "MD",
+        "zip": "20901",
+        "memberships": [],
+        "customerTypes": ["premium single", "Employee", "Wonderful Person"],
+        "giftCards": [],
+        "teeTimes": [],
+        "punchCards": [],
+        "rewardsBalance": 2471,
+        "balance": 0,
+        "cardOnFile": "5504",
+        "cardExpires": "07/2036"
+    },
+    {
+        "id": "458432",
+        "courseId": "313585",
+        "firstName": "Fionn",
+        "lastName": "Petrov",
+        "displayName": "Fionn Petrov - Corporate — 4 seat",
+        "email": "fionn.petrov@sbcglobal.net",
+        "phone": "8012805826",
+        "birthday": "11/16/1960",
+        "notes": "prefers the 7:40 time",
+        "street": "77 Greenside Ct",
+        "city": "N/A",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [
+            {
+                "name": "Corporate — 4 seat",
+                "expires": "04/25/2027"
+            }
+        ],
+        "customerTypes": ["Senior", "Austin Test"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025313",
+                "date": "05/07/2026 8:45 AM",
+                "players": 2
+            },
+            {
+                "id": "9025314",
+                "date": "09/06/2026 11:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025315",
+                "date": "04/25/2026 6:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025316",
+                "date": "12/14/2025 3:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025317",
+                "date": "05/11/2025 2:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025318",
+                "date": "06/08/2026 8:15 AM",
+                "players": 2
+            },
+            {
+                "id": "9025319",
+                "date": "05/27/2026 5:30 PM",
+                "players": 3
+            },
+            {
+                "id": "9025320",
+                "date": "01/12/2025 7:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025321",
+                "date": "06/06/2026 5:30 PM",
+                "players": 4
+            },
+            {
+                "id": "9025322",
+                "date": "03/25/2025 3:45 PM",
+                "players": 1
+            },
+            {
+                "id": "9025323",
+                "date": "03/08/2025 2:45 PM",
+                "players": 2
+            },
+            {
+                "id": "9025324",
+                "date": "11/23/2025 7:00 AM",
+                "players": 1
+            },
+            {
+                "id": "9025325",
+                "date": "07/21/2025 9:15 AM",
+                "players": 1
+            }
+        ],
+        "punchCards": [
+            {
+                "name": "10-Round Punch Card",
+                "remaining": 3,
+                "total": 10,
+                "expires": "11/23/2026"
+            }
+        ],
+        "rewardsBalance": 138,
+        "balance": 0
+    },
+    {
+        "id": "458433",
+        "courseId": "313586",
+        "firstName": "Grete",
+        "lastName": "Bergstrom",
+        "displayName": "Grete Bergstrom",
+        "email": "grete.bergstrom@yahoo.com",
+        "phone": "8015878419",
+        "birthday": "12/23/2004",
+        "notes": "left-handed rental clubs",
+        "street": "9 Dogleg Dr",
+        "city": "Bethesda",
+        "state": "MD",
+        "zip": "20814",
+        "memberships": [],
+        "customerTypes": [],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025326",
+                "date": "12/21/2025 7:30 AM",
+                "players": 2
+            },
+            {
+                "id": "9025327",
+                "date": "09/23/2025 4:30 PM",
+                "players": 1
+            },
+            {
+                "id": "9025328",
+                "date": "06/08/2025 9:30 AM",
+                "players": 1
+            },
+            {
+                "id": "9025329",
+                "date": "05/19/2026 2:00 PM",
+                "players": 3
+            },
+            {
+                "id": "9025330",
+                "date": "04/14/2026 7:00 AM",
+                "players": 2
+            },
+            {
+                "id": "9025331",
+                "date": "03/01/2025 10:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025332",
+                "date": "05/28/2026 11:45 AM",
+                "players": 3
+            },
+            {
+                "id": "9025333",
+                "date": "05/25/2026 1:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025334",
+                "date": "12/09/2025 4:00 PM",
+                "players": 1
+            },
+            {
+                "id": "9025335",
+                "date": "05/15/2025 1:45 PM",
+                "players": 4
+            },
+            {
+                "id": "9025336",
+                "date": "05/07/2025 3:00 PM",
+                "players": 2
+            },
+            {
+                "id": "9025337",
+                "date": "12/17/2025 6:00 AM",
+                "players": 3
+            },
+            {
+                "id": "9025338",
+                "date": "11/28/2025 2:30 PM",
+                "players": 3
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 2158,
+        "balance": 0
+    },
+    {
+        "id": "458434",
+        "courseId": "313587",
+        "firstName": "Hugh",
+        "lastName": "Marchetti",
+        "displayName": "Hugh Marchetti - Guest of Members",
+        "email": "hugh.marchetti@sbcglobal.net",
+        "phone": "8013690308",
+        "birthday": "05/05/1973",
+        "notes": "always pays on account",
+        "street": "77 Greenside Ct",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Guest of Members", "Campaign Testers"],
+        "giftCards": [
+            {
+                "id": "261940",
+                "type": "Winnings",
+                "expires": "05/12/2032",
+                "awarded": 100,
+                "spent": 0,
+                "balance": 100,
+                "upc": ""
+            },
+            {
+                "id": "261941",
+                "type": "Winnings",
+                "expires": "03/05/2029",
+                "awarded": 175,
+                "spent": 0,
+                "balance": 175,
+                "upc": ""
+            }
+        ],
+        "teeTimes": [
+            {
+                "id": "9025339",
+                "date": "08/07/2025 4:45 PM",
+                "players": 3
+            },
+            {
+                "id": "9025340",
+                "date": "08/22/2025 9:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025341",
+                "date": "12/27/2025 8:15 AM",
+                "players": 4
+            },
+            {
+                "id": "9025342",
+                "date": "11/15/2025 8:15 AM",
+                "players": 3
+            },
+            {
+                "id": "9025343",
+                "date": "09/25/2026 8:30 AM",
+                "players": 4
+            },
+            {
+                "id": "9025344",
+                "date": "03/01/2026 4:45 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 250,
+        "balance": 0
+    },
+    {
+        "id": "458435",
+        "courseId": "313588",
+        "firstName": "Ines",
+        "lastName": "Salvatore",
+        "displayName": "Ines Salvatore - Diamond",
+        "email": "ines.salvatore@aol.com",
+        "phone": "8017430694",
+        "birthday": "05/07/2000",
+        "notes": "wife's birthday in June — comp dessert",
+        "street": "9 Dogleg Dr",
+        "city": "Arlington",
+        "state": "VA",
+        "zip": "22201",
+        "memberships": [],
+        "customerTypes": ["Diamond"],
+        "giftCards": [],
+        "teeTimes": [
+            {
+                "id": "9025345",
+                "date": "12/23/2025 2:45 PM",
+                "players": 1
+            }
+        ],
+        "punchCards": [],
+        "rewardsBalance": 36,
+        "balance": 0,
+        "cardOnFile": "2084",
+        "cardExpires": "03/2033"
+    }
+]

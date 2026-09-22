@@ -114,6 +114,9 @@ const SLUG_TO_KIND = Object.fromEntries(
 /** Write a modal into the query string. Returns false for kinds that aren't linkable. */
 function encodeModal(m: Modal, q: URLSearchParams): boolean {
   if (m.kind === 'confirm') return false;
+  // Cart signout is a momentary decision about a physical key, not a place. A link that
+  // reopened it would restore a picker over a fleet whose availability has since moved on.
+  if (m.kind === 'cartSignout') return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);
   switch (m.kind) {

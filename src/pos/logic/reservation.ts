@@ -4,6 +4,15 @@ import { largestFit } from './bookings';
 import { openRuns } from './openings';
 import { bookingRateClass, rateBand, rateCardFee, seatRateClass } from './rates';
 import type { RateContext } from './rates';
+import {
+  seatCanSwitchHoles,
+  seatCatalogFee,
+  seatNetGreenFee,
+  seatRate,
+  seatRateIsChosen,
+  seatTransportRate,
+} from './seat-pricing';
+import { transportById } from '../data/rate-catalog';
 
 export type { RateContext } from './rates';
 
@@ -33,7 +42,19 @@ export const playerHoles = (b: Booking, i: number): 9 | 18 => b.playerStates[i]?
  * and the customer roster; pass `rateContext(state)` wherever state is to hand.
  */
 export const playerFee = (b: Booking, i: number, rates?: RateContext): number =>
-  b.playerStates[i]?.fee ?? holesFee(b, i, playerHoles(b, i), rates);
+  b.playerStates[i]?.fee ?? chosenRateFee(b, i) ?? holesFee(b, i, playerHoles(b, i), rates);
+
+/**
+ * The catalog's price for a seat whose rate someone picked, or `undefined`.
+ *
+ * Only a *chosen* rate answers here. A seat nobody has touched falls through to `holesFee` and
+ * keeps the booking's own rate, which is what stops two hundred authored bookings repricing
+ * themselves the moment the catalog exists.
+ */
+function chosenRateFee(b: Booking, i: number): number | undefined {
+  if (!seatRateIsChosen(b, i)) return undefined;
+  return seatCatalogFee(b, i) ?? undefined;
+}
 
 /** This player's transport. */
 export const playerTransport = (b: Booking, i: number): Transport => b.playerStates[i]?.transport ?? b.cart;
@@ -53,20 +74,30 @@ export const playerIsAdjusted = (b: Booking, i: number): boolean => {
   );
 };
 
-/** Set one player's holes, fee or transport (or clear one with `undefined`). */
-export function setPlayer(
-  b: Booking,
-  i: number,
-  patch: Partial<Pick<PlayerState, 'holes' | 'fee' | 'transport'>>,
-): Partial<Booking> {
+/** Everything about one seat that the reservation can set. */
+export type SeatPatch = Partial<
+  Pick<
+    PlayerState,
+    | 'holes'
+    | 'fee'
+    | 'transport'
+    | 'rateId'
+    | 'transportRateId'
+    | 'transportFee'
+    | 'discountId'
+    | 'discountManual'
+    | 'cartKey'
+    | 'punch'
+  >
+>;
+
+/** Set one player's holes, fee, rate, transport or discount (or clear one with `undefined`). */
+export function setPlayer(b: Booking, i: number, patch: SeatPatch): Partial<Booking> {
   return { playerStates: b.playerStates.map((p, j) => (j === i ? { ...p, ...patch } : p)) };
 }
 
 /** The same value for every player — "everyone rides". */
-export function setAllPlayers(
-  b: Booking,
-  patch: Partial<Pick<PlayerState, 'holes' | 'fee' | 'transport'>>,
-): Partial<Booking> {
+export function setAllPlayers(b: Booking, patch: SeatPatch): Partial<Booking> {
   return { playerStates: b.playerStates.map((p) => ({ ...p, ...patch })) };
 }
 
@@ -153,6 +184,13 @@ export function holesFee(b: Booking, i: number, holes: 9 | 18, rates?: RateConte
  * not the fee for eighteen.
  */
 export function setPlayerHoles(b: Booking, i: number, holes: 9 | 18): Partial<Booking> {
+  // A rate that isn't sold for that length blocks the switch rather than repricing behind the
+  // counter's back. The toggle is disabled in the UI too; this is the guard for anything that
+  // dispatches directly.
+  if (!seatCanSwitchHoles(b, i, holes)) return {};
+  // The chosen rate is kept: switching a player from nine to eighteen does not put them on a
+  // different rate, it charges that rate's eighteen-hole price. Only the typed-over fee goes,
+  // because a number typed for nine holes is not the fee for eighteen.
   return setPlayer(b, i, { holes: holes === bookingHoles(b) ? undefined : holes, fee: undefined });
 }
 
@@ -180,9 +218,17 @@ export function setGroupTransport(b: Booking, transport: Transport): Partial<Boo
   };
 }
 
-/** What is still owed on the reservation: unpaid players still playing. */
+/**
+ * What is still owed on the reservation: unpaid players still playing.
+ *
+ * The **net** fee, so a comped or punch-paid seat reduces it. Summing `playerFee` here was how
+ * the panel footer came to disagree with the row above it.
+ */
 export function reservationDue(b: Booking, rates?: RateContext): number {
-  return b.playerStates.reduce((sum, p, i) => (p.noShow || p.paid ? sum : sum + playerFee(b, i, rates)), 0);
+  return b.playerStates.reduce(
+    (sum, p, i) => (p.noShow || p.paid ? sum : sum + seatNetGreenFee(b, i, playerFee(b, i, rates))),
+    0,
+  );
 }
 
 /** True when nobody on the booking owes anything — everyone paid, or a no-show. */
@@ -204,7 +250,10 @@ export function roundLabel(b: Booking): string {
 
 /** Everyone's fees, summed, over the players still playing (no-shows excluded). */
 export function reservationGreenFees(b: Booking, rates?: RateContext): number {
-  return b.playerStates.reduce((sum, p, i) => (p.noShow ? sum : sum + playerFee(b, i, rates)), 0);
+  return b.playerStates.reduce(
+    (sum, p, i) => (p.noShow ? sum : sum + seatNetGreenFee(b, i, playerFee(b, i, rates))),
+    0,
+  );
 }
 
 // ─── Phone reservation screen (appended by the mobile half) ─────────────────
@@ -255,3 +304,91 @@ export function patchEachPlayer(
 
 /** A player whose reservation can still be changed: not paid, not a no-show. */
 export const isEditableSeat = (p: PlayerState | undefined): boolean => Boolean(p && !p.paid && !p.noShow);
+
+// ─── Rate, transport and discount (Weston Edits, round 3) ───────────────────
+
+/**
+ * Put a seat on a rate.
+ *
+ * Choosing a tile drops any typed-over fee, because the number staff typed was for the rate
+ * they were on. Choosing the rate the system would have picked anyway clears the choice rather
+ * than pinning it — so a seat only carries a `rateId` when someone actually overrode something,
+ * and "reset" has a meaning.
+ */
+export function setPlayerRate(b: Booking, i: number, rateId: string): Partial<Booking> {
+  const auto = seatRate({ ...b, playerStates: clearRate(b, i) }, i);
+  return setPlayer(b, i, { rateId: auto?.id === rateId ? undefined : rateId, fee: undefined });
+}
+
+const clearRate = (b: Booking, i: number): PlayerState[] =>
+  b.playerStates.map((p, j) => (j === i ? { ...p, rateId: undefined } : p));
+
+/** Put a seat's rate and fee back to what the system would pick for whoever is sitting there. */
+export const resetPlayerRate = (b: Booking, i: number): Partial<Booking> =>
+  setPlayer(b, i, { rateId: undefined, fee: undefined });
+
+/**
+ * Put a seat on a transport row.
+ *
+ * The row carries its own mode, so picking "Walking" from the tiles also moves the seat's
+ * walk / ride / push state — the icon toggle and the tile grid are two views of one decision,
+ * and letting them disagree is how a player ends up riding on a walking fee.
+ */
+export function setPlayerTransportRate(b: Booking, i: number, transportRateId: string): Partial<Booking> {
+  const rate = transportById(transportRateId);
+  if (!rate) return {};
+  return setPlayer(b, i, {
+    transportRateId,
+    transport: rate.mode === b.cart ? undefined : rate.mode,
+    transportFee: undefined,
+  });
+}
+
+/** Set a seat's transport price by hand; typing the row's own price back in clears it. */
+export function setPlayerTransportFee(b: Booking, i: number, fee: number): Partial<Booking> {
+  const clean = Math.max(0, Math.round(fee * 100) / 100);
+  return setPlayer(b, i, { transportFee: clean === seatTransportRate(b, i).price ? undefined : clean });
+}
+
+/** Apply a discount preset to a seat. `manual` carries the amount for the typed-in one. */
+export const setPlayerDiscount = (b: Booking, i: number, discountId: string, manual?: number): Partial<Booking> =>
+  setPlayer(b, i, { discountId, discountManual: manual });
+
+export const clearPlayerDiscount = (b: Booking, i: number): Partial<Booking> =>
+  setPlayer(b, i, { discountId: undefined, discountManual: undefined });
+
+/**
+ * Hand a cart key to a player, and take it back.
+ *
+ * Signing out a cart implies riding: a player holding cart 14 who still reads as walking is a
+ * row that contradicts itself, so the mode follows the key.
+ */
+export function signOutCart(b: Booking, i: number, cartKey: number): Partial<Booking> {
+  const riding = playerTransport(b, i) === 'cart';
+  return setPlayer(b, i, {
+    cartKey,
+    ...(riding ? {} : { transport: 'cart' as Transport, transportRateId: undefined }),
+  });
+}
+
+export const returnCart = (b: Booking, i: number): Partial<Booking> => setPlayer(b, i, { cartKey: undefined });
+
+/** Everyone on the same rate — the old prototype's "Save fees to all", minus paid seats. */
+export const setGroupRate = (b: Booking, rateId: string): Partial<Booking> =>
+  patchEachPlayer(b, (x, i) => setPlayerRate(x, i, rateId), isEditableSeat);
+
+/**
+ * Put a seat's round on a punch card.
+ *
+ * A punch buys the round, not the ride: the green fee goes to zero and transport keeps its own
+ * price. The card need not be the player's own — `customerId` carries whose it is, which is how
+ * a member puts a guest's round on theirs.
+ *
+ * The punch is not spent here. It comes off the card when the round checks in, because an
+ * applied punch on a reservation nobody showed up for has not been used.
+ */
+export const applyPunchCard = (b: Booking, i: number, customerId: string, cardName: string): Partial<Booking> =>
+  setPlayer(b, i, { punch: { customerId, cardName }, discountId: undefined, discountManual: undefined });
+
+/** Take the round back off the punch card — it reprices to whatever its rate says. */
+export const clearPunchCard = (b: Booking, i: number): Partial<Booking> => setPlayer(b, i, { punch: undefined });

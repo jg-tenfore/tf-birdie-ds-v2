@@ -1,20 +1,34 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
-import { adjustedParty, at18, growableParty, nameOnlyGuest, withBookings } from '../mobile-scenarios';
+import { adjustedParty, at18, bookerWithRecord, nameOnlyGuest, openParty, withBookings } from '../mobile-scenarios';
+import { seatRecord } from '../../../pos/logic/seat-pricing';
+import type { Booking } from '../../../pos/types';
 
 /**
- * Weston Edits / 4 · Customer Tab / Mobile
+ * Weston Edits / 4 · Customer Profile / Mobile
  *
- * Weston wanted to "open their customer profile" from the reservation. On the phone it's a
- * **Customer** tab on the reservation screen: a row of player chips across the top (a phone
- * shows one profile at a time), then that player's profile — tier, ID.me, handicap, other
- * upcoming rounds, contact, notes. **Open full profile** pushes People's Golfer Detail over
- * the reservation, and Back comes straight back. The player, like the tab, lives in the
- * route, so switching replaces and Back always leaves the booking.
+ * The Customer **tab** is gone on the phone too. Weston's third round: "I don't think it needs
+ * to be a tab on the reservation, I wonder if it's its own thing." A customer record is not a
+ * property of a tee time — the same person is on four other bookings this month, and the
+ * questions staff get asked ("do I still have that gift card", "I didn't no-show") are about
+ * the person, not the round.
+ *
+ * So the reservation drops to four tabs, and a player's **name** opens their record as a
+ * full-screen dialog over it. ✕ returns to the reservation exactly as you left it.
+ *
+ * The problem it solves, in his words: "they're like, hey, is your email jonah.hamlet@hotmail?
+ * No, actually it's at Gmail. If I want to fix that, currently I go all the way to customer
+ * lookup." Now it is one tap from the seat, with one-tap domain chips so nobody types a whole
+ * address on glass.
+ *
+ * Contact edits in place. Memberships, customer types, punch cards, rain checks, gift cards and
+ * rounds played are shown but not edited — taking money stays the register's job. Customer
+ * types are chips with an expander rather than the column of eighteen checkboxes Weston called
+ * ugly.
  */
 const meta = {
-  title: 'Weston Edits/4 · Customer Tab/Mobile',
+  title: 'Weston Edits/4 · Customer Profile/Mobile',
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -24,72 +38,82 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-const party = () => {
-  const b = adjustedParty();
-  return { b, state: at18(withBookings(b)) };
+/** The reservation, then that seat's record stacked over it. */
+const recordOver = (b: Booking, seat: number) => (
+  <MobileStory
+    edition="weston"
+    initialState={at18(withBookings(b))}
+    tab="tee"
+    stack={[
+      { name: 'bookingDetail', bookingId: b.id },
+      { name: 'customerRecord', customerId: seatRecord(b, seat)?.id ?? null, bookingId: b.id, seat },
+    ]}
+  />
+);
+
+/**
+ * The booker's record: contact, membership, account, credits and rounds played.
+ *
+ * Deliberately a booking whose booker *resolves* — by the booking's phone. Most do not, because
+ * a name on a sheet is just a string until someone links it, and that is the rule this round
+ * exists to enforce rather than a gap in the data.
+ */
+export const BookerRecord: Story = {
+  render: () => recordOver(bookerWithRecord(), 0),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Contact');
+    await expect(canvas.getByText('Account')).toBeTruthy();
+    await expect(canvas.getByText('Tee time history')).toBeTruthy();
+  },
 };
 
-/** A linked customer — picked from People, ID.me verified — selected on the Customer tab. */
-export const LinkedCustomer: Story = {
-  render: () => {
-    const { b, state } = party();
-    return <MobileStory edition="weston" initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'customer', player: 1 }]} />;
+/** A guest seat linked to a real customer — their record, not the booker's. */
+export const LinkedGuest: Story = {
+  render: () => recordOver(adjustedParty(), 1),
+};
+
+/**
+ * An empty seat opens the same route in assign mode: search the roster, or create somebody.
+ * That is how Guest 3 becomes a person — and linking is what makes them price the round.
+ */
+export const AssignASeat: Story = {
+  render: () => recordOver(openParty(), 1),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText(/Who is in seat 2\?/);
   },
 };
 
 /**
- * The booker, the tab's default player. Resolved the way the tablet resolves them — linked
- * record, then the booking's phone (never the name) — so both show the same person.
+ * A seat *named* like a customer but not linked. It still opens in assign mode, because a name
+ * is not an identification — and until someone links it, the seat pays the booking's rate.
  */
-export const Booker: Story = {
-  render: () => {
-    const { b, state } = party();
-    return <MobileStory edition="weston" initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'customer' }]} />;
+export const NameIsNotAnIdentification: Story = {
+  render: () => recordOver(nameOnlyGuest(), 1),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText(/Who is in seat 2\?/);
   },
 };
 
-/**
- * An unnamed guest. No record to show, so the tab says so and offers **Link a customer**,
- * which opens the People picker for that seat.
- */
-export const UnlinkedGuest: Story = {
+/** The reservation underneath, now four tabs rather than five. */
+export const FourTabs: Story = {
   render: () => {
-    const b = growableParty();
-    return <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'customer', player: 1 }]} />;
-  },
-};
-
-/** **Open full profile**: People's Golfer Detail, pushed over the reservation. Back returns to the tab. */
-export const FullProfile: Story = {
-  render: () => {
-    const { b, state } = party();
-    const id = b.guests?.[1]?.crmId ?? 'G001';
+    const b = adjustedParty();
     return (
       <MobileStory
         edition="weston"
-        initialState={state}
+        initialState={at18(withBookings(b))}
         tab="tee"
-        stack={[
-          { name: 'bookingDetail', bookingId: b.id, tab: 'customer', player: 1 },
-          { name: 'golferDetail', golferId: id },
-        ]}
+        stack={[{ name: 'bookingDetail', bookingId: b.id }]}
       />
     );
   },
-};
-
-/**
- * A seat *named* "Kim, D." but not linked. No guessing: the tab suggests Kim, David with
- * **Link**, and the seat pays the booking's rate until someone links it.
- */
-export const SuggestedProfile: Story = {
-  render: () => {
-    const b = nameOnlyGuest();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'customer', player: 1 }]} />;
-  },
   play: async ({ canvasElement }) => {
-    const suggestion = within(await within(canvasElement).findByTestId('customer-suggestion'));
-    await expect(suggestion.getByText('David Kim')).toBeTruthy();
-    await expect(suggestion.getByRole('button', { name: 'Link' })).toBeTruthy();
+    const canvas = within(canvasElement);
+    await canvas.findByRole('tab', { name: 'Players' });
+    // The tab it replaced is gone, not hidden.
+    await expect(canvas.queryByRole('tab', { name: 'Customer' })).toBeNull();
   },
 };

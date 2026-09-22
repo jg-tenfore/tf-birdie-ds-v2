@@ -4,6 +4,7 @@ import { ALL_GOLFERS } from '../data/golfers';
 import type { Golfer } from '../types';
 import type { Action, PosState } from './pos-store';
 import { createInitialState, golferRoster, reducer } from './pos-store';
+import { seedWestonDefaults, useWestonDefaults } from './weston-globals';
 
 /**
  * Wires the POS reducer into React and exposes it through context.
@@ -29,10 +30,16 @@ export function PosProvider({
   children: ReactNode;
   initialState?: Partial<PosState>;
 }) {
+  // Storybook's toolbar can preset the four Weston variant switches for the whole session —
+  // panel width, row density, transport style, rate catalog. `null` everywhere else, which is
+  // every published prototype, and then this is a no-op. A story that pins one of those
+  // switches itself still wins; see `seedWestonDefaults`.
+  const westonDefaults = useWestonDefaults();
+
   const [state, dispatch] = useReducer(
     reducer,
     initialState,
-    (overrides) => createInitialState(overrides ?? {}),
+    (overrides) => createInitialState(seedWestonDefaults(overrides ?? {}, westonDefaults)),
   );
 
   const toast = useCallback((message: string) => dispatch({ type: 'toast', message }), []);

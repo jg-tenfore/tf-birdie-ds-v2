@@ -158,6 +158,40 @@ export interface PlayerState {
   holes?: 9 | 18;
   fee?: number;
   transport?: Transport;
+  /**
+   * The rate this seat is sold on (`rate-catalog.ts`), chosen from the tile grid.
+   *
+   * Absent means nobody has picked one, and the seat reads the rate the system would pick
+   * from the player's own record (`autoRate`). Storing the choice rather than the number is
+   * what lets the row print "Course Level Fee : $26.00" instead of a bare amount, and what
+   * keeps a switched 9 ↔ 18 on the same *rate* rather than resetting to rack.
+   */
+  rateId?: string;
+  /**
+   * The transport row this seat is sold on. Absent falls back to the default row for the
+   * booking's mode, so a booking made before transport had a catalog still prices correctly.
+   */
+  transportRateId?: string;
+  /** A typed-over transport price, the way `fee` overrides the green fee. */
+  transportFee?: number;
+  /** A discount preset applied to the seat, and the amount when it is a manual one. */
+  discountId?: string;
+  discountManual?: number;
+  /** The cart signed out to this player, if any. Drives the key glyph on the chip. */
+  cartKey?: number;
+  /**
+   * The green fee paid with a punch card instead of money.
+   *
+   * A punch card holds prepaid **rounds** — "20-Round Punch Card" — so a punch buys the round,
+   * not the ride: the green fee goes to zero and transport is still billed at its own rate.
+   * `customerId` is carried because the card need not be the player's own; a member can put a
+   * guest's round on theirs, which is the whole reason the old prototype had "use other
+   * customer's punchcards".
+   *
+   * The punch is spent when the round checks in, not when it is applied — an applied punch on
+   * a reservation nobody checked in has not been used.
+   */
+  punch?: { customerId: string; cardName: string };
 }
 
 /**

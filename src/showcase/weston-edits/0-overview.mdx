@@ -5,15 +5,20 @@ import { SiteLink } from '../../stories/SiteLink';
 
 # ✏️ Weston Edits
 
-Feedback from Weston Farnsworth on the tablet prototype, recorded as a Loom:
-["Streamlining T-Time Editing Without Order Flow"](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b)
-(2:46, September 2026).
+Feedback from Weston Farnsworth on the tablet prototype, in three rounds:
+
+| Round | Where it came from | What it covers |
+|---|---|---|
+| **1** | A Loom, ["Streamlining T-Time Editing Without Order Flow"](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b) (2:46, September 2026) | Golf first, order second — sections 1–8 |
+| **2** | A Loom, ["Request to Improve T Sheet Date Navigation"](https://www.loom.com/share/a0d4ed98b7344746b5a4bf8a9d7ee4fb) (46 s) | Getting to June without a dozen taps — section 9 |
+| **3** | A call, 22 September 2026 | The reservation becomes where the money is decided — sections 10–18 |
 
 <SiteLink to="weston-edits" tone="filled" size="md">Open the tablet prototype</SiteLink>{' '}
 <SiteLink to="weston-edits-mobile" tone="filled" size="md">Open the mobile prototype</SiteLink>
 
 Both are the **18-hole club** with the edits switched on. The other six prototypes are
-unchanged, except for the bug fixes in section 8, which apply everywhere.
+unchanged, except for what is marked *all editions* — the bug fixes in section 8, and round 3's
+confirm-before-clear and icon registry.
 
 ## What Weston asked for
 
@@ -36,12 +41,12 @@ sheet. Weston said he could be convinced of a modal instead.
 |---|---|
 | Where the edits live | A separate **edition** of the same app (`src/pos/edition.tsx`), published as its own 18-hole prototypes. The base prototypes stay as they are. |
 | How the reservation opens (tablet) | **Slide-over panel** from the right. The tee sheet (grid or list) **narrows** to the room left of it as it slides in: columns tighten, nothing is hidden under the panel, and there is no sideways scrolling |
-| Where a customer profile opens | A **Customer tab** in the panel, for the selected player |
+| Where a customer profile opens | Round 1 put it in a **Customer tab** in the panel. Round 3 took the tab out — a customer is not a property of a tee time — so the player's **name** opens their record over everything. See section 4, and the round-3 decisions below |
 | ID.me | **Badge only**, from demo data. The verify flow waits on how Birdie shows it today |
 | Bugs found in the recording | **Fixed everywhere**, not only in Weston Edits |
 | What **Check in & pay** checks in | **Everyone** on the reservation, except no-shows — on the tablet and the phone |
 | A player's fee after switching 9 ↔ 18 | The **rate card**: that hole count's price in the tee time's band (early / peak / twilight), on the player's rate class, or the row's price override. The booked length keeps the booking's own rate. Staff can override; Reset returns to the card |
-| Rate class | **Per player**, not per booking: each seat follows its own customer — a **linked customer record**, or for the booker the **booking's phone**. **Never the seat's name**: a seat whose name looks like a customer shows a *Suggested profile · Link* in the Customer tab and pays the booking's rate until someone links it. Unlinked seats fall back to the booking's class. A member in a guest's group plays on the member rate, a guest in a member's group on rack. The same on the tablet, the phone and the register |
+| Rate class | **Per player**, not per booking: each seat follows its own customer — a **linked customer record**, or for the booker the **booking's phone**. **Never the seat's name**: a seat whose name looks like a customer shows a *Suggested profile · Link* in their record and pays the booking's rate until someone links it. Unlinked seats fall back to the booking's class. A member in a guest's group plays on the member rate, a guest in a member's group on rack. The same on the tablet, the phone and the register |
 | Tax & cart fees per seat | **The seat's own class**, not the booking's status: each paying seat adds its own green-fee tax to the order's Taxes line and pays its own class's cart fee. A member's $0 seat carries no green-fee tax (no green fee, no tax on it), a guest in a member's booking pays the guest tax and cart fee. Paid and no-show seats add nothing |
 | The phone's long-press quick sheet | **Open reservation** replaces its straight-to-register Check in & pay |
 | Walk-ins | A **reservation too**: Walk-in (or a CHECK IN rate with nothing on the order) books the **next open tee time** after the demo "now", opens it in the panel / reservation screen, and staff can pick another time there. The base edition keeps its fast register-first walk-in |
@@ -53,14 +58,15 @@ sheet. Weston said he could be convinced of a modal instead.
 
 ## Every change, component by component
 
-Each component has a **Tablet** and a **Mobile** entry in the sidebar.
+Each section has a **Tablet** entry in the sidebar, and a **Mobile** entry wherever the phone
+has something of its own to show. Section 18 is a doc page rather than a screen.
 
 | # | Component | Tablet | Mobile |
 |---|---|---|---|
 | 1 | **Reservation Panel** | Clicking a tee time opens a slide-over with the reservation. The tee sheet narrows beside it and scrolls the tee time into view, and clicking another booking switches the panel. Nothing goes into the cart yet | Tapping a booking opens the reservation screen first, golf before order |
 | 2 | **Player Rows** | One row per player: 9 or 18 holes, tee fee (on the player's own rate class; from the rate card when switched), transport, check-in status. Add, remove or swap players, and change the player count | The same controls as full-width rows |
 | 3 | **ID.me Badge** | A verified badge on the player (Military, Veteran, First responder…) | The same badge on the player row |
-| 4 | **Customer Tab** | The selected player's customer profile, in a tab of the panel | A Customer tab on the reservation screen |
+| 4 | **Customer Profile** | Tapping the player's **name** opens their record over everything — contact details editable in place, plus memberships, customer types, punch cards, rain checks, gift cards and rounds played. The Customer *tab* is gone: a customer is not a property of a tee time. An empty seat opens the same surface in assign mode | The same record, as a full-screen dialog over the reservation |
 | 5 | **Financial, Notes & Activity** | The reservation's balance, per-player payments, notes and history, as panel tabs | The same, as tabs on the reservation screen |
 | 6 | **Check In & Pay** | The panel's main action. It checks everyone in and sends the reservation, as adjusted, to the register. A walk-in starts here too, at the next open tee time | The pinned bottom action. The quick sheet opens the reservation; the Register's Walk-in creates one |
 | 7 | **Register Golf Summary** | Golf lines in the order become a read-only summary with **Edit reservation**. No **+ modifier** or **Guest Details** on golf lines, walk-ins included. Retail on the order is taxed | The same on the phone's order screen |
@@ -77,6 +83,141 @@ on the **phone**. Both get the same generated demo days, and all of it is **West
 | # | Component | Tablet | Mobile |
 |---|---|---|---|
 | 9 | **Date Navigation** | The same controls (‹ ›, the calendar popover, **Today**, **Weekend**), now with a tee sheet on every date within a year of today: the same generated days as the phone, shared by the grid, list and day summary. The calendar dots those days and greys out dates beyond the year. A generated day that's been cleared stays empty | A swipeable **week strip** under the date for quick day hops, and the date row's ‹ › now move a week. Tapping the date opens a **calendar sheet** with a month grid, month and year jump, ‹ › by month, **Today**, dots on days with tee times, and the viewed date highlighted. Any date within a year either side of today has a believable, deterministic demo sheet; dates beyond that are greyed |
+
+## Round 3: the reservation decides the money
+
+A call on **22 September 2026**. Rounds 1 and 2 moved the golf in front of the order; round 3
+is about what the counter actually does once it is there. Two things drove it.
+
+The first is that a fee was a **number somebody typed**, and staff do not want a price box:
+
+> "They do want to select what's available, because this is not showing you every rate that you
+> have in the system, it's showing you every rate that you could possibly have for **this
+> specific tee time on this specific date**."
+
+The second is that a **customer is not part of a tee time**:
+
+> "I don't think it needs to be a tab on the reservation, I wonder if it's its own thing… if I
+> click on Michael Thompson, does something else open?"
+
+Neither was expressible in the shape the POS had, where a seat's price was a bare number and a
+golfer was five fields. So round 3 started with data.
+
+### The data underneath
+
+| File | What it holds |
+|---|---|
+| `data/customers.ts` · `customers.json` | The **hundred hand-authored records** ported from v1 — memberships, customer types, punch cards, gift cards, rounds played, no-shows, rewards and balances. Committed, so the database is a thing you can open and read rather than a function of a seed |
+| `data/roster.ts` | **340 records**: those hundred, the 28 golfers the POS already priced against, and one per name that can appear on a tee sheet — on any of the eight prototypes. The sheet names are synthesised deterministically *from the name*, so a golfer reads the same way on every run and in every screenshot |
+| `data/rate-catalog.ts` | Green fees with **eligibility rules**, the transport catalog, the discount presets, and a 26-rate course for the overflow case |
+| `data/carts.ts` | The signout fleet — 35 numbers, skipping 13 the way most fleets do — with availability *derived* from the day's bookings |
+| `data/rain-checks.ts` | Credits with balances and redemptions, so a record can say not just that a credit is empty but what emptied it |
+| `logic/seat-pricing.ts` | The rate, transport row, discount and punch behind one seat's price, resolved **by reliable key only** |
+
+Synthesising the sheet names rather than re-pointing 200-odd authored bookings at the ported
+ones was a deliberate call: re-pointing would have reseeded the demo window that every
+screenshot, story and doc depends on, to change strings nobody reads.
+
+**A name is a string until somebody links it.** Only **93 of the 18-hole club's 853** demo
+bookings have a booker who resolves to a record — by the booking's phone, the only reliable key
+for seat 0 — and that is the rule this round exists to enforce rather than a gap in the
+fixtures. A story that wants to show a *record* rather than the assign-a-customer state has to
+pick a booking that actually has one (`bookerWithRecord`).
+
+### Decisions
+
+| Question | Decision |
+|---|---|
+| Where a customer record opens | **Over everything, from the player's name.** A centred modal on the tablet, a full-screen dialog on the phone; closing it leaves the reservation exactly as it was. The reservation drops to **four tabs**, and an old `?res-tab=customer` link degrades to Players rather than breaking |
+| What is editable in a record | **Contact details, in place**, with one-tap email domains — Weston's case was "no, actually it's at Gmail", which today means walking all the way to customer lookup. Memberships, punch cards, rain checks and gift cards are shown but **not** edited: taking money stays the register's job, and a second place to do it is a second place for the totals to disagree |
+| Customer types | **Chips with an expander** — "show the one you have, and if you want to assign more you can" — not the column of eighteen checkboxes he called ugly |
+| An empty seat | Opens the **same surface in assign mode**: search the roster, or create somebody. Linking is what makes that person price the round. A matching name never does |
+| What a seat's price is | A **named rate**, not a number. The row says what it is sold on — "Course Level Fee : $26.00" — because a bare dollar amount cannot answer *why is he paying that* |
+| Which rates the grid offers | **What this tee time on this date sells**: the catalog narrowed by band, day of week and hole count. The player's record **sorts and groups** the tiles; it never hides one, because the counter's job includes putting somebody on a rate they do not technically qualify for. Ineligible tiles are dimmed and titled *Not this player's rate — staff override* |
+| Which rate is picked for you | The **cheapest the player qualifies for**, falling back to the card's rack row when nobody is identified. Picking the rate the system already chose *clears* the choice rather than pinning it, so **Reset** means something |
+| A pinned rate across 9 ↔ 18 | It **survives**, and charges that rate's other price. A rate sold for one length only **blocks** the toggle and says why, rather than repricing behind the counter's back |
+| Where the rate editor opens | **In place on the row** on the tablet — Weston's own suggestion, "maybe you click and this expands, instead of taking over a full screen" — so the rest of the group never leaves the screen. On the phone it is a **full-screen dialog**: four rows of tiles under an open row on a 402px screen pushes the group off entirely, so you would lose the group *and* have to scroll |
+| A grid with too many rows | Past twelve rates it changes shape rather than growing: **Eligible · n** stays visible, the rest collapse behind **Show**, and a filter box runs across both |
+| Transport | A **priced catalog**, not a boolean: several carts at different prices, a member cart at nothing, and a **trail fee for walking**. A walker paying $8.58 cannot be expressed by a walk/ride toggle. The icons on the row now select a mode's *default row*, so the toggle and the tiles are two views of one decision |
+| Punch cards | A punch card holds prepaid **rounds**, so applying one settles the **green fee** and the ride is **still billed**. The old *Free Punch Cart* transport row is gone — a walker and a rider would have spent the same punch for different value. The punch carries whose card it was, so a member can cover a guest's round, and it is **spent at check-in**, not when applied |
+| Discounts | Five presets — comp, 50%, 25%, employee and a typed amount — each carrying a **reason** onto the row and the register line, because a $0 seat with no explanation is what an owner asks about at the end of the month. A punch clears any discount: "50% off a fee already covered by a prepaid round" is not something anybody means |
+| Cart signout | Back on the player row as a key glyph. Availability is **derived** from the day's bookings, never stored, so returning a cart is just clearing a seat. A taken cart is **shown struck through with who has it** — "cart 14 is out with the 9:12" is the question actually being asked. Signing a key out implies riding |
+| Getting one seat onto the order | Per-seat **Add** — "you hit add to cart for each player, and then you hit save". **Check in & pay** then **tops the order up** to the whole booking rather than rebuilding it, so seats added one at a time keep whatever was done to them |
+| Moving between reservations | A **‹ n of m ›** stepper in the panel header, in tee-time order. Empty slots, blocks and events are skipped, the arrows **disable** at the ends rather than wrapping, and a step resets to the **Players** tab |
+| Panel width | **640 ships**; 820 and full-cover are a click away in section 10, because Weston asked to feel the difference rather than choose from a description |
+| The order rail | **One button, two jobs, never both at once.** With something on the order it is the back arrow and it *clears*, behind a confirm. Once the order is empty it becomes a hamburger and *collapses the rail* to a **56px strip** carrying Walk-in, Reserve and the order count. Anything landing on the order re-expands it |
+| The four questions he declined to answer | Shipped as **variants**, not decisions — panel width, row density, transport style and rate catalog, on the Storybook toolbar |
+
+### Every change, component by component
+
+| # | Component | Tablet | Mobile |
+|---|---|---|---|
+| 10 | **Panel Size** | The same booking at 640, 820 and cover, plus 640 with the order rail expanded — the comparison that matters, since the rail costs the sheet 320px. The sheet **narrows** rather than scrolling sideways, until cover, where it would collapse its own layout and is simply covered | No equivalent: the phone's reservation is the screen |
+| 11 | **Rate Selector** | The tile grid on the row — green fee, transport, discount, punch card, in the order money gets decided — with the system's pick outlined, ineligible rates dimmed, **Save fees to all**, **Reset**, and the 26-rate overflow treatment | A full-screen dialog with the same four rows; ✕ discards, Save commits. The fee chip opens it instead of a number pad (2 · Player Rows → **Tee Fee Sheet**) |
+| 12 | **Player Row Detail** | What the row says under the name: the rate's name, the transport row's name, a discount with its reason and the price it came down from, the punch card that settled the round, the cart key. **Comfortable** (default) gives the rate and ride a line each; **dense** is V1's one-liner | The row prints the rate and the ride by name underneath |
+| 13 | **Order Rail** | Clear-then-collapse, the 56px strip, and the rail returning on its own the moment something lands in the order | No rail to collapse: the order is the Register tab, and its badge shows nothing when the order is empty |
+| 14 | **Per-seat Cart** | **Add** on each editable row; the row then reads **In order**. Check in & pay reads **Update order** and charges the whole booking, keeping every adjustment | The same **Add** on each row of the reservation screen |
+| 15 | **Next In Line** | **‹ n of m ›** between the reservation's header and its ✕; the sheet scrolls the new booking in only if it is off screen | The same stepper in the reservation's app bar |
+| 16 | **Cart Signout** | The 35-cart fleet on 46×40 targets, taken carts struck through with who has them, and **Return cart n** when the seat already holds one | The same fleet from the row's sheet — keys are handed out at the cart barn, which is exactly where the phone is the device in hand |
+| 17 | **Punch Cards** | The editor's fourth row: the player's own card by name and count, **Use a customer's card** for somebody else's, the note that it is spent at check-in, and the round's gross kept so removing one is an undo | The same fourth row inside the dialog |
+| 18 | **Rate Catalog** | A doc page rather than a screen: what a rate *is*, how eligibility is matched, the standard ten-row card, the 26-rate one, the transport catalog, the discount presets, and what a seat remembers. Read it before reviewing 11 | — |
+
+### What the first pass got wrong
+
+Two corrections worth keeping, because both were believed the other way round first.
+
+**The pricing shipped as a display layer.** A discount, a punch card and a chosen transport row
+all changed the player row and nothing else: the row read $0.00 while **Check in & pay** and the
+register's **Pay** still charged the full green fee, and the reservation's own "due" figure
+disagreed with the row directly above it. Measured on a foursome, applying a punch left the
+order at $223.50 — unchanged. `buildTeeTimeCart`, `seatCharges` and `reservationDue` now price
+through `seatNetGreenFee`, so the row, the reservation total, the cart line and the tax all
+agree with what the counter is about to take; tax follows the net, so a comped seat carries no
+green-fee tax. Transport bills the catalog row only once someone picks one, which keeps an
+untouched booking pricing exactly as it did before. Five regression tests pin it.
+
+**Dense rows do not fit a foursome in the 640 panel.** This was asserted before it was measured
+and it is wrong. The players list stands **823px comfortable and 734px dense** against **618px**
+of visible panel — the party stepper and the three group actions take the top of it before a
+single seat is drawn. Dense buys back about 90px across a foursome, roughly half a seat; it does
+not buy the scroll. Fitting four seats outright is a job for the **820** panel (section 10), not
+for the row.
+
+### Variant switches, on the Storybook toolbar
+
+Four questions Weston explicitly declined to answer from a description — "I can be convinced
+either way", "I'd want to see it" — so all four ship as switches rather than decisions.
+
+| Toolbar control | Options | The question |
+|---|---|---|
+| **Panel width** | 640 · ships / 820 · room for rates / covers the sheet | Room to work against how much of the day you can see |
+| **Row density** | comfortable / dense | Reading a rate name back to a golfer against seeing more seats at once |
+| **Transport** | toggle / named rate | The walk / ride / push icons, or the transport rate it actually bills |
+| **Rates** | standard / heavy · 26 | Whether the tile grid holds at a club that prices every band separately. **Story-only** — no prototype ships the heavy catalog |
+
+They wire through `PosProvider`, so every story responds without one of them being edited. A
+story that pins a switch itself still wins: the merge order is defaults → toolbar → story, and
+section 10 pins the width on the panel so its three screenshots cannot collapse into one. None
+of them are linkable — a prototype URL never carries a variant.
+
+### Fixes this round
+
+*All editions:* **clearing the order now confirms** — it is destructive, has no undo, and did it
+silently before (the confirm also counts the golf lines, not the tax line, so a threesome no
+longer offers to remove "4 items"). And three icon names were never registered — `menu`,
+`vpn_key` and `person_search` — so `iconFor` fell back to a neutral bullet and they shipped as
+solid dots while the whole suite stayed green. All three are registered, and `icons.test.ts` now
+scans every literal icon name in `src` against the registry.
+
+*Weston Edits:* the collapsed rail's Walk-in opened the old dialog while the expanded one booked
+the next open tee time as a reservation — the two were written twice and drifted; they now come
+from one `QUICK_ACTIONS` list. The base edition's floating "Show order panel" arrow renders only
+where there is no strip to carry its own hamburger. Tooltips wrapping disabled buttons never
+fired, because a disabled element dispatches no events. The rate editor's headings read
+"GREEN FEE · ,9, HOLES", because `String(children)` on interpolated JSX hands back an array;
+they are uppercased by CSS now. And `isEligible` required *every* listed customer type while
+memberships required any, so a customer carrying plain `Resident` did not qualify for the
+Weekday Resident row, which lists two spellings of the same thing.
 
 ## How the edition works
 

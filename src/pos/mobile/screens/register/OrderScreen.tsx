@@ -81,14 +81,30 @@ export function OrderScreen() {
   // after the order was opened (Edit reservation → back). When the order's golf lines no
   // longer match what the booking builds, reload it — `loadBooking` on the same booking
   // rebuilds only the golf and keeps retail, F&B and any payment already taken.
+  //
+  // The comparison has to be against the *same seats the order holds*. Built without
+  // `state.orderSeats`, a per-seat order is stale by construction — two of four seats can never
+  // equal all four — so the effect fired on mount and `loadBooking` replaced the split with the
+  // whole party. Tapping Add on two rows and opening the Register tab charged for four.
   const staleGolf =
     weston &&
     booking != null &&
     state.cart.some((i) => i.isCheckIn) &&
-    JSON.stringify(golfLines(state.cart)) !== JSON.stringify(golfLines(cartLogic.buildTeeTimeCart(booking, state.courses, rateContext(state))));
+    JSON.stringify(golfLines(state.cart)) !==
+      JSON.stringify(
+        golfLines(
+          cartLogic.buildTeeTimeCart(booking, state.courses, rateContext(state), state.orderSeats ?? undefined),
+        ),
+      );
   useEffect(() => {
-    if (staleGolf && booking) dispatch({ type: 'loadBooking', bookingId: booking.id });
-  }, [staleGolf, booking, dispatch]);
+    if (!staleGolf || !booking) return;
+    // Rebuild the same seats, not the booking: a split order stays split.
+    dispatch(
+      state.orderSeats
+        ? { type: 'rebuildOrderSeats', bookingId: booking.id }
+        : { type: 'loadBooking', bookingId: booking.id },
+    );
+  }, [staleGolf, booking, state.orderSeats, dispatch]);
 
   const subtitle = booking
     ? `${booking.name} · ${booking.conf}`

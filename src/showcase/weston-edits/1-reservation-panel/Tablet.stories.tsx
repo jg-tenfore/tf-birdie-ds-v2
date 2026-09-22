@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 import { DEFAULT_TEE_SHEET_SETTINGS } from '../../../pos/data/courses';
-import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithPanel, twilightNine } from '../tablet-scenarios';
+import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustomer,
+  sheetWithPanel, twilightNine } from '../tablet-scenarios';
 
 /**
  * Weston Edits / 1 · Reservation Panel / Tablet
@@ -86,11 +87,12 @@ export const SwitchesBooking: Story = {
   },
 };
 
-/** The Customer tab — the selected player's record. See 4 · Customer Tab. */
-export const CustomerTab: Story = {
-  render: () => (
-    <Screen edition="weston" initialState={sheetWithPanel(adjustedParty(), 'customer', { panel: { playerIndex: 1 } })} />
-  ),
+/**
+ * The customer record, opened from a player's name and layered over the panel. The panel keeps
+ * its place underneath — closing the record returns to it untouched. See 4 · Customer Profile.
+ */
+export const CustomerRecordOverPanel: Story = {
+  render: () => <Screen edition="weston" initialState={sheetWithCustomer(adjustedParty(), 1)} />,
 };
 
 /** The Financial tab — per-player amounts, refunds and rain checks. See 5. */

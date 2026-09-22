@@ -1,3 +1,5 @@
+import type { CustomerEdits } from '../data/roster';
+import type { Customer } from '../data/customers';
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY, demoNow } from '../data/bookings';
@@ -80,10 +82,19 @@ export type Modal =
   /** `tip` is what checkout recalculated in, so the reader charges the checkout total. */
   | { kind: 'paymentReader'; method: string; tip?: number }
   | { kind: 'confirm'; title: string; body: string; confirmLabel: string; onConfirm: string }
-  | { kind: 'teeSheetSearch' };
+  | { kind: 'teeSheetSearch' }
+  /** Handing a cart key to one player (Weston Edits, round 3). */
+  | { kind: 'cartSignout'; bookingId: string; seat: number };
 
 /** The reservation panel's tabs, in order. */
-export const RESERVATION_TABS = ['players', 'customer', 'financial', 'notes', 'activity'] as const;
+/**
+ * The reservation's tabs.
+ *
+ * Four, not five. The Customer tab went in Weston's third round — "I don't think it needs to be
+ * a tab on the reservation, I wonder if it's its own thing" — because a customer record is not
+ * a property of a reservation. Tapping the player's name opens it (`customerModal`).
+ */
+export const RESERVATION_TABS = ['players', 'financial', 'notes', 'activity'] as const;
 export type ReservationTab = (typeof RESERVATION_TABS)[number];
 
 /**
@@ -100,7 +111,70 @@ export interface ReservationPanelState {
    * since Weston "can be convinced either way". Not linkable; the prototype always slides.
    */
   presentation?: 'panel' | 'modal';
+  /**
+   * Overrides the edition's default width for this one panel — a story's switch, so a single
+   * page can show the same booking at three sizes.
+   */
+  width?: PanelWidth;
 }
+
+/**
+ * How wide the slide-over runs.
+ *
+ * Weston's third round: "I wonder if it should take up more space… I don't know if we need to
+ * collapse the tee sheet. I think it's more important to have this bigger than to show more of
+ * the tee sheet." Three sizes rather than one, because he asked to feel the difference on the
+ * tablet before committing.
+ *
+ *  - `standard` — 640. Wider than the 480 he was looking at; with the order rail collapsed the
+ *    sheet still shows both nines.
+ *  - `wide` — 820. Room for the rate tiles beside a two-column player row; the sheet keeps
+ *    about one nine.
+ *  - `cover` — the whole sheet. Maximum room, still one ✕ back to where you were.
+ */
+export type PanelWidth = 'standard' | 'wide' | 'cover';
+
+export const PANEL_WIDTHS: Record<PanelWidth, number> = { standard: 640, wide: 820, cover: 0 };
+
+/**
+ * The customer record, open over everything.
+ *
+ * Not part of the reservation: it is opened *from* a seat but it is the person's record, and
+ * closing it leaves the reservation exactly as it was. `seat` is carried so that linking or
+ * creating a customer knows which chair it is filling — null when the record was opened from
+ * somewhere else, like a booking's menu on the tee sheet.
+ */
+export interface CustomerModalState {
+  customerId: string | null;
+  bookingId?: string;
+  seat?: number;
+  /** Opened on an empty seat: the record starts in search-and-assign mode. */
+  assigning?: boolean;
+}
+
+/**
+ * Story-level switches for the variants Weston asked to compare rather than choose.
+ *
+ * They live on state so a story can set one and every component below reads it, and so the
+ * prototype can ship one default without a second code path. None of them are linkable — a
+ * prototype URL never carries a variant.
+ */
+export interface WestonOptions {
+  panelWidth: PanelWidth;
+  /** `comfortable` gives the rate and transport names their own lines; `dense` is V1's one-liner. */
+  rowDensity: 'comfortable' | 'dense';
+  /** `toggle` keeps the walk/ride/push icons on the row; `named` prints the transport rate. */
+  transportStyle: 'toggle' | 'named';
+  /** `heavy` swaps in the 26-rate course, to exercise the grid's overflow. */
+  rateCatalog: 'standard' | 'heavy';
+}
+
+export const DEFAULT_WESTON_OPTIONS: WestonOptions = {
+  panelWidth: 'standard',
+  rowDensity: 'comfortable',
+  transportStyle: 'toggle',
+  rateCatalog: 'standard',
+};
 
 /** A right-click / long-press menu anchored to a booking chip or a time label. */
 export type ContextMenuState =
@@ -189,6 +263,27 @@ export interface PosState {
   modal: Modal | null;
   /** The reservation slide-over (Weston Edits), when open. */
   reservationPanel: ReservationPanelState | null;
+  /** The customer record, layered over everything (Weston Edits, round 3). */
+  customerModal: CustomerModalState | null;
+  /**
+   * Which seats of `selectedBookingId` are on the order.
+   *
+   * Weston's third round put an **Add to cart** on each player row, so a foursome splitting the
+   * bill rings up two seats now and two later. Empty means the whole booking — which is what
+   * Check in & pay loads, and what every surface did before per-seat existed.
+   */
+  orderSeats: number[] | null;
+  /** Variant switches for the comparisons Weston asked to see. Story-driven. */
+  weston: WestonOptions;
+  /**
+   * Edits made to customer records this session, keyed by customer id.
+   *
+   * An overlay over the committed roster rather than a mutation of it, so a demo always starts
+   * from the same place. Read through `liveCustomer` / `liveRoster` — an edit the record shows
+   * but the player row does not is the same class of bug as a discount the row shows and the
+   * register does not charge.
+   */
+  customerEdits: CustomerEdits;
   contextMenu: ContextMenuState;
   toast: string | null;
   /** Set after a successful checkout so the Pay button can show the paid state. */
@@ -259,6 +354,10 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     listFilters: { ...emptyListFilters },
     modal: null,
     reservationPanel: null,
+    customerModal: null,
+    orderSeats: null,
+    weston: { ...DEFAULT_WESTON_OPTIONS },
+    customerEdits: {},
     contextMenu: null,
     toast: null,
     lastPayment: null,
@@ -270,6 +369,19 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
 
 export type Action =
   | { type: 'setView'; view: MainView }
+  | {
+      type: 'openCustomerModal';
+      customerId: string | null;
+      bookingId?: string;
+      seat?: number;
+      assigning?: boolean;
+    }
+  | { type: 'closeCustomerModal' }
+  | { type: 'addSeatToOrder'; bookingId: string; seat: number }
+  | { type: 'rebuildOrderSeats'; bookingId: string }
+  | { type: 'stepReservation'; delta: 1 | -1 }
+  | { type: 'setWestonOption'; patch: Partial<WestonOptions> }
+  | { type: 'patchCustomer'; customerId: string; patch: Partial<Customer> }
   | { type: 'setCategory'; category: string | null }
   | { type: 'toggleLeftPanel'; collapsed?: boolean }
   // Cart
@@ -360,6 +472,28 @@ export function reducer(state: PosState, action: Action): PosState {
       };
     case 'setCategory':
       return { ...state, currentCategory: action.category };
+    case 'openCustomerModal':
+      return {
+        ...state,
+        customerModal: {
+          customerId: action.customerId,
+          bookingId: action.bookingId,
+          seat: action.seat,
+          assigning: action.assigning,
+        },
+      };
+    case 'closeCustomerModal':
+      return { ...state, customerModal: null };
+    case 'setWestonOption':
+      return { ...state, weston: { ...state.weston, ...action.patch } };
+    case 'patchCustomer':
+      return {
+        ...state,
+        customerEdits: {
+          ...state.customerEdits,
+          [action.customerId]: { ...state.customerEdits[action.customerId], ...action.patch },
+        },
+      };
     case 'toggleLeftPanel':
       return { ...state, leftPanelCollapsed: action.collapsed ?? !state.leftPanelCollapsed };
     case 'openModal':
@@ -515,9 +649,11 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, cart };
     }
     case 'clearOrder':
+      // Seats go with the order they were on.
       return {
         ...state,
         cart: [],
+        orderSeats: null,
         selectedGolfer: null,
         selectedBookingId: null,
         flowMode: '',
@@ -529,6 +665,56 @@ export function reducer(state: PosState, action: Action): PosState {
       };
     case 'setFlowMode':
       return { ...state, flowMode: action.mode };
+    case 'stepReservation': {
+      // "Next in line" — Weston liked the idea of moving booking to booking without closing
+      // the panel: "if you're just moving fast, you're boom, boom, boom, going through."
+      // Ordered by tee time across the courses in view, empty slots skipped, stopping at the
+      // ends rather than wrapping — a silent jump back to the morning is disorienting.
+      const panel = state.reservationPanel;
+      if (!panel) return state;
+      const day = dayBookings(state)
+        .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+        .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
+      const at = day.findIndex((x) => x.id === panel.bookingId);
+      const next = day[at + action.delta];
+      if (at < 0 || !next) return state;
+      return { ...state, reservationPanel: { ...panel, bookingId: next.id, tab: 'players', playerIndex: 0 } };
+    }
+    case 'rebuildOrderSeats': {
+      // Reprice the seats the order already holds, after the reservation changed under it.
+      // Deliberately not `loadBooking`: that rebuilds the whole booking, which would quietly
+      // undo a split bill.
+      const b = state.bookings.find((x) => x.id === action.bookingId);
+      if (!b || !state.orderSeats) return state;
+      const extras = state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes');
+      return {
+        ...state,
+        cart: [
+          ...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state), state.orderSeats),
+          ...extras,
+        ],
+      };
+    }
+    case 'addSeatToOrder': {
+      const b = state.bookings.find((x) => x.id === action.bookingId);
+      if (!b) return state;
+      // Adding a seat to a different booking's order starts a fresh one; adding to the same
+      // booking tops it up and keeps the retail and F&B lines alone.
+      const same = state.selectedBookingId === b.id;
+      const seats = [...new Set([...(same ? (state.orderSeats ?? []) : []), action.seat])];
+      const extras = same ? state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes') : [];
+      return {
+        ...state,
+        // The rail comes back the moment something lands in the order: an order you cannot see
+        // is one nobody checks before charging it.
+        leftPanelCollapsed: false,
+        selectedBookingId: b.id,
+        orderSeats: seats,
+        cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state), seats), ...extras],
+        orderScenario: same ? state.orderScenario : null,
+        lastPayment: same ? state.lastPayment : null,
+      };
+    }
     case 'loadBooking': {
       const b = state.bookings.find((x) => x.id === action.bookingId);
       if (!b) return state;
@@ -543,6 +729,9 @@ export function reducer(state: PosState, action: Action): PosState {
         selectedBookingId: b.id,
         selectedGolfer: null,
         flowMode: '',
+        // Check in & pay tops the order up to the whole booking rather than rebuilding it, so
+        // seats added one at a time keep whatever was done to them.
+        orderSeats: null,
         cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state)), ...extras],
         orderScenario: same ? state.orderScenario : null,
         lastPayment: same ? state.lastPayment : null,

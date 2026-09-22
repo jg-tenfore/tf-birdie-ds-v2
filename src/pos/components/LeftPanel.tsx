@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/material';
+import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import { elevation, grid, md3, payBadges, radius } from '../../theme/tokens';
 import { SETTINGS_MENU_ITEMS, TRANSPORT_META } from '../data/config';
 import { COURSES, TIMES } from '../data/courses';
 import { useWestonEdits } from '../edition';
 import { roundLabel } from '../logic/reservation';
+import { seatRecord } from '../logic/seat-pricing';
 import { useStartWalkIn } from './use-start-walk-in';
 import { RegisterGolfSummary } from './RegisterGolfSummary';
 import * as cart from '../logic/cart';
@@ -41,7 +42,13 @@ export function LeftPanel() {
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();
-  const walkIn = useStartWalkIn();
+  // Tax is a line on the order, not a thing anyone added, so counting it made clearing a
+  // threesome's golf read "4 items will be removed".
+  const orderCount = state.cart
+    .filter((item) => !item.isTax && item.name !== 'Taxes')
+    .reduce((n, item) => n + (item.qty ?? 1), 0);
+  const hasOrder = orderCount > 0;
+  const runQuickAction = useQuickAction();
 
   // The chip shows the primary golfer: the booking name, the looked-up golfer, or
   // player 1's name once a round has been rung up for a walk-in.
@@ -99,6 +106,12 @@ export function LeftPanel() {
     }
   };
 
+  // Weston: "this takes up a lot of space if there's nothing in it… on the tee sheet we always
+  // want to maximise the space we have." Collapsing is the operator's call, not automatic, so
+  // the rail keeps a strip with the control on it rather than vanishing to nothing — a panel you
+  // cannot get back is worse than one that is too wide.
+  if (weston && state.leftPanelCollapsed) return <RailStrip />;
+
   return (
     <Box
       sx={{
@@ -118,9 +131,33 @@ export function LeftPanel() {
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.25 }}>
+          {/*
+            One button, two jobs, never both at once.
+
+            With something in the order it is the back arrow, and it clears — behind a confirm,
+            because clearing an order is destructive and there is no undo. Once the order is
+            empty there is nothing to clear, so it becomes a hamburger that collapses the rail:
+            the control only offers the thing that is actually available, and the rail can only
+            be put away when hiding it costs nothing. That is Weston's point exactly — "it takes
+            up a lot of space if there's nothing in it".
+          */}
           <ButtonBase
-            onClick={() => dispatch({ type: 'clearOrder' })}
-            title="Clear order"
+            aria-label={hasOrder ? 'Clear order' : 'Collapse the order rail'}
+            onClick={() =>
+              hasOrder
+                ? dispatch({
+                    type: 'openModal',
+                    modal: {
+                      kind: 'confirm',
+                      title: 'Clear this order?',
+                      body: `${orderCount} item${orderCount === 1 ? '' : 's'} will be removed. This cannot be undone.`,
+                      confirmLabel: 'Clear order',
+                      onConfirm: 'clearOrder',
+                    },
+                  })
+                : dispatch({ type: 'toggleLeftPanel', collapsed: true })
+            }
+            title={hasOrder ? 'Clear order' : 'Collapse the order rail'}
             sx={{
               width: 38,
               height: 38,
@@ -129,7 +166,7 @@ export function LeftPanel() {
               '&:hover': { bgcolor: md3.surfaceHigh },
             }}
           >
-            <Icon name="arrow_back" size={20} />
+            <Icon name={hasOrder ? 'arrow_back' : 'menu'} size={20} />
           </ButtonBase>
 
           <ButtonBase
@@ -217,9 +254,16 @@ export function LeftPanel() {
                 <ButtonBase
                   key={playerIdx}
                   onClick={() =>
-                    // Weston Edits: a booked player's details live on the reservation.
+                    // Weston Edits: a booked player's record opens over everything, from the
+                    // name — it belongs to the person, not to this order.
                     weston && booking
-                      ? dispatch({ type: 'openReservation', bookingId: booking.id, tab: 'customer', playerIndex: playerIdx })
+                      ? dispatch({
+                          type: 'openCustomerModal',
+                          customerId: seatRecord(booking, playerIdx)?.id ?? null,
+                          bookingId: booking.id,
+                          seat: playerIdx,
+                          assigning: seatRecord(booking, playerIdx) == null,
+                        })
                       : dispatch({
                           type: 'openModal',
                           modal: { kind: 'guestDetail', guestIndex: playerIdx },
@@ -248,19 +292,10 @@ export function LeftPanel() {
         {/* ── Action buttons (pre-order only) ── */}
         {showActions && (
           <Stack gap={0.75} sx={{ mt: 0.75 }}>
-            {[
-              { label: 'Walk-in', icon: 'directions_walk', mode: 'walkin' as const },
-              { label: 'Reserve tee time', icon: 'event_available', mode: 'reserve' as const },
-            ].map((a) => (
+            {QUICK_ACTIONS.map((a) => (
               <ButtonBase
                 key={a.mode}
-                onClick={() => {
-                  // Weston Edits: a walk-in is a reservation first — at the next open tee
-                  // time, opened in the panel — and reaches the order through Check in & pay.
-                  if (walkIn.routes && a.mode === 'walkin') return void walkIn.start();
-                  dispatch({ type: 'setFlowMode', mode: a.mode });
-                  dispatch({ type: 'setCategory', category: 'CHECK IN' });
-                }}
+                onClick={() => runQuickAction(a.mode)}
                 sx={{
                   gap: 1.125,
                   px: 1.375,
@@ -998,3 +1033,141 @@ function PayButton({ payable }: { payable: number }) {
 
 /** Re-exported so the tee sheet can show the dominant-transport summary too. */
 export { dominantTransport };
+
+/**
+ * The order rail, collapsed.
+ *
+ * A 56px strip rather than nothing at all. Weston wanted the tee sheet to get the space back
+ * when the order is empty, but collapsing the rail to zero takes Walk-in and Reserve with it —
+ * and the two things staff reach for most cannot live behind a panel that is gone. So the strip
+ * keeps them, plus the count of whatever is in the order, and one tap brings the rail back.
+ *
+ * Adding anything to the order re-expands automatically: an order you cannot see is one nobody
+ * checks before charging it.
+ */
+function RailStrip() {
+  const { state, dispatch } = usePos();
+  const runQuickAction = useQuickAction();
+  const count = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
+  const expand = () => dispatch({ type: 'toggleLeftPanel', collapsed: false });
+
+  return (
+    <Box
+      data-order-rail="collapsed"
+      sx={{
+        width: 56,
+        flexShrink: 0,
+        bgcolor: '#fff',
+        borderRight: `1px solid ${md3.outlineVariant}`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 1,
+        pt: 1.25,
+        zIndex: 2,
+        transition: 'width .25s cubic-bezier(.4,0,.2,1)',
+      }}
+    >
+      <Tooltip title="Expand the order rail" placement="right">
+        <ButtonBase
+          aria-label="Expand the order rail"
+          onClick={expand}
+          sx={{ width: 34, height: 34, borderRadius: `${radius.sm}px`, color: md3.onSurfaceVariant }}
+        >
+          <Icon name="menu" size={18} />
+        </ButtonBase>
+      </Tooltip>
+
+      {QUICK_ACTIONS.map((a) => (
+        <StripButton key={a.mode} icon={a.icon} label={a.label} onClick={() => runQuickAction(a.mode)} />
+      ))}
+
+      <Box sx={{ flex: 1 }} />
+
+      <Tooltip title={count ? `${count} in the order` : 'Order is empty'} placement="right">
+        <ButtonBase
+          aria-label={count ? `Order · ${count} items` : 'Order is empty'}
+          onClick={expand}
+          sx={{
+            width: 34,
+            height: 34,
+            mb: 1.5,
+            borderRadius: `${radius.sm}px`,
+            color: count ? md3.primary : md3.outline,
+            position: 'relative',
+          }}
+        >
+          <Icon name="shopping_cart" size={18} />
+          {count > 0 && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 1,
+                right: 1,
+                minWidth: 15,
+                height: 15,
+                px: '3px',
+                borderRadius: 999,
+                bgcolor: md3.primary,
+                color: md3.onPrimary,
+                fontSize: 9,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {count}
+            </Box>
+          )}
+        </ButtonBase>
+      </Tooltip>
+    </Box>
+  );
+}
+
+function StripButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+  return (
+    <Tooltip title={label} placement="right">
+      <ButtonBase
+        aria-label={label}
+        onClick={onClick}
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: `${radius.sm}px`,
+          color: md3.onSurfaceVariant,
+          '&:hover': { bgcolor: md3.primaryContainer, color: md3.onPrimaryContainer },
+        }}
+      >
+        <Icon name={icon} size={18} />
+      </ButtonBase>
+    </Tooltip>
+  );
+}
+
+/**
+ * The rail's quick actions — one definition, used expanded and collapsed.
+ *
+ * They were written twice, which is how the collapsed Walk-in ended up opening the old walk-in
+ * dialog while the expanded one booked the next open tee time as a reservation, and how the
+ * collapsed Reserve ended up on an icon name that does not exist (rendering as a dot, because
+ * `iconFor` falls back to a bullet rather than failing). Label, glyph and behaviour now come
+ * from one place, so the two states cannot drift again.
+ */
+const QUICK_ACTIONS = [
+  { label: 'Walk-in', icon: 'directions_walk', mode: 'walkin' as const },
+  { label: 'Reserve tee time', icon: 'event_available', mode: 'reserve' as const },
+];
+
+function useQuickAction() {
+  const { dispatch } = usePos();
+  const walkIn = useStartWalkIn();
+  return (mode: 'walkin' | 'reserve') => {
+    // Weston Edits: a walk-in is a reservation first — at the next open tee time, opened in the
+    // panel — and reaches the order through Check in & pay.
+    if (walkIn.routes && mode === 'walkin') return void walkIn.start();
+    dispatch({ type: 'setFlowMode', mode });
+    dispatch({ type: 'setCategory', category: 'CHECK IN' });
+  };
+}

@@ -181,9 +181,9 @@ describe('reservation panel state', () => {
     let s = createInitialState({ venueId: 'eighteen' });
     s = reducer(s, { type: 'openReservation', bookingId: a.id });
     expect(s.reservationPanel).toEqual({ bookingId: a.id, tab: 'players', playerIndex: 0 });
-    s = reducer(s, { type: 'setReservationTab', tab: 'customer', playerIndex: 1 });
+    s = reducer(s, { type: 'setReservationTab', tab: 'financial', playerIndex: 1 });
     s = reducer(s, { type: 'openReservation', bookingId: a.id });
-    expect(s.reservationPanel?.tab).toBe('customer');
+    expect(s.reservationPanel?.tab).toBe('financial');
     s = reducer(s, { type: 'openReservation', bookingId: b.id });
     expect(s.reservationPanel).toEqual({ bookingId: b.id, tab: 'players', playerIndex: 0 });
     s = reducer(s, { type: 'loadBooking', bookingId: b.id });

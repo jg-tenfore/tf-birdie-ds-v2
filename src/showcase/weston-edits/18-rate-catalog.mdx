@@ -1,0 +1,210 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Weston Edits/18 · Rate Catalog" />
+
+# 🏷️ Rate Catalog
+
+Sections 1 to 17 are things you can see by clicking. This one is not. The rate catalog is the
+model underneath the tile grid — what a rate *is*, who is allowed to buy it, and how the system
+decides which one a player is owed — and it is the part that has to be right before any of the
+screens mean anything.
+
+Weston's description of what staff expect, from the third call:
+
+> "They do want to select what's available, because this is not showing you every rate that you
+> have in the system, it's showing you every rate that you could possibly have for **this
+> specific tee time on this specific date**."
+
+That sentence contains the whole model. A rate is not a number in a table; it is a price plus a
+rule about when and to whom it may be sold.
+
+## A rate is a price plus a rule
+
+Every rate carries an **eligibility** object. Each field narrows who or when — a field that is
+absent does not narrow anything.
+
+| Field | Narrows by | Example |
+|---|---|---|
+| `open` | Nothing. Anyone may buy it | The rack rate |
+| `memberships` | Holding **any one** of these memberships | Membership Weekday — *Weekday Golf* |
+| `membersOnly` | Holding any membership at all | Member Cart |
+| `customerTypes` | Carrying these customer types | Weekday Junior — *Junior* |
+| `bands` | Time of day: early, peak or twilight | Junior Twilight |
+| `days` | Days of the week, 0 = Sunday | Weekday Resident — Mon to Fri |
+| `holes` | Hole counts it is sold for | Premium Single — 18 only |
+
+Two notes on that table, both of which matter at the counter:
+
+- A rate with **no rule** is open to anyone. That is the right default: an unknown rate should
+  be offerable, not hidden.
+- `customerTypes` and `memberships` both match on **any** of the values listed, not all. The
+  standard card's *Weekday Resident* lists two spellings of one idea (`Resident` and
+  `Resident 22 Test`), so a customer carrying either qualifies. It read "every" when first
+  built, which meant a plain `Resident` did not qualify for the resident rate — the kind of
+  fault that is invisible until someone is charged the wrong price at a counter.
+
+## The grid is the slot's rates, not the system's
+
+When the rate editor opens on a player row it does not list the catalog. It lists
+**`ratesForTeeTime`** — every rate whose **band**, **day of week** and **hole count** cover this
+tee time. Nothing about the player narrows the grid.
+
+That split is deliberate and it is the thing most rate pickers get wrong:
+
+| Question | Who answers it | What it does |
+|---|---|---|
+| *May this rate be sold in this slot at all?* | The slot — band, day, holes | **Filters.** A rate that cannot be sold here is not a tile |
+| *Does this player qualify for it?* | The player's record | **Sorts and groups.** It never hides a tile |
+
+Staff can put a player on any tile in the grid, qualified or not, because the counter's job
+includes saying "you're getting the member rate today" to somebody who technically isn't. The
+tiles a player does not qualify for are dimmed and carry the tooltip *Not this player's rate —
+staff override*, which is a record of a decision rather than a warning.
+
+## The system pre-picks, staff decide
+
+For an untouched seat the editor marks the rate the player is **owed**: the cheapest one they
+qualify for, falling back to the card's rack row when nobody is identified — an unlinked seat
+pays the public rate until someone says otherwise (`autoRate`). Weston: *"it'll automatically
+give you what you're supposed to get."*
+
+Choosing a tile pins it to the seat (`PlayerState.rateId`), and three behaviours follow:
+
+- **Picking the rate the system already chose clears the choice** rather than pinning it, so a
+  seat only carries a `rateId` when somebody actually overrode something — and **Reset** has a
+  meaning.
+- **A pinned rate survives a 9 ↔ 18 switch.** Switching holes charges *that rate's* other
+  price; it does not move the player to a different rate.
+- **A rate that is not sold for the other hole count blocks the switch** instead of repricing
+  behind the counter's back. The toggle disables and says which rate is in the way.
+
+Typing a fee over the top still works, and always wins — but the number is no longer the only
+thing the row can say, which was the point. A bare `$13.00` cannot answer *why is he paying
+that*. The rate's name can.
+
+## The player's own record decides — never the name
+
+Which rate a seat is owed is a question about a **person**, so the seat has to resolve to a
+person by a reliable key:
+
+1. a **linked customer record** on the seat (`crmId`), or
+2. for the booker, the **booking's phone number**.
+
+**Never the seat's name.** "Kim, D." might be Kim, David or a stranger who shares his surname,
+and pricing a round on that guess is the mistake this round of work exists to prevent. A name
+that looks like a customer is offered as a *Suggested profile · Link* in the customer record —
+it prices nothing until somebody links it, and until then the seat pays the booking's rate.
+
+The consequence runs right through the app: rate class is **per seat**, not per booking. A
+member in a guest's foursome plays on the membership row; a guest in a member's foursome pays
+rack, with rack's tax and rack's cart fee.
+
+## The standard card
+
+Ten rows, the shape of a real small-club card: three resident rows, four membership rows, an
+employee row, a family row and the rack rate that anchors it. Prices are per player, by hole
+count, in each band — early (before 10:00 AM), peak (10:00 AM to 2:00 PM) and twilight (from
+2:00 PM).
+
+| Rate | Who it is for | Early 18 / 9 | Peak 18 / 9 | Twilight 18 / 9 |
+|---|---|---|---|---|
+| Weekday Resident | Resident types, Mon–Fri | $46 / $29 | $58 / $36 | $34 / $21 |
+| Weekday Senior Resident | Senior, Mon–Fri | $43 / $27 | $53 / $33 | $32 / $19 |
+| Weekday Junior | Junior, Mon–Fri | $32 / $17 | $38 / $22 | $22 / $12 |
+| Membership Weekday | *Weekday Golf* membership, Mon–Fri | $0 | $0 | $0 |
+| Membership 7 Days | *Full Golf*, *Corporate — 4 seat*, *30 Day booking window* | $0 | $0 | $0 |
+| Junior Membership Weekday | *Junior* membership, Mon–Fri | $0 | $0 | $0 |
+| Employee | Employee type | $0 | $0 | $0 |
+| Family Full Membership | *Full Golf* membership | $0 | $0 | $0 |
+| Family Weekday | *Weekday Golf* or *Trial Month* | $0 | $14 / $8 | $0 |
+| **Weekday Non Resident** *(rack)* | Anyone | $54 / $34 | $72 / $46 | $42 / $26 |
+
+The rack row is marked in the data, not guessed by name: it is what an unidentified player is
+charged, and what the grid falls back to when nobody qualifies for anything.
+
+Every priced fixture on the demo tee sheet comes from this card, so no nine ever costs more
+than the eighteen beside it and switching a nine to 18 can never lower a fee.
+
+## A club with a lot of rates
+
+Weston's other note was that plenty of courses carry far more than ten rows — *"there's some
+that have a lot, so we've got to figure out how we handle all of that as well."* So there is a
+second, **26-rate** catalog to exercise the grid against: rack prime and rack standard, an
+online discount, a Birdie Club rate, resident and senior and junior splits, military, first
+responder, employee and employee guest, five membership rows, guest of member, a diamond card,
+an 18-only premium single, league, outing and a twilight replay.
+
+It is **story-only** — no prototype ships it. The Storybook toolbar's **Rates** control swaps it
+in, and one authored price per rate is scaled through the bands (peak as authored, early at
+75%, twilight at 60%) so a rate can never accidentally cost more at twilight than at noon.
+
+Past twelve rates the editor changes shape rather than growing:
+
+| | |
+|---|---|
+| **Eligible · n** | What this player qualifies for, cheapest first, always visible |
+| **All rates · n** | Everything else, behind a **Show** / **Hide** |
+| **Filter rates…** | A text filter across both groups |
+
+## Transport is a parallel catalog
+
+Riding is not a boolean, and this is the second half of the model. A course sells several carts
+at different prices, a member cart at nothing — and, the case that breaks a walk/ride toggle
+outright, **a trail fee for walking**.
+
+| Row | Mode | Price | Who |
+|---|---|---|---|
+| Riding Cart | Ride | $26.82 | Anyone *(the ride toggle's default)* |
+| Cart Plus | Ride | $32.00 | Anyone |
+| Member Cart | Ride | $0.00 | Members |
+| Walking | Walk | $8.58 | Anyone *(the walk toggle's default — the trail fee)* |
+| Walking, member | Walk | $0.00 | Members |
+| Push Cart | Push | $6.00 | Anyone *(the push toggle's default)* |
+
+Transport rows answer eligibility with the same `isEligible` the green fees use — one definition
+of "qualifies", not two that drift apart. The walk / ride / push icons on the player row now
+select a **mode's default row**, and picking a row from the tiles moves the icons with it: the
+toggle and the tiles are two views of one decision, and letting them disagree is how a player
+ends up riding on a walking fee.
+
+There is deliberately **no punch-card row here** — see section 17. A punch card holds prepaid
+rounds, so it settles the green fee and the ride is still billed.
+
+## Discounts carry a reason
+
+The third row of the editor. Weston's case is *"you're the son of a staff guest, let me comp
+you"* — one tap, and it has to leave something behind, because a $0 seat with no explanation is
+the thing an owner asks about at the end of the month.
+
+| Preset | Takes off | Reason printed on the row |
+|---|---|---|
+| Comp | The whole fee | Comped |
+| 50% off | Half | 50% off |
+| 25% off | A quarter | 25% off |
+| Employee | The whole fee | Employee |
+| Amount… | A figure staff type | Manual discount |
+
+The reason travels with the seat, onto the player row (*"$13.00 · 50% off · was $26.00"*) and
+onto the register line. A discount and a punch card are mutually exclusive: applying a punch
+clears the discount, because "50% off a fee already covered by a prepaid round" is not something
+anybody means.
+
+## What a seat remembers
+
+Everything above is additive, and that is what keeps two hundred authored bookings — and every
+test written against them — telling the truth. A seat nobody has touched carries none of these
+fields and prices exactly as it did before the catalog existed.
+
+| On `PlayerState` | Set when |
+|---|---|
+| `rateId` | Staff chose a tile other than the one the system picked |
+| `fee` | Staff typed a green fee |
+| `transportRateId` / `transportFee` | Staff chose a transport row, or typed its price |
+| `discountId` / `discountManual` | A discount preset was applied |
+| `punch` | The round was put on a punch card — whose, and which card |
+| `holes` | The player was switched off the booking's hole count |
+| `cartKey` | A cart was signed out to them |
+
+Nothing here is a snapshot of a price. Every one of them is a *decision*, and the price is
+recomputed from the catalog on every render — which is why a seat added to the order one hour
+and topped up the next still charges what the reservation says.

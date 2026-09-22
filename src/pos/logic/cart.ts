@@ -5,6 +5,7 @@ import { VENUES } from '../data/venues';
 import type { Booking, CartItem, CartPlayer, Course, ModifierTag, Transport } from '../types';
 import { playerFee, playerHoles, playerName, playerTransport, roundLabel } from './reservation';
 import { seatIsMember } from './rates';
+import { seatNetGreenFee, seatTransportOverride } from './seat-pricing';
 import type { RateContext } from './rates';
 
 /**
@@ -488,12 +489,17 @@ export function seatCharges(b: Booking, i: number, rates?: RateContext): SeatCha
     : b.status === 'member'
       ? TEE_PRICES.booked
       : (TEE_PRICES[b.status] ?? TEE_PRICES.booked);
-  // The fee the register charges this seat: a member with no hand-set fee plays at $0.
-  const greenFee = member && b.playerStates[i]?.fee == null ? 0 : playerFee(b, i, rates);
+  // The fee the register charges this seat: a member with no hand-set fee plays at $0, and a
+  // discount or a punch card takes it down from there. Taxing the rate rather than the net is
+  // how a comped seat came to carry green-fee tax.
+  const rateFee = member && b.playerStates[i]?.fee == null ? 0 : playerFee(b, i, rates);
+  const greenFee = seatNetGreenFee(b, i, rateFee);
+  // Transport is the class fee until someone picks a row from the catalog or types a price.
+  const chosenTransport = seatTransportOverride(b, i);
   return {
     member,
-    cartFee: row.cartFee ?? 0,
-    pushFee: row.pushFee ?? 5,
+    cartFee: chosenTransport ?? row.cartFee ?? 0,
+    pushFee: chosenTransport ?? row.pushFee ?? 5,
     tax: greenFee > 0 ? (row.tax ?? 0) : 0,
   };
 }
@@ -524,15 +530,25 @@ export function seatCharges(b: Booking, i: number, rates?: RateContext): SeatCha
  * carries the operator's per-row price overrides and the customer roster (`holesFee`) —
  * pass `rateContext(state)`.
  */
-export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: RateContext): CartItem[] {
+export function buildTeeTimeCart(
+  b: Booking,
+  courses: Course[] = [],
+  rates?: RateContext,
+  seats?: readonly number[],
+): CartItem[] {
   const course = courses.find((c) => c.id === b.course) ?? ALL_COURSES.find((c) => c.id === b.course);
   let taxTotal = 0;
 
-  const players: CartPlayer[] = Array.from({ length: b.players }, (_, i) => {
+  // `seats` limits the order to the players added so far — Weston's third round put an **Add to
+  // cart** on each row, so a foursome splitting the bill rings up two seats now and two later.
+  // Omitted means the whole booking, which is what Check in & pay does.
+  const indices = seats ? [...seats].sort((x, y) => x - y) : Array.from({ length: b.players }, (_, i) => i);
+
+  const players: CartPlayer[] = indices.map((i) => {
     const modifierTags: ModifierTag[] = [];
     const transport = playerTransport(b, i);
     const state = b.playerStates[i];
-    const fee = playerFee(b, i, rates);
+    const fee = seatNetGreenFee(b, i, playerFee(b, i, rates));
     const prices = seatCharges(b, i, rates);
     if (!state?.paid && !state?.noShow) taxTotal += prices.tax;
 
@@ -580,6 +596,7 @@ export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: Rat
   });
 
   const chargeable = players.filter((p) => !p.paid && !p.noShow).length;
+  const seatCount = players.length;
   const teeTime = {
     label: TIMES.find((x) => x.totalMin === b.timeMin)?.label ?? '?',
     courseName: course?.name ?? '',
@@ -591,8 +608,8 @@ export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: Rat
     {
       name: roundLabel(b),
       unitPrice: b.price,
-      price: b.price * b.players,
-      qty: b.players,
+      price: b.price * seatCount,
+      qty: seatCount,
       isCheckIn: true,
       teeTime,
       players,
