@@ -1,0 +1,89 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { SiteLink } from '../../stories/SiteLink';
+
+<Meta title="Weston Edits/Overview" />
+
+# ✏️ Weston Edits
+
+Feedback from Weston Farnsworth on the tablet prototype, recorded as a Loom:
+["Streamlining T-Time Editing Without Order Flow"](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b)
+(2:46, September 2026).
+
+<SiteLink to="weston-edits" tone="filled" size="md">Open the tablet prototype</SiteLink>{' '}
+<SiteLink to="weston-edits-mobile" tone="filled" size="md">Open the mobile prototype</SiteLink>
+
+Both are the **18-hole club** with the edits switched on. The other six prototypes are
+unchanged, except for the bug fixes in section 8, which apply everywhere.
+
+## What Weston asked for
+
+**Golf first, order second.** Today, clicking a tee time treats it like an order: it jumps to
+the register, loads charge lines into the cart, and the only golf controls are **+ modifier**
+(which is for food and beverage) and **Guest Details**. The order should come *after* the golf.
+
+Clicking a tee time should open the **reservation**. That's where you work the golf:
+change the players and the player count, adjust tee fees, switch a player between 9 and 18
+holes, open a customer profile, and see ID.me status. Only then does it go to the cart and
+checkout. It should open as a **slide-over panel**, so you never lose your place on the tee
+sheet. Weston said he could be convinced of a modal instead.
+
+> "It's kind of pre — you're still massaging the reservation before you submit it to the
+> cart and then check it out."
+
+## Decisions
+
+| Question | Decision |
+|---|---|
+| Where the edits live | A separate **edition** of the same app (`src/pos/edition.tsx`), published as its own 18-hole prototypes. The base prototypes stay as they are. |
+| How the reservation opens (tablet) | **Slide-over panel** from the right. The tee sheet (grid or list) **narrows** to the room left of it as it slides in: columns tighten, nothing is hidden under the panel, and there is no sideways scrolling |
+| Where a customer profile opens | A **Customer tab** in the panel, for the selected player |
+| ID.me | **Badge only**, from demo data. The verify flow waits on how Birdie shows it today |
+| Bugs found in the recording | **Fixed everywhere**, not only in Weston Edits |
+| What **Check in & pay** checks in | **Everyone** on the reservation, except no-shows — on the tablet and the phone |
+| A player's fee after switching 9 ↔ 18 | The **rate card**: that hole count's price in the tee time's band (early / peak / twilight), on the player's rate class, or the row's price override. The booked length keeps the booking's own rate. Staff can override; Reset returns to the card |
+| Rate class | **Per player**, not per booking: each seat follows its own customer — a **linked customer record**, or for the booker the **booking's phone**. **Never the seat's name**: a seat whose name looks like a customer shows a *Suggested profile · Link* in the Customer tab and pays the booking's rate until someone links it. Unlinked seats fall back to the booking's class. A member in a guest's group plays on the member rate, a guest in a member's group on rack. The same on the tablet, the phone and the register |
+| Tax & cart fees per seat | **The seat's own class**, not the booking's status: each paying seat adds its own green-fee tax to the order's Taxes line and pays its own class's cart fee. A member's $0 seat carries no green-fee tax (no green fee, no tax on it), a guest in a member's booking pays the guest tax and cart fee. Paid and no-show seats add nothing |
+| The phone's long-press quick sheet | **Open reservation** replaces its straight-to-register Check in & pay |
+| Walk-ins | A **reservation too**: Walk-in (or a CHECK IN rate with nothing on the order) books the **next open tee time** after the demo "now", opens it in the panel / reservation screen, and staff can pick another time there. The base edition keeps its fast register-first walk-in |
+| Tax | **One calculation, all editions** (`orderTotals`): golf by its booking's tax line, retail and F&B at the sales-tax rate, and the register, checkout, tip, reader and change due all charge that one total |
+| Opening a reservation (tablet) | The tee sheet **scrolls it into view** (vertically) beside the panel, grid and list, without moving when it's already visible |
+| Demo walk-ins | An `R-` code is a reservation: bookings the seed marked walk-in with one read `booked`. True walk-ins carry a `W-` code |
+| Demo prices | **From the rate card**: every priced fixture is the card's price for its hole count, time band and class, so no nine costs more than the eighteen and switching a nine to 18 never lowers the fee. Members and comps stay $0 |
+| Demo "now" | **One fixed clock** (`demoNow()`: May 21, 2026, 12:00 PM) for the now-line, the opening scroll, walk-ins, the rate card's default band and the times stamped on payments and activity, so every screenshot is the same whenever it's taken |
+
+## Every change, component by component
+
+Each component has a **Tablet** and a **Mobile** entry in the sidebar.
+
+| # | Component | Tablet | Mobile |
+|---|---|---|---|
+| 1 | **Reservation Panel** | Clicking a tee time opens a slide-over with the reservation. The tee sheet narrows beside it and scrolls the tee time into view, and clicking another booking switches the panel. Nothing goes into the cart yet | Tapping a booking opens the reservation screen first, golf before order |
+| 2 | **Player Rows** | One row per player: 9 or 18 holes, tee fee (on the player's own rate class; from the rate card when switched), transport, check-in status. Add, remove or swap players, and change the player count | The same controls as full-width rows |
+| 3 | **ID.me Badge** | A verified badge on the player (Military, Veteran, First responder…) | The same badge on the player row |
+| 4 | **Customer Tab** | The selected player's customer profile, in a tab of the panel | A Customer tab on the reservation screen |
+| 5 | **Financial, Notes & Activity** | The reservation's balance, per-player payments, notes and history, as panel tabs | The same, as tabs on the reservation screen |
+| 6 | **Check In & Pay** | The panel's main action. It checks everyone in and sends the reservation, as adjusted, to the register. A walk-in starts here too, at the next open tee time | The pinned bottom action. The quick sheet opens the reservation; the Register's Walk-in creates one |
+| 7 | **Register Golf Summary** | Golf lines in the order become a read-only summary with **Edit reservation**. No **+ modifier** or **Guest Details** on golf lines, walk-ins included. Retail on the order is taxed | The same on the phone's order screen |
+| 8 | **Bug Fixes** *(all editions)* | A reserved tee time no longer reads "Walk-in", now fixed in the demo data too. The rate matches the booking. A paid booking doesn't ask to be paid again. No tax on $0. The booking detaches when you leave. One tax calculation: Pay, checkout and the reader charge the same total. Back/Forward keeps booking edits | Checked on the phone too |
+
+## Round 2: date navigation
+
+A second Loom ([Request to Improve T Sheet Date Navigation](https://www.loom.com/share/a0d4ed98b7344746b5a4bf8a9d7ee4fb),
+46 s). On the phone, tapping the date opened a fixed list of the 11 demo days, with no month
+or year and no calendar. Getting to June took about a dozen taps on the next-day arrow. The
+tablet already has a month calendar, so its controls stay as they are; the new navigation is
+on the **phone**. Both get the same generated demo days, and all of it is **Weston Edits only**.
+
+| # | Component | Tablet | Mobile |
+|---|---|---|---|
+| 9 | **Date Navigation** | The same controls (‹ ›, the calendar popover, **Today**, **Weekend**), now with a tee sheet on every date within a year of today: the same generated days as the phone, shared by the grid, list and day summary. The calendar dots those days and greys out dates beyond the year. A generated day that's been cleared stays empty | A swipeable **week strip** under the date for quick day hops, and the date row's ‹ › now move a week. Tapping the date opens a **calendar sheet** with a month grid, month and year jump, ‹ › by month, **Today**, dots on days with tee times, and the viewed date highlighted. Any date within a year either side of today has a believable, deterministic demo sheet; dates beyond that are greyed |
+
+## How the edition works
+
+An edition is a context, not a fork. Components read `useEdition()` and branch only where
+Weston's edits differ, so one component serves both editions and nothing drifts into two
+copies. A story picks one with `<Screen edition="weston" />` or `<MobileStory edition="weston" />`.
+A prototype build picks one with `VITE_EDITION=weston`. In dev, add `?edition=weston` to the
+prototype URL.
+
+When Weston signs off, the edits become the default by changing one line in `edition.tsx`.

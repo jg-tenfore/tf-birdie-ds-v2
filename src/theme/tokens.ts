@@ -213,3 +213,28 @@ export const mobile = {
     exitEasing: 'cubic-bezier(0.3, 0, 0.8, 0.15)',
   },
 } as const;
+
+/**
+ * ID.me verification badges (Weston Edits). Neutral blue family so they read as identity,
+ * not as payment or member status. Keyed by `IdMeGroup` in `src/pos/types.ts`.
+ */
+export const idMeGroups = {
+  military: { label: 'Military', bg: '#e0ecff', text: '#1d4ed8' },
+  veteran: { label: 'Veteran', bg: '#e0ecff', text: '#1d4ed8' },
+  first_responder: { label: 'First responder', bg: '#e0ecff', text: '#1d4ed8' },
+  nurse: { label: 'Nurse', bg: '#e0ecff', text: '#1d4ed8' },
+  teacher: { label: 'Teacher', bg: '#e0ecff', text: '#1d4ed8' },
+} as const;
+
+/**
+ * The reservation slide-over (Weston Edits, tablet). Wide enough for a player row's holes,
+ * fee and transport controls on one line; narrow enough that the sheet's first course and
+ * its time gutter stay in view beside it.
+ */
+export const reservationPanel = {
+  width: 480,
+  /** The slide-in, shared by the panel and the tee sheet narrowing beside it. */
+  motion: '.22s cubic-bezier(.2,0,0,1)',
+  /** A player whose holes, fee or transport differ from the booking's. */
+  adjusted: { bg: '#fffbeb', border: '#fde68a', text: '#92400e' },
+} as const;

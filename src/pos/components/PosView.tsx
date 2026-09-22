@@ -16,6 +16,7 @@ import { venue } from '../data/venues';
 import type { CatalogItem } from '../types';
 import { EmptyState, Icon, SectionLabel } from './primitives';
 import { Stack } from './Stack';
+import { useStartWalkIn } from './use-start-walk-in';
 
 /**
  * The POS catalog: search, colored category buttons, and the item grid.
@@ -29,6 +30,7 @@ export function PosView() {
   const { state, dispatch, toast } = usePos();
   const holesLock = cart.cartHolesLock(state.cart);
   const hasCheckIn = state.cart.some((i) => i.isCheckIn);
+  const walkIn = useStartWalkIn();
 
   /**
    * Route an item tap.
@@ -55,6 +57,9 @@ export function PosView() {
         },
       });
     }
+    // Weston Edits: a round rung with nothing on the order is a walk-in — it goes to the
+    // tee sheet as a reservation at that rate, not onto the order as a line.
+    if (walkIn.routes && cart.isCheckInItem(item.n)) return void walkIn.start({ rate: { name: item.n, price: item.p } });
     dispatch({ type: 'addItem', name: item.n, price: item.p });
     toast(`Added: ${item.n}`);
   };

@@ -6,6 +6,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import '@fontsource-variable/roboto';
 import { theme } from './theme';
 import { isVenueId, setVenueOverride } from './pos/data/venues';
+import { isEdition, setEditionOverride } from './pos/edition';
 
 /**
  * One entry, two apps. The mobile prototype is built with `VITE_APP=mobile` (Pages serves
@@ -24,6 +25,13 @@ const isMobile =
 if (isMobile) {
   const v = new URLSearchParams(window.location.search).get('venue');
   if (v && isVenueId(v)) setVenueOverride(v);
+}
+
+// `?edition=weston` shows Weston's edits from the one dev server; built prototypes carry
+// `VITE_EDITION` instead. Set before the apps load, like the venue.
+{
+  const e = new URLSearchParams(window.location.search).get('edition');
+  if (e && isEdition(e)) setEditionOverride(e);
 }
 
 const App = isMobile

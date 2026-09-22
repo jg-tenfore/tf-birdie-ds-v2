@@ -50,9 +50,9 @@ export const Checkout: Story = {
 };
 
 /**
- * Checkout for a loaded tee-sheet booking. Tax arrives on the booking's own line and is
- * counted once — the terminal's checkout counts it twice (see the Register `orderMoney`
- * note).
+ * Checkout for a loaded tee-sheet booking. The golf's tax arrives on the booking's own line
+ * and is counted once; anything else on the order pays sales tax. Phone and terminal both
+ * total with `orderTotals`, so they charge the same amount.
  */
 export const CheckoutLoadedBooking: Story = {
   render: () => <MobileStory initialState={withLoadedBooking(paidFoursome())} tab="register" stack={toCheckout} />,

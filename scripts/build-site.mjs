@@ -12,6 +12,8 @@
  *   /mobile/         the phone app      — every Mobile Screens story, live, three nines
  *   /mobile-18/      the phone app      — the 18-hole course
  *   /mobile-9/       the phone app      — the single nine
+ *   /weston-edits/        Weston's edits — the 18-hole terminal, golf-first reservation flow
+ *   /weston-edits-mobile/ Weston's edits — the same on the phone
  *   /reference/      the original HTML  — read-only, what the port is measured against
  *
  * The three prototypes are the *same build* run three times with a different `VITE_VENUE`.
@@ -67,13 +69,15 @@ const PROTOTYPES = [
   { dir: 'prototype', venue: 'three-nines' },
   { dir: 'prototype-18', venue: 'eighteen' },
   { dir: 'prototype-9', venue: 'nine' },
+  // Weston's edits: the 18-hole club with the golf-first reservation flow switched on.
+  { dir: 'weston-edits', venue: 'eighteen', edition: 'weston' },
 ];
 
-for (const { dir, venue } of PROTOTYPES) {
+for (const { dir, venue, edition = 'base' } of PROTOTYPES) {
   run(
     'npx',
     ['vite', 'build', '--base', `${BASE}${dir}/`, '--outDir', `site/${dir}`],
-    { VITE_VENUE: venue },
+    { VITE_VENUE: venue, VITE_EDITION: edition },
   );
 }
 
@@ -86,13 +90,14 @@ const MOBILE_PROTOTYPES = [
   { dir: 'mobile', venue: 'three-nines' },
   { dir: 'mobile-18', venue: 'eighteen' },
   { dir: 'mobile-9', venue: 'nine' },
+  { dir: 'weston-edits-mobile', venue: 'eighteen', edition: 'weston' },
 ];
 
-for (const { dir, venue } of MOBILE_PROTOTYPES) {
+for (const { dir, venue, edition = 'base' } of MOBILE_PROTOTYPES) {
   run(
     'npx',
     ['vite', 'build', '--base', `${BASE}${dir}/`, '--outDir', `site/${dir}`],
-    { VITE_APP: 'mobile', VITE_VENUE: venue },
+    { VITE_APP: 'mobile', VITE_VENUE: venue, VITE_EDITION: edition },
   );
 }
 

@@ -17,6 +17,8 @@ Everything is published to GitHub Pages from `main`, as one site:
 | 📱 | [**Mobile · Three nines**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) | Phone POS, the original club |
 | 📱 | [**Mobile · 18-hole course**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-18/) | Phone POS, a championship course |
 | 📱 | [**Mobile · Single nine**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-9/) | Phone POS, one nine-hole course |
+| ✏️ | [**Weston Edits · Tablet**](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits/) | The 18-hole terminal with Weston's golf-first reservation edits |
+| ✏️ | [**Weston Edits · Mobile**](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits-mobile/) | The same edits on the phone |
 | 📄 | [**The original**](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/) | The single-file HTML prototype this was ported from, read-only |
 
 ### 📚 Design system: Storybook
@@ -35,6 +37,8 @@ The front door, and the place to review anything in isolation. It holds:
   screen, how you reach it and how you get out.
 - **Tee Sheet Actions** (35 stories): every action that writes to the tee sheet, before and
   after.
+- **Weston Edits**: an overview of Weston's feedback and decisions, then each changed
+  component with a **Tablet** and a **Mobile** story.
 
 Every story is built from plain state, so the screen you review is exactly the one the
 prototypes render.
@@ -89,6 +93,34 @@ the tablet ones.
 The phone uses the same state, data and pricing as the terminal. An order totals the same on
 both, and a customer added on one exists on the other.
 
+### ✏️ Weston Edits: golf first, order second
+
+[Tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits/) ·
+[Mobile](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits-mobile/) ·
+[What changed (Storybook)](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/weston-edits-overview--overview)
+
+Weston's feedback on the tablet prototype
+([Loom](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b)): clicking a tee time
+shouldn't turn it straight into an order. These are the **18-hole** prototypes with his edits
+switched on:
+
+- **Clicking a tee time opens the reservation**, in a slide-over panel on the tablet so you keep
+  your place on the tee sheet. On the phone it's the reservation screen.
+- **You work the golf there first:** players and player count, 9 or 18 holes per player, tee
+  fees, riding or walking, check-in status, an ID.me badge, and a Customer tab for the
+  selected player's profile.
+- **Only Check in & pay sends it to the register.** In the order, golf lines are a read-only
+  summary with **Edit reservation**. Modifiers stay for food and beverage.
+
+Storybook's **Weston Edits** category documents each change component by component, with a
+Tablet and a Mobile story for each. The bugs the recording turned up (a reserved tee time
+labelled "Walk-in", mismatched rates, a paid booking asking to be paid, tax on $0) are fixed in
+every prototype, not just this one.
+
+It's an *edition* of the same app, not a copy: components branch on `useEdition()`
+([`src/pos/edition.tsx`](src/pos/edition.tsx)), and a build picks one with `VITE_EDITION=weston`.
+When the edits are approved, making them the default is a one-line change.
+
 ### 📄 The original
 
 [jg-tenfore.github.io/tf-birdie-ds-v2/reference](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/)
@@ -109,6 +141,8 @@ The single-file HTML prototype this port came from, published unmodified. It's t
 | `/mobile/` | Mobile: three nines |
 | `/mobile-18/` | Mobile: the 18-hole course |
 | `/mobile-9/` | Mobile: a single nine |
+| `/weston-edits/` | Weston Edits: tablet, 18 holes |
+| `/weston-edits-mobile/` | Weston Edits: mobile, 18 holes |
 | `/reference/` | The original single-file HTML prototype |
 
 GitHub Pages serves one site per repository, so they share one tree, with Storybook at the root
@@ -116,7 +150,7 @@ and the rest in subdirectories. See [`scripts/build-site.mjs`](scripts/build-sit
 
 </details>
 
-## Why six prototypes, and why they're one codebase
+## Why eight prototypes, and why they're one codebase
 
 The tablet prototypes and Storybook import the *same* components from `src/pos`. Refining a
 component changes all of them, so the design system and the things it describes can't drift.
@@ -142,6 +176,9 @@ npm install
 npm run storybook   # design system  → http://localhost:6006
 npm run dev         # prototype      → http://localhost:5173
                     # mobile         → http://localhost:5173/mobile/  (?venue=eighteen / nine)
+                    # Weston Edits   → add ?edition=weston, e.g.
+                    #   http://localhost:5173/?edition=weston#/tee-sheet?venue=eighteen
+                    #   http://localhost:5173/mobile/?edition=weston&venue=eighteen
 ```
 
 Other scripts:

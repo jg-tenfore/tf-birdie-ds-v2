@@ -57,7 +57,7 @@ export function NewCustomerScreen(_: ScreenProps<'newCustomer'>) {
     dispatch({ type: 'addGolfer', golfer });
     const name = displayName(golfer.name);
     if (fromPicker) {
-      attachGolfer(dispatch, fromPicker.target, golfer);
+      attachGolfer(dispatch, fromPicker.target, golfer, state.bookings);
       nav.pop(2);
       toast(`${name} created and added`);
     } else if (below?.name === 'people') {

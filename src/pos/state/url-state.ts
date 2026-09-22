@@ -5,7 +5,8 @@ import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { buildTeeTimeCart } from '../logic/cart';
 import type { MainView, TeeSheetViewMode } from '../types';
 import type { ListFilters, Modal, PosState } from './pos-store';
-import { emptyListFilters } from './pos-store';
+import { RESERVATION_TABS, emptyListFilters } from './pos-store';
+import type { ReservationTab } from './pos-store';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
@@ -33,6 +34,7 @@ import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
  *   #/register?booking=p01&modal=checkout          a booking loaded, mid-payment
  *   #/register?order=walkin&modal=modifiers&i=0&p=1
  *   #/tee-sheet?modal=block&t=0912                 blocking the 9:12 row
+ *   #/tee-sheet?res=p43&res-tab=customer&res-p=1   the reservation panel (Weston Edits)
  *
  * Times are `HHMM` in 24-hour form (`0912`) rather than raw minutes — same information,
  * legible to a human scanning the link.
@@ -172,6 +174,7 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
       break;
     case 'paymentReader':
       q.set('method', m.method);
+      if (m.tip) q.set('tip', String(m.tip));
       break;
     default:
       break;
@@ -251,8 +254,10 @@ function decodeModal(q: URLSearchParams): Modal | null {
       const course = q.get('course');
       return course ? { kind, courseId: course } : null;
     }
-    case 'paymentReader':
-      return { kind, method: q.get('method') ?? 'card' };
+    case 'paymentReader': {
+      const tip = Number(q.get('tip'));
+      return { kind, method: q.get('method') ?? 'card', ...(tip > 0 && { tip }) };
+    }
     case 'checkout':
     case 'teeSheetSearch':
     case 'newCustomer':
@@ -317,6 +322,15 @@ export function stateToHash(state: PosState): string {
     if (f.search.trim()) q.set('q', f.search.trim());
   }
 
+  // The reservation slide-over. Its own params rather than a modal slug: it isn't a dialog,
+  // and a dialog can open on top of it — both have to survive the link.
+  const panel = state.reservationPanel;
+  if (panel) {
+    q.set('res', panel.bookingId);
+    if (panel.tab !== 'players') q.set('res-tab', panel.tab);
+    if (panel.playerIndex) q.set('res-p', String(panel.playerIndex));
+  }
+
   if (state.modal) encodeModal(state.modal, q);
 
   const query = q.toString();
@@ -330,14 +344,30 @@ export const stateToUrl = (state: PosState): string =>
 // ─── URL → state ────────────────────────────────────────────────────────────
 
 /**
+ * The running app a URL is being applied to (Back / Forward / an edited hash): what a link
+ * resolves its booking ids against, and what it must not throw away.
+ */
+export type UrlSession = Pick<
+  PosState,
+  'venueId' | 'bookings' | 'courses' | 'cart' | 'selectedBookingId' | 'orderScenario'
+>;
+
+/**
  * Parse a hash into a state patch.
  *
  * Returns a partial rather than a whole state so it can seed a new provider *or* be
  * merged into a running one on back/forward. Unknown or malformed values are dropped
  * rather than throwing — a hand-edited link should degrade to a sensible screen, not a
  * blank page.
+ *
+ * With no `session` (the initial page load) the patch seeds the club: its courses and its
+ * demo bookings. With a `session` (Back / Forward) on the **same club**, the link is only
+ * navigation — it resolves `?booking=` and `?res=` against the session's own bookings and
+ * leaves `bookings` and `courses` out of the patch, so moves, check-ins, new tee times and
+ * generated days survive; the cart it already holds for the same booking or scenario is
+ * kept too. Only a link to a **different club** (`?venue=`) re-homes, as a fresh load would.
  */
-export function hashToState(hash: string): Partial<PosState> {
+export function hashToState(hash: string, session?: UrlSession): Partial<PosState> {
   const raw = hash.replace(/^#/, '');
   const [path = '', queryString = ''] = raw.split('?');
   const q = new URLSearchParams(queryString);
@@ -364,22 +394,34 @@ export function hashToState(hash: string): Partial<PosState> {
   patch.teeSheetMode = teeSheetMode;
 
   // ── Day and band ──
+  // A link omits the demo day and the full band, so on Back / Forward their absence means
+  // exactly that — otherwise Back from another day would leave the sheet on it.
   const date = parseDate(q.get('date'));
   if (date) patch.currentDate = date;
+  else if (session) patch.currentDate = DEMO_TODAY();
 
   const shift = q.get('shift');
   if (shift && shift in shifts) patch.shift = shift as ShiftKey;
+  else if (session) patch.shift = 'full';
 
   // ── Which club ──
   const venueParam = q.get('venue');
   const venueId = venueParam && isVenueId(venueParam) ? venueParam : buildVenue();
   patch.venueId = venueId;
-  patch.courses = venue(venueId).courses.map((c) => ({ ...c }));
+  // Same club as the running app: navigation only, its sheet stays as the operator left it.
+  const live = session && session.venueId === venueId ? session : null;
+  const courses = live ? live.courses : venue(venueId).courses.map((c) => ({ ...c }));
+  const bookings = live
+    ? live.bookings
+    : venueId === buildVenue()
+      ? demoBookings()
+      : venueBookings(venueId);
+  if (!live) {
+    patch.courses = courses;
+    patch.bookings = bookings;
+  }
 
   // ── The order ──
-  const bookings = venueId === buildVenue() ? demoBookings() : venueBookings(venueId);
-  patch.bookings = bookings;
-
   const bookingId = q.get('booking');
   const order = q.get('order');
 
@@ -387,14 +429,26 @@ export function hashToState(hash: string): Partial<PosState> {
     const booking = bookings.find((b) => b.id === bookingId);
     if (booking) {
       patch.selectedBookingId = booking.id;
-      patch.cart = buildTeeTimeCart(booking);
+      // Back to the booking already on the order keeps the order as rung up, not a fresh copy.
+      const keepCart = live && live.selectedBookingId === booking.id && live.cart.length > 0;
+      if (!keepCart) patch.cart = buildTeeTimeCart(booking, courses);
       patch.view = 'pos';
     }
   } else if (order && isOrderScenario(order)) {
-    // Scenario builders set view/category themselves; the link's own screen choice wins,
-    // so applying the scenario first and the patch second is the right order.
-    Object.assign(patch, ORDER_SCENARIOS[order](), patch);
-    patch.orderScenario = order;
+    if (live && live.orderScenario === order && live.cart.length > 0) {
+      // The same scenario's order is still on the counter, edits and all — keep it.
+      patch.orderScenario = order;
+    } else {
+      // Scenario builders set view/category themselves; the link's own screen choice wins,
+      // so applying the scenario first and the patch second is the right order.
+      Object.assign(patch, ORDER_SCENARIOS[order](), patch);
+      patch.orderScenario = order;
+      // A scenario carries the demo bookings; on the running club they'd undo its edits.
+      if (live) {
+        delete patch.bookings;
+        delete patch.courses;
+      }
+    }
   }
 
   // ── Chrome ──
@@ -434,6 +488,19 @@ export function hashToState(hash: string): Partial<PosState> {
   if (search) filters.search = search;
   if (Object.keys(filters).length) patch.listFilters = { ...emptyListFilters, ...filters };
 
+  // ── Reservation panel ──
+  const res = q.get('res');
+  // Only for a booking the club has — a panel for a missing booking would be an empty frame.
+  if (res && bookings.some((b) => b.id === res)) {
+    const tab = q.get('res-tab');
+    const p = Number(q.get('res-p'));
+    patch.reservationPanel = {
+      bookingId: res,
+      tab: tab && (RESERVATION_TABS as readonly string[]).includes(tab) ? (tab as ReservationTab) : 'players',
+      playerIndex: Number.isInteger(p) && p > 0 ? p : 0,
+    };
+  }
+
   // ── Modal ──
   const modal = decodeModal(q);
   if (modal) patch.modal = modal;
@@ -441,8 +508,12 @@ export function hashToState(hash: string): Partial<PosState> {
   return patch;
 }
 
-/** Read the current location into a state patch. */
-export const readUrl = (): Partial<PosState> => hashToState(window.location.hash);
+/**
+ * Read the current location into a state patch. Pass the running state on Back / Forward
+ * (`useUrlSync`) so the patch navigates it rather than reseeding it; omit it on first load.
+ */
+export const readUrl = (session?: UrlSession): Partial<PosState> =>
+  hashToState(window.location.hash, session);
 
 /**
  * Whether moving between two states is a *navigation* — worth its own history entry, so
@@ -458,6 +529,7 @@ export function isNavigation(prev: PosState, next: PosState): boolean {
     prev.teeSheetMode !== next.teeSheetMode ||
     prev.modal?.kind !== next.modal?.kind ||
     prev.selectedBookingId !== next.selectedBookingId ||
+    prev.reservationPanel?.bookingId !== next.reservationPanel?.bookingId ||
     toDateStr(prev.currentDate) !== toDateStr(next.currentDate)
   );
 }

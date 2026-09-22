@@ -8,6 +8,7 @@ import { usePos } from '../state/PosProvider';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Callout, FilledButton, ModalFrame, OutlineButton } from './ModalFrame';
 import { Stack } from '../components/Stack';
+import { demoNow } from '../data/bookings';
 
 /**
  * Checkout — the receipt on the left, the numeric keypad on the right.
@@ -24,15 +25,12 @@ export function Checkout() {
   const { state, dispatch, toast } = usePos();
   const booking = selectedBooking(state);
 
+  // The one order total (`orderTotals`): golf taxed by its booking's tax line, everything
+  // else at the sales-tax rate. The register's Pay button, this receipt and the reader all
+  // read it, so they can't disagree — before, this added the golf tax twice.
   const base = useMemo(() => {
-    const gross = cart.payableTotal(state.cart);
-    const discounts = cart.checkoutDiscounts(state.cart);
-    const subtotal = gross - discounts;
-    const explicitTax = cart.cartTotals(state.cart).tax;
-    // Rounds loaded from the tee sheet arrive with their own tax line; ad-hoc
-    // retail orders don't, so tax is computed for those.
-    const tax = explicitTax > 0 ? explicitTax : cart.salesTax(gross);
-    return { gross, discounts, subtotal, tax, total: +(gross + tax).toFixed(2) };
+    const t = cart.orderTotals(state.cart);
+    return { discounts: Math.abs(t.discount), subtotal: t.subtotal, tax: t.tax, total: t.total };
   }, [state.cart]);
 
   const [mode, setMode] = useState<'tendered' | 'tip'>('tendered');
@@ -253,7 +251,8 @@ export function Checkout() {
               <ButtonBase
                 key={method}
                 onClick={() =>
-                  dispatch({ type: 'openModal', modal: { kind: 'paymentReader', method } })
+                  // The reader charges this checkout's total, tip included.
+                  dispatch({ type: 'openModal', modal: { kind: 'paymentReader', method, ...(bakedTip > 0 && { tip: bakedTip }) } })
                 }
                 sx={{
                   flexDirection: 'column',
@@ -311,12 +310,14 @@ function Row({
  * demonstrates what staff see on the customer-facing reader, and each stage has its
  * own copy and affordances (key-in is only offered while waiting for the card).
  */
-export function PaymentReader({ method }: { method: string }) {
+export function PaymentReader({ method, tip = 0 }: { method: string; tip?: number }) {
   const { state, dispatch, toast } = usePos();
   const cfg = PR_CONFIG[method] ?? PR_CONFIG.card;
   const [stage, setStage] = useState<1 | 2 | 3>(1);
 
-  const amount = +(cart.payableTotal(state.cart) + cart.salesTax(cart.payableTotal(state.cart))).toFixed(2);
+  // Exactly the checkout total — `orderTotals` plus the tip checkout recalculated in. No
+  // second tax: the reader used to add a flat 8% on top of an amount that already had it.
+  const amount = +(cart.orderTotals(state.cart).total + tip).toFixed(2);
 
   const advance = () => {
     if (stage === 1) {
@@ -395,7 +396,7 @@ export function PaymentReader({ method }: { method: string }) {
         {stage === 3 && (
           <Box sx={{ width: '100%' }}>
             <Callout tone="success">
-              Approved · {method} · {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              Approved · {method} · {demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </Callout>
           </Box>
         )}

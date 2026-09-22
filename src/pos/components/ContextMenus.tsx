@@ -7,6 +7,7 @@ import { usePos } from '../state/PosProvider';
 import { Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
 import { checkInPlayer } from '../logic/bookings';
+import { useWestonEdits } from '../edition';
 
 /**
  * The two right-click menus on the tee sheet.
@@ -157,6 +158,14 @@ function MenuShell({
 
 function BookingMenu() {
   const { state, dispatch, toast } = usePos();
+  const weston = useWestonEdits();
+  // Weston Edits: "Booking details" is the reservation panel, not the dialog.
+  const openDetails = (bookingId: string) =>
+    dispatch(
+      weston
+        ? { type: 'openReservation', bookingId }
+        : { type: 'openModal', modal: { kind: 'bookingDetail', bookingId } },
+    );
   const menu = state.contextMenu;
   if (menu?.kind !== 'booking') return null;
 
@@ -242,7 +251,7 @@ function BookingMenu() {
           {
             icon: 'group',
             label: 'Booking details',
-            run: () => dispatch({ type: 'openModal', modal: { kind: 'bookingDetail', bookingId: b.id } }),
+            run: () => openDetails(b.id),
           },
           {
             icon: 'delete',
@@ -274,7 +283,7 @@ function BookingMenu() {
         {
           icon: 'open_in_full',
           label: 'Booking details',
-          run: () => dispatch({ type: 'openModal', modal: { kind: 'bookingDetail', bookingId: b.id } }),
+          run: () => openDetails(b.id),
         },
 
         { section: 'Check-in' },

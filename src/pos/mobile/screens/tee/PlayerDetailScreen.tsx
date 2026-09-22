@@ -2,7 +2,10 @@ import { Box, List, ListItemButton, ListItemIcon, ListItemText, Radio, Switch, T
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { md3, payBadges } from '../../../../theme/tokens';
 import { formatTimeLabel } from '../../../data/courses';
-import { findMemberByPhone } from '../../../data/golfers';
+import { findMemberByPhone, idMeGroupOf } from '../../../data/golfers';
+import { useWestonEdits } from '../../../edition';
+import { playerFee } from '../../../logic/reservation';
+import { ReservationSection } from './PlayerReservation';
 import { money } from '../../../logic/cart';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
@@ -11,8 +14,9 @@ import type { PlayerState } from '../../../types';
 import { MobileScreen, TopAppBar } from '../../chrome';
 import { useMobileNav } from '../../navigation';
 import type { ScreenProps } from '../types';
-import { BookingGone, Callout, MemberBadge, PlayerAvatar, SectionHeader } from './parts';
-import { ROUND_STEPS, playerName, roundStepOf, seatMemberType, useBooking } from './tee-helpers';
+import { useRates } from './reservation-helpers';
+import { BookingGone, Callout, IdMeBadge, MemberBadge, PlayerAvatar, SectionHeader } from './parts';
+import { ROUND_STEPS, playerName, roundStepOf, seatGolfer, seatMemberType, useBooking } from './tee-helpers';
 
 /**
  * One seat on a booking — pushed from the Players tab, so Back returns to the party.
@@ -28,8 +32,10 @@ import { ROUND_STEPS, playerName, roundStepOf, seatMemberType, useBooking } from
 export function PlayerDetailScreen({ route }: ScreenProps<'playerDetail'>) {
   const { dispatch, toast } = usePos();
   const nav = useMobileNav();
+  const weston = useWestonEdits();
   const { booking: b, course } = useBooking(route.bookingId);
   const roster = useGolferRoster();
+  const rates = useRates();
   if (!b) return <BookingGone />;
 
   const i = route.playerIndex;
@@ -44,6 +50,7 @@ export function PlayerDetailScreen({ route }: ScreenProps<'playerDetail'>) {
       ? findMemberByPhone(b.phone, roster)
       : undefined;
   const crmId = guest?.crmId ?? crm?.id;
+  const idMe = idMeGroupOf(seatGolfer(b, i, roster)?.id);
 
   const patch = (next: Partial<PlayerState>, msg?: string) => {
     dispatch({
@@ -69,6 +76,7 @@ export function PlayerDetailScreen({ route }: ScreenProps<'playerDetail'>) {
         <Typography variant="h4" sx={{ textAlign: 'center' }}>
           {name}
         </Typography>
+        {weston && idMe && <IdMeBadge group={idMe} />}
         <Stack direction="row" gap={0.75} alignItems="center">
           {mt ? <MemberBadge type={mt} /> : <Typography variant="body2" sx={{ color: md3.onSurfaceVariant }}>Guest</Typography>}
           <Typography variant="body2" sx={{ color: md3.onSurfaceVariant }}>
@@ -82,6 +90,8 @@ export function PlayerDetailScreen({ route }: ScreenProps<'playerDetail'>) {
           {note}
         </Callout>
       )}
+
+      {weston && <ReservationSection bookingId={b.id} index={i} />}
 
       <SectionHeader>Round status</SectionHeader>
       <List disablePadding sx={{ opacity: p.noShow ? 0.45 : 1 }}>
@@ -106,7 +116,7 @@ export function PlayerDetailScreen({ route }: ScreenProps<'playerDetail'>) {
           <ListItemIcon>
             <Icon name="paid" size={24} color={p.paid ? payBadges.paid.text : md3.onSurfaceVariant} />
           </ListItemIcon>
-          <ListItemText primary="Paid" secondary={p.paid ? 'Settled' : `${money(b.price)} due`} />
+          <ListItemText primary="Paid" secondary={p.paid ? 'Settled' : `${money(playerFee(b, i, rates))} due`} />
           <Switch edge="end" checked={p.paid} tabIndex={-1} />
         </ListItemButton>
         <ListItemButton onClick={() => patch({ noShow: !p.noShow, step: -1 }, p.noShow ? `${name} · restored` : `${name} · no-show`)}>

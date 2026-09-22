@@ -1,4 +1,4 @@
-import type { Golfer } from '../types';
+import type { Golfer, IdMeGroup } from '../types';
 
 /**
  * CRM records, ported verbatim from the prototype.
@@ -110,3 +110,19 @@ export function findMemberByName(playerName: string, roster: readonly Golfer[] =
     return mFirst.startsWith(firstPart);
   });
 }
+
+/**
+ * ID.me-verified customers in the demo roster, by golfer id. Kept as a side table rather
+ * than a field on each record so the ported roster above stays diffable against the source.
+ * Weston Edits shows these as a badge on the player; there is no verify flow yet.
+ */
+export const IDME_VERIFIED: Record<string, IdMeGroup> = {
+  G001: 'veteran',
+  G006: 'military',
+  M005: 'first_responder',
+  M008: 'nurse',
+};
+
+/** A customer's ID.me group, if verified. */
+export const idMeGroupOf = (golferId: string | undefined): IdMeGroup | undefined =>
+  golferId ? IDME_VERIFIED[golferId] : undefined;

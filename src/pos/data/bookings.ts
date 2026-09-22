@@ -1,3 +1,5 @@
+import { rateCardFee } from '../logic/rates';
+import { DEFAULT_TEE_SHEET_SETTINGS, generateTimes } from './courses';
 import type { Booking, PlayerState } from '../types';
 
 /**
@@ -13,8 +15,12 @@ import type { Booking, PlayerState } from '../types';
  *     centred on the demo "today", thinning each day deterministically so no two
  *     days look alike, then layering realistic state on top (past days are
  *     settled, today's mornings are mid-round, future days are mostly unpaid).
+ *     Each copy is priced from the rate card (`fixturePrice`), not the seed's flat rates.
  *  3. `injectMay21Specials()` — adds the non-bookable blocks and the staff shift
  *     change that demonstrate slot blocking.
+ *
+ * Days outside the window come from `generateDayBookings()` — the same reprojection, on
+ * demand, for any date within a year of today (Weston Edits' phone date navigation).
  *
  * Everything is deterministic: the "today" anchor is a fixed date and the
  * thinning uses an FNV-1a hash of the booking id rather than `Math.random()`, so
@@ -31,6 +37,60 @@ type DayBucket = 'past' | 'today' | 'future';
  * every Storybook snapshot stay stable regardless of when they run.
  */
 export const DEMO_TODAY = (): Date => new Date(2026, 4, 21);
+
+/**
+ * The demo's fixed "now" on `DEMO_TODAY`, in minutes from midnight: noon. The generator
+ * treats today's morning tee times as already played and the afternoon as still to come
+ * (`applyDateWindow`), so anything that needs "the next open tee time" — a walk-in — starts
+ * looking after this. Fixed, like the date, so the answer is the same in every screenshot.
+ */
+export const DEMO_NOW_MIN = 12 * 60;
+
+/**
+ * The demo's one clock: `DEMO_NOW_MIN` on `DEMO_TODAY`, as a `Date` — Thursday, May 21, 2026,
+ * 12:00 PM. Everything that renders "now" reads it rather than the machine's clock: the tee
+ * sheet's red now-line and its opening scroll, the walk-in's next open tee time, the rate
+ * card's default band, and the times stamped on activity entries and payments. So the
+ * prototype, every story and every screenshot look the same whenever they are taken.
+ * (Generated ids still use `Date.now()` for uniqueness; nobody sees those.)
+ */
+export const demoNow = (): Date => {
+  const d = DEMO_TODAY();
+  d.setHours(Math.floor(DEMO_NOW_MIN / 60), DEMO_NOW_MIN % 60, 0, 0);
+  return d;
+};
+
+/** Minutes from midnight of a clock reading — `demoNow()` gives `DEMO_NOW_MIN`. */
+export const minutesOfDay = (d: Date): number => d.getHours() * 60 + d.getMinutes();
+
+/**
+ * Walk-in or reservation, by confirmation code.
+ *
+ * The seed slate marks some `R-` (reservation) bookings `status: 'walkin'` — the $59 and
+ * $29 nine-hole rounds. An `R-` code is a tee time booked ahead, so those are reservations
+ * (`booked`); a true walk-in carries a walk-in code (`W-`, written at the counter) and keeps
+ * its status. Applied once, where the fixtures are generated, so nothing downstream sees the
+ * contradiction. Ids, times and everything else stay exactly as seeded (prices are brought
+ * in line with the rate card separately, by `fixturePrice`).
+ */
+export function statusForConf(b: Pick<Booking, 'status' | 'conf'>): Booking['status'] {
+  return b.status === 'walkin' && b.conf.startsWith('R-') ? 'booked' : b.status;
+}
+
+/**
+ * A fixture's price, brought in line with the rate card.
+ *
+ * The seed slate priced by booking kind — $100 an 18, $120 a group, $59 or $29 a nine —
+ * whatever the time of day, so a $59 twilight nine cost more than the card's twilight 18
+ * ($42), and switching it to 18 holes *lowered* the fee. A priced fixture now reads the
+ * card (`rateCardFee`): its hole count, its tee time's band (early / peak / twilight), its
+ * class (rack for guests, the membership row for members). $0 stays $0 — members and comps.
+ * Applied once, where the fixtures are generated; nothing else about a booking changes.
+ */
+export function fixturePrice(b: Pick<Booking, 'status' | 'timeMin' | 'date' | 'price' | 'holes'>): number {
+  if (b.price === 0 || (b.holes !== '9H' && b.holes !== '18H')) return b.price;
+  return rateCardFee(b, b.holes === '18H' ? 18 : 9);
+}
 
 function seedBookings(): Booking[] {
   // Helper to make playerStates
@@ -290,183 +350,305 @@ function seedBookings(): Booking[] {
   return [...thu_bookings, ...fri, ...sat, ...sun];
 }
 
-function applyDateWindow(srcBookings: Booking[]): Booking[] {
-  // Anchor today to May 21, 2026 (Thursday). Fixed anchor (not new Date())
-  // keeps demo data stable regardless of when the file is opened.
-  const TODAY = new Date(2026, 4, 21); // May = month 4 (0-indexed)
-  const NOON_MIN = 12 * 60; // 720
+// ─── The date window, and days beyond it ────────────────────────────────────
 
-  function fmt(d: Date) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
+/** `YYYY-MM-DD` of a local date. */
+function fmt(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function addDays(base: Date, n: number) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+/** Deterministic pseudo-random in [0, 1] for repeatable outcomes (FNV-1a). */
+function hash(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
-  function addDays(base: Date, n: number) {
-    const d = new Date(base);
-    d.setDate(d.getDate() + n);
-    return d;
-  }
-  // Deterministic pseudo-random for repeatable outcomes
-  function hash(str: string) {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return (h >>> 0) / 4294967295;
-  }
+  return (h >>> 0) / 4294967295;
+}
 
-  // Offsets relative to TODAY: -6..+4 → May 15..May 25
-  const OFFSETS = [-6,-5,-4,-3,-2,-1,0,1,2,3,4];
+/** Offsets relative to `DEMO_TODAY` of the authored window: -6..+4 → May 15..May 25. */
+const WINDOW_OFFSETS = [-6,-5,-4,-3,-2,-1,0,1,2,3,4];
 
-  // Use the dense Apr 9 set as the template for every day
-  const template = srcBookings.filter(b => b.date === '2026-04-09');
+/** Whole days from `DEMO_TODAY` to a `YYYY-MM-DD` date (DST-safe). */
+function offsetOf(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.round((new Date(y, m - 1, d).getTime() - DEMO_TODAY().getTime()) / 86_400_000);
+}
 
-  // Each day keeps a slightly different subset of the template so days
-  // aren't identical. Today (offset 0) keeps everything. Other days
-  // probabilistically drop some bookings — weekends keep more.
-  function keepFraction(offset: number) {
-    const target = addDays(TODAY, offset);
-    const dow = target.getDay(); // 0=Sun, 6=Sat
-    const isWeekend = (dow === 0 || dow === 6);
-    if (offset === 0)  return 1.00;        // today: full slate
-    if (isWeekend)     return 0.92;        // weekends very busy
-    if (offset === -1) return 0.85;        // yesterday: also dense
-    if (offset === 1)  return 0.82;        // tomorrow: high anticipation
-    if (Math.abs(offset) <= 2) return 0.72; // near days
-    return 0.62;                            // farther days
-  }
+const isWeekendOffset = (offset: number) => {
+  const dow = addDays(DEMO_TODAY(), offset).getDay(); // 0=Sun, 6=Sat
+  return dow === 0 || dow === 6;
+};
 
-  function dayBucket(offset: number): DayBucket {
-    if (offset < 0) return 'past';
-    if (offset > 0) return 'future';
-    return 'today';
-  }
+/**
+ * How much of the template a window day keeps. Today (offset 0) keeps everything; other
+ * days probabilistically drop some bookings — weekends keep more.
+ */
+function windowKeepFraction(offset: number) {
+  if (offset === 0)  return 1.00;        // today: full slate
+  if (isWeekendOffset(offset)) return 0.92; // weekends very busy
+  if (offset === -1) return 0.85;        // yesterday: also dense
+  if (offset === 1)  return 0.82;        // tomorrow: high anticipation
+  if (Math.abs(offset) <= 2) return 0.72; // near days
+  return 0.62;                            // farther days
+}
 
+/**
+ * How much of the template a generated day (outside the window) keeps. Weekends stay
+ * busier than weekdays at every distance; both thin out the further the day is from
+ * today — a year out, a weekday keeps about a third of the template.
+ */
+function generatedKeepFraction(offset: number) {
+  const base = isWeekendOffset(offset) ? 0.88 : 0.58;
+  const distance = Math.min(1, Math.abs(offset) / 365);
+  return base * (1 - 0.45 * distance);
+}
+
+function dayBucket(offset: number): DayBucket {
+  if (offset < 0) return 'past';
+  if (offset > 0) return 'future';
+  return 'today';
+}
+
+/**
+ * Reproject the dense template day onto one date, `offset` days from today, keeping each
+ * template booking with probability `keep` (by hash of its id and the date, so the same
+ * date always keeps the same bookings).
+ */
+function projectDay(template: Booking[], offset: number, keep: number, onRows = false): Booking[] {
+  const dateStr = fmt(addDays(DEMO_TODAY(), offset));
+  const bucket = dayBucket(offset);
   const out: Booking[] = [];
 
-  OFFSETS.forEach(offset => {
-    const targetDate = addDays(TODAY, offset);
-    const dateStr = fmt(targetDate);
-    const bucket = dayBucket(offset);
-    const keep = keepFraction(offset);
+  // Deterministic per-day-per-booking thinning
+  const kept = template.filter((src) => hash(src.id + '::keep::' + dateStr) <= keep);
 
-    template.forEach((src) => {
-      // Deterministic per-day-per-booking thinning
-      const dropRoll = hash(src.id + '::keep::' + dateStr);
-      if (dropRoll > keep) return;
+  (onRows ? placeOnRows(kept) : kept).forEach((src) => {
+    // Clone with a unique id so the same template entry across multiple
+    // days doesn't collide (booking ids must be unique app-wide). The offset
+    // is unique per date, so ids never collide across dates either.
+    const newId = (offset === 0) ? src.id : `${src.id}_${offset>=0?'p'+offset:'m'+(-offset)}`;
+    const b = {
+      ...src,
+      id: newId,
+      date: dateStr,
+      status: statusForConf(src),
+      price: fixturePrice({ ...src, status: statusForConf(src) }),
+      playerStates: src.playerStates.map(p => ({...p})),
+    };
 
-      // Clone with a unique id so the same template entry across multiple
-      // days doesn't collide (booking ids must be unique app-wide).
-      const newId = (offset === 0) ? src.id : `${src.id}_${offset>=0?'p'+offset:'m'+(-offset)}`;
-      const b = {
-        ...src,
-        id: newId,
-        date: dateStr,
-        playerStates: src.playerStates.map(p => ({...p})),
-      };
-
-      applyState(b, bucket);
-      out.push(b);
-    });
+    applyState(b, bucket);
+    out.push(b);
   });
+  return out;
+}
 
-  function applyState(b: Booking, bucket: DayBucket) {
-    const r = hash(b.id + '::' + bucket);
+/**
+ * Put every booking of a generated day on a real tee-sheet row, with no two overlapping.
+ *
+ * The template day was authored freehand: one booking sits between the 8-minute rows (12:36,
+ * `p42`) and a few overlap a neighbour's cells (`p15`'s foursome covers slot 1, where `p16`
+ * starts). On the authored window those quirks are left alone — it is byte-stable and every
+ * story is written against it — but on a generated day they were invisible bookings: counted
+ * in the golfer totals, never rendered on the grid or the phone list, impossible to open.
+ *
+ * So each kept booking, earliest first (then by slot, then id — deterministic), is snapped up
+ * to the next row of the default grid (`generateTimes(DEFAULT_TEE_SHEET_SETTINGS)`) and seated
+ * in its own slot if its whole party fits there, else the lowest slot on that row with
+ * `players` free cells in a row, else the same search on the next row down its course. A
+ * booking with no room before the grid ends is dropped. The template's order is kept in the
+ * result, so ids, thinning and state rolls are unchanged for every booking that didn't move.
+ */
+function placeOnRows(day: Booking[], slots = DEFAULT_TEE_SHEET_SETTINGS.slots): Booking[] {
+  const rows = generateTimes(DEFAULT_TEE_SHEET_SETTINGS).map((t) => t.totalMin);
+  const taken = new Map<string, boolean[]>();
+  const cells = (course: string, row: number) => {
+    const key = `${course}|${row}`;
+    let c = taken.get(key);
+    if (!c) taken.set(key, (c = Array<boolean>(slots).fill(false)));
+    return c;
+  };
+  const fits = (c: boolean[], start: number, n: number) =>
+    start + n <= slots && c.slice(start, start + n).every((x) => !x);
 
-    if (bucket === 'past') {
-      // Past days: realistic mix of completed-day outcomes.
-      //   ~62% completed (round done, paid)
-      //   ~12% no-show
-      //   ~10% cancelled (refunded)
-      //   ~ 8% rain check
-      //   ~ 8% completed but tab still open
-      if (r < 0.62) {
-        b.pay = (b.status === 'member') ? 'open' : 'paid';
-        b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = 6; p.noShow = false; });
-      } else if (r < 0.74) {
-        b.pay = 'no_show';
-        b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
-      } else if (r < 0.84) {
-        // Cancellation (refunded)
-        b.pay = 'refund';
-        b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
-      } else if (r < 0.92) {
-        b.pay = 'rain_chk';
-        b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = false; });
-      } else {
-        b.pay = 'open';
-        b.playerStates.forEach(p => { p.paid = false; p.step = 6; p.noShow = false; });
-      }
-    }
-    else if (bucket === 'future') {
-      // Future days: mostly booked, some prepaid, a few cancelled.
-      // ~38% prepaid, ~55% open/pending, ~7% cancelled
-      if (r < 0.07) {
-        b.pay = 'refund';
-        b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
-      } else {
-        const prepaid = r < 0.45; // 0.07..0.45 = ~38% prepaid
-        b.pay = (b.status === 'member') ? 'open' : (prepaid ? 'paid' : 'open');
-        b.playerStates.forEach(p => {
-          p.paid = prepaid && b.status !== 'member';
-          p.step = -1;
-          p.noShow = false;
-        });
-      }
-    }
-    else {
-      // TODAY (May 21).
-      // Morning tee times (before noon) have already happened — show real
-      // activity. Afternoon/evening tee times are still pending.
-      const isMorning = b.timeMin < NOON_MIN;
-
-      if (!isMorning) {
-        // Afternoon: not yet started. Most still pending; some prepaid.
-        const prepaid = r < 0.28;
-        b.pay = (b.status === 'member') ? 'open' : (prepaid ? 'paid' : 'open');
-        b.playerStates.forEach(p => { p.paid = prepaid && b.status !== 'member'; p.step = -1; p.noShow = false; });
-        return;
-      }
-
-      // Morning activity buckets, distributed by hash. Steps are ROUND_STEPS in
-      // config.ts: 0 checked in · 1 teed off · 2 at the turn · 3 finished.
-      //   ~55% completed round (paid, step 3, all checked in)
-      //   ~15% on the course (step 1-2)
-      //   ~10% just checked in (step 0, paid)
-      //   ~ 6% cancelled (refunded)
-      //   ~ 7% no-show
-      //   ~ 7% completed but tab open
-      if (r < 0.55) {
-        // Completed — round done, paid, all checked in through finish
-        b.pay = (b.status === 'member') ? 'open' : 'paid';
-        b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = 3; p.noShow = false; });
-      } else if (r < 0.70) {
-        // Mid-round — at turn or teed off
-        const mid = r < 0.625 ? 2 : 1; // step 2 = At Turn, 1 = Teed Off
-        b.pay = (b.status === 'member') ? 'open' : 'paid';
-        b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = mid; p.noShow = false; });
-      } else if (r < 0.80) {
-        // Just checked in
-        b.pay = (b.status === 'member') ? 'open' : 'paid';
-        b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = 0; p.noShow = false; });
-      } else if (r < 0.86) {
-        // Cancelled (refunded) earlier this morning
-        b.pay = 'refund';
-        b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
-      } else if (r < 0.93) {
-        // No-show — tee time passed, players didn't arrive
-        b.pay = 'no_show';
-        b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
-      } else {
-        // Played, tab still open at the counter
-        b.pay = 'open';
-        b.playerStates.forEach(p => { p.paid = false; p.step = 3; p.noShow = false; });
-      }
+  const order = [...day].sort((a, b) => a.timeMin - b.timeMin || a.slot - b.slot || a.id.localeCompare(b.id));
+  const placed = new Map<string, Booking>();
+  for (const b of order) {
+    const n = Math.max(1, Math.min(b.players, slots));
+    for (let i = rows.findIndex((r) => r >= b.timeMin); i >= 0 && i < rows.length; i++) {
+      const c = cells(b.course, rows[i]);
+      const slot = fits(c, b.slot, n) ? b.slot : c.findIndex((_, s) => fits(c, s, n));
+      if (slot < 0) continue;
+      c.fill(true, slot, slot + n);
+      placed.set(b.id, rows[i] === b.timeMin && slot === b.slot ? b : { ...b, timeMin: rows[i], slot });
+      break;
     }
   }
+  return day.flatMap((b) => placed.get(b.id) ?? []);
+}
 
+/** Layer a day's realistic state onto a cloned booking — settled past, mid-round today, unpaid future. */
+function applyState(b: Booking, bucket: DayBucket) {
+  const r = hash(b.id + '::' + bucket);
+
+  if (bucket === 'past') {
+    // Past days: realistic mix of completed-day outcomes.
+    //   ~62% completed (round done, paid)
+    //   ~12% no-show
+    //   ~10% cancelled (refunded)
+    //   ~ 8% rain check
+    //   ~ 8% completed but tab still open
+    if (r < 0.62) {
+      b.pay = (b.status === 'member') ? 'open' : 'paid';
+      b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = 6; p.noShow = false; });
+    } else if (r < 0.74) {
+      b.pay = 'no_show';
+      b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
+    } else if (r < 0.84) {
+      // Cancellation (refunded)
+      b.pay = 'refund';
+      b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
+    } else if (r < 0.92) {
+      b.pay = 'rain_chk';
+      b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = false; });
+    } else {
+      b.pay = 'open';
+      b.playerStates.forEach(p => { p.paid = false; p.step = 6; p.noShow = false; });
+    }
+  }
+  else if (bucket === 'future') {
+    // Future days: mostly booked, some prepaid, a few cancelled.
+    // ~38% prepaid, ~55% open/pending, ~7% cancelled
+    if (r < 0.07) {
+      b.pay = 'refund';
+      b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
+    } else {
+      const prepaid = r < 0.45; // 0.07..0.45 = ~38% prepaid
+      b.pay = (b.status === 'member') ? 'open' : (prepaid ? 'paid' : 'open');
+      b.playerStates.forEach(p => {
+        p.paid = prepaid && b.status !== 'member';
+        p.step = -1;
+        p.noShow = false;
+      });
+    }
+  }
+  else {
+    // TODAY (May 21).
+    // Morning tee times (before noon) have already happened — show real
+    // activity. Afternoon/evening tee times are still pending.
+    const isMorning = b.timeMin < DEMO_NOW_MIN;
+
+    if (!isMorning) {
+      // Afternoon: not yet started. Most still pending; some prepaid.
+      const prepaid = r < 0.28;
+      b.pay = (b.status === 'member') ? 'open' : (prepaid ? 'paid' : 'open');
+      b.playerStates.forEach(p => { p.paid = prepaid && b.status !== 'member'; p.step = -1; p.noShow = false; });
+      return;
+    }
+
+    // Morning activity buckets, distributed by hash. Steps are ROUND_STEPS in
+    // config.ts: 0 checked in · 1 teed off · 2 at the turn · 3 finished.
+    //   ~55% completed round (paid, step 3, all checked in)
+    //   ~15% on the course (step 1-2)
+    //   ~10% just checked in (step 0, paid)
+    //   ~ 6% cancelled (refunded)
+    //   ~ 7% no-show
+    //   ~ 7% completed but tab open
+    if (r < 0.55) {
+      // Completed — round done, paid, all checked in through finish
+      b.pay = (b.status === 'member') ? 'open' : 'paid';
+      b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = 3; p.noShow = false; });
+    } else if (r < 0.70) {
+      // Mid-round — at turn or teed off
+      const mid = r < 0.625 ? 2 : 1; // step 2 = At Turn, 1 = Teed Off
+      b.pay = (b.status === 'member') ? 'open' : 'paid';
+      b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = mid; p.noShow = false; });
+    } else if (r < 0.80) {
+      // Just checked in
+      b.pay = (b.status === 'member') ? 'open' : 'paid';
+      b.playerStates.forEach(p => { p.paid = b.status !== 'member'; p.step = 0; p.noShow = false; });
+    } else if (r < 0.86) {
+      // Cancelled (refunded) earlier this morning
+      b.pay = 'refund';
+      b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
+    } else if (r < 0.93) {
+      // No-show — tee time passed, players didn't arrive
+      b.pay = 'no_show';
+      b.playerStates.forEach(p => { p.paid = false; p.step = -1; p.noShow = true; });
+    } else {
+      // Played, tab still open at the counter
+      b.pay = 'open';
+      b.playerStates.forEach(p => { p.paid = false; p.step = 3; p.noShow = false; });
+    }
+  }
+}
+
+/** The dense Apr 9 set every day is reprojected from. */
+let templateCache: Booking[] | null = null;
+const template = (): Booking[] =>
+  (templateCache ??= seedBookings().filter((b) => b.date === '2026-04-09'));
+
+/** The 11-day window centred on the demo "today" (May 15 – May 25). */
+function applyDateWindow(): Booking[] {
+  return WINDOW_OFFSETS.flatMap((offset) => projectDay(template(), offset, windowKeepFraction(offset)));
+}
+
+/** How many months either side of `DEMO_TODAY` a demo day can be generated for. */
+export const DEMO_RANGE_MONTHS = 12;
+
+/** First and last dates the demo can show: `DEMO_TODAY` ± `DEMO_RANGE_MONTHS`, inclusive. */
+export function demoRange(): { start: Date; end: Date } {
+  const start = DEMO_TODAY();
+  start.setMonth(start.getMonth() - DEMO_RANGE_MONTHS);
+  const end = DEMO_TODAY();
+  end.setMonth(end.getMonth() + DEMO_RANGE_MONTHS);
+  return { start, end };
+}
+
+/** True when a `YYYY-MM-DD` date is within `demoRange()`. */
+export function isInDemoRange(dateStr: string): boolean {
+  const { start, end } = demoRange();
+  return dateStr >= fmt(start) && dateStr <= fmt(end);
+}
+
+/** True when a `YYYY-MM-DD` date is one of the authored window's 11 days. */
+export const isInDemoWindow = (dateStr: string): boolean => {
+  const o = offsetOf(dateStr);
+  return o >= WINDOW_OFFSETS[0] && o <= WINDOW_OFFSETS[WINDOW_OFFSETS.length - 1];
+};
+
+const generatedCache = new Map<string, Booking[]>();
+
+/**
+ * A believable tee sheet for any demo date outside the authored window (Weston Edits' phone
+ * date navigation). The same dense template day `applyDateWindow` uses, thinned by
+ * `generatedKeepFraction` — weekends busier, lighter further from today — with the same
+ * past / future state on top (past days settled, future days mostly unpaid). Unlike the
+ * window, every booking is then seated on a real grid row with no overlaps (`placeOnRows`),
+ * so everything the day's totals count can be seen, opened and deleted. Authored against the
+ * three-nines club, like every fixture; `venueDayBookings` re-homes it (1:1 per course, so
+ * the placement survives the move).
+ *
+ * Deterministic and memoized per date: the same date always yields the same bookings with
+ * the same ids (`<template id>_p<offset>` / `_m<offset>`, unique per date). Returns `[]` for
+ * window days (they come from `createBookings`) and for dates outside `demoRange()`.
+ */
+export function generateDayBookings(dateStr: string): Booking[] {
+  const cached = generatedCache.get(dateStr);
+  if (cached) return cached;
+  const offset = offsetOf(dateStr);
+  const out = isInDemoRange(dateStr) && !isInDemoWindow(dateStr)
+    ? projectDay(template(), offset, generatedKeepFraction(offset), true)
+    : [];
+  generatedCache.set(dateStr, out);
   return out;
 }
 
@@ -562,7 +744,7 @@ function injectMay21Specials(bookings: Booking[]): void {
  * bookings the operator created during the session.
  */
 export function createBookings(): Booking[] {
-  const projected = applyDateWindow(seedBookings());
+  const projected = applyDateWindow();
   injectMay21Specials(projected);
   return projected;
 }

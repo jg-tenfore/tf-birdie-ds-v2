@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_TODAY } from '../data/bookings';
 import { toDateStr } from '../data/courses';
-import { createInitialState } from './pos-store';
+import { ALL_GOLFERS } from '../data/golfers';
+import { venueBookings } from '../data/venues';
+import { missingDemoDay } from './demo-days';
+import { createInitialState, reducer } from './pos-store';
 import type { Modal, PosState } from './pos-store';
 import { demoBookings } from './scenarios';
 import { hashToState, isNavigation, stateToHash } from './url-state';
@@ -118,6 +121,7 @@ describe('modals', () => {
   const cases: Array<[string, Modal]> = [
     ['checkout', { kind: 'checkout' }],
     ['payment reader', { kind: 'paymentReader', method: 'card' }],
+    ['payment reader with a tip', { kind: 'paymentReader', method: 'card', tip: 12.5 }],
     ['booking detail', { kind: 'bookingDetail', bookingId: 'p01', tab: 2 }],
     ['tee picker', { kind: 'teePicker', is18H: true }],
     ['reserve confirm', { kind: 'reserveConfirm', payMode: 'now' }],
@@ -264,5 +268,165 @@ describe('malformed input', () => {
     expect(() => hashToState(hash)).not.toThrow();
     const patch = hashToState(hash);
     expect(patch.view).toBeDefined();
+  });
+});
+
+describe('reservation panel (Weston Edits)', () => {
+  const id = demoBookings().find((b) => b.date === toDateStr(DEMO_TODAY()) && b.players >= 2)!.id;
+  const tee = { view: 'tee' as const, leftPanelCollapsed: true };
+
+  it('stays out of the link when closed', () => {
+    expect(stateToHash(createInitialState(tee))).not.toContain('res=');
+  });
+
+  it('writes only the non-default parts', () => {
+    const hash = stateToHash(
+      createInitialState({ ...tee, reservationPanel: { bookingId: id, tab: 'players', playerIndex: 0 } }),
+    );
+    expect(hash).toBe(`#/tee-sheet?res=${id}`);
+  });
+
+  it.each([
+    ['players', 0],
+    ['customer', 1],
+    ['financial', 0],
+    ['notes', 0],
+    ['activity', 0],
+  ] as const)('round-trips the %s tab', (tab, playerIndex) => {
+    expectStable({ ...tee, reservationPanel: { bookingId: id, tab, playerIndex } });
+    const patch = hashToState(
+      stateToHash(createInitialState({ ...tee, reservationPanel: { bookingId: id, tab, playerIndex } })),
+    );
+    expect(patch.reservationPanel).toEqual({ bookingId: id, tab, playerIndex });
+  });
+
+  it('survives a dialog opened on top of it', () => {
+    const patch = hashToState(`#/tee-sheet?res=${id}&res-tab=customer&modal=new-customer`);
+    expect(patch.reservationPanel?.tab).toBe('customer');
+    expect(patch.modal).toEqual({ kind: 'newCustomer' });
+  });
+
+  it('drops a panel for a booking the club does not have, and a bogus tab', () => {
+    expect(hashToState('#/tee-sheet?res=nope').reservationPanel).toBeUndefined();
+    expect(hashToState(`#/tee-sheet?res=${id}&res-tab=bogus&res-p=-2`).reservationPanel).toEqual({
+      bookingId: id,
+      tab: 'players',
+      playerIndex: 0,
+    });
+  });
+
+  it('treats opening, closing or switching the panel as navigation, not changing its tab', () => {
+    const open = createInitialState({ ...tee, reservationPanel: { bookingId: id, tab: 'players', playerIndex: 0 } });
+    expect(isNavigation(createInitialState(tee), open)).toBe(true);
+    expect(
+      isNavigation(open, createInitialState({ ...tee, reservationPanel: { bookingId: id, tab: 'notes', playerIndex: 0 } })),
+    ).toBe(false);
+  });
+});
+
+describe('back and forward keep the session', () => {
+  // What `useUrlSync` does on popstate: parse the new hash against the running state and
+  // merge it in.
+  const back = (state: PosState, hash: string) =>
+    reducer(state, { type: 'applyUrl', patch: hashToState(hash, state) });
+
+  const today = toDateStr(DEMO_TODAY());
+  const tee = createInitialState({ view: 'tee', leftPanelCollapsed: true });
+  const target = tee.bookings.find((b) => b.date === today && b.status !== 'block' && b.players >= 2)!;
+  const checkedIn = reducer(tee, {
+    type: 'patchBooking',
+    bookingId: target.id,
+    patch: { name: 'Edited, E.', playerStates: target.playerStates.map((p) => ({ ...p, step: 0 })) },
+  });
+
+  it('keeps a booking edit across a link to another screen and day', () => {
+    const away = back(checkedIn, '#/register?date=2026-05-23');
+    expect(away.view).toBe('pos');
+    expect(toDateStr(away.currentDate)).toBe('2026-05-23');
+    const home = back(away, '#/tee-sheet');
+    expect(home.view).toBe('tee');
+    const b = home.bookings.find((x) => x.id === target.id)!;
+    expect(b.name).toBe('Edited, E.');
+    expect(b.playerStates.every((p) => p.step === 0)).toBe(true);
+    expect(home.bookings).toBe(checkedIn.bookings);
+  });
+
+  it('leaves the sheet and the course layout out of a same-club patch', () => {
+    const patch = hashToState('#/tee-sheet?date=2026-05-23', checkedIn);
+    expect(patch.bookings).toBeUndefined();
+    expect(patch.courses).toBeUndefined();
+    // …but a first load, with no session, still seeds both.
+    expect(hashToState('#/tee-sheet').bookings?.length).toBeGreaterThan(0);
+    expect(hashToState('#/tee-sheet').courses?.length).toBeGreaterThan(0);
+  });
+
+  it('keeps course edits, new tee times, notes, prices and added golfers', () => {
+    const added = { ...target, id: 'new-1', timeMin: target.timeMin + 8, name: 'New, N.' };
+    let s = reducer(checkedIn, { type: 'addBookings', bookings: [added] });
+    s = reducer(s, { type: 'patchCourse', courseId: s.courses[0].id, patch: { locked: true, note: 'Frost' } });
+    s = reducer(s, { type: 'setTimeNote', key: '2026-5-21_552', note: { text: 'Shotgun', color: 'yellow' } });
+    s = reducer(s, { type: 'setTimePrice', key: '2026-5-21_552', price: { fee: 10 } });
+    s = reducer(s, { type: 'addGolfer', golfer: { ...ALL_GOLFERS[0], id: 'g-new', name: 'Zed, Z.' } });
+    const after = back(back(s, '#/register'), '#/tee-sheet');
+    expect(after.bookings.some((b) => b.id === 'new-1')).toBe(true);
+    expect(after.courses[0]).toMatchObject({ locked: true, note: 'Frost' });
+    expect(after.timeNotes).toBe(s.timeNotes);
+    expect(after.timePrices).toBe(s.timePrices);
+    expect(after.addedGolfers).toBe(s.addedGolfers);
+  });
+
+  it('opens the reservation panel for a booking made this session', () => {
+    const added = { ...target, id: 'new-2', name: 'New, N.' };
+    const s = reducer(checkedIn, { type: 'addBookings', bookings: [added] });
+    expect(back(s, '#/tee-sheet?res=new-2').reservationPanel?.bookingId).toBe('new-2');
+  });
+
+  it('keeps the cart of the booking already on the order', () => {
+    const loaded = reducer(checkedIn, { type: 'loadBooking', bookingId: target.id });
+    const edited = reducer(loaded, { type: 'addItem', name: 'Titleist Pro V1 Box', price: 54 });
+    const s = back(back(edited, '#/tee-sheet'), `#/register?booking=${target.id}`);
+    expect(s.selectedBookingId).toBe(target.id);
+    expect(s.cart).toBe(edited.cart);
+  });
+
+  it('keeps generated days across Back', () => {
+    const june12 = new Date(2026, 5, 12);
+    const filled = reducer(reducer(tee, { type: 'setDate', date: june12 }), {
+      type: 'fillDemoDay',
+      date: '2026-06-12',
+      bookings: missingDemoDay(tee, june12),
+    });
+    const s = back(filled, '#/tee-sheet');
+    expect(s.generatedDates).toEqual(['2026-06-12']);
+    expect(s.bookings).toBe(filled.bookings);
+    expect(s.bookings.some((b) => b.date === '2026-06-12')).toBe(true);
+  });
+
+  it('re-homes onto another club when the link changes venue', () => {
+    const s = back(checkedIn, '#/tee-sheet?venue=nine');
+    expect(s.venueId).toBe('nine');
+    expect(s.bookings).toBe(venueBookings('nine'));
+    expect(s.courses.map((c) => c.id)).toEqual(['the-nine']);
+    expect(s.generatedDates).toEqual([]);
+    // …and back to the first club is a fresh sheet too: the venue changed twice.
+    const again = back(s, '#/tee-sheet');
+    expect(again.venueId).toBe(checkedIn.venueId);
+    expect(again.bookings.find((b) => b.id === target.id)!.name).toBe(target.name);
+  });
+});
+
+describe('back and forward restore the day and band', () => {
+  const back = (state: PosState, hash: string) =>
+    reducer(state, { type: 'applyUrl', patch: hashToState(hash, state) });
+
+  it('returns to the demo day and the full band when the link omits them', () => {
+    // A link leaves out the defaults, so Back from another day's link to a bare `#/tee-sheet`
+    // has to mean "today" — otherwise the sheet would stay on the day you came back from.
+    const away = back(createInitialState({ view: 'tee' }), '#/tee-sheet?date=2026-05-23&shift=peak');
+    expect(toDateStr(away.currentDate)).toBe('2026-05-23');
+    expect(away.shift).toBe('peak');
+    const home = back(away, '#/tee-sheet');
+    expect(toDateStr(home.currentDate)).toBe(toDateStr(DEMO_TODAY()));
+    expect(home.shift).toBe('full');
   });
 });

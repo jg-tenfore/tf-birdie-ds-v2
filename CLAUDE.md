@@ -196,3 +196,21 @@ all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the st
 - **Story metas must write `parameters` inline** (`parameters: { ...mobileMeta.parameters }`).
   Storybook's docs plugin injects its own `parameters` key and silently overwrites one that
   arrives by spread or by variable, dropping `layout: 'fullscreen'`.
+
+## Weston Edits (editions)
+
+`src/pos/edition.tsx` defines editions: `base` (default) and `weston` (Weston's golf-first
+reservation flow). It's a context, not a fork: branch with `useWestonEdits()` only where the
+edits differ, and pass `edition="weston"` to `<Screen>` / `<MobileStory>` / `<PosApp>` /
+`<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=weston`. Published
+as `/weston-edits/` and `/weston-edits-mobile/` (18-hole club). Storybook's **Weston Edits**
+category has `Overview` plus one folder per changed component, each with `Tablet` and
+`Mobile` story files. Per-player reservation values (`holes`, `fee`, `transport`) live on
+`PlayerState` and are edited through `src/pos/logic/reservation.ts`. A seat's rate class is its
+own player's (`seatRateClass` in `logic/rates.ts`), so pass `rateContext(state)` — which
+carries the roster — to anything that prices a seat.
+
+**One demo clock.** Anything that renders "now" — the now-line, the opening scroll, walk-ins,
+timestamps on payments and activity — reads `demoNow()` from `src/pos/data/bookings.ts`, never
+`new Date()`, so screenshots are identical whenever they're taken. `Date.now()` is fine for
+generated ids nobody sees.

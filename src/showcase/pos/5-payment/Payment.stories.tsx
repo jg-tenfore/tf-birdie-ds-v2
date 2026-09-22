@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Screen, paidFoursome, screenParams, withLoadedBooking, withWalkInOrder } from '../screen-helpers';
+import { Screen, screenParams, unpaidBooking, withLoadedBooking, withWalkInOrder } from '../screen-helpers';
 
 /**
  * POS Screens / 5 · Payment
@@ -22,11 +22,14 @@ export const Checkout: Story = {
   render: () => <Screen initialState={withWalkInOrder({ modal: { kind: 'checkout' } })} />,
 };
 
-/** Checkout for a tee-sheet booking — tax arrives on the booking's own line. */
+/**
+ * Checkout for a tee-sheet booking with a balance — tax arrives on the booking's own line.
+ * (An unpaid booking: a paid one has nothing to check out.)
+ */
 export const CheckoutLoadedBooking: Story = {
   render: () => (
     <Screen
-      initialState={withLoadedBooking(paidFoursome(), { modal: { kind: 'checkout' } })}
+      initialState={withLoadedBooking(unpaidBooking(), { modal: { kind: 'checkout' } })}
     />
   ),
 };

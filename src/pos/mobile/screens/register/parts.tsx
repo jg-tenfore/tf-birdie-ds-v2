@@ -10,11 +10,15 @@ import type { MemberTypeKey } from '../../../../theme/tokens';
 import { CATALOG, CHECK_IN_ITEMS, MEMBER_ITEM_TYPES } from '../../../data/catalog';
 import * as cartLogic from '../../../logic/cart';
 import { runsAt } from '../../../logic/bookings';
-import { toDateStr } from '../../../data/courses';
+import { formatTimeLabel, toDateStr } from '../../../data/courses';
+import { DEMO_TODAY } from '../../../data/bookings';
+import { useWestonEdits } from '../../../edition';
+import { planWalkIn } from '../../../logic/walk-in';
+import type { WalkInRate } from '../../../logic/walk-in';
 import { dayBookings } from '../../../state/pos-store';
 import type { PosState } from '../../../state/pos-store';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
-import type { Booking, CartItem, CartPlayer, CatalogItem, PlayerState } from '../../../types';
+import type { Booking, CartItem, CartPlayer, CatalogItem, Golfer, PlayerState } from '../../../types';
 import { hexRgba } from '../../../components/PosView';
 import { Stack } from '../../../components/Stack';
 import { BottomSheet } from '../../chrome';
@@ -32,28 +36,14 @@ import { useMobileNav } from '../../navigation';
 // ─── Money ──────────────────────────────────────────────────────────────────
 
 /**
- * What the order costs, in one place so the bar, the order, checkout and the reader
- * never disagree.
- *
- * Tax is either the booking's own `Taxes` line (tee-sheet rounds carry one) or sales tax
- * on the goods. The terminal's checkout adds the `Taxes` line *and* counts it inside
- * `payableTotal`, so a loaded booking pays its tax twice there; the phone excludes tax
- * lines from the goods total so it's counted once.
+ * What the order costs — `orderTotals`, the one calculation the terminal uses too, so the
+ * bar, the order, checkout, the tip screen and the reader never disagree with each other
+ * or with the terminal. Golf is taxed by its booking's tax line, everything else at the
+ * sales-tax rate; Tax Exempt zeroes both.
  */
 export function orderMoney(cart: CartItem[]) {
-  const goodsLines = cart.filter((i) => !i.isTax && i.name !== 'Taxes');
-  const goods = cartLogic.payableTotal(goodsLines);
-  const totals = cartLogic.cartTotals(cart);
-  const exempt = cart.some((i) => i.name === 'Tax Exempt');
-  const tax = exempt ? 0 : totals.tax > 0 ? totals.tax : cartLogic.salesTax(goods);
-  return {
-    subtotal: totals.subtotal,
-    discount: totals.discount,
-    goods,
-    tax,
-    exempt,
-    total: +(goods + tax).toFixed(2),
-  };
+  const t = cartLogic.orderTotals(cart);
+  return { subtotal: t.subtotal, discount: t.discount, goods: t.goods, tax: t.tax, exempt: t.exempt, total: t.total };
 }
 
 /** Lines the operator thinks of as "on the order" — tax rows hang off others. */
@@ -261,6 +251,42 @@ export function ViewOrderBar() {
   );
 }
 
+// ─── Walk-ins (Weston Edits) ────────────────────────────────────────────────
+
+/**
+ * Starting a walk-in on the phone, by edition — the terminal's `useStartWalkIn`, with the
+ * phone's navigation.
+ *
+ * `routes` is true in the weston edition when nothing is on the order yet (no booking, no
+ * round, not mid-"Reserve"). Then `start` puts a walk-in at the next open tee time today
+ * (`planWalkIn`), shows today's sheet, and pushes its reservation screen — players, holes,
+ * fees and transport are set there, and its Check in & pay brings it to the order. The base
+ * edition keeps the register-first walk-in: `routes` is false and callers fall through.
+ */
+export function useMobileWalkIn() {
+  const { state, dispatch, toast } = usePos();
+  const nav = useMobileNav();
+  const weston = useWestonEdits();
+  const routes =
+    weston && !state.selectedBookingId && state.flowMode !== 'reserve' && !state.cart.some((i) => i.isCheckIn);
+
+  const start = (opts: { rate?: WalkInRate | null; golfer?: Golfer | null } = {}) => {
+    const booking = planWalkIn(state, { golfer: state.selectedGolfer, ...opts });
+    if (!booking) {
+      toast('No open tee times left today');
+      return false;
+    }
+    dispatch({ type: 'addBookings', bookings: [booking] });
+    if (toDateStr(state.currentDate) !== booking.date) dispatch({ type: 'setDate', date: DEMO_TODAY() });
+    if (state.flowMode) dispatch({ type: 'setFlowMode', mode: '' });
+    nav.push({ name: 'bookingDetail', bookingId: booking.id });
+    toast(`Walk-in · ${formatTimeLabel(booking.timeMin)} · next open tee time`);
+    return true;
+  };
+
+  return { routes, start };
+}
+
 // ─── Adding items ───────────────────────────────────────────────────────────
 
 /** Would this rate mix 9 and 18 holes on one tee time? */
@@ -285,6 +311,7 @@ export function useAddItem() {
   const [memberItem, setMemberItem] = useState<CatalogItem | null>(null);
   const [modifier, setModifier] = useState<CatalogItem | null>(null);
   const lock = cartLogic.cartHolesLock(state.cart);
+  const walkIn = useMobileWalkIn();
 
   const add = (item: CatalogItem) => {
     if (cartLogic.isModifierItem(item.n)) {
@@ -293,6 +320,8 @@ export function useAddItem() {
     }
     if (isHoleLocked(item, lock)) return toast(`This order is locked to ${lock === '18H' ? '18' : '9'} holes`);
     if (MEMBER_ITEM_TYPES[item.n]) return setMemberItem(item);
+    // Weston Edits: a round rung with nothing on the order is a walk-in reservation.
+    if (walkIn.routes && CHECK_IN_ITEMS.has(item.n)) return void walkIn.start({ rate: { name: item.n, price: item.p } });
     dispatch({ type: 'addItem', name: item.n, price: item.p });
     toast(`Added · ${item.n}`);
   };
@@ -310,6 +339,7 @@ export function useAddItem() {
 /** Pick the member a member rate is for. Only eligible tiers can be chosen. */
 function MemberSheet({ item, onClose }: { item: CatalogItem | null; onClose: () => void }) {
   const { dispatch, toast } = usePos();
+  const walkIn = useMobileWalkIn();
   // The session roster, so a member created today can buy their rate like any other.
   const roster = useGolferRoster();
   const tier = item ? (MEMBER_ITEM_TYPES[item.n] as MemberTypeKey) : null;
@@ -327,6 +357,11 @@ function MemberSheet({ item, onClose }: { item: CatalogItem | null; onClose: () 
             <ButtonBase
               key={g.id}
               onClick={() => {
+                // Weston Edits: the verified member's walk-in is a reservation too.
+                if (walkIn.routes) {
+                  onClose();
+                  return void walkIn.start({ rate: { name: item.n, price: item.p }, golfer: g });
+                }
                 dispatch({ type: 'selectGolfer', golfer: g });
                 dispatch({ type: 'addItem', name: item.n, price: item.p });
                 toast(`${item.n} · ${g.name}`);

@@ -17,6 +17,7 @@ import {
   SelectField,
 } from './ModalFrame';
 import { Stack } from '../components/Stack';
+import { useOpenBooking } from '../components/use-open-booking';
 
 /** Ad-hoc line item for anything not in the catalog. */
 export function OpenItem() {
@@ -156,6 +157,7 @@ export function ConfirmDialog({
 /** Search every booking in the demo window, not just the current day. */
 export function TeeSheetSearch() {
   const { state, dispatch } = usePos();
+  const openBooking = useOpenBooking();
   const [query, setQuery] = useState('');
 
   const results = useMemo(() => {
@@ -216,7 +218,7 @@ export function TeeSheetSearch() {
                   onClick={() => {
                     dispatch({ type: 'setDate', date: new Date(y, m - 1, d) });
                     dispatch({ type: 'closeModal' });
-                    dispatch({ type: 'loadBooking', bookingId: b.id });
+                    openBooking(b.id);
                   }}
                 />
               );

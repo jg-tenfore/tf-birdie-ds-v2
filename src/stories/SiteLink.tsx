@@ -56,6 +56,18 @@ export const SURFACES = {
     label: 'Mobile · Single nine',
     detail: 'The same phone screens against one nine-hole course.',
   },
+  'weston-edits': {
+    dir: 'weston-edits',
+    venue: 'eighteen',
+    label: 'Weston Edits · Tablet',
+    detail: 'The 18-hole terminal with the golf-first reservation flow: click a tee time, adjust the golf in a slide-over, then check in and pay.',
+  },
+  'weston-edits-mobile': {
+    dir: 'weston-edits-mobile',
+    venue: 'eighteen',
+    label: 'Weston Edits · Mobile',
+    detail: 'The same edits on the phone, at the 18-hole club.',
+  },
   reference: {
     dir: 'reference',
     venue: null,
@@ -92,6 +104,14 @@ function surfaceUrl(id: SurfaceId, path = ''): string {
     // The reference HTML is only assembled by the site build, so in dev it points at the
     // deployed copy rather than a path that doesn't exist yet.
     if (id === 'reference') return 'https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/';
+
+    // Weston's edits: the same dev server with `?edition=weston`, at the 18-hole club.
+    if (id === 'weston-edits') {
+      return `${DEV_PROTOTYPE_ORIGIN}/?edition=weston${path || '#/tee-sheet'}${path.includes('?') ? '&' : '?'}venue=eighteen`;
+    }
+    if (id === 'weston-edits-mobile') {
+      return `${DEV_PROTOTYPE_ORIGIN}/mobile/?edition=weston&venue=eighteen${path}`;
+    }
 
     // The mobile prototypes are the same dev server on its own path; `?venue=` picks the club.
     if (id === 'mobile' || id === 'mobile-18' || id === 'mobile-9') {
@@ -230,6 +250,16 @@ const GROUPS: Array<{
       { to: 'mobile', label: 'Three nines' },
       { to: 'mobile-18', label: '18-hole course' },
       { to: 'mobile-9', label: 'Single nine' },
+    ],
+  },
+  {
+    emoji: '✏️',
+    title: 'Weston Edits',
+    spec: '18-hole club · tablet + phone',
+    body: 'Golf first, order second: a tee time opens its reservation, and only Check in & pay sends it to the register.',
+    links: [
+      { to: 'weston-edits', label: 'Tablet' },
+      { to: 'weston-edits-mobile', label: 'Mobile' },
     ],
   },
   {

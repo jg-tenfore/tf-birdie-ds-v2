@@ -75,7 +75,8 @@ export function NewTeeTimeScreen({ route }: ScreenProps<'newTeeTime'>) {
       cart: transport,
       status: isMember ? 'member' : type === 'walkin' ? 'walkin' : 'booked',
       phone: golfer?.phone ?? '—',
-      conf: `${isMember ? 'M' : 'R'}-${5000 + seq}`,
+      // A walk-in's code says so (`W-`); `R-` is a reservation booked ahead.
+      conf: `${isMember ? 'M' : type === 'walkin' ? 'W' : 'R'}-${5000 + seq}`,
       pay: type === 'walkin' ? 'paid' : 'open',
       price: rate.p,
       holes: holes === 18 ? '18H' : '9H',

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material';
 import { grid as gridTokens, md3, noteColors, radius, shifts } from '../../theme/tokens';
-import { DEMO_TODAY } from '../data/bookings';
+import { DEMO_TODAY, demoNow, minutesOfDay } from '../data/bookings';
 import { TIMES, formatTimeLabel } from '../data/courses';
 import { moneyShort } from '../logic/cart';
 import { openRuns } from '../logic/openings';
@@ -10,6 +10,8 @@ import { usePos } from '../state/PosProvider';
 import type { Booking, Course, TimeSlot } from '../types';
 import { Icon, MemberDot } from './primitives';
 import { Stack } from './Stack';
+import { useOpenBooking } from './use-open-booking';
+import { usePanelSqueeze, useScrollBookingIntoView } from './use-scroll-booking-into-view';
 
 /**
  * The tee-sheet calendar grid.
@@ -78,8 +80,9 @@ export function TeeSheetGrid() {
    */
   const nowAnchor = useMemo(() => {
     if (!isToday) return null;
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
+    // The demo's fixed clock, not the machine's — the same "now" walk-ins book after, so the
+    // rule, the past/upcoming split and the opening scroll are identical in every screenshot.
+    const nowMin = minutesOfDay(demoNow());
     const iv = state.settings.intervalMins;
     for (const t of visibleTimes) {
       // Before the first row still to come: sit at its top edge, so everything above the
@@ -100,6 +103,13 @@ export function TeeSheetGrid() {
     scrollRef.current.scrollTop =
       state.settings.autoScrollNow && el ? Math.max(0, el.offsetTop - 180) : 0;
   }, [state.settings.autoScrollNow, nowAnchor?.totalMin, rowH, visibleTimes.length]);
+
+  // Weston Edits: while the reservation panel is open the sheet narrows to the room left of
+  // it (`usePanelSqueeze`) — every column tightens, nothing sits under the panel and there
+  // is nothing to scroll sideways to — and opening a booking scrolls it into view,
+  // smoothly, and only if it isn't already visible.
+  const squeeze = usePanelSqueeze();
+  useScrollBookingIntoView(scrollRef, state.reservationPanel?.bookingId);
 
   /**
    * Row tint. On the full-day view each band gets its own wash so the shape of the
@@ -128,10 +138,18 @@ export function TeeSheetGrid() {
 
 
   return (
-    <Box ref={scrollRef} sx={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+    <Box
+      ref={scrollRef}
+      data-tee-sheet-scroller
+      data-panel-squeeze
+      // Columns shrink to fit (every cell is `minWidth: 0`), so the sheet never scrolls
+      // sideways — not even for the few pixels a hovered chip's scale-up pokes past the edge.
+      sx={{ flex: 1, minWidth: 0, overflowY: 'auto', overflowX: 'hidden', position: 'relative', ...squeeze }}
+    >
       <Box sx={{ position: 'relative', width: '100%' }}>
         {/* ── Sticky course headers ── */}
         <Stack
+          data-sticky-header
           direction="row"
           sx={{
             position: 'sticky',
@@ -639,6 +657,7 @@ function CourseGroup({
   isLast: boolean;
 }) {
   const { state, dispatch } = usePos();
+  const openBooking = useOpenBooking();
 
   const occupied = new Set<number>();
   for (const b of cellBookings) {
@@ -678,11 +697,24 @@ function CourseGroup({
             `ci:${(booking.playerStates ?? []).filter((p) => p.step >= 0).length}`,
             `paid:${(booking.playerStates ?? []).filter((p) => p.paid).length}`,
           ].join('|')}
-          sx={{ flex: span, position: 'relative', minWidth: 0, cursor: 'pointer' }}
+          sx={{
+            flex: span,
+            position: 'relative',
+            minWidth: 0,
+            cursor: 'pointer',
+            // The booking the reservation panel is showing (Weston Edits), so the sheet
+            // beside the panel still says which tee time is being worked.
+            ...(state.reservationPanel?.bookingId === booking.id && {
+              outline: `2.5px solid ${md3.onSurface}`,
+              outlineOffset: '-1px',
+              borderRadius: '8px',
+              zIndex: 2,
+            }),
+          }}
           onClick={() => {
             if (state.multiSelectActive)
               return dispatch({ type: 'toggleMultiSelect', bookingId: booking.id });
-            dispatch({ type: 'loadBooking', bookingId: booking.id });
+            openBooking(booking.id);
           }}
           onContextMenu={(e) => {
             e.preventDefault();

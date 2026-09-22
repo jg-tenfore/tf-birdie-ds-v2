@@ -11,6 +11,7 @@ import { dayBookings, selectedBooking } from '../state/pos-store';
 import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Golfer } from '../types';
 import { Icon, MemberDot, SectionLabel, deltaMoney } from '../components/primitives';
+import { useStartWalkIn } from '../components/use-start-walk-in';
 import {
   Callout,
   Field,
@@ -25,6 +26,7 @@ import {
 } from './ModalFrame';
 import { Stack } from '../components/Stack';
 import { checkInPlayer } from '../logic/bookings';
+import { demoNow } from '../data/bookings';
 
 /**
  * People-facing dialogs: member validation, golfer search, guest details, new
@@ -69,8 +71,15 @@ export function MemberLookup({ itemName, requiredType }: { itemName: string; req
     });
   }, [query, requiredType, roster]);
 
+  const walkIn = useStartWalkIn();
+
   const confirm = () => {
     if (!picked) return;
+    // Weston Edits: the verified member's walk-in goes to the tee sheet as a reservation.
+    if (walkIn.routes) {
+      if (walkIn.start({ rate: { name: itemName, price }, golfer: picked })) return;
+      return dispatch({ type: 'closeModal' });
+    }
     dispatch({ type: 'selectGolfer', golfer: picked });
     dispatch({ type: 'addItem', name: itemName, price });
     dispatch({ type: 'closeModal' });
@@ -772,7 +781,7 @@ export function ActionPanel({ action }: { action: 'checkin' | 'refund' | 'rainch
           financialActions: [
             ...(b.financialActions ?? []),
             {
-              time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+              time: demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
               label: action === 'refund' ? 'Refund' : 'Rain check',
               player: row?.name ?? 'Player',
               type: action === 'refund' ? 'refund' : 'raincheck',

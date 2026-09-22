@@ -211,7 +211,7 @@ function QuickAction({ icon, label, onClick }: { icon: ReactNode; label: string;
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Box sx={{ flex: 1, py: 1.5, textAlign: 'center', minWidth: 0 }}>
       <Typography variant="h5" noWrap>
@@ -222,7 +222,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SectionTitle({ children }: { children: ReactNode }) {
+export function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <Typography variant="subtitle2" sx={{ color: md3.primary, px: 2, pt: 2.5, pb: 0.5 }}>
       {children}
@@ -230,7 +230,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-function InfoItem({ icon, primary, secondary, muted }: { icon: ReactNode; primary: string; secondary: string; muted?: boolean }) {
+export function InfoItem({ icon, primary, secondary, muted }: { icon: ReactNode; primary: string; secondary: string; muted?: boolean }) {
   return (
     <Stack direction="row" alignItems="center" gap={2} sx={{ px: 2, minHeight: mobile.listItem.two }}>
       <Box sx={{ color: md3.onSurfaceVariant, display: 'flex' }}>{icon}</Box>

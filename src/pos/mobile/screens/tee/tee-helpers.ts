@@ -4,6 +4,9 @@ import { shifts } from '../../../../theme/tokens';
 import type { MemberTypeKey } from '../../../../theme/tokens';
 import { findMemberByPhone } from '../../../data/golfers';
 import { usePos } from '../../../state/PosProvider';
+import { seatCustomer } from '../../../logic/seat-customer';
+import { reservationDue } from '../../../logic/reservation';
+import type { RateContext } from '../../../logic/rates';
 import type { Booking, Course, Golfer } from '../../../types';
 
 /**
@@ -54,9 +57,12 @@ export function bandOf(timeMin: number): 'early' | 'peak' | 'twilight' {
 
 export const isSlotHolder = (b: Booking) => b.pay === 'block' || b.pay === 'event' || b.status === 'block';
 
-/** Money still owed: unpaid, not-no-show players × rate. */
-export const balanceOf = (b: Booking) =>
-  (b.playerStates ?? []).filter((p) => !p.paid && !p.noShow).length * b.price;
+/**
+ * Money still owed: each unpaid, not-no-show player's own fee (`reservationDue`) — per
+ * player, so a member in a guest's group owes the member rate, as the register charges.
+ * Pass `rateContext(state)` (the phone's `useRates()`) for price overrides and new customers.
+ */
+export const balanceOf = (b: Booking, rates?: RateContext) => reservationDue({ ...b, playerStates: b.playerStates ?? [] }, rates);
 
 export const checkedInCount = (b: Booking) =>
   (b.playerStates ?? []).filter((p) => p.step >= 0 && !p.noShow).length;
@@ -73,6 +79,13 @@ export function seatMemberType(b: Booking, i: number, roster?: readonly Golfer[]
   if (i === 0) return findMemberByPhone(b.phone, roster)?.memberType ?? null;
   return null;
 }
+
+/**
+ * The CRM record behind a seat — `seatCustomer`, shared with the tablet's reservation panel
+ * so both resolve a player the same way (linked record, then the booker's phone — never the name).
+ * Unnamed guests have none.
+ */
+export const seatGolfer = (b: Booking, i: number, roster: readonly Golfer[]): Golfer | undefined => seatCustomer(b, i, roster);
 
 /**
  * The round's steps. Defined once in `data/config.ts` and shared with the terminal's

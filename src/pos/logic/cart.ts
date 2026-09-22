@@ -1,7 +1,11 @@
 import { CHECK_IN_ITEMS, MODIFIER_ITEMS } from '../data/catalog';
 import { COURSES, TEE_PRICES, TIMES } from '../data/courses';
 import { TAX_RATE } from '../data/config';
-import type { Booking, CartItem, CartPlayer, ModifierTag, Transport } from '../types';
+import { VENUES } from '../data/venues';
+import type { Booking, CartItem, CartPlayer, Course, ModifierTag, Transport } from '../types';
+import { playerFee, playerHoles, playerName, playerTransport, roundLabel } from './reservation';
+import { seatIsMember } from './rates';
+import type { RateContext } from './rates';
 
 /**
  * Cart construction and pricing.
@@ -60,7 +64,9 @@ export function cartHolesLock(cart: CartItem[]): '9H' | '18H' | null {
  * its cart.
  */
 export function playerPrice(unitPrice: number, player: CartPlayer): number {
-  let fee = unitPrice;
+  // Settled on the booking already — on the order so the party reads whole, but free.
+  if (player.paid || player.noShow) return 0;
+  let fee = player.fee ?? unitPrice;
   let transport = 0;
 
   for (const t of player.modifierTags ?? []) {
@@ -76,7 +82,9 @@ export function playerBreakdown(
   unitPrice: number,
   player: CartPlayer,
 ): { fee: number; transport: number; discount: number; total: number } {
-  let fee = unitPrice;
+  if (player.paid || player.noShow) return { fee: 0, transport: 0, discount: 0, total: 0 };
+  const base = player.fee ?? unitPrice;
+  let fee = base;
   let transport = 0;
   let discount = 0;
 
@@ -86,7 +94,7 @@ export function playerBreakdown(
       fee += t.p;
       discount += t.p;
     } else {
-      discount += t.p - unitPrice;
+      discount += t.p - base;
       fee = t.p;
     }
   }
@@ -121,8 +129,9 @@ export function cartTotals(cart: CartItem[]): CartTotals {
       const unitPrice = i.unitPrice ?? i.price / Math.max(i.qty, 1);
       if (i.players && i.players.length > 0) {
         for (const p of i.players) {
+          if (p.paid || p.noShow) continue;
           const b = playerBreakdown(unitPrice, p);
-          subtotal += unitPrice + b.transport;
+          subtotal += (p.fee ?? unitPrice) + b.transport;
           discount += b.discount;
         }
       } else {
@@ -137,11 +146,39 @@ export function cartTotals(cart: CartItem[]): CartTotals {
       subtotal += i.price * (i.qty || 1);
     }
   }
+  // Tax is carried on lines that hang off a round. With nothing left to charge — every
+  // player settled, or the round removed — there is nothing for it to be tax *on*.
+  if (!hasChargeableLines(cart)) tax = 0;
   return { subtotal, discount, tax };
 }
 
+/** Anything on the order that isn't a tax row, and still charges. */
+function hasChargeableLines(cart: CartItem[]): boolean {
+  return cart.some((i) => {
+    if (i.isTax || i.name === 'Taxes') return false;
+    if (i.isCheckIn) return (i.players ?? []).length === 0 ? i.qty > 0 : (i.players ?? []).some((p) => !p.paid && !p.noShow);
+    return true;
+  });
+}
+
 /**
- * The amount the Pay button charges.
+ * The order is a tee time whose players have all settled — paid earlier or no-shows — and
+ * nothing else is on it. The Pay button shows "Paid in full" rather than asking again.
+ */
+export function cartIsSettled(cart: CartItem[]): boolean {
+  const rounds = cart.filter((i) => i.isCheckIn);
+  return rounds.length > 0 && !hasChargeableLines(cart);
+}
+
+/** Drop tax rows when nothing chargeable is left for them to hang off. */
+export function dropOrphanTax(cart: CartItem[]): CartItem[] {
+  if (cart.some((i) => i.isCheckIn) || hasChargeableLines(cart)) return cart;
+  return cart.filter((i) => !(i.isTax || i.name === 'Taxes'));
+}
+
+/**
+ * What the lines charge — tax rows included as they stand, no sales tax. The amount an
+ * order actually charges is `orderTotals(cart).total`; this is its building block.
  *
  * Mirrors the prototype's `computeCartTotal`, which is *not* simply
  * `subtotal + discount + tax` from `cartTotals`. Two deliberate differences:
@@ -158,7 +195,9 @@ export function cartTotals(cart: CartItem[]): CartTotals {
  * charges the $18 shown in the panel instead of $20.
  */
 export function payableTotal(cart: CartItem[]): number {
+  const chargeable = hasChargeableLines(cart);
   return cart.reduce((sum, i) => {
+    if (!chargeable && (i.isTax || i.name === 'Taxes')) return sum;
     if (i.isCheckIn) {
       if (i.players && i.players.length > 0) {
         return sum + i.players.reduce((ps, p) => ps + playerPrice(i.unitPrice ?? 0, p), 0);
@@ -169,13 +208,75 @@ export function payableTotal(cart: CartItem[]): number {
   }, 0);
 }
 
-/** Discounts to surface on the checkout receipt (a positive magnitude). */
-export function checkoutDiscounts(cart: CartItem[]): number {
-  return Math.abs(cartTotals(cart).discount);
-}
-
 /** Sales tax on a taxable amount. */
 export const salesTax = (amount: number): number => +(amount * TAX_RATE).toFixed(2);
+
+/** A tax row — the `Taxes` line a tee-sheet round arrives with. */
+const isTaxRow = (i: CartItem): boolean => Boolean(i.isTax) || i.name === 'Taxes';
+
+const cents = (n: number): number => Math.round(n * 100) / 100;
+
+/** Everything an order costs, from `orderTotals`. */
+export interface OrderTotals {
+  /** List price of every line, before discounts. */
+  subtotal: number;
+  /** Discounts actually applied — negative, or 0. `subtotal + discount = goods`. */
+  discount: number;
+  /** What the lines charge, before tax. */
+  goods: number;
+  /** Tax on the golf: the booking's own `Taxes` line. */
+  golfTax: number;
+  /** Sales tax (`TAX_RATE`) on everything else — retail, F&B, rentals. */
+  salesTax: number;
+  /** `golfTax + salesTax`, or 0 when the order is tax exempt. */
+  tax: number;
+  /** The order carries a Tax Exempt line. */
+  exempt: boolean;
+  /** `goods + tax` — the one number the Pay button, checkout and every reader charge. */
+  total: number;
+}
+
+/**
+ * **The** order total — one calculation for the register, the reservation's Check in & pay,
+ * checkout, the tip screen, the payment reader and change due, on the terminal and the
+ * phone alike. Nothing else adds tax to an order.
+ *
+ *  - **Golf** is taxed by the booking's own `Taxes` line — the sum of each chargeable seat's
+ *    own green-fee tax, by that seat's rate class (`seatCharges`, from `buildTeeTimeCart`). A round rung up at the counter has no such
+ *    line, so it's taxed like everything else.
+ *  - **Everything else** — retail, F&B, rentals, and any round without a tax line — pays
+ *    sales tax (`salesTax`, `TAX_RATE`) on what it charges. Before this, retail on a
+ *    tee-time order was untaxed (the tax line short-circuited it), the terminal's checkout
+ *    counted the golf tax twice, and its reader added a flat 8% on top of that.
+ *  - A **Tax Exempt** line zeroes both.
+ *
+ * With nothing left to charge (every seat settled, or the round removed), a stray tax row
+ * charges nothing.
+ */
+export function orderTotals(cart: CartItem[]): OrderTotals {
+  const lines = cart.filter((i) => !isTaxRow(i));
+  const exempt = cart.some((i) => i.name === 'Tax Exempt');
+  const goods = cents(payableTotal(lines));
+  const subtotal = cents(cartTotals(lines).subtotal);
+
+  const golfTaxed = hasChargeableLines(cart) && cart.some(isTaxRow);
+  const golfTax = golfTaxed ? cents(cart.filter(isTaxRow).reduce((s, i) => s + i.price, 0)) : 0;
+  // The golf a tax line already covers; sales tax is on the rest.
+  const golfGoods = golfTaxed ? payableTotal(lines.filter((i) => i.isCheckIn)) : 0;
+  const sales = salesTax(Math.max(0, goods - golfGoods));
+  const tax = exempt ? 0 : cents(golfTax + sales);
+
+  return {
+    subtotal,
+    discount: cents(goods - subtotal),
+    goods,
+    golfTax: exempt ? 0 : golfTax,
+    salesTax: exempt ? 0 : sales,
+    tax,
+    exempt,
+    total: cents(goods + tax),
+  };
+}
 
 /** Total players across the check-in lines — drives the guest chip row. */
 export function playerCount(cart: CartItem[]): number {
@@ -258,8 +359,16 @@ export function changeQty(cart: CartItem[], index: number, delta: number): CartI
   });
 }
 
+/**
+ * Remove a line. Removing a round also removes the tax rows that hang off it (`isSubItem`
+ * lines directly after it) — otherwise the order is left charging tax on nothing.
+ */
 export function removeItem(cart: CartItem[], index: number): CartItem[] {
-  return cart.filter((_, i) => i !== index);
+  const item = cart[index];
+  if (!item) return cart;
+  let end = index + 1;
+  if (item.isCheckIn) while (cart[end]?.isSubItem) end++;
+  return dropOrphanTax(cart.filter((_, i) => i < index || i >= end));
 }
 
 /** Add a seat to a round. The prototype caps a tee time at five players. */
@@ -345,74 +454,109 @@ export function togglePlayerModifier(
 
 // ─── Building a cart from a tee-sheet booking ────────────────────────────────
 
+/** Every course at every club, so a booking's course resolves whichever venue it's on. */
+const ALL_COURSES: Course[] = [...COURSES, ...Object.values(VENUES).flatMap((v) => v.courses)];
+
+/** What one seat of a tee time adds besides its green fee, by the seat's own class. */
+export interface SeatCharges {
+  /** The seat plays on the membership row (`seatIsMember`). */
+  member: boolean;
+  /** Riding-cart fee for this seat's class. */
+  cartFee: number;
+  /** Push-cart fee for this seat's class. */
+  pushFee: number;
+  /** Green-fee tax for this seat — 0 when the seat's green fee is $0. */
+  tax: number;
+}
+
 /**
- * Time-of-day discount applied when a round is checked in from the tee sheet.
+ * The cart fee, push fee and green-fee tax for seat `i`, by **that seat's** rate class
+ * (`seatIsMember` — linked customer or booker phone, never a name), not the booking's status:
  *
- * Early morning (6–10am) and twilight (2–6pm) discount; peak (10am–2pm) does not.
- * Members are exempt — their rate is already zero.
+ *  - a **member** seat reads the member row of `TEE_PRICES`;
+ *  - a **guest** seat reads the booking's own row — or, when the booking is a member's, the
+ *    reservation (`booked`) row, the guest rate a member's guest pays.
+ *
+ * Green-fee tax is tax *on the green fee*, so a seat whose fee is $0 — a member on the
+ * membership row, or a comped seat — carries none. Settled seats are the caller's concern
+ * (`buildTeeTimeCart` skips paid and no-show seats).
  */
-export function timeShiftDiscount(
-  timeMin: number,
-  holes: string,
-): { name: string; disc: number; color: string } | null {
-  const is18 = holes === '18';
-  if (timeMin >= 360 && timeMin < 600)
-    return { name: 'Early Morning Discount', disc: is18 ? -6 : -3, color: '#f59e0b' };
-  if (timeMin >= 840 && timeMin < 1080)
-    return { name: 'Twilight Discount', disc: is18 ? -6 : -3, color: '#7c3aed' };
-  return null;
+export function seatCharges(b: Booking, i: number, rates?: RateContext): SeatCharges {
+  const member = seatIsMember(b, i, rates?.roster);
+  const row = member
+    ? TEE_PRICES.member
+    : b.status === 'member'
+      ? TEE_PRICES.booked
+      : (TEE_PRICES[b.status] ?? TEE_PRICES.booked);
+  // The fee the register charges this seat: a member with no hand-set fee plays at $0.
+  const greenFee = member && b.playerStates[i]?.fee == null ? 0 : playerFee(b, i, rates);
+  return {
+    member,
+    cartFee: row.cartFee ?? 0,
+    pushFee: row.pushFee ?? 5,
+    tax: greenFee > 0 ? (row.tax ?? 0) : 0,
+  };
 }
 
 /**
  * Turn a tee-sheet booking into cart lines: one per-player check-in line plus a
- * tax line. Ported from `buildTeeTimeCart`.
+ * tax line. Ported from `buildTeeTimeCart`, with the reservation as the source of truth:
  *
- * Transport comes off the booking (`b.cart`) rather than being chosen at the
- * counter, because the golfer already picked it when they reserved.
+ *  - **Price** is the booking's own rate (`b.price`), per player via `playerFee` — what the
+ *    reservation and the booking's Financial tab show. The original priced from
+ *    `TEE_PRICES[status]` and then took a time-of-day discount off that, so a $29 twilight
+ *    booking charged $59 − $3.
+ *  - **Holes** are per player (`playerHoles`), never read off the course — the original
+ *    looked the course up in the three-nines `COURSES` and got 9 at every other club.
+ *  - **Transport** is per player (`playerTransport`), priced from the seat's own class
+ *    (`seatCharges`) — a guest in a member's group pays the guest cart fee.
+ *  - **Settled seats** — already paid, or no-shows — come across marked, and charge nothing.
+ *    Tax is only carried for the seats that still pay; with none, there is no tax line.
+ *
+ *  - **Rate class** is per player too (`seatRateClass`): a member in a guest's group
+ *    charges the membership rate and carries the Member tag; a guest in a member's group
+ *    charges rack.
+ *  - **Tax** is per seat as well: the `Taxes` line is the sum of each chargeable seat's own
+ *    green-fee tax (`seatCharges`), so a member's $0 seat in a guest group adds nothing and a
+ *    guest in a member booking adds the guest tax.
+ *
+ * `courses` is the venue's own list; the lookup falls back to every club's courses. `rates`
+ * carries the operator's per-row price overrides and the customer roster (`holesFee`) —
+ * pass `rateContext(state)`.
  */
-export function buildTeeTimeCart(b: Booking): CartItem[] {
-  const course = COURSES.find((c) => c.id === b.course);
-  const prices = TEE_PRICES[b.status] ?? TEE_PRICES.booked;
-  const holes = String(course?.holeCount ?? 9);
-
-  const roundLabel =
-    b.status === 'member'
-      ? 'Member Check-in'
-      : b.status === 'walkin'
-        ? `Walk-in ${holes} holes`
-        : `Tee Time ${holes} holes`;
-
-  const shiftDisc = b.status !== 'member' ? timeShiftDiscount(b.timeMin, holes) : null;
-
-  // Player 1 is the booking name; the rest come from `guests` or fall back to
-  // "Guest n" so every seat is addressable even before it's named.
-  const guestNames = [
-    b.name,
-    ...(b.guests ?? []).slice(1).map((g, i) => g?.name || `Guest ${i + 2}`),
-  ];
+export function buildTeeTimeCart(b: Booking, courses: Course[] = [], rates?: RateContext): CartItem[] {
+  const course = courses.find((c) => c.id === b.course) ?? ALL_COURSES.find((c) => c.id === b.course);
+  let taxTotal = 0;
 
   const players: CartPlayer[] = Array.from({ length: b.players }, (_, i) => {
     const modifierTags: ModifierTag[] = [];
+    const transport = playerTransport(b, i);
+    const state = b.playerStates[i];
+    const fee = playerFee(b, i, rates);
+    const prices = seatCharges(b, i, rates);
+    if (!state?.paid && !state?.noShow) taxTotal += prices.tax;
 
-    if (b.cart === 'cart') {
+    if (transport === 'cart') {
       modifierTags.push({
         name: 'Riding Cart',
         tag: 'Riding Cart',
         tagColor: '#d97706',
-        p: prices.cartFee ?? 0,
+        p: prices.cartFee,
         isTransport: true,
       });
-    } else if (b.cart === 'push') {
+    } else if (transport === 'push') {
       modifierTags.push({
         name: 'Push Cart',
         tag: 'Push Cart',
         tagColor: '#7c3aed',
-        p: prices.pushFee ?? 5,
+        p: prices.pushFee,
         isTransport: true,
       });
     }
 
-    if (b.status === 'member' && prices.memberDiscount) {
+    // Members play on the member rate unless someone set a fee for this seat by hand — per
+    // player, so a member in a guest's group is tagged and a guest in a member's isn't.
+    if (prices.member && state?.fee == null) {
       modifierTags.push({
         name: 'Member Rate',
         tag: 'Member',
@@ -422,47 +566,50 @@ export function buildTeeTimeCart(b: Booking): CartItem[] {
       });
     }
 
-    if (shiftDisc) {
-      modifierTags.push({
-        name: shiftDisc.name,
-        tag: shiftDisc.name.toUpperCase(),
-        tagColor: shiftDisc.color,
-        p: shiftDisc.disc,
-        isDiscount: true,
-      });
-    }
-
+    const guest = b.guests?.[i];
     return {
-      name: guestNames[i] || `Guest ${i + 1}`,
-      transport: b.cart === 'cart' ? 'cart' : b.cart === 'push' ? 'push' : 'walking',
+      name: playerName(b, i),
+      transport,
       modifierTags,
+      ...(fee !== b.price ? { fee } : {}),
+      holes: playerHoles(b, i),
+      ...(state?.paid ? { paid: true } : {}),
+      ...(state?.noShow ? { noShow: true } : {}),
+      ...(guest?.crmId ? { crmId: guest.crmId } : {}),
     };
   });
 
-  const basePrice = b.status === 'member' ? 0 : prices.basePrice;
+  const chargeable = players.filter((p) => !p.paid && !p.noShow).length;
+  const teeTime = {
+    label: TIMES.find((x) => x.totalMin === b.timeMin)?.label ?? '?',
+    courseName: course?.name ?? '',
+    courseId: b.course,
+    timeMin: b.timeMin,
+  };
 
   return [
     {
-      name: roundLabel,
-      unitPrice: basePrice,
-      price: basePrice * b.players,
+      name: roundLabel(b),
+      unitPrice: b.price,
+      price: b.price * b.players,
       qty: b.players,
       isCheckIn: true,
-      teeTime: {
-        label: TIMES.find((x) => x.totalMin === b.timeMin)?.label ?? '?',
-        courseName: course?.name ?? '',
-        courseId: b.course,
-        timeMin: b.timeMin,
-      },
+      teeTime,
       players,
     },
-    {
-      name: 'Taxes',
-      price: prices.tax * b.players,
-      qty: 1,
-      isSubItem: true,
-      isTax: true,
-    },
+    // Kept even at $0 (every paying seat a member, say): the line is what marks the golf as
+    // taxed by its booking, so `orderTotals` doesn't charge it sales tax instead.
+    ...(chargeable > 0
+      ? [
+          {
+            name: 'Taxes',
+            price: cents(taxTotal),
+            qty: 1,
+            isSubItem: true,
+            isTax: true,
+          },
+        ]
+      : []),
   ];
 }
 

@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/material';
-import { elevation, grid, md3, radius } from '../../theme/tokens';
+import { elevation, grid, md3, payBadges, radius } from '../../theme/tokens';
 import { SETTINGS_MENU_ITEMS, TRANSPORT_META } from '../data/config';
 import { COURSES, TIMES } from '../data/courses';
+import { useWestonEdits } from '../edition';
+import { roundLabel } from '../logic/reservation';
+import { useStartWalkIn } from './use-start-walk-in';
+import { RegisterGolfSummary } from './RegisterGolfSummary';
 import * as cart from '../logic/cart';
 import { dominantTransport, selectedBooking } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
@@ -32,10 +36,12 @@ export function LeftPanel() {
   const { state, dispatch, toast } = usePos();
   const booking = selectedBooking(state);
   const checkIn = cart.findCheckInItem(state.cart);
-  const totals = cart.cartTotals(state.cart);
-  const payable = cart.payableTotal(state.cart);
+  // One calculation for the whole order — the same one checkout and the reader charge.
+  const totals = cart.orderTotals(state.cart);
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
+  const weston = useWestonEdits();
+  const walkIn = useStartWalkIn();
 
   // The chip shows the primary golfer: the booking name, the looked-up golfer, or
   // player 1's name once a round has been rung up for a walk-in.
@@ -211,10 +217,13 @@ export function LeftPanel() {
                 <ButtonBase
                   key={playerIdx}
                   onClick={() =>
-                    dispatch({
-                      type: 'openModal',
-                      modal: { kind: 'guestDetail', guestIndex: playerIdx },
-                    })
+                    // Weston Edits: a booked player's details live on the reservation.
+                    weston && booking
+                      ? dispatch({ type: 'openReservation', bookingId: booking.id, tab: 'customer', playerIndex: playerIdx })
+                      : dispatch({
+                          type: 'openModal',
+                          modal: { kind: 'guestDetail', guestIndex: playerIdx },
+                        })
                   }
                   sx={{
                     gap: 0.625,
@@ -246,6 +255,9 @@ export function LeftPanel() {
               <ButtonBase
                 key={a.mode}
                 onClick={() => {
+                  // Weston Edits: a walk-in is a reservation first — at the next open tee
+                  // time, opened in the panel — and reaches the order through Check in & pay.
+                  if (walkIn.routes && a.mode === 'walkin') return void walkIn.start();
                   dispatch({ type: 'setFlowMode', mode: a.mode });
                   dispatch({ type: 'setCategory', category: 'CHECK IN' });
                 }}
@@ -280,9 +292,14 @@ export function LeftPanel() {
           <EmptyState icon="shopping_cart" label="No items added yet" />
         ) : (
           <>
-            <TeeTimeSummaryCard />
+            {weston && booking ? (
+              // Weston Edits: the golf is a read-only summary; edit it on the reservation.
+              <RegisterGolfSummary booking={booking} lines={state.cart.filter((i) => i.isCheckIn)} />
+            ) : (
+              <TeeTimeSummaryCard />
+            )}
             {state.cart.map((item, i) =>
-              item.isSubItem ? null : item.isCheckIn ? (
+              item.isSubItem || (weston && booking && item.isCheckIn) ? null : item.isCheckIn ? (
                 <CheckInLines key={`${item.name}-${i}`} item={item} index={i} />
               ) : (
                 <StandardLine key={`${item.name}-${i}`} item={item} index={i} />
@@ -370,7 +387,7 @@ export function LeftPanel() {
           </Box>
         </Box>
 
-        <PayButton payable={payable} />
+        <PayButton payable={totals.total} />
       </Box>
     </Box>
   );
@@ -401,12 +418,17 @@ function TeeTimeSummaryCard() {
   } as const;
 
   if (booking) {
-    const course = COURSES.find((c) => c.id === booking.course);
+    // The venue's courses — the three-nines `COURSES` has no 18-hole or single-nine courses,
+    // so at those clubs the card used to show a blank course name.
+    const course =
+      state.courses.find((c) => c.id === booking.course) ?? COURSES.find((c) => c.id === booking.course);
     const time = TIMES.find((t) => t.totalMin === booking.timeMin);
+    const holesText = booking.status === 'member' ? booking.holes : roundLabel(booking).replace('Tee Time ', '');
+    // Kind of booking. The demo data now marks only true walk-ins `walkin` (an `R-` code is a
+    // reservation — `statusForConf`), so a walk-in reads "Walk-in" and a reservation "Reserved".
     const statusLabels: Record<string, string> = {
-      booked: 'Reserved',
-      walkin: 'Walk-in',
       member: 'Member',
+      walkin: 'Walk-in',
       checkedin: 'Checked In',
       group: 'Group',
       event: 'Event',
@@ -432,7 +454,7 @@ function TeeTimeSummaryCard() {
         />
         <InfoLine
           icon="label"
-          value={statusLabels[booking.status] ?? booking.status}
+          value={`${statusLabels[booking.status] ?? 'Reserved'} · ${holesText}`}
           valueColor={md3.primary}
         />
         {booking.note && (
@@ -559,6 +581,8 @@ function InfoLine({
  */
 function CheckInLines({ item, index }: { item: CartItem; index: number }) {
   const { state, dispatch } = usePos();
+  // Weston Edits: golf is adjusted on the reservation, never with modifiers at the register.
+  const weston = useWestonEdits();
   const booking = selectedBooking(state);
   const unitPrice = item.unitPrice ?? item.price;
   const players = item.players ?? [];
@@ -567,6 +591,8 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
     <>
       {players.map((p, pi) => {
         const b = cart.playerBreakdown(unitPrice, p);
+        const seatPrice = p.fee ?? unitPrice;
+        const settled = p.paid || p.noShow;
         const transportTag = (p.modifierTags ?? []).find((t) => t.isTransport);
         const otherTags = (p.modifierTags ?? []).filter((t) => !t.isTransport);
         const rowLabel = `Guest ${pi + 1}`;
@@ -594,7 +620,7 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
                 {item.name}
               </SectionLabel>
               <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
-                {cart.money(unitPrice)}/ea
+                {cart.money(seatPrice)}/ea
               </Typography>
               {isFirst ? (
                 <ButtonBase
@@ -623,8 +649,8 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
                 )}
                 <Typography sx={{ fontSize: 14, fontWeight: 800 }}>{displayName}</Typography>
               </Stack>
-              <Typography sx={{ fontSize: 14, fontWeight: 800 }}>
-                {cart.money(b.total)}
+              <Typography sx={{ fontSize: 14, fontWeight: 800, color: settled ? md3.primary : md3.onSurface }}>
+                {p.noShow ? 'No-show' : p.paid ? 'Paid' : cart.money(b.total)}
               </Typography>
             </Stack>
 
@@ -633,7 +659,7 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
               amount={b.transport}
             />
             {otherTags.map((t) => {
-              const delta = t.isDiscount ? t.p : t.p - unitPrice;
+              const delta = t.isDiscount ? t.p : t.p - seatPrice;
               return (
                 <SubLine
                   key={t.name}
@@ -671,6 +697,7 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
               </Stack>
             )}
 
+            {!settled && !weston && (
             <Stack direction="row" gap={0.75} sx={{ mt: 0.75 }}>
               <MicroButton
                 dashed
@@ -691,6 +718,7 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
                 Guest Details
               </MicroButton>
             </Stack>
+            )}
           </Box>
         );
       })}
@@ -898,6 +926,28 @@ function PayButton({ payable }: { payable: number }) {
         >
           New order
         </Button>
+      </Box>
+    );
+  }
+
+  // A booking whose players have all paid (or no-showed) has nothing to take: say so rather
+  // than offering "Pay $0.00" — or, as before, charging it again at the status rate.
+  if (cart.cartIsSettled(state.cart)) {
+    return (
+      <Box
+        data-pay-state="settled"
+        sx={{
+          width: '100%',
+          p: '14px',
+          borderRadius: '14px',
+          bgcolor: payBadges.paid.bg,
+          color: payBadges.paid.text,
+          fontSize: 14,
+          fontWeight: 700,
+          textAlign: 'center',
+        }}
+      >
+        {checkIn?.players?.every((p) => p.noShow) ? 'No-show · nothing due' : 'Paid in full · nothing due'}
       </Box>
     );
   }

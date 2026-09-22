@@ -4,6 +4,7 @@ import {
   Screen,
   memberBooking,
   paidFoursome,
+  unpaidBooking,
   screenParams,
   withLoadedBooking,
   withWalkInOrder,
@@ -69,11 +70,21 @@ export const WalkInOrder: Story = {
 /**
  * A tee-sheet booking loaded into the register.
  *
- * The cart is built from the booking: transport comes off the reservation rather than
- * being chosen at the counter, and the summary card at the top links back to the full
- * booking record.
+ * The cart is built from the booking: its own rate per player, and transport off the
+ * reservation rather than chosen at the counter. The summary card at the top links back to
+ * the full booking record. An unpaid booking — a booking that is already paid now loads as
+ * "Paid in full" rather than asking for the money again (see `LoadedPaidTeeTime`).
  */
 export const LoadedTeeTime: Story = {
+  render: () => <Screen initialState={withLoadedBooking(unpaidBooking())} />,
+};
+
+/**
+ * A booking whose players have all paid, loaded into the register. The seats come across
+ * marked **Paid** at $0, there is no tax line, and the Pay button reads "Paid in full ·
+ * nothing due". Before, the cart was priced from the booking's status and charged again.
+ */
+export const LoadedPaidTeeTime: Story = {
   render: () => <Screen initialState={withLoadedBooking(paidFoursome())} />,
 };
 

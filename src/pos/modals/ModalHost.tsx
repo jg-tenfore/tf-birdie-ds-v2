@@ -55,7 +55,7 @@ export function ModalHost() {
     case 'checkout':
       return <Checkout />;
     case 'paymentReader':
-      return <PaymentReader method={m.method} />;
+      return <PaymentReader method={m.method} tip={m.tip} />;
     case 'memberLookup':
       return <MemberLookup itemName={m.itemName} requiredType={m.requiredType} />;
     case 'golferSearch':
