@@ -112,6 +112,7 @@ const preview: Preview = {
             '7 · Register Golf Summary', ['Tablet', 'Mobile'],
             '8 · Bug Fixes', ['Tablet', 'Mobile'],
             '9 · Date Navigation', ['Tablet', 'Mobile'],
+            '10 · Panel Size', ['Tablet', 'Mobile'],
           ],
           '*',
         ],
