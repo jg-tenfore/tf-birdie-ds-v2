@@ -13,7 +13,7 @@ import {
   type RateCatalogKey,
   type TransportRate,
 } from '../data/rate-catalog';
-import { customerForId, customerForPhone } from '../data/roster';
+import { customerForPhone, liveCustomer, type CustomerEdits } from '../data/roster';
 import type { Customer } from '../data/customers';
 import type { Booking } from '../types';
 import { rateBand } from './rates';
@@ -36,6 +36,14 @@ import { rateBand } from './rates';
 export interface SeatPricingContext {
   /** Which catalog the surface is reading. `heavy` is story-only. */
   catalog?: RateCatalogKey;
+  /**
+   * Session edits to customer records.
+   *
+   * Passed so that a customer type added in the record actually changes what the seat pays —
+   * otherwise the record would show one thing and the row charge another, which is the bug
+   * class this whole round keeps running into.
+   */
+  customers?: CustomerEdits;
 }
 
 /**
@@ -47,13 +55,16 @@ export interface SeatPricingContext {
  * exists to prevent. A name that looks like a customer is a *suggestion* elsewhere; it prices
  * nothing until someone links it.
  */
-export function seatRecord(b: Booking, i: number): Customer | null {
+export function seatRecord(b: Booking, i: number, edits: CustomerEdits = {}): Customer | null {
   const crmId = b.guests?.[i]?.crmId;
   if (crmId) {
-    const linked = customerForId(crmId);
+    const linked = liveCustomer(crmId, edits);
     if (linked) return linked;
   }
-  if (i === 0) return customerForPhone(b.phone);
+  if (i === 0) {
+    const booker = customerForPhone(b.phone);
+    return booker ? liveCustomer(booker.id, edits) : null;
+  }
   return null;
 }
 
@@ -82,7 +93,7 @@ export function seatRate(b: Booking, i: number, ctx: SeatPricingContext = {}): G
     const found = grid.find((r) => r.id === chosen);
     if (found) return found;
   }
-  return autoRate(grid, seatRecord(b, i), holes);
+  return autoRate(grid, seatRecord(b, i, ctx.customers), holes);
 }
 
 /**

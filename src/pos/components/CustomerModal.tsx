@@ -6,10 +6,11 @@ import {
   EMAIL_DOMAINS,
   bookingName,
   formatPhone,
+  normalizePhone,
   memberTierOf,
   type Customer,
 } from '../data/customers';
-import { customerForId, searchRoster } from '../data/roster';
+import { liveCustomer, searchRoster } from '../data/roster';
 import { golferOf } from '../data/customers';
 import { assignPlayer } from '../logic/reservation';
 import { rainCheckBalance, rainChecksFor } from '../data/rain-checks';
@@ -41,7 +42,8 @@ export function CustomerModal() {
   const { state } = usePos();
   const m = state.customerModal;
   if (!m) return null;
-  const customer = customerForId(m.customerId ?? undefined);
+  // Read through the overlay, so reopening a record shows what was saved to it.
+  const customer = liveCustomer(m.customerId ?? undefined, state.customerEdits);
   if (!customer || m.assigning) return <AssignCustomer />;
   return <CustomerRecord customer={customer} />;
 }
@@ -62,7 +64,15 @@ function CustomerRecord({ customer }: { customer: Customer }) {
   const owed = rainCheckBalance(customer.id);
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
 
+  // Saved into state rather than discarded: Weston's case is fixing a wrong email at the
+  // counter, and an edit that vanishes on close demonstrates a form, not a fix. It lives as
+  // long as any other demo edit and resets on reload.
   const save = () => {
+    dispatch({
+      type: 'patchCustomer',
+      customerId: customer.id,
+      patch: { email, phone: normalizePhone(phone), notes, customerTypes: types },
+    });
     dispatch({ type: 'toast', message: `${bookingName(customer)} saved` });
     close();
   };

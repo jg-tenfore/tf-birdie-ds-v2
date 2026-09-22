@@ -1,3 +1,5 @@
+import type { CustomerEdits } from '../data/roster';
+import type { Customer } from '../data/customers';
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY, demoNow } from '../data/bookings';
@@ -273,6 +275,15 @@ export interface PosState {
   orderSeats: number[] | null;
   /** Variant switches for the comparisons Weston asked to see. Story-driven. */
   weston: WestonOptions;
+  /**
+   * Edits made to customer records this session, keyed by customer id.
+   *
+   * An overlay over the committed roster rather than a mutation of it, so a demo always starts
+   * from the same place. Read through `liveCustomer` / `liveRoster` — an edit the record shows
+   * but the player row does not is the same class of bug as a discount the row shows and the
+   * register does not charge.
+   */
+  customerEdits: CustomerEdits;
   contextMenu: ContextMenuState;
   toast: string | null;
   /** Set after a successful checkout so the Pay button can show the paid state. */
@@ -346,6 +357,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     customerModal: null,
     orderSeats: null,
     weston: { ...DEFAULT_WESTON_OPTIONS },
+    customerEdits: {},
     contextMenu: null,
     toast: null,
     lastPayment: null,
@@ -368,6 +380,7 @@ export type Action =
   | { type: 'addSeatToOrder'; bookingId: string; seat: number }
   | { type: 'stepReservation'; delta: 1 | -1 }
   | { type: 'setWestonOption'; patch: Partial<WestonOptions> }
+  | { type: 'patchCustomer'; customerId: string; patch: Partial<Customer> }
   | { type: 'setCategory'; category: string | null }
   | { type: 'toggleLeftPanel'; collapsed?: boolean }
   // Cart
@@ -472,6 +485,14 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, customerModal: null };
     case 'setWestonOption':
       return { ...state, weston: { ...state.weston, ...action.patch } };
+    case 'patchCustomer':
+      return {
+        ...state,
+        customerEdits: {
+          ...state.customerEdits,
+          [action.customerId]: { ...state.customerEdits[action.customerId], ...action.patch },
+        },
+      };
     case 'toggleLeftPanel':
       return { ...state, leftPanelCollapsed: action.collapsed ?? !state.leftPanelCollapsed };
     case 'openModal':

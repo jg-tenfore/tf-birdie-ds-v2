@@ -270,8 +270,8 @@ function PlayerRow({
   const holes = playerHoles(b, i);
   const t = transportMeta(playerTransport(b, i));
   const adjusted = playerIsAdjusted(b, i);
-  const sp = seatPrice(b, i, fee, { catalog: state.weston.rateCatalog });
-  const record = seatRecord(b, i);
+  const sp = seatPrice(b, i, fee, { catalog: state.weston.rateCatalog, customers: state.customerEdits });
+  const record = seatRecord(b, i, state.customerEdits);
   const inOrder = state.selectedBookingId === b.id && (state.orderSeats?.includes(i) ?? false);
   const status = p.noShow ? 'No-show' : roundStepOf(p).label;
 
@@ -530,7 +530,7 @@ export function TransportList({ value, onPick }: { value: Transport; onPick: (t:
 /** The ⋮ on a player row: profile, swap/link a customer, reset, remove. */
 function RowActions({ booking: b, index: i, onDone, onRemove }: { booking: Booking; index: number; onDone: () => void; onRemove: () => void }) {
   const nav = useMobileNav();
-  const { dispatch, toast } = usePos();
+  const { state, dispatch, toast } = usePos();
   const roster = useGolferRoster();
   const golfer = seatGolfer(b, i, roster);
   const p = b.playerStates[i];
@@ -545,7 +545,7 @@ function RowActions({ booking: b, index: i, onDone, onRemove }: { booking: Booki
       run: () =>
         nav.push({
           name: 'customerRecord',
-          customerId: seatRecord(b, i)?.id ?? null,
+          customerId: seatRecord(b, i, state.customerEdits)?.id ?? null,
           bookingId: b.id,
           seat: i,
         }),

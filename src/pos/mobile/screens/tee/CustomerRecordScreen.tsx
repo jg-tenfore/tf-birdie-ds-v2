@@ -7,10 +7,11 @@ import {
   bookingName,
   formatPhone,
   golferOf,
+  normalizePhone,
   memberTierOf,
   type Customer,
 } from '../../../data/customers';
-import { customerForId, searchRoster } from '../../../data/roster';
+import { liveCustomer, searchRoster } from '../../../data/roster';
 import { rainCheckBalance, rainChecksFor } from '../../../data/rain-checks';
 import { money } from '../../../logic/cart';
 import { assignPlayer } from '../../../logic/reservation';
@@ -39,7 +40,9 @@ import { SectionHeader } from './parts';
  * matching name never does.
  */
 export function CustomerRecordScreen({ route }: ScreenProps<'customerRecord'>) {
-  const customer = customerForId(route.customerId ?? undefined);
+  const { state } = usePos();
+  // Read through the session overlay, so reopening shows what was saved.
+  const customer = liveCustomer(route.customerId ?? undefined, state.customerEdits);
   if (!customer) return <AssignSeat route={route} />;
   return <Record customer={customer} />;
 }
@@ -64,6 +67,13 @@ function Record({ customer }: { customer: Customer }) {
           title={`${customer.firstName} ${customer.lastName}`}
           confirmLabel="Save"
           onConfirm={() => {
+            // Saved, not discarded: the case Weston described is fixing a wrong email, and an
+            // edit that vanishes on close demonstrates a form rather than a fix.
+            dispatch({
+              type: 'patchCustomer',
+              customerId: customer.id,
+              patch: { email, phone: normalizePhone(phone), notes, customerTypes: types },
+            });
             dispatch({ type: 'toast', message: `${bookingName(customer)} saved` });
             nav.pop();
           }}

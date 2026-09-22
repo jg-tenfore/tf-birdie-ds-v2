@@ -25,6 +25,7 @@ import {
 import { seatCustomer, seatIdMe } from '../logic/seat-customer';
 import { seatCanSwitchHoles, seatPrice, seatRecord } from '../logic/seat-pricing';
 import type { SeatPrice } from '../logic/seat-pricing';
+import type { Customer } from '../data/customers';
 import { dayBookings, rateContext } from '../state/pos-store';
 import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking, Transport } from '../types';
@@ -171,20 +172,21 @@ export function PlayerRow({
   const feeIsDefault = p.fee == null;
 
   const patch = (x: Partial<Booking>) => dispatch({ type: 'patchBooking', bookingId: b.id, patch: x });
-  const ctx = { catalog: state.weston.rateCatalog };
+  const ctx = { catalog: state.weston.rateCatalog, customers: state.customerEdits };
   const money9 = seatPrice(b, i, fee, ctx);
   const dense = state.weston.rowDensity === 'dense';
   const inOrder = state.selectedBookingId === b.id && (state.orderSeats?.includes(i) ?? false);
+  const liveRecord = seatRecord(b, i, state.customerEdits);
   // Weston, round 3: "if I click on Michael Thompson… does something else open?" The record is
   // the person's, not the reservation's, so it opens over everything rather than as a tab.
   // A seat with nobody in it opens the same surface in assign mode.
   const openCustomer = () =>
     dispatch({
       type: 'openCustomerModal',
-      customerId: seatRecord(b, i)?.id ?? null,
+      customerId: liveRecord?.id ?? null,
       bookingId: b.id,
       seat: i,
-      assigning: seatRecord(b, i) == null,
+      assigning: liveRecord == null,
     });
 
   return (
@@ -383,7 +385,7 @@ export function PlayerRow({
       )}
 
       {/* ── What they're sold on ── */}
-      {!p.noShow && <SeatMeta booking={b} seat={i} price={money9} dense={dense} />}
+      {!p.noShow && <SeatMeta booking={b} seat={i} price={money9} dense={dense} record={liveRecord} />}
 
       {/* ── The rate editor, in place ── */}
       {expanded && !p.noShow && <RateExpand booking={b} seat={i} />}
@@ -419,13 +421,15 @@ function SeatMeta({
   seat: i,
   price: sp,
   dense,
+  record,
 }: {
   booking: Booking;
   seat: number;
   price: SeatPrice;
   dense: boolean;
+  /** The seat's record *with session edits applied*, resolved once by the row. */
+  record: Customer | null;
 }) {
-  const record = seatRecord(b, i);
   const bits = [
     record && `ID ${record.id}`,
     record && record.rewardsBalance > 0 && `+${record.rewardsBalance}`,

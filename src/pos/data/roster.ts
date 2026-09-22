@@ -332,3 +332,39 @@ export function searchRoster(query: string, limit = 8, list: Customer[] = roster
     )
     .slice(0, limit);
 }
+
+// ─── Session edits ──────────────────────────────────────────────────────────
+
+/**
+ * Edits made to a customer record during a session.
+ *
+ * Weston's case is fixing a wrong email at the counter, and an edit that vanishes the moment
+ * you close the record does not demonstrate that — it demonstrates a form. So the record's Save
+ * writes here, keyed by customer id, and every read goes through `liveCustomer`.
+ *
+ * An overlay rather than a mutated roster, for two reasons. The committed hundred stay a fixed
+ * thing you can open and read, so a demo always starts from the same place; and the overlay is
+ * ordinary reducer state, so it travels with everything else and resets on reload exactly as a
+ * booking edit does.
+ *
+ * It is deliberately not persisted. Nothing in this prototype is.
+ */
+export type CustomerEdits = Record<string, Partial<Customer>>;
+
+/**
+ * A record as it stands now: the committed one with any session edit folded over it.
+ *
+ * Every surface that shows or prices a customer reads through this, because an edit that the
+ * record shows but the player row does not is the same class of bug as a discount the row shows
+ * and the register does not charge.
+ */
+export function liveCustomer(id: string | undefined, edits: CustomerEdits = {}): Customer | null {
+  const base = customerForId(id);
+  if (!base) return null;
+  const patch = edits[base.id];
+  return patch ? { ...base, ...patch } : base;
+}
+
+/** The whole roster with session edits folded in — what search and pricing read. */
+export const liveRoster = (edits: CustomerEdits = {}): Customer[] =>
+  Object.keys(edits).length === 0 ? roster : roster.map((c) => (edits[c.id] ? { ...c, ...edits[c.id] } : c));
