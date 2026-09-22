@@ -4,7 +4,7 @@ import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, growableParty, nameOnlyGuest, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 4 · Customer Tab / Mobile
+ * Weston Edits / 4 · Customer Profile / Mobile
  *
  * Weston wanted to "open their customer profile" from the reservation. On the phone it's a
  * **Customer** tab on the reservation screen: a row of player chips across the top (a phone
@@ -14,7 +14,7 @@ import { adjustedParty, at18, growableParty, nameOnlyGuest, withBookings } from 
  * route, so switching replaces and Back always leaves the booking.
  */
 const meta = {
-  title: 'Weston Edits/4 · Customer Tab/Mobile',
+  title: 'Weston Edits/4 · Customer Profile/Mobile',
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

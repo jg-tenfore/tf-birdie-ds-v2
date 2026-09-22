@@ -1,6 +1,7 @@
 import { ALL_GOLFERS } from '../../pos/data/golfers';
 import { venue, venueBookings } from '../../pos/data/venues';
 import { buildTeeTimeCart } from '../../pos/logic/cart';
+import { seatRecord } from '../../pos/logic/seat-pricing';
 import { rateBand } from '../../pos/logic/rates';
 import {
   assignPlayer,
@@ -154,5 +155,26 @@ export function registerWith(b: Booking, extra: Partial<PosState> = {}): Partial
     selectedBookingId: b.id,
     cart: buildTeeTimeCart(b, COURSES),
     ...extra,
+  });
+}
+
+/**
+ * The reservation open with a player's **customer record** layered over it.
+ *
+ * Weston's third round moved the record off the reservation: "I don't think it needs to be a
+ * tab… I wonder if it's its own thing." Opening it from seat `seat` resolves whoever is sitting
+ * there by reliable key — a linked record, or the booker's phone — and falls into assign mode
+ * when the seat is empty, which is the Guest 3 case.
+ */
+export function sheetWithCustomer(b: Booking, seat = 0, extra: Partial<PosState> = {}): Partial<PosState> {
+  const record = seatRecord(b, seat);
+  return sheetWithPanel(b, 'players', {
+    ...extra,
+    customerModal: {
+      customerId: record?.id ?? null,
+      bookingId: b.id,
+      seat,
+      assigning: record == null,
+    },
   });
 }

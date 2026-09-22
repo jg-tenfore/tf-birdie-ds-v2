@@ -83,7 +83,14 @@ export type Modal =
   | { kind: 'teeSheetSearch' };
 
 /** The reservation panel's tabs, in order. */
-export const RESERVATION_TABS = ['players', 'customer', 'financial', 'notes', 'activity'] as const;
+/**
+ * The reservation's tabs.
+ *
+ * Four, not five. The Customer tab went in Weston's third round — "I don't think it needs to be
+ * a tab on the reservation, I wonder if it's its own thing" — because a customer record is not
+ * a property of a reservation. Tapping the player's name opens it (`customerModal`).
+ */
+export const RESERVATION_TABS = ['players', 'financial', 'notes', 'activity'] as const;
 export type ReservationTab = (typeof RESERVATION_TABS)[number];
 
 /**
@@ -101,6 +108,64 @@ export interface ReservationPanelState {
    */
   presentation?: 'panel' | 'modal';
 }
+
+/**
+ * How wide the slide-over runs.
+ *
+ * Weston's third round: "I wonder if it should take up more space… I don't know if we need to
+ * collapse the tee sheet. I think it's more important to have this bigger than to show more of
+ * the tee sheet." Three sizes rather than one, because he asked to feel the difference on the
+ * tablet before committing.
+ *
+ *  - `standard` — 640. Wider than the 480 he was looking at; with the order rail collapsed the
+ *    sheet still shows both nines.
+ *  - `wide` — 820. Room for the rate tiles beside a two-column player row; the sheet keeps
+ *    about one nine.
+ *  - `cover` — the whole sheet. Maximum room, still one ✕ back to where you were.
+ */
+export type PanelWidth = 'standard' | 'wide' | 'cover';
+
+export const PANEL_WIDTHS: Record<PanelWidth, number> = { standard: 640, wide: 820, cover: 0 };
+
+/**
+ * The customer record, open over everything.
+ *
+ * Not part of the reservation: it is opened *from* a seat but it is the person's record, and
+ * closing it leaves the reservation exactly as it was. `seat` is carried so that linking or
+ * creating a customer knows which chair it is filling — null when the record was opened from
+ * somewhere else, like a booking's menu on the tee sheet.
+ */
+export interface CustomerModalState {
+  customerId: string | null;
+  bookingId?: string;
+  seat?: number;
+  /** Opened on an empty seat: the record starts in search-and-assign mode. */
+  assigning?: boolean;
+}
+
+/**
+ * Story-level switches for the variants Weston asked to compare rather than choose.
+ *
+ * They live on state so a story can set one and every component below reads it, and so the
+ * prototype can ship one default without a second code path. None of them are linkable — a
+ * prototype URL never carries a variant.
+ */
+export interface WestonOptions {
+  panelWidth: PanelWidth;
+  /** `comfortable` gives the rate and transport names their own lines; `dense` is V1's one-liner. */
+  rowDensity: 'comfortable' | 'dense';
+  /** `toggle` keeps the walk/ride/push icons on the row; `named` prints the transport rate. */
+  transportStyle: 'toggle' | 'named';
+  /** `heavy` swaps in the 26-rate course, to exercise the grid's overflow. */
+  rateCatalog: 'standard' | 'heavy';
+}
+
+export const DEFAULT_WESTON_OPTIONS: WestonOptions = {
+  panelWidth: 'standard',
+  rowDensity: 'comfortable',
+  transportStyle: 'toggle',
+  rateCatalog: 'standard',
+};
 
 /** A right-click / long-press menu anchored to a booking chip or a time label. */
 export type ContextMenuState =
@@ -189,6 +254,10 @@ export interface PosState {
   modal: Modal | null;
   /** The reservation slide-over (Weston Edits), when open. */
   reservationPanel: ReservationPanelState | null;
+  /** The customer record, layered over everything (Weston Edits, round 3). */
+  customerModal: CustomerModalState | null;
+  /** Variant switches for the comparisons Weston asked to see. Story-driven. */
+  weston: WestonOptions;
   contextMenu: ContextMenuState;
   toast: string | null;
   /** Set after a successful checkout so the Pay button can show the paid state. */
@@ -259,6 +328,8 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     listFilters: { ...emptyListFilters },
     modal: null,
     reservationPanel: null,
+    customerModal: null,
+    weston: { ...DEFAULT_WESTON_OPTIONS },
     contextMenu: null,
     toast: null,
     lastPayment: null,
@@ -270,6 +341,15 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
 
 export type Action =
   | { type: 'setView'; view: MainView }
+  | {
+      type: 'openCustomerModal';
+      customerId: string | null;
+      bookingId?: string;
+      seat?: number;
+      assigning?: boolean;
+    }
+  | { type: 'closeCustomerModal' }
+  | { type: 'setWestonOption'; patch: Partial<WestonOptions> }
   | { type: 'setCategory'; category: string | null }
   | { type: 'toggleLeftPanel'; collapsed?: boolean }
   // Cart
@@ -360,6 +440,20 @@ export function reducer(state: PosState, action: Action): PosState {
       };
     case 'setCategory':
       return { ...state, currentCategory: action.category };
+    case 'openCustomerModal':
+      return {
+        ...state,
+        customerModal: {
+          customerId: action.customerId,
+          bookingId: action.bookingId,
+          seat: action.seat,
+          assigning: action.assigning,
+        },
+      };
+    case 'closeCustomerModal':
+      return { ...state, customerModal: null };
+    case 'setWestonOption':
+      return { ...state, weston: { ...state.weston, ...action.patch } };
     case 'toggleLeftPanel':
       return { ...state, leftPanelCollapsed: action.collapsed ?? !state.leftPanelCollapsed };
     case 'openModal':

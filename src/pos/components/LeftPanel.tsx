@@ -5,6 +5,7 @@ import { SETTINGS_MENU_ITEMS, TRANSPORT_META } from '../data/config';
 import { COURSES, TIMES } from '../data/courses';
 import { useWestonEdits } from '../edition';
 import { roundLabel } from '../logic/reservation';
+import { seatRecord } from '../logic/seat-pricing';
 import { useStartWalkIn } from './use-start-walk-in';
 import { RegisterGolfSummary } from './RegisterGolfSummary';
 import * as cart from '../logic/cart';
@@ -217,9 +218,16 @@ export function LeftPanel() {
                 <ButtonBase
                   key={playerIdx}
                   onClick={() =>
-                    // Weston Edits: a booked player's details live on the reservation.
+                    // Weston Edits: a booked player's record opens over everything, from the
+                    // name — it belongs to the person, not to this order.
                     weston && booking
-                      ? dispatch({ type: 'openReservation', bookingId: booking.id, tab: 'customer', playerIndex: playerIdx })
+                      ? dispatch({
+                          type: 'openCustomerModal',
+                          customerId: seatRecord(booking, playerIdx)?.id ?? null,
+                          bookingId: booking.id,
+                          seat: playerIdx,
+                          assigning: seatRecord(booking, playerIdx) == null,
+                        })
                       : dispatch({
                           type: 'openModal',
                           modal: { kind: 'guestDetail', guestIndex: playerIdx },

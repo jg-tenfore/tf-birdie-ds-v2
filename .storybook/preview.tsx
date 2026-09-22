@@ -106,7 +106,7 @@ const preview: Preview = {
             '1 · Reservation Panel', ['Tablet', 'Mobile'],
             '2 · Player Rows', ['Tablet', 'Mobile'],
             '3 · ID.me Badge', ['Tablet', 'Mobile'],
-            '4 · Customer Tab', ['Tablet', 'Mobile'],
+            '4 · Customer Profile', ['Tablet', 'Mobile'],
             '5 · Financial, Notes & Activity', ['Tablet', 'Mobile'],
             '6 · Check In & Pay', ['Tablet', 'Mobile'],
             '7 · Register Golf Summary', ['Tablet', 'Mobile'],

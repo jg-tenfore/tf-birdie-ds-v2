@@ -23,6 +23,7 @@ import {
   setPlayerTransport,
 } from '../logic/reservation';
 import { seatCustomer, seatIdMe } from '../logic/seat-customer';
+import { seatRecord } from '../logic/seat-pricing';
 import { dayBookings, rateContext } from '../state/pos-store';
 import { useGolferRoster, usePos } from '../state/PosProvider';
 import type { Booking, Transport } from '../types';
@@ -155,8 +156,17 @@ export function PlayerRow({
   const feeIsDefault = p.fee == null;
 
   const patch = (x: Partial<Booking>) => dispatch({ type: 'patchBooking', bookingId: b.id, patch: x });
+  // Weston, round 3: "if I click on Michael Thompson… does something else open?" The record is
+  // the person's, not the reservation's, so it opens over everything rather than as a tab.
+  // A seat with nobody in it opens the same surface in assign mode.
   const openCustomer = () =>
-    dispatch({ type: 'setReservationTab', tab: 'customer', playerIndex: i });
+    dispatch({
+      type: 'openCustomerModal',
+      customerId: seatRecord(b, i)?.id ?? null,
+      bookingId: b.id,
+      seat: i,
+      assigning: seatRecord(b, i) == null,
+    });
 
   return (
     <Box

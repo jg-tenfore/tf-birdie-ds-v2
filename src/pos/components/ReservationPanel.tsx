@@ -12,7 +12,6 @@ import type { ReservationTab } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
 import { BookingActivity, BookingFinancial, BookingNotes } from './BookingTabs';
-import { CustomerTab } from './CustomerTab';
 import { PlayerRows } from './PlayerRows';
 import { BookingMemberDot, Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
@@ -62,7 +61,7 @@ export function ReservationPanel() {
         animation: `${slideIn} ${reservationPanel.motion}`,
       }}
     >
-      <ReservationContent booking={b} tab={panel.tab} playerIndex={panel.playerIndex} />
+      <ReservationContent booking={b} tab={panel.tab} />
     </Box>
   );
 }
@@ -100,14 +99,13 @@ function ReservationModal({ booking: b }: { booking: Booking }) {
         },
       }}
     >
-      <ReservationContent booking={b} tab={panel.tab} playerIndex={panel.playerIndex} />
+      <ReservationContent booking={b} tab={panel.tab} />
     </Dialog>
   );
 }
 
 const TAB_LABELS: Record<ReservationTab, string> = {
   players: 'Players',
-  customer: 'Customer',
   financial: 'Financial',
   notes: 'Notes',
   activity: 'Activity',
@@ -117,11 +115,9 @@ const TAB_LABELS: Record<ReservationTab, string> = {
 export function ReservationContent({
   booking: b,
   tab,
-  playerIndex,
 }: {
   booking: Booking;
   tab: ReservationTab;
-  playerIndex: number;
 }) {
   const { state, dispatch } = usePos();
   const course = state.courses.find((c) => c.id === b.course);
@@ -178,7 +174,6 @@ export function ReservationContent({
       {/* ── Body ── */}
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: '14px 16px' }}>
         {tab === 'players' && <PlayerRows booking={b} />}
-        {tab === 'customer' && <CustomerTab key={playerIndex} booking={b} playerIndex={playerIndex} />}
         {tab === 'financial' && <BookingFinancial booking={b} />}
         {tab === 'notes' && <BookingNotes key={b.id} booking={b} />}
         {tab === 'activity' && <BookingActivity booking={b} />}
