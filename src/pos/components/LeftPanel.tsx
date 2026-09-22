@@ -42,6 +42,8 @@ export function LeftPanel() {
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();
+  const orderCount = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
+  const hasOrder = orderCount > 0;
   const walkIn = useStartWalkIn();
 
   // The chip shows the primary golfer: the booking name, the looked-up golfer, or
@@ -122,34 +124,36 @@ export function LeftPanel() {
         pointerEvents: state.leftPanelCollapsed ? 'none' : 'auto',
       }}
     >
-      {weston && (
-        <Tooltip title="Collapse the order rail">
-          <ButtonBase
-            aria-label="Collapse the order rail"
-            onClick={() => dispatch({ type: 'toggleLeftPanel', collapsed: true })}
-            sx={{
-              position: 'absolute',
-              left: grid.leftPanelW - 26,
-              top: 8,
-              zIndex: 3,
-              width: 22,
-              height: 22,
-              borderRadius: '50%',
-              bgcolor: md3.surfaceContainer,
-              color: md3.onSurfaceVariant,
-              '&:hover': { bgcolor: md3.primaryContainer, color: md3.onPrimaryContainer },
-            }}
-          >
-            <Icon name="chevron_left" size={15} />
-          </ButtonBase>
-        </Tooltip>
-      )}
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.25 }}>
+          {/*
+            One button, two jobs, never both at once.
+
+            With something in the order it is the back arrow, and it clears — behind a confirm,
+            because clearing an order is destructive and there is no undo. Once the order is
+            empty there is nothing to clear, so it becomes a hamburger that collapses the rail:
+            the control only offers the thing that is actually available, and the rail can only
+            be put away when hiding it costs nothing. That is Weston's point exactly — "it takes
+            up a lot of space if there's nothing in it".
+          */}
           <ButtonBase
-            onClick={() => dispatch({ type: 'clearOrder' })}
-            title="Clear order"
+            aria-label={hasOrder ? 'Clear order' : 'Collapse the order rail'}
+            onClick={() =>
+              hasOrder
+                ? dispatch({
+                    type: 'openModal',
+                    modal: {
+                      kind: 'confirm',
+                      title: 'Clear this order?',
+                      body: `${orderCount} item${orderCount === 1 ? '' : 's'} will be removed. This cannot be undone.`,
+                      confirmLabel: 'Clear order',
+                      onConfirm: 'clearOrder',
+                    },
+                  })
+                : dispatch({ type: 'toggleLeftPanel', collapsed: true })
+            }
+            title={hasOrder ? 'Clear order' : 'Collapse the order rail'}
             sx={{
               width: 38,
               height: 38,
@@ -158,7 +162,7 @@ export function LeftPanel() {
               '&:hover': { bgcolor: md3.surfaceHigh },
             }}
           >
-            <Icon name="arrow_back" size={20} />
+            <Icon name={hasOrder ? 'arrow_back' : 'menu'} size={20} />
           </ButtonBase>
 
           <ButtonBase
@@ -1074,7 +1078,7 @@ function RailStrip() {
           onClick={expand}
           sx={{ width: 34, height: 34, borderRadius: `${radius.sm}px`, color: md3.onSurfaceVariant }}
         >
-          <Icon name="chevron_right" size={18} />
+          <Icon name="menu" size={18} />
         </ButtonBase>
       </Tooltip>
 
