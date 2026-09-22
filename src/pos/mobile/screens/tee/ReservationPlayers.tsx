@@ -68,7 +68,7 @@ import { checkedInCount, dayLabel, parseDateStr, playerName, roundStepOf, seatGo
 
 type SheetState =
   | null
-  | { kind: 'fee' | 'transport' | 'row' | 'remove'; index: number }
+  | { kind: 'transport' | 'row' | 'remove'; index: number }
   | { kind: 'group' };
 
 export function ReservationPlayersTab({ booking: b }: { booking: Booking }) {
@@ -172,7 +172,6 @@ export function ReservationPlayersTab({ booking: b }: { booking: Booking }) {
       </Box>
 
       {/* ── Sheets ── */}
-      {sheet?.kind === 'fee' && <FeeSheet booking={b} index={sheet.index} onClose={() => setSheet(null)} />}
 
       <BottomSheet
         open={sheet?.kind === 'transport'}
@@ -256,7 +255,7 @@ function PlayerRow({
   p: PlayerState;
   is18: boolean;
   locked: boolean;
-  onSheet: (kind: 'fee' | 'transport' | 'row') => void;
+  onSheet: (kind: 'transport' | 'row') => void;
 }) {
   const nav = useMobileNav();
   const { state, dispatch, toast } = usePos();
@@ -350,6 +349,7 @@ function PlayerRow({
             label={inOrder ? `${name} is on the order` : `Add ${name} to the order`}
             onClick={() => dispatch({ type: 'addSeatToOrder', bookingId: b.id, seat: i })}
             strong={inOrder}
+            pressed={inOrder}
           >
             <Icon name={inOrder ? 'shopping_cart' : 'add_shopping_cart'} size={16} />
           </ControlChip>
@@ -365,6 +365,9 @@ function PlayerRow({
       >
         {[
           sp.rate && `${sp.rate.name} : ${money(sp.greenFee)}`,
+          // Why the seat is cheap, not just that it is. A discount says what it was worth
+          // before; a punch names the card that settled it.
+          sp.usesPunch ? sp.reason : sp.discount > 0 ? `${sp.reason} · was ${money(sp.gross)}` : null,
           `${sp.transport.name} : ${money(sp.transportFee)}`,
           record && `ID ${record.id}`,
           p.cartKey != null && `cart ${p.cartKey}`,
@@ -420,16 +423,23 @@ function ControlChip({
   onClick,
   disabled,
   strong,
+  pressed,
 }: {
   children: ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
   strong?: boolean;
+  /**
+   * Marks the chip as a toggle that is on. Without it a chip whose only state cue is its fill
+   * reads to a screen reader as a plain button — the terminal's equivalent already says so.
+   */
+  pressed?: boolean;
 }) {
   return (
     <ButtonBase
       aria-label={label}
+      aria-pressed={pressed}
       onClick={onClick}
       disabled={disabled}
       sx={{

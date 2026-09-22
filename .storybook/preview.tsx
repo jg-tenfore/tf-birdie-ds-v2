@@ -241,7 +241,7 @@ const preview: Preview = {
             '10 · Panel Size', ['Tablet', 'Mobile'],
             '11 · Rate Selector', ['Tablet', 'Mobile'],
             '12 · Player Row Detail', ['Tablet', 'Mobile'],
-            '13 · Order Rail', ['Tablet', 'Mobile'],
+            '13 · Order Rail', ['Tablet'],
             '14 · Per-seat Cart', ['Tablet', 'Mobile'],
             '15 · Next In Line', ['Tablet', 'Mobile'],
             '16 · Cart Signout', ['Tablet', 'Mobile'],

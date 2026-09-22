@@ -378,6 +378,7 @@ export type Action =
     }
   | { type: 'closeCustomerModal' }
   | { type: 'addSeatToOrder'; bookingId: string; seat: number }
+  | { type: 'rebuildOrderSeats'; bookingId: string }
   | { type: 'stepReservation'; delta: 1 | -1 }
   | { type: 'setWestonOption'; patch: Partial<WestonOptions> }
   | { type: 'patchCustomer'; customerId: string; patch: Partial<Customer> }
@@ -678,6 +679,21 @@ export function reducer(state: PosState, action: Action): PosState {
       const next = day[at + action.delta];
       if (at < 0 || !next) return state;
       return { ...state, reservationPanel: { ...panel, bookingId: next.id, tab: 'players', playerIndex: 0 } };
+    }
+    case 'rebuildOrderSeats': {
+      // Reprice the seats the order already holds, after the reservation changed under it.
+      // Deliberately not `loadBooking`: that rebuilds the whole booking, which would quietly
+      // undo a split bill.
+      const b = state.bookings.find((x) => x.id === action.bookingId);
+      if (!b || !state.orderSeats) return state;
+      const extras = state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes');
+      return {
+        ...state,
+        cart: [
+          ...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state), state.orderSeats),
+          ...extras,
+        ],
+      };
     }
     case 'addSeatToOrder': {
       const b = state.bookings.find((x) => x.id === action.bookingId);
