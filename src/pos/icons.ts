@@ -72,6 +72,7 @@ import Payments from '@mui/icons-material/Payments';
 import Person from '@mui/icons-material/Person';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonOff from '@mui/icons-material/PersonOff';
+import PersonSearch from '@mui/icons-material/PersonSearch';
 import Phone from '@mui/icons-material/Phone';
 import PointOfSale from '@mui/icons-material/PointOfSale';
 import Print from '@mui/icons-material/Print';
@@ -192,6 +193,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   person: Person,
   person_add: PersonAdd,
   person_off: PersonOff,
+  person_search: PersonSearch,
   phone: Phone,
   point_of_sale: PointOfSale,
   print: Print,

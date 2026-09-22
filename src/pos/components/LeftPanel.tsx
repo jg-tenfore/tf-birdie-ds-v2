@@ -44,7 +44,7 @@ export function LeftPanel() {
   const weston = useWestonEdits();
   const orderCount = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
   const hasOrder = orderCount > 0;
-  const walkIn = useStartWalkIn();
+  const runQuickAction = useQuickAction();
 
   // The chip shows the primary golfer: the booking name, the looked-up golfer, or
   // player 1's name once a round has been rung up for a walk-in.
@@ -288,19 +288,10 @@ export function LeftPanel() {
         {/* ── Action buttons (pre-order only) ── */}
         {showActions && (
           <Stack gap={0.75} sx={{ mt: 0.75 }}>
-            {[
-              { label: 'Walk-in', icon: 'directions_walk', mode: 'walkin' as const },
-              { label: 'Reserve tee time', icon: 'event_available', mode: 'reserve' as const },
-            ].map((a) => (
+            {QUICK_ACTIONS.map((a) => (
               <ButtonBase
                 key={a.mode}
-                onClick={() => {
-                  // Weston Edits: a walk-in is a reservation first — at the next open tee
-                  // time, opened in the panel — and reaches the order through Check in & pay.
-                  if (walkIn.routes && a.mode === 'walkin') return void walkIn.start();
-                  dispatch({ type: 'setFlowMode', mode: a.mode });
-                  dispatch({ type: 'setCategory', category: 'CHECK IN' });
-                }}
+                onClick={() => runQuickAction(a.mode)}
                 sx={{
                   gap: 1.125,
                   px: 1.375,
@@ -1052,6 +1043,7 @@ export { dominantTransport };
  */
 function RailStrip() {
   const { state, dispatch } = usePos();
+  const runQuickAction = useQuickAction();
   const count = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
   const expand = () => dispatch({ type: 'toggleLeftPanel', collapsed: false });
 
@@ -1082,8 +1074,9 @@ function RailStrip() {
         </ButtonBase>
       </Tooltip>
 
-      <StripButton icon="directions_walk" label="Walk-in" onClick={() => dispatch({ type: 'openModal', modal: { kind: 'walkIn' } })} />
-      <StripButton icon="event" label="Reserve tee time" onClick={() => dispatch({ type: 'setFlowMode', mode: 'reserve' })} />
+      {QUICK_ACTIONS.map((a) => (
+        <StripButton key={a.mode} icon={a.icon} label={a.label} onClick={() => runQuickAction(a.mode)} />
+      ))}
 
       <Box sx={{ flex: 1 }} />
 
@@ -1147,4 +1140,30 @@ function StripButton({ icon, label, onClick }: { icon: string; label: string; on
       </ButtonBase>
     </Tooltip>
   );
+}
+
+/**
+ * The rail's quick actions — one definition, used expanded and collapsed.
+ *
+ * They were written twice, which is how the collapsed Walk-in ended up opening the old walk-in
+ * dialog while the expanded one booked the next open tee time as a reservation, and how the
+ * collapsed Reserve ended up on an icon name that does not exist (rendering as a dot, because
+ * `iconFor` falls back to a bullet rather than failing). Label, glyph and behaviour now come
+ * from one place, so the two states cannot drift again.
+ */
+const QUICK_ACTIONS = [
+  { label: 'Walk-in', icon: 'directions_walk', mode: 'walkin' as const },
+  { label: 'Reserve tee time', icon: 'event_available', mode: 'reserve' as const },
+];
+
+function useQuickAction() {
+  const { dispatch } = usePos();
+  const walkIn = useStartWalkIn();
+  return (mode: 'walkin' | 'reserve') => {
+    // Weston Edits: a walk-in is a reservation first — at the next open tee time, opened in the
+    // panel — and reaches the order through Check in & pay.
+    if (walkIn.routes && mode === 'walkin') return void walkIn.start();
+    dispatch({ type: 'setFlowMode', mode });
+    dispatch({ type: 'setCategory', category: 'CHECK IN' });
+  };
 }
