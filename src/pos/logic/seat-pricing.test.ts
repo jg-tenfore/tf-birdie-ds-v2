@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TRANSPORT_RATES, transportById } from '../data/rate-catalog';
 import { roster } from '../data/roster';
+import { bookingName } from '../data/customers';
 import { buildTeeTimeCart, orderTotals } from './cart';
 import { COURSES } from '../data/courses';
 import { createInitialState, reducer } from '../state/pos-store';
@@ -34,6 +35,7 @@ import {
   seatRate,
   seatRateGrid,
   seatRecord,
+  seatSuggestedRecord,
   seatTransportFee,
   seatUsesPunch,
 } from './seat-pricing';
@@ -397,5 +399,35 @@ describe('a split order follows the reservation', () => {
     expect(orderTotals(s.cart).total).toBeLessThan(before);
     // And it is still a two-seat order — repricing must not quietly widen it to the party.
     expect(s.orderSeats).toEqual([0, 1]);
+  });
+});
+
+describe('a name that looks like a customer', () => {
+  /**
+   * The other half of "never price a seat off its name".
+   *
+   * Round 1 offered the match as a *suggestion* with a Link button — visible, never pricing.
+   * That was lost when the Customer tab was replaced by the customer record, so a seat called
+   * "Kim, D." left the counter searching for a person the seat was already named after.
+   */
+  it('offers the match without pricing it', () => {
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const named = foursome({ guests: [{ name: 'x' }, { name: bookingName(member) }] });
+    // Suggested…
+    expect(seatSuggestedRecord(named, 1)?.id).toBe(member.id);
+    // …but still on the booking's rate, because nothing is linked.
+    expect(seatRecord(named, 1)).toBeNull();
+    expect(seatRate(named, 1)?.rack).toBe(true);
+  });
+
+  it('suggests nobody for an unnamed seat', () => {
+    expect(seatSuggestedRecord(foursome(), 2)).toBeNull();
+  });
+
+  it('suggests nobody once the seat is linked', () => {
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const linked = foursome({ guests: [{ name: 'x' }, { name: bookingName(member), crmId: member.id }] });
+    expect(seatSuggestedRecord(linked, 1)).toBeNull();
+    expect(seatRecord(linked, 1)?.id).toBe(member.id);
   });
 });

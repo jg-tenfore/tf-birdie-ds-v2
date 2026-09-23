@@ -12,6 +12,9 @@ import {
   type Customer,
 } from '../../../data/customers';
 import { liveCustomer, searchRoster } from '../../../data/roster';
+import { idMeGroupOf } from '../../../data/golfers';
+import { seatSuggestedRecord } from '../../../logic/seat-pricing';
+import { IdMeBadge } from '../../../components/IdMeBadge';
 import { rainCheckBalance, rainChecksFor } from '../../../data/rain-checks';
 import { money } from '../../../logic/cart';
 import { assignPlayer } from '../../../logic/reservation';
@@ -57,6 +60,7 @@ function Record({ customer }: { customer: Customer }) {
   const [showAll, setShowAll] = useState(false);
 
   const tier = memberTierOf(customer);
+  const idMe = idMeGroupOf(customer.id);
   const credits = rainChecksFor(customer.id);
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
 
@@ -82,9 +86,13 @@ function Record({ customer }: { customer: Customer }) {
       }
     >
       <Box sx={{ p: 2, pb: 4 }}>
-        <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
-          Customer ID {customer.id} · Course ID {customer.courseId}
-        </Typography>
+        <Stack direction="row" alignItems="center" gap={1} sx={{ flexWrap: 'wrap' }}>
+          <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
+            Customer ID {customer.id} · Course ID {customer.courseId}
+          </Typography>
+          {/* The badge is on the player row; the record is where someone goes to check it. */}
+          {idMe && <IdMeBadge group={idMe} compact />}
+        </Stack>
 
         <SectionHeader sx={{ px: 0 }}>Contact</SectionHeader>
         <Stack direction="column" gap={1.25}>
@@ -194,6 +202,12 @@ function AssignSeat({ route }: { route: ScreenProps<'customerRecord'>['route'] }
   const [query, setQuery] = useState('');
   const results = searchRoster(query, 8);
 
+  // A seat named like a customer but not linked to one. It pays the booking's rate until
+  // somebody links it, but there is no reason to make the counter search for a person the
+  // seat is already called.
+  const booking = state.bookings.find((x) => x.id === route.bookingId);
+  const suggested = booking && route.seat != null ? seatSuggestedRecord(booking, route.seat, state.customerEdits) : null;
+
   const link = (c: Customer) => {
     const b = state.bookings.find((x) => x.id === route.bookingId);
     if (b && route.seat != null) {
@@ -223,7 +237,46 @@ function AssignSeat({ route }: { route: ScreenProps<'customerRecord'>['route'] }
           placeholder="Search name, phone, email or ID"
         />
       </Box>
-      {query.trim().length < 2 && <Muted>Type at least two characters.</Muted>}
+      {suggested && (
+        <Box
+          data-customer-suggestion
+          sx={{
+            mx: 2,
+            mb: 1,
+            p: 1.5,
+            borderRadius: `${radius.md}px`,
+            border: `1.5px solid ${md3.primary}`,
+            bgcolor: md3.primaryContainer,
+          }}
+        >
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3 }}>
+            SUGGESTED · NOT LINKED
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, mt: 0.25 }}>{suggested.displayName}</Typography>
+          <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
+            {formatPhone(suggested.phone)} · {suggested.email}
+          </Typography>
+          <ButtonBase
+            onClick={() => link(suggested)}
+            sx={{
+              mt: 1,
+              minHeight: 44,
+              width: '100%',
+              borderRadius: `${radius.md}px`,
+              bgcolor: md3.primary,
+              color: md3.onPrimary,
+              fontSize: 14,
+              fontWeight: 700,
+            }}
+          >
+            Link {suggested.firstName} to this seat
+          </ButtonBase>
+          <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: 0.75 }}>
+            Pays the booking's rate until it is linked.
+          </Typography>
+        </Box>
+      )}
+      {query.trim().length < 2 && !suggested && <Muted>Type at least two characters.</Muted>}
       <List disablePadding>
         {results.map((c) => (
           <ListItemButton key={c.id} onClick={() => link(c)} sx={{ minHeight: 56 }}>
