@@ -1,5 +1,5 @@
 import type { MemberTypeKey } from '../../theme/tokens';
-import type { Golfer, IdMeGroup } from '../types';
+import type { Golfer } from '../types';
 import records from './customers.json';
 
 /**
@@ -187,19 +187,6 @@ export const isMember = (c: Customer): boolean => c.memberships.length > 0;
  * `Last, First` — the surname-first convention the tee sheet sorts and displays on.
  */
 export const bookingName = (c: Customer): string => c.sheetName ?? `${c.lastName}, ${c.firstName}`;
-
-/**
- * ID.me verification, derived from the customer types the course already records.
- *
- * Badge only, as agreed — the verify flow waits on how Birdie presents it today. Deriving it
- * from Military / Hero / Employee rather than storing a separate flag means a record can't
- * claim a verification its own types contradict.
- */
-export function idMeGroupOf(c: Customer): IdMeGroup | null {
-  if (c.customerTypes.includes('Military')) return 'military';
-  if (c.customerTypes.includes('Hero')) return 'first_responder';
-  return null;
-}
 
 /** Digits-only phone, for matching numbers written in inconsistent formats. */
 export const normalizePhone = (phone: string): string => phone.replace(/\D/g, '');

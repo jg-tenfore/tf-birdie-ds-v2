@@ -23,6 +23,7 @@ import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
 import { dayBookings } from '../../../state/pos-store';
+import { seatNetGreenFee } from '../../../logic/seat-pricing';
 import type { Booking, PlayerState, Transport } from '../../../types';
 import { BottomActionBar, BottomSheet, MobileScreen, TopAppBar } from '../../chrome';
 import type { BookingTab } from '../../navigation';
@@ -443,7 +444,9 @@ function FinancialTab({ booking: b }: { booking: Booking }) {
             )}
           </Box>
           {(() => {
-            const fee = playerFee(b, i, rates);
+            // The net, not the rate: the balance above is already net, and a row that
+            // disagrees with its own total is how a comped seat reads as unpaid.
+            const fee = seatNetGreenFee(b, i, playerFee(b, i, rates));
             return (
               <Typography variant="subtitle2" sx={{ color: p.noShow || (!p.paid && !fee) ? md3.outline : p.paid ? payBadges.paid.text : md3.error }}>
                 {p.noShow ? 'No-show' : p.paid ? 'Paid' : fee ? money(fee) : 'No charge'}
@@ -758,8 +761,12 @@ function HolderBody({ booking: b }: { booking: Booking }) {
 function NextInLine({ booking: b }: { booking: Booking }) {
   const { state } = usePos();
   const nav = useMobileNav();
+  // "The course in view", as agreed — `dayBookings` filters by date alone, so without this the
+  // stepper walks to a tee time on a course the operator has hidden and the sheet behind the
+  // panel does not move.
+  const onScreen = new Set(state.courses.filter((c) => c.visible).map((c) => c.id));
   const day = dayBookings(state)
-    .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+    .filter((x) => x.pay !== 'block' && x.pay !== 'event' && onScreen.has(x.course))
     .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
   const at = day.findIndex((x) => x.id === b.id);
   if (at < 0 || day.length < 2) return null;

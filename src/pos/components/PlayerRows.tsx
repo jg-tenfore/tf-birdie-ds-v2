@@ -437,36 +437,48 @@ function SeatMeta({
     b.playerStates[i]?.cartKey != null && `cart ${b.playerStates[i]?.cartKey}`,
   ].filter(Boolean) as string[];
 
+  // Why the seat is cheap, when it is.
+  const reason = sp.usesPunch
+    ? sp.reason
+    : sp.discount > 0
+      ? `${sp.reason} · was ${money(sp.gross)}`
+      : null;
+
   if (dense) {
     return (
-      <Typography
-        sx={{
-          fontSize: 10.5,
-          color: md3.onSurfaceVariant,
-          mt: 0.5,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {[
-          sp.rate && `${sp.rate.name} : ${money(sp.greenFee)}`,
-          `${sp.transport.name} : ${money(sp.transportFee)}`,
-          ...bits,
-        ]
-          .filter(Boolean)
-          .join(' · ')}
-      </Typography>
+      <Box sx={{ mt: 0.5 }}>
+        <Typography
+          sx={{
+            fontSize: 10.5,
+            color: md3.onSurfaceVariant,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {[
+            sp.rate && `${sp.rate.name} : ${money(sp.greenFee)}`,
+            `${sp.transport.name} : ${money(sp.transportFee)}`,
+            ...bits,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </Typography>
+        {/*
+          Dense takes a second line only when there is a reason to give. An ordinary seat keeps
+          the one-liner dense exists for; a comped or punch-paid seat would otherwise read as a
+          bare $0.00, and an unexplained zero is the thing that gets queried at month end.
+        */}
+        {reason && (
+          <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: md3.primary }}>{reason}</Typography>
+        )}
+      </Box>
     );
   }
 
   return (
     <Box sx={{ mt: 0.5 }}>
-      <MetaLine
-        left={sp.rate?.name ?? 'Green fee'}
-        right={money(sp.greenFee)}
-        note={sp.usesPunch ? sp.reason : sp.discount > 0 ? `${sp.reason} · was ${money(sp.gross)}` : null}
-      />
+      <MetaLine left={sp.rate?.name ?? 'Green fee'} right={money(sp.greenFee)} note={reason} />
       <MetaLine left={sp.transport.name} right={money(sp.transportFee)} />
       {bits.length > 0 && (
         <Typography sx={{ fontSize: 10.5, color: md3.outline, mt: 0.125 }}>{bits.join(' · ')}</Typography>

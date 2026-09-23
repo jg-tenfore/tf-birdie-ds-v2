@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { TRANSPORT_RATES, transportById } from '../data/rate-catalog';
 import { roster } from '../data/roster';
 import { buildTeeTimeCart, orderTotals } from './cart';
+import { COURSES } from '../data/courses';
+import { createInitialState, reducer } from '../state/pos-store';
+
+/** The demo's own courses, so a fixture booking resolves to one. */
+const ALL_COURSES_FOR_TEST = COURSES;
 import { availableCarts, signedOutCarts } from '../data/carts';
 import type { Booking } from '../types';
 import {
@@ -16,6 +21,7 @@ import {
   setPlayerDiscount,
   setPlayerHoles,
   reservationDue,
+  reservationSettled,
   setPlayerRate,
   setPlayerTransportFee,
   setPlayerTransportRate,
@@ -23,6 +29,7 @@ import {
 } from './reservation';
 import {
   seatCanSwitchHoles,
+  seatNetGreenFee,
   seatPrice,
   seatRate,
   seatRateGrid,
@@ -312,5 +319,83 @@ describe('what the row says and what the register charges', () => {
     const b = foursome();
     expect(orderTotal(b)).toBe(orderTotal(foursome()));
     expect(reservationDue(b)).toBe(72 * 4);
+  });
+});
+
+describe('the row agrees with the total above it', () => {
+  /**
+   * The third outing of the same fault, so it gets its own group.
+   *
+   * Round 3 kept shipping surfaces that showed a seat's *rate* while the number beside them
+   * showed what was actually owed. It happened in the cart, then on the phone's order screen,
+   * then on the Financial tab — a comped seat printing $54.00 on its row while the balance
+   * above it had already dropped by $54.00.
+   */
+  it('prices a comped seat at nothing everywhere that reports it', () => {
+    const b = foursome();
+    const comped = apply(b, setPlayerDiscount(b, 1, 'disc-comp'));
+    const rate = playerFee(comped, 1);
+    expect(rate).toBe(72); // the rate is unchanged — that is the point
+    expect(seatNetGreenFee(comped, 1, rate)).toBe(0);
+    expect(reservationDue(comped)).toBe(reservationDue(b) - 72);
+  });
+
+  it('prices a punch-paid seat at nothing everywhere that reports it', () => {
+    const b = foursome();
+    const holder = roster.find((c) => c.punchCards.some((p) => p.remaining > 0))!;
+    const punched = apply(b, applyPunchCard(b, 1, holder.id, holder.punchCards[0].name));
+    expect(seatNetGreenFee(punched, 1, playerFee(punched, 1))).toBe(0);
+    expect(reservationDue(punched)).toBe(reservationDue(b) - 72);
+  });
+});
+
+describe('a refund gives the money back on the seats', () => {
+  /**
+   * Refunding moved the booking's badge but left every `playerStates[].paid` true, so a
+   * refunded booking reopened in the reservation still read "Paid in full · nothing due" and
+   * offered "Open in register" — insisting it had been paid for a round just refunded.
+   */
+  it('leaves nothing settled after a whole-group refund', () => {
+    const paid = foursome({
+      pay: 'paid',
+      playerStates: [
+        { ...seat(), paid: true },
+        { ...seat(), paid: true },
+        { ...seat(), paid: true },
+        { ...seat(), paid: true },
+      ],
+    });
+    expect(reservationSettled(paid)).toBe(true);
+    const refunded = apply(paid, {
+      pay: 'refund',
+      playerStates: paid.playerStates.map((p) => ({ ...p, paid: false })),
+    });
+    expect(reservationSettled(refunded)).toBe(false);
+    expect(reservationDue(refunded)).toBe(72 * 4);
+  });
+});
+
+describe('a split order follows the reservation', () => {
+  /**
+   * Seats added one at a time were priced when they were added and never again, so comping a
+   * seat already on the order left the register charging the old amount. The phone had a
+   * re-sync on its order screen; the terminal had none.
+   */
+  it('reprices a seat already on the order when the reservation changes', () => {
+    const b = foursome();
+    let s = createInitialState({ bookings: [b], courses: ALL_COURSES_FOR_TEST });
+    s = reducer(s, { type: 'addSeatToOrder', bookingId: b.id, seat: 0 });
+    s = reducer(s, { type: 'addSeatToOrder', bookingId: b.id, seat: 1 });
+    const before = orderTotals(s.cart).total;
+
+    s = reducer(s, {
+      type: 'patchBooking',
+      bookingId: b.id,
+      patch: setPlayerDiscount(s.bookings.find((x) => x.id === b.id)!, 1, 'disc-comp'),
+    });
+
+    expect(orderTotals(s.cart).total).toBeLessThan(before);
+    // And it is still a two-seat order — repricing must not quietly widen it to the party.
+    expect(s.orderSeats).toEqual([0, 1]);
   });
 });

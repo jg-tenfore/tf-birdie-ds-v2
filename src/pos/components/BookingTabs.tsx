@@ -5,6 +5,7 @@ import { ROUND_STEPS, roundStepOf } from '../data/config';
 import { formatTimeLabel } from '../data/courses';
 import { money } from '../logic/cart';
 import { playerFee, playerName, reservationDue } from '../logic/reservation';
+import { seatNetGreenFee } from '../logic/seat-pricing';
 import { rateContext } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking, PlayerState } from '../types';
@@ -126,6 +127,15 @@ export function BookingFinancial({ booking: b }: { booking: Booking }) {
           },
         ],
         ...(type !== 'refund' ? { pay: 'rain_chk' as const } : { pay: 'refund' as const }),
+        // Give the money back on the seats too, not just on the booking's badge.
+        //
+        // Only the badge moved before, so a refunded booking reopened in the panel still read
+        // "Paid in full · nothing due" and offered "Open in register" — the reservation
+        // insisting it had been paid for a round the course had just refunded. A whole-group
+        // action clears every seat; a single refund clears that one.
+        playerStates: b.playerStates.map((p, i) =>
+          playerIdx == null || i === playerIdx ? { ...p, paid: false } : p,
+        ),
       },
     });
     toast(`${label} · ${name}`);
@@ -133,7 +143,7 @@ export function BookingFinancial({ booking: b }: { booking: Booking }) {
 
   // Per player: a seat switched to 18, or with an adjusted fee, owes its own amount.
   const owed = reservationDue(b, rates);
-  const adjusted = states.some((_, i) => playerFee(b, i, rates) !== b.price);
+  const adjusted = states.some((_, i) => seatNetGreenFee(b, i, playerFee(b, i, rates)) !== b.price);
 
   return (
     <>
@@ -216,7 +226,7 @@ export function BookingFinancial({ booking: b }: { booking: Booking }) {
                     color: p.paid ? '#16a34a' : md3.error,
                   }}
                 >
-                  {p.noShow ? '—' : p.paid ? 'Paid' : money(playerFee(b, i, rates))}
+                  {p.noShow ? '—' : p.paid ? 'Paid' : money(seatNetGreenFee(b, i, playerFee(b, i, rates)))}
                 </Typography>
                 <ButtonBase
                   onClick={() => log(i, 'refund')}
