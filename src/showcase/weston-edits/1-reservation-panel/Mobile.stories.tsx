@@ -85,7 +85,7 @@ import { adjustedParty, at18, growableParty, withBookings } from '../mobile-scen
  * - Nothing about the phone's presentation is waiting on Weston — the open questions in this
  *   section (slide-over vs modal, panel width) are tablet-only.
  * - **Doc drift, not behaviour:** the **Reservation** story's own blurb below still lists five
- *   tabs including Customer. The screen renders four (`WESTON_TABS`); the blurb is stale.
+ *   tabs. Corrected: the screen renders four (`WESTON_TABS`), and the blurb now says so.
  */
 const meta = {
   title: 'Weston Edits/1 · Reservation Panel/Mobile',
@@ -100,7 +100,8 @@ type Story = StoryObj;
 
 /**
  * The reservation for an unpaid party at the 18-hole club. Header facts on top (time,
- * course, pay state, party), then Players · Customer · Financial · Notes · Activity. Each
+ * course, pay state, party), then Players · Financial · Notes · Activity — four tabs since
+ * round 3 moved the customer record out from under the reservation. Each
  * player row carries holes, tee fee and transport; the pinned action is **Check in & pay**
  * with the amount the register will charge. Weston: "it takes you to the details of the
  * golf first".
