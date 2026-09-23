@@ -67,7 +67,28 @@ export function CartSignoutModal() {
         </Stack>
       }
     >
-      <Stack direction="row" gap={6} sx={{ flexWrap: 'wrap' }}>
+      {/*
+        A grid, not a wrapping row.
+
+        This was `<Stack gap={6}>`, and `gap` goes through MUI's spacing scale — so six meant
+        **48px**, not six. Thirty-five 46×40 keys floated in an acre of white, which is what
+        Weston was looking at when he said "the hell is that? Oh, that grid's nasty."
+
+        Four columns of full-width keys, 8px apart. The keys roughly doubled in area, and a
+        counter reaching for one on a tablet gets a 56dp target rather than a 40dp one.
+      */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+          gap: '8px',
+          // Nine rows of four do not fit a dialog, so the fleet scrolls rather than pushing
+          // the hint and the out-list off the bottom.
+          maxHeight: 340,
+          overflowY: 'auto',
+          pr: 0.5,
+        }}
+      >
         {CART_FLEET.map((cart) => {
           const holder = free.has(cart) ? null : cartHolder(cart, day);
           const mine = cart === held;
@@ -84,10 +105,9 @@ export function CartSignoutModal() {
                     : `Sign out cart ${cart}`
               }
               sx={{
-                width: 46,
-                height: 40,
+                height: 56,
                 borderRadius: `${radius.sm}px`,
-                fontSize: 14,
+                fontSize: 17,
                 fontWeight: 800,
                 border: `1.5px solid ${mine ? md3.primary : md3.outlineVariant}`,
                 bgcolor: mine ? md3.primaryContainer : holder ? md3.surfaceContainer : md3.onPrimary,
@@ -99,7 +119,7 @@ export function CartSignoutModal() {
             </ButtonBase>
           );
         })}
-      </Stack>
+      </Box>
       <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mt: 1.5 }}>
         A struck-through number is already out. Hover to see who has it.
       </Typography>

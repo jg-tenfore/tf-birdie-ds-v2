@@ -15,6 +15,7 @@ import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import AttachMoney from '@mui/icons-material/AttachMoney';
 import Backspace from '@mui/icons-material/Backspace';
+import Badge from '@mui/icons-material/Badge';
 import BarChart from '@mui/icons-material/BarChart';
 import Block from '@mui/icons-material/Block';
 import CalendarViewDay from '@mui/icons-material/CalendarViewDay';
@@ -137,6 +138,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   arrow_drop_down: ArrowDropDown,
   attach_money: AttachMoney,
   backspace: Backspace,
+  badge: Badge,
   bar_chart: BarChart,
   block: Block,
   calendar_view_day: CalendarViewDay,

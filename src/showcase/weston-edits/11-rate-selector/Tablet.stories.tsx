@@ -32,9 +32,35 @@ import type { Booking } from '../../../pos/types';
  * ## The component
  *
  * `RateExpand` (`src/pos/components/RateExpand.tsx`), rendered by `PlayerRows` under the seat
- * whose ⚙ tuner is pressed, in a box marked `data-rate-expand="{seat}"`. Four sections in the
- * order money gets decided — **green fee → transport → discount → punch card** — then a footer
- * carrying Reset, Save fees to all, and the three running totals.
+ * whose ⚙ tuner is pressed, in a box marked `data-rate-expand="{seat}"`. **Three** sections in
+ * the order money gets decided — **green fee → transport → punch card** — between a title bar
+ * carrying Reset, Save fees to all and ✕, and a footer carrying the three running totals over
+ * **Cancel** and **Save changes**.
+ *
+ * There were four. The **Discount** row went in round 4:
+ *
+ * > *"You can probably get rid of discounting here. The discounts are generally kind of built
+ * > into the rates… you have a discounted rate, which is like a rate that you set up, but then
+ * > you can discount on the order level. This would just kind of be weird because we'd introduce
+ * > a discount to a tee fee here. It doesn't quite make sense, especially the way we structure
+ * > it."*
+ *
+ * Discounting survives in the two places that match how courses are configured: a rate that *is*
+ * the discount (they are all over the grid — `Membership Weekday $0.00 · 100% off`), and the
+ * order-level discount in the register.
+ *
+ * ## Committing
+ *
+ * Weston went looking for a way to say he was done and did not find one — *"I was looking for
+ * one… just like a confirm, like a save, just to close it."* So the editor is framed like a
+ * dialog: **✕** top right, **Cancel** and **Save changes** bottom left, under the summary he
+ * wanted to read first (*"it'll tell you, okay, they're getting this green fee, transport, this
+ * is the total… and just, okay, I'm done"*).
+ *
+ * Tiles still commit as they are tapped, because watching the other three players reprice is the
+ * point of editing in place. **Cancel** is therefore a real undo: `before` captures every
+ * player's state on mount and Cancel writes it back, which also takes back a **Save fees to
+ * all** that swept the group.
  *
  * Nothing it decides lives on the component. Every tile dispatches `patchBooking` and the editor
  * re-reads the booking, which is why the row's meta line, the footer, the order rail and the
@@ -47,12 +73,14 @@ import type { Booking } from '../../../pos/types';
  * | `fee` | the row's tee-fee box | absent | A typed-over green fee. **Choosing a tile clears it** — the two cannot both be the price |
  * | `transportRateId` | a transport tile | absent — the default row for the booking's mode | The transport row. It carries its own `mode`, so picking *Walking* also moves the seat's walk/ride/push state |
  * | `transportFee` | typed | absent | A typed-over transport price, cleared the same way |
- * | `discountId` · `discountManual` | a discount tile · **Amount…** | absent | The preset, and the amount when it is the typed one |
  * | `punch` | the punch row (17 · Punch Cards) | absent | `{ customerId, cardName }` — settles the green fee, leaves the ride billed |
  *
- * Two pieces of local state, deliberately not on the store: `filter` (the search box) and
- * `showAll` (the overflow toggle). They are about reading the grid, not about the booking, and
- * they should not survive closing the editor.
+ * `discountId` and `discountManual` are still on `PlayerState` and still honoured by the pricing
+ * seam — the register writes them. This editor no longer does.
+ *
+ * Two pieces of local state, deliberately not on the store: `catalogOpen` (the overflow dialog)
+ * and `before` (the undo snapshot). Neither is about the booking, and neither should survive
+ * closing the editor.
  *
  * ## Eligible, and what that does *not* mean
  *
@@ -75,13 +103,14 @@ import type { Booking } from '../../../pos/types';
  * | Tile | min-width 92px, 9×5px padding, `radius.sm`, 11.5px/700 label over a 10.5px amount |
  * | Selected tile | `md3.primary` 1.5px border on `md3.primaryContainer`, `aria-pressed="true"` |
  * | Ineligible tile | `opacity: .55`, `title="Not this player's rate — staff override"`, **not disabled** |
- * | Overflow kicks in | `grid.length > 12`. Below that there is no filter box and no Show/Hide |
- * | Filter box | 130px, `aria-label="Filter rates"`, matches on rate name across both sections |
+ * | Overflow kicks in | `grid.length > 12`. Below that every rate is on the row |
+ * | Truncated to | 8 eligible tiles plus a **+N more…** tile that opens the catalog dialog |
+ * | Catalog dialog | 620px, `aria-label="Search rates"`, searches both groups at once |
  * | This slot | Thursday 4:00 PM twilight nine — **10** standard rates, **24 of 26** heavy ones |
  * | Eligible here | 1 of 10 standard for an unlinked guest (the open rack row); 8 of 24 heavy |
  * | Transport catalog | Riding Cart $26.82 · Cart Plus $32 · Member Cart $0 · **Walking $8.58** · Walking, member $0 · Push Cart $6 |
- * | Discount presets | Comp · 50% off · 25% off · Employee, plus **Amount…** (typed, reason "Manual discount") |
- * | Footer | Green fee (struck through when discounted or punched) · Transport · Total |
+ * | Footer | Green fee (struck through when discounted or punched) · Transport · Total, then Cancel / Save changes |
+ * | Buttons | 40dp tall — round 4 asked for bigger targets throughout ("we need to plan for those") |
  *
  * ## Scope
  *
@@ -99,11 +128,12 @@ import type { Booking } from '../../../pos/types';
  * | Story | Scenario | What it is for |
  * |---|---|---|
  * | **Opens On The Row** | `openParty`, seat 1 | That the tuner expands under the seat rather than taking the screen. Asserts the grid and `aria-expanded` |
- * | **The Whole Editor** | `openParty`, seat 1 | All four rows at rest, for reading |
+ * | **The Whole Editor** | `openParty`, seat 1 | All three rows at rest, with the title bar and the commit row, for reading |
  * | **Eligible First Then The Rest** | `adjustedParty`, seat 2 — Kim, David, a member | That the member's rows sort above `Weekday Junior`, and that the override tile carries the warning instead of being disabled |
- * | **Heavy Catalog** | `rateCatalog: 'heavy'` | 24 tiles: eight eligible shown, sixteen behind **Show**, filter box in the header |
- * | **Show All Rates** | heavy | The override path — one tap, not a manager screen. Checks the control becomes **Hide** |
- * | **Filtering The Heavy Catalog** | heavy | Typing `senior` over both sections at once |
+ * | **Heavy Catalog** | `rateCatalog: 'heavy'` | 24 tiles: eight eligible on the row, the rest behind **+N more…** |
+ * | **Open The Full Catalog** | heavy | The override path — one tap to every rate this tee time can sell |
+ * | **Searching The Catalog** | heavy | Typing `senior` over both groups at once, inside the dialog |
+ * | **Cancel Puts It Back** | `openParty` | That Cancel is an undo, not just a close — the rate returns to what it was |
  * | **Transport Tiles** | `openParty` | That walking costs $8.58 and the member cart is dimmed, not hidden |
  * | **Save Fees To All** | `openParty` | One decision across the party; checks all three tee-fee fields land on $21.00 |
  * | **Reset Puts It Back** | `openParty` | That an accidental tap is one tap to undo |
@@ -119,8 +149,12 @@ import type { Booking } from '../../../pos/types';
  * - **Save fees to all copies the rate and nothing else.** Not the transport row, not the
  *   discount, not a punch. That is almost certainly right (a group rarely shares a discount
  *   reason) but it has not been put to Weston.
- * - **Amount… has no tile state.** The typed discount commits on blur and then reads as
- *   "Amount…" again; the reason shows on the row and in the footer, not on the tile.
+ * - **Save changes and ✕ do the same thing.** Both close and keep; only Cancel reverts. Weston
+ *   described the button he wanted as "just to close it", so this matches what he asked for —
+ *   but a ✕ that keeps changes while a Cancel beside it discards them is worth one more look.
+ * - **Nothing warns on close.** Tapping another player's tuner closes this editor and keeps the
+ *   edits, silently. That is almost certainly right for a counter moving down a foursome, and it
+ *   means the Cancel is only reachable while you are still on the seat.
  */
 const meta = {
   title: 'Weston Edits/11 · Rate Selector/Tablet',
@@ -263,25 +297,25 @@ export const HeavyCatalog: Story = {
   ),
   play: async ({ canvasElement }) => {
     const expand = await openRates(canvasElement, openParty(), 0);
-    // The filter only appears on a heavy card — ten tiles don't need one.
-    await expect(within(expand).getByLabelText('Filter rates')).toBeTruthy();
-    // Eligible for an unlinked guest: the open rates. Shown.
+    // Eligible for an unlinked guest: the open rates. Shown, up to eight of them.
     await expect(hasTile(expand, 'Rack Prime')).toBe(true);
-    // Everything else is behind Show.
+    // Everything else is behind the door, not on the row.
     await expect(hasTile(expand, 'Resident Senior')).toBe(false);
-    await expect(within(expand).getByRole('button', { name: 'Show' })).toBeTruthy();
+    await expect(within(expand).getByText(/^\+\d+ more…$/)).toBeTruthy();
   },
 };
 
 /**
- * **Show all rates.** One tap opens the other sixteen. This is the override path — a resident
- * who left their card at home, a league player being put on the league rate — and it is one
- * tap deep rather than hidden behind a manager screen.
+ * **The door opens the catalog.** Tapping `+N more…` brings up every rate this tee time can
+ * sell, eligible ones first, with a search box — the override path for a resident who booked
+ * as a guest, or a comp nobody qualifies for.
  *
- * The play test opens it and checks a rate that was collapsed is now on screen, and that the
- * control has become **Hide**.
+ * This replaced an inline **Show** toggle that printed all twenty-six tiles into the player
+ * row. Weston, round 4: *"I've seen some where they might have like 30 rates and they're all
+ * applicable… it would just be a lot here. I wonder if we just truncate and there's an option
+ * to open more up."*
  */
-export const ShowAllRates: Story = {
+export const OpenTheFullCatalog: Story = {
   render: () => (
     <Screen
       edition="weston"
@@ -292,21 +326,23 @@ export const ShowAllRates: Story = {
   ),
   play: async ({ canvasElement }) => {
     const expand = await openRates(canvasElement, openParty(), 0);
-    await userEvent.click(within(expand).getByRole('button', { name: 'Show' }));
-    await waitFor(() => expect(hasTile(expand, 'Resident Senior')).toBe(true));
-    await expect(within(expand).getByRole('button', { name: 'Hide' })).toBeTruthy();
+    await userEvent.click(within(expand).getByText(/^\+\d+ more…$/));
+    const dialog = await within(document.body).findByRole('dialog');
+    await waitFor(() => expect(within(dialog).getByText('Resident Senior')).toBeTruthy());
+    await expect(within(dialog).getByText('Rack Prime')).toBeTruthy();
   },
 };
 
 /**
- * **Filtering.** On a 24-tile grid, typing beats hunting. The filter runs over both sections at
- * once, so "senior" leaves the senior rates and nothing else — and because it is a filter on an
- * already-narrowed list, what it searches is still only what this tee time can sell.
+ * **Searching the catalog.** On a twenty-six rate course, typing beats hunting. The search runs
+ * over both groups at once, so "senior" leaves the senior rates and nothing else — and because
+ * it searches an already-narrowed list, what it finds is still only what this tee time can
+ * sell.
  *
- * The play test opens the full grid, types `senior`, and checks the rack rate has gone while
- * the two senior rows remain.
+ * The play test opens the catalog, types `senior`, and checks the rack rate has gone while both
+ * senior rates remain.
  */
-export const FilteringTheHeavyCatalog: Story = {
+export const SearchingTheCatalog: Story = {
   render: () => (
     <Screen
       edition="weston"
@@ -317,11 +353,12 @@ export const FilteringTheHeavyCatalog: Story = {
   ),
   play: async ({ canvasElement }) => {
     const expand = await openRates(canvasElement, openParty(), 0);
-    await userEvent.click(within(expand).getByRole('button', { name: 'Show' }));
-    await userEvent.type(within(expand).getByLabelText('Filter rates'), 'senior');
-    await waitFor(() => expect(hasTile(expand, 'Rack Prime')).toBe(false));
-    await expect(hasTile(expand, 'Resident Senior')).toBe(true);
-    await expect(hasTile(expand, 'Non Resident Senior')).toBe(true);
+    await userEvent.click(within(expand).getByText(/^\+\d+ more…$/));
+    const dialog = await within(document.body).findByRole('dialog');
+    await userEvent.type(within(dialog).getByLabelText('Search rates'), 'senior');
+    await waitFor(() => expect(within(dialog).queryByText('Rack Prime')).toBeNull());
+    await expect(within(dialog).getByText('Resident Senior')).toBeTruthy();
+    await expect(within(dialog).getByText('Non Resident Senior')).toBeTruthy();
   },
 };
 
@@ -399,5 +436,45 @@ export const ResetPutsItBack: Story = {
     await waitFor(() => expect(feeOf(canvasElement, 0)).not.toBe(before));
     await userEvent.click(within(expand).getByRole('button', { name: 'Reset' }));
     await waitFor(() => expect(feeOf(canvasElement, 0)).toBe(before));
+  },
+};
+
+/**
+ * **Cancel is an undo, not just a close.**
+ *
+ * The editor commits as you tap, so that the rest of the party reprices while you work. That
+ * makes a way back mandatory rather than polite: Cancel restores every player's state as it was
+ * when the editor opened and collapses the row.
+ *
+ * The play test changes the rate, watches the row's fee move, cancels, and checks the fee is
+ * back where it started **and** the editor has closed.
+ */
+export const CancelPutsItBack: Story = {
+  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  play: async ({ canvasElement }) => {
+    const b = openParty();
+    const expand = await openRates(canvasElement, b, 0);
+    const before = feeOf(canvasElement, 0);
+    await userEvent.click(within(expand).getByRole('button', { name: /^Weekday Resident/ }));
+    await waitFor(() => expect(feeOf(canvasElement, 0)).not.toBe(before));
+    await userEvent.click(within(expand).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(feeOf(canvasElement, 0)).toBe(before));
+    await waitFor(() => expect(canvasElement.querySelector('[data-rate-expand="0"]')).toBeNull());
+  },
+};
+
+/**
+ * **No Discount row.** Cut in round 4 — a discount on a green fee is not how courses are set up.
+ * The play test asserts the heading is gone and that the three that remain are still there, so
+ * this cannot pass by the editor failing to render at all.
+ */
+export const NoDiscountRow: Story = {
+  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  play: async ({ canvasElement }) => {
+    const expand = await openRates(canvasElement, openParty(), 0);
+    await expect(within(expand).queryByText('Discount')).toBeNull();
+    await expect(within(expand).getByText('Transport')).toBeTruthy();
+    await expect(within(expand).getByText('Punch card')).toBeTruthy();
+    await expect(within(expand).getByText(/^Green fee/)).toBeTruthy();
   },
 };

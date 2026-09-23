@@ -89,7 +89,7 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // into the tee sheet behind it — so the background is marked `inert`, which takes it out of
   // the tab order, out of the accessibility tree and out of pointer events together.
   const panel = state.reservationPanel;
-  const panelIsModal = Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop === 'scrim';
+  const panelIsModal = Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze';
 
   return (
     <PosShell>
