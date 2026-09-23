@@ -22,5 +22,21 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
+  /*
+   * `.storybook` is type-checked, and it has to be listed by name to be.
+   *
+   * It was left out entirely, so a type error in `preview.tsx` never reached CI — and that file
+   * is not a stub: it carries the story sort order, the viewports, and the four Weston variant
+   * globals with the decorator that feeds them into state. A silent type hole in the one file
+   * every story renders through is the wrong place to have one.
+   *
+   * `files`, not `include`, because TypeScript's wildcard matching never descends into a
+   * directory whose name begins with a dot. Both `".storybook"` and `".storybook/**‍/*.ts"`
+   * match nothing at all — the config reads as though the hole is closed while it is still
+   * open, which is worse than leaving it obviously open. Three entries; a fourth file added
+   * here is the kind of omission a reviewer catches, where a glob quietly matching nothing is
+   * not.
+   */
+  "files": [".storybook/main.ts", ".storybook/manager.ts", ".storybook/preview.tsx"],
   "include": ["src"]
 }

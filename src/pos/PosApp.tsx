@@ -1,11 +1,22 @@
+import { Suspense, lazy } from 'react';
 import { Box, Snackbar } from '@mui/material';
 import { elevation, md3, radius, shell } from '../theme/tokens';
 import { ContextMenus } from './components/ContextMenus';
 import { LeftPanel } from './components/LeftPanel';
-import { PosView } from './components/PosView';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
+
+/**
+ * The register, split out of the first load.
+ *
+ * The terminal opens on the tee sheet — the register is a place you go, not the place you
+ * land, and in Weston's edition you now reach it through the reservation rather than by
+ * clicking a tee time. It brings the item catalog, the modifier tables and the product imagery
+ * with it, none of which the tee sheet touches. A story or a deep link that opens straight on
+ * the register pays one fetch for it instead of every load paying for it up front.
+ */
+const PosView = lazy(() => import('./components/PosView').then((m) => ({ default: m.PosView })));
 import { ReservationPanel } from './components/ReservationPanel';
 import { CustomerModal } from './components/CustomerModal';
 import { CartSignoutModal } from './components/CartSignout';
@@ -86,7 +97,15 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       {/* `display: contents` so marking the background inert costs it no layout. */}
       <Box component="div" inert={panelIsModal || undefined} sx={{ display: 'contents' }}>
         <LeftPanel />
-        {state.view === 'pos' ? <PosView /> : <TeeSheetView />}
+        {state.view === 'pos' ? (
+          // The fallback is a plain surface, not a spinner: the register's chunk resolves in a
+          // frame or two off a warm cache, and a spinner that flashes reads worse than nothing.
+          <Suspense fallback={<Box sx={{ flex: 1, bgcolor: md3.surface }} />}>
+            <PosView />
+          </Suspense>
+        ) : (
+          <TeeSheetView />
+        )}
         <TeeSheetSidebar />
       </Box>
 
