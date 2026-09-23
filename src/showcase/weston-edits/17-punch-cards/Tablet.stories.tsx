@@ -12,11 +12,11 @@ import { cardOf, golfer, ownCardApplied, punchHolder, punchParty, sheetWithPanel
 /**
  * Weston Edits / 17 · Punch Cards / Tablet
  *
- * **A punch card holds prepaid rounds.** That sentence is the whole design, and getting it
- * wrong is what the old prototype did: its transport list carried a row called *Free Punch
- * Cart*, which spent a punch to pay for a **ride**. Those are different goods. A walker and a
- * rider would hand over the same punch and get very different value for it, and the course
- * would have sold a round's worth of credit for a cart.
+ * **A punch card holds prepaid rounds.** That sentence is the whole design, and getting it wrong
+ * is what the old prototype did: its transport list carried a row called *Free Punch Cart*, which
+ * spent a punch to pay for a **ride**. Those are different goods. A walker and a rider would hand
+ * over the same punch and get very different value for it, and the course would have sold a
+ * round's worth of credit for a cart.
  *
  * So the punch lives with the round, not the ride:
  *
@@ -28,15 +28,95 @@ import { cardOf, golfer, ownCardApplied, punchHolder, punchParty, sheetWithPanel
  * | **When it is spent** | At **check-in**, not when it is applied |
  * | **Where it lives** | The fourth row of the in-place rate editor, under green fee, transport and discount — the order money gets decided in |
  *
- * The last two are worth dwelling on. **The punch comes off the card at check-in** because an
- * applied punch on a reservation nobody showed up for has not been used: pricing a reservation
- * stays a pure read of the booking, and a card is only decremented when a round actually
- * happens. The panel says so in as many words under the applied card, so nobody has to guess
- * whether cancelling the reservation costs the golfer a round.
+ * There is deliberately **no punch-card transport row** in `TRANSPORT_RATES`. That absence is the
+ * fix, and it is worth stating as a rule rather than leaving as an omission.
  *
- * And a punch is **not a discount**. Applying one clears any discount on the seat, because
- * "50% off a fee that has already been paid by a punch" is not a thing anyone means. The row
- * keeps the round's gross so it can still show what was covered.
+ * ## The component
+ *
+ * `PunchRow`, a local component inside `src/pos/components/RateExpand.tsx`, rendered as the
+ * editor's fourth section under the label **PUNCH CARD**.
+ *
+ * | | |
+ * |---|---|
+ * | Nothing applied | a tile per card the seat's own record still has rounds on (`usablePunchCards`), reading `{card.name}` over `{remaining} of {total} left`, then **Use a customer's card** |
+ * | Searching | an inline `Search a card holder` field over `searchRoster(query, 4)`, **filtered to holders with rounds left** — searching is not the place to discover somebody's card is empty. Each result reads `{name}` over `{remaining} left` |
+ * | Applied | one selected tile, `{card.name}` over `applied · tap to remove`, and a note beneath |
+ * | The note | "The punch comes off the card at check-in, not now." plus " Another customer's card." when `punch.customerId` is not the seat's own record |
+ *
+ * | State | Where | Default | What it does |
+ * |---|---|---|---|
+ * | `PlayerState.punch` | the booking | absent | `{ customerId, cardName }` — who is paying and with which card |
+ * | `query` · `searching` | local to `PunchRow` | `''` · `false` | The roster search. Not on the store, because it is about finding a card, not about the booking |
+ *
+ * The write is `applyPunchCard(b, i, customerId, cardName)`; removal is `clearPunchCard`.
+ *
+ * ## What a punch does to the price
+ *
+ * In `seatPrice` (`src/pos/logic/seat-pricing.ts`):
+ *
+ * - `greenFee` is **0** when `usesPunch`, however the round was priced;
+ * - `gross` is kept, so the row and the footer can still show what was covered and the strike-
+ *   through has something to strike;
+ * - `transportFee` is untouched;
+ * - `reason` becomes the card's name, which is what the player row prints instead of a bare zero;
+ * - `total` is therefore exactly the transport.
+ *
+ * Two consequences the counter can feel. **A punch is not a discount** — `applyPunchCard` clears
+ * any discount on the seat, because "50% off a fee that has already been paid by a punch" is not a
+ * thing anyone means. And **removing a punch reprices, it does not restore**: the green fee goes
+ * back to whatever the seat's rate says now, not to a remembered number.
+ *
+ * **The punch comes off the card at check-in, not when it is applied.** Pricing a reservation
+ * stays a pure read of the booking, and a card is only decremented when a round actually happens —
+ * so a party that never turns up keeps its rounds. The editor says so in as many words, because
+ * otherwise the counter has to ask somebody.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Tile | the editor's standard tile — min-width 92, `radius.sm`, 11.5px/700 over a 10.5px amount |
+ * | Applied tile | `md3.primary` border on `md3.primaryContainer`, `aria-pressed="true"` |
+ * | The note | 10.5px `md3.onSurfaceVariant` |
+ * | Search | inline `InputBase`, full width, `aria-label="Search a card holder"`, **4** results |
+ * | This fixture | seat 2 holds a **10-Round Punch Card, 6 of 10 left**; the riding cart beside it stays at **$26.82** |
+ * | Walking, punched | green fee $0.00, transport **$8.58** — the trail fee a walk/ride boolean cannot express |
+ *
+ * ## Scope
+ *
+ * Weston edition only, inside the in-place rate editor on the reservation panel's **Players** tab,
+ * on an editable seat. A punched seat reads back on the row through **12 · Player Row Detail**
+ * (the card's name in place of the reason) and through the order line, because both come from the
+ * same `seatPrice`.
+ *
+ * The transport catalog this section defines itself against is in **11 · Rate Selector**; the
+ * eligibility model behind both is in **18 · Rate Catalog**.
+ *
+ * None of the four Storybook toolbar globals change this section.
+ *
+ * ## The stories
+ *
+ * | Story | Seat | What it is for |
+ * |---|---|---|
+ * | **Their Own Card** | 2 of `punchParty` | The common case. Applies the card and checks the tee fee drops to **$0.00**, the green-fee line carries the **card's name**, and the riding cart is **still $26.82**. That last number is the point of the whole section |
+ * | **On The Row** | 2 of `ownCardApplied` | The applied state at rest: $0.00 with the card named beside it, transport untouched, and the fee field outlined as *adjusted* with a reset — a punched seat is an edited seat, and the row never pretends the round was free |
+ * | **Another Customer's Card** | 3 of `punchParty` | An unlinked guest paying rack, covered by a member's card. Searches the roster, takes the card, and checks the panel says in small type that it was **another customer's card** — six months later that note is the only answer to "why did that guest not pay" |
+ * | **Spent At Check-In** | 2 of `ownCardApplied` | One line that settles a question the counter would otherwise have to ask somebody |
+ * | **Removing It Reprices Back** | 2 of `ownCardApplied` | Pressing the applied tile again. Asserts the fee lands exactly on the **rate's** price, not on a remembered one |
+ * | **Rounds Not Rides** | 2 and 3, built in the render | The case that made the point: one punched walker, one punched rider on a member's card. Both green fees settled; the rider's cart still billed and the walker's trail fee too. Under *Free Punch Cart* those two would have spent the same punch for different goods — and the walker could not have spent one at all |
+ *
+ * ## Still open
+ *
+ * - **Nothing decrements a card.** "Spent at check-in" is the rule and the note says so, but
+ *   check-in does not actually write it: `usablePunchCards` reads the roster, and the roster is
+ *   never reduced. A real build needs that write, plus the reversal when a check-in is undone.
+ * - **The first card wins.** A customer holding two cards is offered both from their own record,
+ *   but the roster search applies `usablePunchCards(c)[0]` without asking which.
+ * - **No rounds-remaining feedback after applying.** The tile stops showing the count once the
+ *   card is applied, so "six of ten left" — the thing being read back to the golfer — disappears at
+ *   the moment it is used.
+ * - **Nothing stops the same card paying two seats.** A member covering three guests would spend
+ *   three punches, which is probably right; there is no check that they have three.
  */
 const meta = {
   title: 'Weston Edits/17 · Punch Cards/Tablet',

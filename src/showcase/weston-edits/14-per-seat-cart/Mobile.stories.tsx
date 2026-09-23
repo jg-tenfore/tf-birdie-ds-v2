@@ -6,54 +6,110 @@ import { adjustedParty, at18, openParty, partlyPaidNamed, seatOrder, seatsTotal,
 /**
  * Weston Edits / 14 · Per-seat Cart / Mobile
  *
- * Weston, on the third call, describing how a group that splits the bill actually gets rung
- * up: *"you hit add to cart for each player, and then you hit save."*
+ * Weston, on the third call, describing how a group that splits the bill actually gets rung up:
+ * *"you hit add to cart for each player, and then you hit save."*
  *
  * Until this round the reservation had one way into the order — **Check in & pay**, which takes
  * the whole booking. That is right for the common case and wrong for the one that ties up the
  * counter: a foursome where two are paying now, one is paying with the other's card, and the
- * fourth is still in the parking lot. So every editable player row carries a small cart chip
+ * fourth is still in the parking lot. So every editable player row carries a small **cart chip**
  * beside the ⋮, and the order is built a seat at a time.
  *
- * | | What it puts on the order |
+ * ## The component
+ *
+ * A `ControlChip` on the player row in `src/pos/mobile/screens/tee/ReservationPlayers.tsx`. It
+ * dispatches `{ type: 'addSeatToOrder', bookingId, seat }` — **the terminal's reducer, unchanged**
+ * (`src/pos/state/pos-store.ts`), which is what makes the two surfaces agree about what a split
+ * order is.
+ *
+ * | | Glyph | `aria-label` | `aria-pressed` | Fill |
+ * |---|---|---|---|---|
+ * | Not yet added | `add_shopping_cart` | `Add {name} to the order` | `false` | transparent, `md3.outline` border |
+ * | Already on it | `shopping_cart` | `{name} is on the order` | `true` | `md3.primaryContainer` |
+ *
+ * The label carries the state rather than a word beside the glyph: at 402 an "In order" caption
+ * would cost a control's worth of width on a strip that is already **9 | 18**, fee, transport,
+ * cart and ⋮. The play tests below assert on the label, because it is both the accessible name
+ * and what a screen reader announces. `aria-pressed` is set too, so the chip does not read as a
+ * plain button.
+ *
+ * Locked seats — paid or no-show — carry no chip at all. There is nothing left to charge them
+ * for, which is the same rule that locks their holes, fee and transport.
+ *
+ * ## Where it deliberately differs from the tablet
+ *
+ * | | Tablet | Phone | Why |
+ * |---|---|---|---|
+ * | Feedback | **In order** printed beside the name | the chip's fill, glyph and label | width |
+ * | The rail | adding re-expands the 56px strip | **nothing to re-expand** | `ViewOrderBar` (`screens/register/parts.tsx`) returns null while the cart is empty, so the space was never spent. The order is a screen on the Register destination, with a count badge on the navigation bar |
+ * | Repricing an order | nothing dispatches `rebuildOrderSeats` | `OrderScreen` does, on mount and whenever the reservation and the order disagree | the phone leaves the reservation to look at the order, so it has to re-check on the way back |
+ *
+ * That third row is why **13 · Order Rail has no Mobile half**: the promise is kept, by different
+ * means, and there is no rail to write about.
+ *
+ * ## The defect this feature turned up, and the fix
+ *
+ * The Weston edition treats the reservation as the source of truth for the golf and re-syncs the
+ * order whenever the two disagree — which is what keeps "Edit reservation → back" honest. Built
+ * before per-seat ordering, the comparison in `screens/register/OrderScreen.tsx` was made against
+ * the **whole booking**:
+ *
+ * ```ts
+ * const staleGolf = weston && booking != null && state.cart.some((i) => i.isCheckIn) &&
+ *   JSON.stringify(golfLines(state.cart)) !==
+ *   JSON.stringify(golfLines(cartLogic.buildTeeTimeCart(booking, state.courses, rateContext(state))));
+ * useEffect(() => { if (staleGolf && booking) dispatch({ type: 'loadBooking', bookingId: booking.id }); }, …);
+ * ```
+ *
+ * Two of four seats can never equal all four, so a split order was **stale by construction**: the
+ * effect fired on mount and `loadBooking` rebuilt the whole party. Tapping Add on two rows and
+ * opening the Register tab charged for four — **$196 where the operator had chosen $98**.
+ *
+ * It is fixed. The comparison is now built from `state.orderSeats`, so a split order is compared
+ * against the seats it actually holds, and the effect dispatches `rebuildOrderSeats` rather than
+ * `loadBooking` when there are seats. A split bill stays split and still reprices when the
+ * reservation changes underneath it.
+ *
+ * ## Specs
+ *
+ * | | |
  * |---|---|
- * | The cart chip on a row | That one seat — its holes, its rate, its ride, its tax |
- * | The chip on a second row | Both seats, on the same order |
- * | **Check in & pay** | The whole booking, topping up whatever is already there |
+ * | Frame | 402 × 797 (`mobile.frame`) |
+ * | Chip | 36px tall, `radius.sm`, 16px glyph — the row's control strip, not a standalone target |
+ * | ⋮ | 48px (`mobile.touchTarget`) |
+ * | Reservation | `{ name: 'bookingDetail' }`, a **push**; the order is `{ name: 'order' }` on the Register destination, also a push |
+ * | Order bar | `ViewOrderBar` is `null` at zero lines; the navigation bar badges Register with `orderLines` |
+ * | Pinned action | `Check in & pay · {total}` on the reservation; **`Charge {total}`** on the order screen |
+ * | This fixture | `openParty`, four players — two seats and the whole booking are different totals, which is what the split stories assert on |
  *
- * It is the same reducer as the terminal's (`addSeatToOrder`), which is what makes the two
- * surfaces agree, and the same three guarantees hold here:
+ * ## Scope
  *
- * - **Adding a seat never rebuilds the order.** Adding to the booking already on the order
- *   keeps the retail and F&B lines and adds the seat's golf; adding a seat from a *different*
- *   booking starts a fresh order, because two parties on one order is a receipt nobody can read.
- * - **Check in & pay tops up rather than replaces.** It clears `orderSeats` — the order is now
- *   the whole booking — and rebuilds the golf from the reservation, so seats added one at a
- *   time keep every adjustment made to them. The adjustments live on the booking, not on the
- *   order, which is what makes that true rather than lucky.
- * - **Paid and no-show seats carry no chip at all.** There is nothing left to charge them for.
+ * Weston edition only, on the reservation's **Players** tab, on editable seats. `orderSeats` and
+ * `selectedBookingId` live on the shared store, so a split built on the phone is the same state
+ * the terminal's rail would render.
  *
- * The first of those three holds on the reservation and breaks on the order screen: see **The
- * Order They Split** below, which documents a live defect — the Weston edition's golf re-sync
- * rebuilds a per-seat order into the whole booking the moment the order is opened.
+ * None of the four Storybook toolbar globals change this screen.
  *
- * **What the phone does differently, and why 13 · Order Rail has no Mobile half.** The
- * terminal's third guarantee is that adding anything **re-expands the collapsed order rail** —
- * an order you cannot see is one nobody checks before charging it. The phone has no rail to
- * re-expand and nothing to collapse: the order is a screen on the Register destination, and
- * `ViewOrderBar` (`screens/register/parts.tsx`) simply **returns null while the cart is
- * empty**, so the space Weston wanted back on the tee sheet was never spent in the first place.
- * The same promise is kept by different means — a badge on the Register destination in the
- * navigation bar counts what is waiting, and the order is one tap from anywhere.
+ * ## The stories
  *
- * The other difference is the feedback on the row itself. The terminal prints **In order** next
- * to the name; at 402 that text would cost a control's worth of width, so the chip carries the
- * state instead — a filled cart glyph, a primary-tinted fill, and a label that flips from "Add
- * Rogers, X. to the order" to "Rogers, X. is on the order". The play tests below assert on that
- * label, because it is both the accessible name and the thing a screen reader announces. (The
- * terminal's chip also carries `aria-pressed`; the phone's `ControlChip` does not, so the label
- * is the whole of the programmatic signal. It says the right thing, but a toggle that reads as
- * a plain button is worth a second look.)
+ * | Story | Starting state | What it is for |
+ * |---|---|---|
+ * | **Add One Player** | `openParty` reservation | The booker pays for himself. Asserts the chip's label turns from an instruction into a statement of fact, and that only that seat's did |
+ * | **Adding Two One At A Time** | same | Seats 1 and 3 on. Asserts all four chips afterwards: `[true, false, true, false]` |
+ * | **The Order They Split** | `seatOrder(openParty(), [0, 2])`, opened on the Register destination | The regression test for the defect above. Asserts the two-seat total is **not** the whole booking's, and that **Charge** asks for the two-seat one |
+ * | **Check In And Pay Tops Up** | one seat on the order | The pinned action still carries the whole booking's total; after pressing it the order asks for every seat |
+ * | **Adjustments Survive The Top-Up** | `adjustedParty`, one seat on the order | The total is the *adjusted* booking's, and the test asserts it differs from the booking as booked, so it is a real claim |
+ * | **Paid Seats Carry No Chip** | `partlyPaidNamed` | Exactly as many chips as there are seats still open, and fewer than there are seats |
+ *
+ * ## Still open
+ *
+ * - **A seat cannot be taken back off.** The chip only ever adds; tapping an on-the-order chip
+ *   re-adds the same seat. Removing one means clearing the order.
+ * - **The order screen does not say which seats it holds.** It shows the golf line and its
+ *   players, so "two of four" is legible on the reservation and implied on the order — on a phone,
+ *   where the two are different screens, that gap is wider than it is at the counter.
+ * - **`rebuildOrderSeats` fires on a JSON comparison.** It works, and it is cheap at this size,
+ *   but it is a string compare of two built carts on every render of the order screen.
  */
 const meta = {
   title: 'Weston Edits/14 · Per-seat Cart/Mobile',

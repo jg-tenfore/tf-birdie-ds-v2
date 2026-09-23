@@ -22,6 +22,93 @@ import { at18 } from '../mobile-scenarios';
  * eleven are generated on first visit — the same every time — and beyond a year the
  * calendar greys dates out. The tablet keeps its own controls but gets the same generated
  * days (see **Tablet**); the base phone is unchanged.
+ *
+ * ## The component
+ *
+ * `src/pos/mobile/screens/tee/DateNavigation.tsx` exports both halves; `TeeSheetScreen` renders
+ * the strip under the top app bar and opens the sheet from the date chip.
+ *
+ * | Piece | What it is | How it opens |
+ * |---|---|---|
+ * | `WeekStrip` | Seven days, Sunday first, always visible under the date row | Always on, Weston edition |
+ * | `CalendarSheet` | The MD3 date picker as a **bottom sheet**, confined to the phone frame | The date chip (`aria-label="Choose date"`), or the `teeSheet` route's `calendar` param so a story can open it declaratively |
+ * | `useDayCounts` | Tee times per date, for the dots | `state.bookings`, falling back to `unfilledDemoDay` for dates not yet visited |
+ * | `useDemoDayFill(weston)` | Fills the viewed date on arrival | A layout effect in `TeeSheetScreen`, shared with the tablet |
+ *
+ * | Route param | Values | Default | What it does |
+ * |---|---|---|---|
+ * | `calendar.month` | `YYYY-MM` | the viewed date's month | Which month the sheet opens on |
+ * | `calendar.view` | `days` · `years` · `months` | `days` | Which of the three panes is showing |
+ *
+ * The sheet is **not** a route of its own — it is a parameter on `teeSheet`, so it never enters
+ * the back stack and Back leaves the tee sheet rather than closing a picker.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame` in `src/theme/tokens.ts`) |
+ * | Week strip cell | 64 high, `minWidth: mobile.touchTarget` (**48**), radius 16 |
+ * | Day circle | 36px — filled `md3.primary` when selected, 1px outline when today |
+ * | Dot | 4px, opacity **0.4** under 45% of a full day, **0.7** under 75%, **1** above — "full" is what today carries |
+ * | Swipe | 40px of horizontal travel, and more horizontal than vertical, pages a week and swallows the tap; `touchAction: 'pan-y'` so vertical scrolling still works |
+ * | Week animation | Slides in from the side it came from, `mobile.motion.push` (**300ms**) on `mobile.motion.easing` |
+ * | Date row ‹ › | Move a **week** in this edition (`Previous week` / `Next week`), a day in the base one |
+ * | Calendar cell | `mobile.touchTarget` (48) tall, a 40px circle inside, dot 4px at the bottom |
+ * | Calendar grid | Always **42 cells / six rows**, so paging months doesn't resize the sheet |
+ * | Year & month chooser | 48-high pills, radius 24, three per row, over a `32 + 6 × 48` minimum so the sheet doesn't jump between panes |
+ * | Range | `demoRange()` — `DEMO_TODAY()` ± **12** months. Out-of-range days drop to `opacity: 0.38` and disable; ‹ › stop at the edge |
+ * | Today | `DEMO_TODAY()` — **Thu, May 21 2026**; the demo clock is 12:00 PM (`demoNow()`) |
+ * | Every date picked | Passed through `clampToDemoRange` before it reaches `setDate` |
+ *
+ * ## Scope
+ *
+ * **Weston edition, phone.** The base phone keeps the "Go to date" list of the demo's eleven
+ * days and day-at-a-time arrows — **BeforeWestonEdits** is that. The generated days and the
+ * `demoRange` rules are shared with the tablet.
+ *
+ * ## The stories
+ *
+ * | Story | Starts on | What it is for |
+ * |---|---|---|
+ * | **WeekStrip** | Thu, May 21 (the demo day) | The strip itself: the viewed day filled, today outlined, dots scaled by how busy each day is |
+ * | **CalendarSheet** | the demo day, sheet open | The month grid as it opens — dots, today's outline, ‹ › by month |
+ * | **JumpToJune** | the demo day | Weston's case in three taps: open, next month, pick the 12th. The test then checks the day is populated |
+ * | **YearChooser** | the demo day, sheet open on `view: 'years'` | The year → month pane, for jumps further than a few months |
+ * | **TodayButton** | Fri, Jun 12, sheet open | The one-tap way home; the test asserts the chip reads `Today · Thu, May 21` afterwards |
+ * | **OutOfRange** | Tue, May 18 2027, sheet open | The far edge of `demoRange()`, greyed |
+ * | **BeforeWestonEdits** | the demo day, base edition | The "Go to date" list it replaces |
+ * | **ClearedDayStaysEmpty** | Fri, Jun 12 with `generatedDates: ['2026-06-12']` and no June bookings | A cleared generated day stays cleared: the test steps to Jun 13 (which fills on arrival), comes back, and asserts 0 golfers and `0 tee times` on the strip |
+ *
+ * ## Where the phone differs from the tablet, and why
+ *
+ * **The phone is where round 2 came from**, so it gets new controls; the tablet gets only new
+ * data. Its calendar was already a month grid with dots, and Weston did not complain about it.
+ *
+ * **A week strip, not just a calendar.** Most date movement at a counter is a day or two either
+ * way. The strip makes that one tap and frees the arrows to take the bigger step — which is why
+ * ‹ › move a **week** here and a day on the base phone.
+ *
+ * **A bottom sheet, not a popover.** The tablet anchors its calendar under the date button. The
+ * phone has nothing to anchor to and a thumb at the bottom of the frame, so the picker rises
+ * from there, sized to the 402px frame rather than to a desktop dialog.
+ *
+ * **Everything opens on the demo day.** `state.currentDate` starts at `DEMO_TODAY()`, so the
+ * phone always lands on Thu, May 21 2026 — the day with the full authored slate — and every
+ * jump from there is deliberate.
+ *
+ * ## Still open
+ *
+ * **Generated days are session state.** They live in `state.bookings` after the first visit and
+ * vanish on reload, and `generatedDates` resets when the club changes — so a day cleared at one
+ * club refills after switching away and back.
+ *
+ * **The strip has no month context.** It shows weekday letters and day numbers; the month lives
+ * in the chip above it. Swiping across a month boundary is legible but not announced, beyond
+ * the strip's `Week of …` group label.
+ *
+ * **Twelve months is an assumption**, not something Weston asked for. It covers a real booking
+ * horizon; whether the sheet should simply keep generating is undecided.
  */
 const meta = {
   title: 'Weston Edits/9 · Date Navigation/Mobile',

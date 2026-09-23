@@ -9,19 +9,19 @@ import { openParty, sheetWithOrder, sheetWithPanel } from '../tablet-scenarios';
  *
  * The 320px order rail down the left of the terminal, and what happens to it on the tee sheet.
  *
- * Weston's objection was about space, not about the rail: "this takes up a lot of space if
- * there's nothing in it… on the tee sheet we always want to maximise the space we have." An
- * order rail that is empty for most of the morning is a third of a nine's worth of columns
- * spent on a heading and a Pay button.
+ * Weston's objection was about space, not about the rail: *"this takes up a lot of space if
+ * there's nothing in it… on the tee sheet we always want to maximise the space we have."* An
+ * order rail that is empty for most of the morning is a third of a nine's worth of columns spent
+ * on a heading and a Pay button.
  *
  * Three decisions came out of it.
  *
  * **One button, two jobs, never both at once.** The control at the top-left is the back arrow
- * while there is something on the order, and it *clears* it — behind a confirm, because
- * clearing is destructive and there is no undo. The moment the order is empty there is nothing
- * to clear, so the same button becomes a hamburger and *collapses the rail*. The control only
- * ever offers the thing that is actually available, and the rail can only be put away when
- * hiding it costs nothing.
+ * while there is something on the order, and it *clears* it — behind a confirm, because clearing
+ * is destructive and there is no undo. The moment the order is empty there is nothing to clear,
+ * so the same button becomes a hamburger and *collapses the rail*. The control only ever offers
+ * the thing that is actually available, and the rail can only be put away when hiding it costs
+ * nothing.
  *
  * **Collapsed is a strip, not nothing.** Taking the rail to zero would take Walk-in and Reserve
  * with it, and those are the two things staff reach for most — they cannot live behind a panel
@@ -32,8 +32,79 @@ import { openParty, sheetWithOrder, sheetWithPanel } from '../tablet-scenarios';
  * re-expands the rail on the spot, because an order nobody can see is one nobody checks before
  * charging it.
  *
- * All of it lives in `LeftPanel.tsx` (`RailStrip` is the collapsed form); the state is
- * `leftPanelCollapsed`.
+ * ## The component
+ *
+ * `LeftPanel` (`src/pos/components/LeftPanel.tsx`). Two forms of the same panel:
+ *
+ * - the expanded rail — golfer chip, quick actions, category grid, order lines, Pay;
+ * - `RailStrip`, a local component in the same file, marked `data-order-rail="collapsed"`.
+ *
+ * | State / value | Where | Default | What it does |
+ * |---|---|---|---|
+ * | `leftPanelCollapsed` | `PosState` | `false` in `initialState`; `true` in every tee-sheet story (`atVenue`) | Which form renders. Toggled by `{ type: 'toggleLeftPanel', collapsed }` |
+ * | `orderCount` | derived in `LeftPanel` | — | `state.cart` **minus tax lines**, summed by `qty`. Drives the button's two jobs and the confirm's wording |
+ * | `hasOrder` | derived | — | `orderCount > 0` |
+ * | `count` (the badge) | derived in `RailStrip` | — | every cart line's `qty`, **tax included** |
+ * | `QUICK_ACTIONS` | module constant | Walk-in · Reserve tee time | One definition, rendered in both forms — see 8 · Bug Fixes for what happened when there were two |
+ *
+ * `addSeatToOrder` and `loadBooking` both set `leftPanelCollapsed: false` in the reducer, which
+ * is what makes "the rail comes back" a property of the state rather than a habit of one screen.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Expanded | **320px** (`grid.leftPanelW` in `src/theme/tokens.ts`) |
+ * | Collapsed | **56px** — 264px back to the tee sheet |
+ * | Motion | `width .25s cubic-bezier(.4,0,.2,1)`, on both forms |
+ * | z-index | 2 — the rail sits under the reservation panel (80) and its scrim (79) |
+ * | Header button | 38×38 circle, 20px glyph: `arrow_back` with an order, `menu` without |
+ * | Strip buttons | 34×34, 18px glyph, tooltips placed `right` |
+ * | Badge | min-width 15, `md3.primary` on `md3.onPrimary`, 9px/800 |
+ * | Confirm | "Clear this order?" · "{n} items will be removed. This cannot be undone." · **Clear order** / Cancel |
+ * | Accessible names | `Clear order` · `Collapse the order rail` · `Expand the order rail` · `Order · {n} items` / `Order is empty` |
+ *
+ * **The confirm does not count the tax line.** A three-player check-in builds one golf line at
+ * `qty: 3` plus a `Taxes` line, and the confirm says **3 items** — tax is on the order but it is
+ * not a thing anyone added. It read "4 items" until that was fixed.
+ *
+ * ## Scope
+ *
+ * Weston edition only: `if (weston && state.leftPanelCollapsed) return <RailStrip />`. In the
+ * base edition collapsing still exists but takes the rail to **width 0** with `pointer-events:
+ * none` — no strip, no quick actions, no badge. Everything on this page is the Weston branch.
+ *
+ * **There is no phone equivalent, and this section has no Mobile half.** The phone never spends
+ * the space in the first place: the order is a screen on the Register destination, and
+ * `ViewOrderBar` (`src/pos/mobile/screens/register/parts.tsx`) **returns null while the cart is
+ * empty**. The same promise is kept by different means — nothing to collapse, a badge on the
+ * Register destination counting what is waiting, and the order one tap from anywhere. The
+ * phone's half of the per-seat story is in **14 · Per-seat Cart / Mobile**.
+ *
+ * ## The stories
+ *
+ * | Story | Starting state | What it is for |
+ * |---|---|---|
+ * | **Empty And So Collapsible** | rail expanded, order empty | The state Weston was looking at. Clicks the hamburger and asserts the strip is exactly **56px** |
+ * | **Items On The Order Clear** | `sheetWithOrder(openParty())` | The other job. Asserts the confirm's wording, cancels, and checks the order survived |
+ * | **Cleared Back To The Hamburger** | same | The hand-over: confirming empties the order and the button becomes **Collapse the order rail** |
+ * | **The Collapsed Strip** | order on it, collapsed | Everything the 56px carries — hamburger, both quick actions, and a counting badge |
+ * | **The Collapsed Strip Empty** | nothing on the order | The state the tee sheet spends most of the morning in. Asserts the badge reads **Order is empty** |
+ * | **Adding Something Re-expands** | reservation open, rail collapsed | Weston's split-the-bill path. Asserts the strip is gone and the button is now the clear |
+ *
+ * ## Still open
+ *
+ * - **The badge and the confirm count differently.** `orderCount` filters tax out; the strip's
+ *   badge does not. The same three-player order reads **3 items** in the confirm and **4** on the
+ *   badge. The badge is the one that is wrong.
+ * - **Nothing collapses the rail automatically.** Clearing an order hands the hamburger back but
+ *   leaves the rail open; the operator has to press it. That is deliberate — the rail moving on
+ *   its own while you are looking at it is worse — but it means the space is only reclaimed by
+ *   someone who knows the button is there.
+ * - **The strip has no label.** It is a column of glyphs with tooltips. On a touch terminal a
+ *   tooltip needs a hover, so the first use of the collapsed rail is a guess.
+ * - **Whether 56 is the right number.** It is a comfortable icon column, not a measured one, and
+ *   it was not compared against anything wider.
  */
 const meta = {
   title: 'Weston Edits/13 · Order Rail/Tablet',

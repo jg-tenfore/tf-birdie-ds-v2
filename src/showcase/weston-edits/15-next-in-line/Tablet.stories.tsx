@@ -24,7 +24,27 @@ import {
  *
  * > "If you're just moving fast, you're boom, boom, boom, going through." — Weston
  *
- * The rules are small and all of them are about not losing your place:
+ * ## The component
+ *
+ * `NextInLine`, a local component at the foot of `src/pos/components/ReservationPanel.tsx`,
+ * rendered in the panel header between the booking's title and its ✕. It holds no state: it
+ * derives its position from the store on every render and dispatches one action.
+ *
+ * | | |
+ * |---|---|
+ * | Order | `dayBookings(state)`, filtered `pay !== 'block' && pay !== 'event'`, sorted **`timeMin` → `course` → `slot`** |
+ * | Position | `day.findIndex(x => x.id === booking.id)`, printed 1-based as `{at + 1} of {day.length}` |
+ * | Hides itself | `at < 0 \|\| day.length < 2` — two dead arrows on a one-booking day is worse than nothing |
+ * | ‹ disabled | `at === 0` |
+ * | › disabled | `at === day.length - 1` |
+ * | Action | `{ type: 'stepReservation', delta: 1 \| -1 }` |
+ *
+ * `stepReservation` in `src/pos/state/pos-store.ts` recomputes the same sorted day and patches
+ * the panel to `{ bookingId: next.id, tab: 'players', playerIndex: 0 }`. It is a no-op when there
+ * is no panel open, when the current booking is not in the list, or when there is no neighbour —
+ * which is the second half of "stops at the ends".
+ *
+ * ## The rules
  *
  * | | |
  * |---|---|
@@ -32,14 +52,61 @@ import {
  * | **Empty slots** | Skipped. There is nothing to open in an empty slot, and stepping into one would mean a panel with no reservation in it |
  * | **Blocks and events** | Skipped too. Course Maintenance and Shift Change are on the sheet but they are not parties, and a rate grid for a block is nonsense |
  * | **The ends** | The arrows **disable** rather than wrap. A silent jump from the last tee time back to the 6:00 AM is disorienting when you are moving fast, and the counter reads "88 of 88" as "that's the day" |
- * | **What a step does** | Switches the booking, and resets to the **Players** tab. You are moving to new golf, not continuing the last thought |
+ * | **What a step does** | Switches the booking and resets to the **Players** tab. You are moving to new golf, not continuing the last thought |
  *
  * The counter — **n of m** — is doing real work beside the arrows: it is the only thing on the
  * screen that says how far through the day you are, and it is what tells you the arrow is
  * disabled because you have reached the end rather than because something is broken.
  *
- * The stepper hides itself when there is nothing to step through (a day with one booking on
- * it), rather than showing two dead arrows.
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Arrows | 4px padding, circular, 18px `chevron_left` / `chevron_right`, `md3.onSurfaceVariant` |
+ * | Disabled | `opacity: .3` — present and unusable, rather than gone |
+ * | Counter | 10.5px/700 `md3.outline`, `min-width: 34`, centred, so the arrows do not shuffle between "9 of 88" and "10 of 88" |
+ * | Accessible names | `Previous tee time` · `Next tee time` |
+ * | The demo day | **88** steppable bookings at the 18-hole club, blocks and league events excluded |
+ * | What does not move | The tee sheet. `use-scroll-booking-into-view.ts` scrolls the new booking into view **only if it is not already fully visible**, and centres it when it is not, so stepping through a morning does not throw the page around |
+ *
+ * ## Scope
+ *
+ * Weston edition only, in the reservation panel's header, wherever the panel is open — it does
+ * not care which tab you were on, because it resets that. On a block or league slot it renders
+ * nothing — `findIndex` returns -1 for a booking that is not in the list, which is the same rule
+ * read from the other end.
+ *
+ * None of the four Storybook toolbar globals change this section, though **Panel width** changes
+ * how much of the header the stepper shares with the booking's name.
+ *
+ * ## The stories
+ *
+ * | Story | Starting booking | What it is for |
+ * |---|---|---|
+ * | **The Stepper** | `earlyFrontNine` (3 of 88) | The control in place, with both arrows live |
+ * | **Stepping Forward And Back** | same | › then ‹ lands back where it started. Asserts both the counter and the panel's accessible name |
+ * | **Boom Boom Boom** | `firstInLine` | Three presses forward, checked at every step. Worth watching for what *doesn't* happen: no dialog, nothing closes, the sheet is never left |
+ * | **Blocks And Empty Slots Are Skipped** | `beforeBlock` | › steps **over** the day's first block. Also holds the general rule — no entry in the order is a block — so a change to the demo data cannot quietly put one back |
+ * | **At The Start Of The Day** | `firstInLine` (1 of 88) | ‹ disabled, › live |
+ * | **At The End Of The Day** | `lastInLine` (88 of 88) | › disabled, ‹ live. Moving to tomorrow is the date control's job (9 · Date Navigation), which is a decision, not a keystroke |
+ *
+ * `dayLine()` in `tablet-scenarios.ts` repeats the reducer's sort so a story can say *which*
+ * booking comes next without reaching into `stepReservation`. If the two ever drift, every story
+ * on this page fails.
+ *
+ * ## Still open
+ *
+ * - **No keyboard shortcut.** Weston's "boom, boom, boom" is a mouse or a thumb; ‹ and › are not
+ *   bound to anything. A counter working a rush would probably want the arrow keys.
+ * - **It steps the whole day, across every course.** `dayBookings` filters on the date alone —
+ *   not on `visibleCourses`, not on the tee sheet's filters. Hide the back nine and the stepper
+ *   will still walk you into it, so a filtered sheet and the stepper disagree about what "next"
+ *   means.
+ * - **Unsaved work is not a concept.** Everything the panel does writes to the booking
+ *   immediately, so a step cannot lose an edit — but it also means there is no "you have changes"
+ *   guard to design later if that ever stops being true.
+ * - **88 is this demo day.** The number is generated, not authored; the assertions read it from
+ *   `dayLine()` rather than hard-coding it.
  */
 const meta = {
   title: 'Weston Edits/15 · Next In Line/Tablet',

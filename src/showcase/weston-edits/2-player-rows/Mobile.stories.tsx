@@ -10,12 +10,109 @@ import { adjustedParty, at18, growableParty, mixedGroup, openParty, partlyPaidNa
 /**
  * Weston Edits / 2 · Player Rows / Mobile
  *
- * One row per player, full width. The top of the row is who they are and where they are
- * in the round (tap it for Player Detail); the bottom is the three things Weston asked to
- * change per player — **9 | 18**, **tee fee**, **transport** — plus a ⋮ for swapping the
- * customer, resetting, or removing the player. Below the rows, a party-size stepper
- * bounded by what the tee-sheet row can seat together. Group edits ("everyone rides")
- * live in a bottom sheet behind **Everyone**.
+ * The same three per-player decisions Weston asked for — *"change the players, the amount of
+ * players, the tee fee, or change from 9 to 18 holes per player"* — on a 402px screen, where a
+ * tablet row's seven controls in a line do not fit.
+ *
+ * The answer here is a **two-storey card**. The top half is who the player is and where they are
+ * in the round, and the whole of it is one button that pushes Player Detail. The bottom half is
+ * the three controls. Splitting it that way is the point: on the phone a tap on a control must
+ * never also be navigation, and a tap meant as navigation must never land on a toggle.
+ *
+ * Everything that needs more room than 402px leaves the row — the rate grid to a full-screen
+ * dialog, the round rail and contact to Player Detail, group edits and the ⋮ menu to bottom
+ * sheets. The pricing rules are identical to the terminal's, because they are the same
+ * functions: a seat is priced by **its own player's** class, and a player is resolved by a
+ * linked record or the booker's phone, never by the name on the seat.
+ *
+ * ## The component
+ *
+ * `src/pos/mobile/screens/tee/ReservationPlayers.tsx` — `ReservationPlayersTab` (the tab body)
+ * and `PlayerRow` (one card), rendered by `BookingDetailScreen` in this edition only.
+ *
+ * | Part | Presentation | What it holds |
+ * |---|---|---|
+ * | Row, top half | `ButtonBase` → pushes `playerDetail` | Avatar, member dot, name, `Booker`, `IdMeBadge`, round status, pay badge, › |
+ * | Row, bottom half | in place | `HolesToggle` 9 \| 18, the **fee** chip, the **transport** chip, the per-seat cart chip (14), ⋮ |
+ * | Row caption | in place | The rate's name and price, a discount's reason and what it came down from, the punch, the transport row, `ID <n>`, the cart key (12) |
+ * | Fee chip | pushes `seatRate` (**dialog**) | The rate editor — tiles, not a number pad (11) |
+ * | Transport chip | `BottomSheet` | `TransportList`, a radio list of walk / riding cart / push cart |
+ * | ⋮ | `BottomSheet` | `RowActions` — customer profile or link (4), swap customer, cart signout (16), reset to the booking, remove |
+ * | **Everyone** | `BottomSheet` | `GroupActions` — everyone rides / walks / push, everyone 18 or 9, check everyone in, reset everyone |
+ * | Party size | in place | A stepper bounded by `useReservationLimits` — what the tee-sheet row can seat together |
+ * | Player Detail | pushed screen | `ReservationSection` (`PlayerReservation.tsx`) — the same controls full width, plus `FeeSheet` and Remove |
+ *
+ * ## What a row reads
+ *
+ * The same `PlayerState` overrides as the terminal (`src/pos/types.ts`) — `holes`, `fee`,
+ * `transport`, `rateId`, `transportRateId`, `transportFee`, `discountId`, `punch`, `cartKey`,
+ * `paid`, `noShow`, `step`. Absent means the booking's own value.
+ *
+ * | Row state | Comes from | Effect |
+ * |---|---|---|
+ * | `adjusted` | `playerIsAdjusted(b, i)` | Card border switches to `md3.primary` |
+ * | `strong` on a chip | `fee`/`rateId` or `transport` set | Chip fills `md3.primaryContainer` — the phone's "this differs from the booking" |
+ * | `locked` | `!isEditableSeat(p)` or the booking is no-show / refunded | Controls disabled at `opacity: .5`, with **"Paid — refund on the Financial tab to change this player"** under the row |
+ * | `canGrow` / `canShrink` | `max` from the tee-sheet row; last seat still open | The stepper's **+** and **−** |
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame`) |
+ * | Card | `radius.md` (12px), 1px border — `md3.outlineVariant`, or `md3.primary` when adjusted — on `mobile.surfaceContainerLow` (#f2f5f2) |
+ * | Avatar | 40px, `playerAccents[i % 5]` |
+ * | `HolesToggle` | 36dp tall, 44dp minimum per option, pill ends (18px), selected fills `mobile.secondaryContainer` (#d0e8d9) |
+ * | `ControlChip` | 36dp tall, `radius.sm` (8px), 14px label, `aria-pressed` on the order chip so a fill is not its only state cue |
+ * | ⋮ | `MuiIconButton` medium — **48 × 48**, the `mobile.touchTarget` floor |
+ * | Sheet and list rows | 56dp (`mobile.listItem.one`); the party stepper's row is 72dp (`.two`) |
+ * | Sheet motion | 400ms `cubic-bezier(0.05, 0.7, 0.1, 1)` in, 200ms out (`mobile.motion`) |
+ * | `seatRate` dialog | Rises 12%, 400ms; ✕ discards, Save commits |
+ *
+ * The two chips sit at **36dp**, under the 48dp floor. That is deliberate: three controls, a
+ * cart chip and a ⋮ have to share 402px minus a 40px avatar, and 48dp chips wrap the row onto a
+ * second line. The tap targets that carry consequence — the ⋮, the sheet rows, the stepper — are
+ * all at 48dp or above.
+ *
+ * ## Where it deliberately differs from the tablet
+ *
+ * - **The name does not open the customer record here.** The whole top half of the row is the
+ *   drill-down to Player Detail, so the record is on the ⋮ instead (4). On the terminal the name
+ *   is its own button and opens the record directly.
+ * - **The fee chip opens the rate editor as a full-screen dialog**, not an expander on the row.
+ *   Four rows of tiles under an open row at 402px push the rest of the group off the screen
+ *   entirely — you would lose the group *and* have to scroll. The terminal expands in place,
+ *   which was Weston's own suggestion there.
+ * - **Removing a player confirms**, in a bottom sheet. The terminal removes on one ✕.
+ * - **Group actions are behind "Everyone"**, not three chips above the list — there is no room
+ *   for a permanent row of them, and they are used once per booking, not once per seat.
+ * - **No density switch.** The phone prints one caption line per seat, always.
+ *
+ * ## The stories
+ *
+ * | Story | What it is for |
+ * |---|---|
+ * | **Player Rows** | An adjusted party — two verified members linked on, a guest switched to the other length at the card's fee, per-player transport. Values differing from the booking are filled in primary. The render other stories reuse |
+ * | **Rate Card Fee On Switch** | Flips seat 2's 9 \| 18 and asserts the fee chip reads `rateCardFee(b, h)` exactly, while the booker keeps the booking's own rate |
+ * | **Mixed Member Guest Group** | The per-seat rule on the phone: seat 2 is a member at **$0.00** inside a guest booking; every chip is checked against `playerFee`; the button's amount against `buildTeeTimeCart`; and tax is summed per seat, so the member's $0 seat carries none |
+ * | **Tee Fee Sheet** | Taps the fee. It opens the **rate editor** (11), not a number pad — Weston's third round: staff "do want to select what's available". The export name is older than the behaviour |
+ * | **Transport Sheet** | Walk / riding cart / push cart for one player, as a radio sheet |
+ * | **Row Actions** | The ⋮: customer profile, swap, cart signout, reset, remove. The booker can be swapped but not removed |
+ * | **Remove Player** | The confirm, in the sheet — no centred dialog on the phone |
+ * | **Group Actions** | **Everyone**: the group edits, applied to the players still open. Paid seats are skipped and it says so |
+ * | **Add Player** | A party of two with room beside it; **+** adds a seat and re-seats the booking on the row if it has to |
+ * | **Paid Players Locked** | A partly paid party: settled rows locked with the reason, open rows keeping every control |
+ * | **Player Detail** | The pushed screen's Reservation section — holes and transport full width, the tee fee with its default spelled out, swap, remove |
+ * | **Swap Customer** | The People picker opened for one seat; picking somebody runs `assignPlayer` and returns |
+ *
+ * ## Still open
+ *
+ * - **36dp chips.** Nobody has used this at a cart barn in the rain yet. If the row has to go to
+ *   48dp it wraps to two lines, which is a layout decision rather than a tweak.
+ * - **Transport style** is a toolbar variant here too — icons, or the transport rate that is
+ *   actually billed.
+ * - The phone has **no dense mode**; if the caption line proves too long to read at a glance, the
+ *   fix is what it says, not how tightly it is packed.
  */
 const meta = {
   title: 'Weston Edits/2 · Player Rows/Mobile',

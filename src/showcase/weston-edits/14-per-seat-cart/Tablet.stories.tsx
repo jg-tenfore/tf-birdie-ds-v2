@@ -13,37 +13,101 @@ import {
 /**
  * Weston Edits / 14 · Per-seat Cart / Tablet
  *
- * Weston, on the third call, describing how a group that splits the bill actually gets rung
- * up: *"you hit add to cart for each player, and then you hit save."*
+ * Weston, on the third call, describing how a group that splits the bill actually gets rung up:
+ * *"you hit add to cart for each player, and then you hit save."*
  *
- * Until this round the reservation had one way into the order — **Check in & pay**, which
- * takes the whole booking. That is right for the common case and wrong for the one that ties
- * up the counter: a foursome where two are paying now, one is paying with the other's card,
- * and the fourth is still in the parking lot. So every editable player row now carries a small
- * **Add** beside the name, and the order is built a seat at a time.
+ * Until this round the reservation had one way into the order — **Check in & pay**, which takes
+ * the whole booking. That is right for the common case and wrong for the one that ties up the
+ * counter: a foursome where two are paying now, one is paying with the other's card, and the
+ * fourth is still in the parking lot. So every editable player row carries a small **Add** beside
+ * the name, and the order is built a seat at a time.
  *
- * | | What it puts on the order |
+ * ## The component
+ *
+ * The chip lives on the player row in `src/pos/components/PlayerRows.tsx`; everything it does
+ * happens in the reducer in `src/pos/state/pos-store.ts`.
+ *
+ * | | Label | `aria-label` | `aria-pressed` | Glyph |
+ * |---|---|---|---|---|
+ * | Not yet added | **Add** | `Add {name} to the order` | `false` | `add_shopping_cart` |
+ * | Already on it | **In order** | same | `true` | `shopping_cart`, on `md3.primaryContainer` |
+ *
+ * Paid and no-show seats carry no chip at all — there is nothing to charge, and that is the same
+ * rule that locks their holes, fee and transport.
+ *
+ * | State | Type | Default | What it does |
+ * |---|---|---|---|
+ * | `orderSeats` | `number[] \| null` | `null` | Which seats of `selectedBookingId` the order holds. **`null` means the whole booking** — that is what Check in & pay leaves behind |
+ * | `selectedBookingId` | `string \| null` | `null` | Whose order this is. A chip on a *different* booking starts a fresh order |
+ *
+ * Three reducer cases carry the behaviour:
+ *
+ * | Action | What it does |
  * |---|---|
- * | **Add** on a row | That one seat — its holes, its rate, its ride, its tax |
+ * | `addSeatToOrder` | Unions the seat into `orderSeats`, rebuilds the golf from `buildTeeTimeCart(b, courses, rates, seats)`, **keeps** the non-golf lines when it is the same booking, drops them when it is not, and sets `leftPanelCollapsed: false` |
+ * | `loadBooking` (Check in & pay) | Sets `orderSeats: null`, rebuilds the golf for the whole booking, keeps the non-golf lines, closes the panel and lands in the register |
+ * | `rebuildOrderSeats` | Reprices **the seats the order already holds** after the reservation changed under it. Deliberately not `loadBooking`, which would undo a split — but nothing on the tablet dispatches it yet (see Still open) |
+ *
+ * ## What each route puts on the order
+ *
+ * | | Result |
+ * |---|---|
+ * | **Add** on a row | That one seat — its holes, its rate, its ride, its own green-fee tax |
  * | **Add** on a second row | Both seats, on the same order |
- * | **Check in & pay** | The whole booking, topping up whatever is already there |
+ * | **Add** on a row of another booking | A fresh order for that booking. Two parties on one order is a receipt nobody can read |
+ * | **Check in & pay** | The whole booking, **topping up** whatever is already there |
  *
  * Three things make it safe to use mid-shift:
  *
- * - **Adding a seat never rebuilds the order.** Adding to the booking already on the order
- *   keeps the retail and F&B lines and adds the seat's golf (`addSeatToOrder`); adding a seat
- *   from a *different* booking starts a fresh order, because two parties on one order is a
- *   receipt nobody can read.
- * - **Check in & pay tops up rather than replaces.** It clears `orderSeats` — the order is now
- *   the whole booking — and rebuilds the golf from the reservation, so seats added one at a
- *   time keep every adjustment made to them. The adjustments live on the booking, not on the
- *   order, which is what makes that true rather than lucky.
- * - **The rail comes back on its own.** Adding anything expands the collapsed order rail. An
- *   order you cannot see is one nobody checks before charging it.
+ * - **Adding a seat never rebuilds the order.** The retail and F&B lines survive
+ *   (`!isCheckIn && !isTax && name !== 'Taxes'`); only the golf is rebuilt.
+ * - **Check in & pay tops up rather than replaces.** Seats added one at a time keep every
+ *   adjustment made to them, because the adjustments live on the **booking** and both routes into
+ *   the cart read them from there. That is what makes it true rather than lucky.
+ * - **The rail comes back on its own.** `addSeatToOrder` expands the collapsed rail (13 · Order
+ *   Rail). An order you cannot see is one nobody checks before charging it.
  *
- * A row that has been added reads **In order** with a full cart glyph (`aria-pressed`), so the
- * panel says who is already on the bill without looking away at the rail. Paid and no-show
- * seats carry no Add at all — there is nothing to charge.
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Chip glyph | 13px, `md3.primary` on `md3.primaryContainer` when pressed |
+ * | Order rail | 320px expanded, 56px collapsed; adding anything expands it |
+ * | Footer label | `Check in & pay · {total}` → **`Update order · {total}`** once the booking is on the order → `Open in register` when it is fully settled |
+ * | Tax | Per seat. `buildTeeTimeCart` sums each chargeable seat's tax into one `Taxes` line, so two seats carry two seats' tax |
+ * | This fixture | `openParty`, three players: one seat **$49.00**, the whole booking **$147.00** |
+ *
+ * ## Scope
+ *
+ * Weston edition only, on the reservation panel's **Players** tab, on editable seats. The phone
+ * has the same reducer behind a cart chip on its player row — see the **Mobile** half, which also
+ * records the defect this feature turned up there.
+ *
+ * None of the four Storybook toolbar globals change what this section is about, though **Panel
+ * width** and **Row density** both change how much of the party you can see while doing it.
+ *
+ * ## The stories
+ *
+ * | Story | Starting state | What it is for |
+ * |---|---|---|
+ * | **Add One Player** | `sheetWithPanel(openParty())` | The booker pays for himself. Asserts three things at once: the row flips to **In order**, the collapsed rail expands, and Pay asks for **that seat's** money |
+ * | **Adding Two One At A Time** | same | Seats 1 and 3 on, seat 2 off. Asserts the untouched seat is still `aria-pressed="false"` |
+ * | **Splitting The Bill** | `sheetWithSeatOrder(openParty(), [0, 2])` | The same state at rest — the panel and the rail agreeing about who is on the bill |
+ * | **The Rail Comes Back** | rail collapsed | Asserts the 56px strip is there before the Add and gone after it |
+ * | **Check In And Pay Tops Up** | one seat on the order | The footer reads **Update order** with the *whole* booking's total; after pressing it the register asks for all three seats and the panel has closed |
+ * | **Adjustments Survive The Top-Up** | `adjustedParty`, seat 3 on the order | A typed $25 on the booker, a member linked onto seat 2, seat 3 switched to 18 and walking. The register asks for the *adjusted* total, with nothing re-entered |
+ *
+ * ## Still open
+ *
+ * - **Nothing on the tablet reprices a split order.** `rebuildOrderSeats` exists and does
+ *   exactly the right thing, but only the phone's order screen dispatches it. Edit a seat that is
+ *   already on the order and the rail keeps the price it was added at until Check in & pay rebuilds
+ *   everything. See 6 · Check In & Pay.
+ * - **A seat cannot be taken back off.** The chip is a one-way toggle: pressing an **In order**
+ *   chip does nothing. Removing a seat means clearing the order and re-adding the others.
+ * - **The order has no per-seat labelling.** The rail shows the golf line with its players, not
+ *   "these two of four", so the split is legible on the reservation and merely implied on the
+ *   order.
  */
 const meta = {
   title: 'Weston Edits/14 · Per-seat Cart/Tablet',

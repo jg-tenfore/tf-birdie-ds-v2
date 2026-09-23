@@ -8,21 +8,120 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
 /**
  * Weston Edits / 1 · Reservation Panel / Tablet
  *
- * Weston's Loom, on the tablet: "When you click on a tee time… it pulls it into the cart and
- * it's opening it like it's an order. But the order comes after the golf." Birdie today opens
- * the reservation first, and he asked for it as "a slide-over panel… so you're not losing the
- * context of where you're working on the tee sheet".
+ * What a tee time opens into. This is the section every other one sits inside: rate editing,
+ * per-seat carts, punch cards and the customer record are all things that happen *in* this
+ * panel.
  *
- * So in the Weston edition a booking chip no longer loads the register. It opens this panel
- * from the right: header facts on top, then **Players · Customer · Financial · Notes ·
- * Activity**, and **Check in & pay** pinned at the foot. The tee sheet **narrows** to the
- * room left of it as it slides in — every column tightens, no tee time is hidden under the
- * panel, and there is no sideways scrolling — and clicking another booking switches the
- * panel. Nothing reaches the cart until Check in & pay. The right-click menu keeps all its
- * items; "Booking details" opens this panel.
+ * Weston's Loom: *"When you click on a tee time… it pulls it into the cart and it's opening it
+ * like it's an order. But the order comes after the golf."* He asked for it as *"a slide-over
+ * panel… so you're not losing the context of where you're working on the tee sheet"*, and named
+ * the case: *"If we click on Morris G, a slide-over panel with the tee time details/
+ * reservation."*
  *
- * The panel is state (`reservationPanel` in `pos-store.ts`) and deep-links as
- * `?res=<booking>&res-tab=<tab>&res-p=<player>`.
+ * So in the Weston edition a booking chip no longer loads the register. It opens this panel from
+ * the right: header facts on top, then **Players · Financial · Notes · Activity**, and **Check
+ * in & pay** pinned at the foot. The tee sheet **narrows** into the room left of it as it slides
+ * in — every column tightens, no tee time is hidden under the panel, and there is no sideways
+ * scrolling — and clicking another booking switches the panel rather than closing it. Nothing
+ * reaches the cart until Check in & pay. The right-click menu keeps every item it had;
+ * **Booking details** opens this panel instead of the old dialog.
+ *
+ * ## The component
+ *
+ * `ReservationPanel` (`src/pos/components/ReservationPanel.tsx`). Deliberately **not** a `Modal`:
+ * it is a sibling of the tee sheet inside `PosShell`, positioned absolutely against it, which is
+ * exactly what lets the sheet stay live and clickable beside it. A dialog opened *from* the
+ * panel — the customer record, cart signout, a confirm — layers over it and leaves it standing.
+ *
+ * Four pieces make it up, and three of them have their own section:
+ *
+ * | Part | Where | What it is |
+ * |---|---|---|
+ * | `ReservationContent` | same file | Header, tabs, body, footer — shared by the slide-over and the modal comparison, so the two can never drift |
+ * | `NextInLine` | same file | The **‹ n of m ›** stepper between the header and the ✕. See 15 |
+ * | `CheckInFooter` | same file | What the reservation will charge, and the one primary action. See 6 |
+ * | `PlayerRows` | `components/PlayerRows.tsx` | The Players tab's body. See 2 |
+ *
+ * The sheet's half of the behaviour lives in `components/use-scroll-booking-into-view.ts`:
+ * `usePanelSqueeze` (the right margin the grid and list take) and `useScrollBookingIntoView`
+ * (bringing the opened booking into view beside the panel).
+ *
+ * ## The state
+ *
+ * `ReservationPanelState` in `src/pos/state/pos-store.ts`. The panel is state, not a component
+ * flag — which is why a story can declare one open rather than clicking to it.
+ *
+ * | Field | Values | Default | What it does |
+ * |---|---|---|---|
+ * | `bookingId` | a booking id | — | Which reservation. Changing it switches the panel in place |
+ * | `tab` | `players` · `financial` · `notes` · `activity` | `players` | Which body renders (`RESERVATION_TABS`) |
+ * | `playerIndex` | number | `0` | Carried from the removed Customer tab. Still written and still in the URL; nothing on the tablet reads it any more — see **Still open** |
+ * | `presentation` | `panel` · `modal` | `panel` | Slide-over, or the centred dialog comparison below |
+ * | `width` | `standard` · `wide` · `cover` | falls back to `state.weston.panelWidth` (`standard`) | How wide the panel runs. See 10 |
+ * | `backdrop` | `squeeze` · `scrim` | `squeeze` | What the tee sheet does while it is open. **Sections 1–4 all squeeze** — the scrim is scoped to 10 |
+ *
+ * ## Deep links
+ *
+ * `src/pos/state/url-state.ts`. The panel is linkable; the variants are not.
+ *
+ * | Query | Meaning |
+ * |---|---|
+ * | `?res=<booking>` | Open the panel on that booking. A booking this club doesn't have drops the panel rather than rendering an empty frame |
+ * | `&res-tab=<tab>` | One of the four. Omitted for `players`; a tab that isn't one of the four degrades to `players` |
+ * | `&res-p=<n>` | `playerIndex`. Negative or non-integer degrades to `0` |
+ *
+ * An old `?res-tab=customer` link — saved before round 3 removed the tab — opens the right
+ * booking on **Players** instead of breaking. There is a test pinning that.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 1366 × 840 (`shell` in `theme/tokens.ts`) |
+ * | Width | **640** (`PANEL_WIDTHS.standard`). `theme/tokens.ts`'s `reservationPanel.width` (480) is the pre-round-3 number and nothing reads it any more |
+ * | z-index | 80 — over the tee-sheet toolbar (40) and the multi-select bar (60), under popovers and dialogs |
+ * | Surface | `md3.onPrimary` (#ffffff), 1px `md3.outlineVariant` on the left edge, `elevation.e3` |
+ * | Motion | `.22s cubic-bezier(.2,0,0,1)` (`reservationPanel.motion`). The panel slides `translateX(100%) → 0`; the sheet's `margin-right` animates on the same easing, so the two move as one |
+ * | Squeeze | `margin-right: PANEL_WIDTHS[width]` on `[data-panel-squeeze]`. Zero at `cover` (nothing left to squeeze) and zero under a scrim |
+ * | Scroll-into-view | 16px clearance below `[data-sticky-header]`; an off-screen booking is centred vertically, an on-screen one is not moved at all |
+ * | Tabs | `variant="fullWidth"`, 40px tall, 1px `md3.outlineVariant` underline |
+ * | Modal comparison | MUI `Dialog`, paper 620 × `min(740px, 90%)` |
+ * | Order rail | 320px expanded (`grid.leftPanelW`), 56px collapsed. See 13 |
+ *
+ * ## Scope
+ *
+ * Weston edition only (`<Screen edition="weston" />`), on the **18-hole club**. Both tee-sheet
+ * modes are covered — the grid and the list narrow and scroll alike. The base edition has no
+ * panel at all; clicking a chip there still loads the register.
+ *
+ * Still pending: whether this ships as a slide-over or as the centred dialog, and at which
+ * width. Both are below, and both are Weston's call.
+ *
+ * ## The stories
+ *
+ * | Story | What it is for |
+ * |---|---|
+ * | **Over The Tee Sheet** | The panel open on an unpaid party, beside a squeezed sheet. The reference shot |
+ * | **Click A Booking Opens It** | Clicks a chip on a live sheet. Asserts the panel opened on Players *and* that the order is still empty — "the order comes after the golf", as a test |
+ * | **Switches Booking** | Clicks a second chip while the panel is open; the panel switches rather than closing |
+ * | **Customer Record Over Panel** | The record layered over the panel, opened from a player's name. The panel keeps its place underneath. See 4 |
+ * | **Financial Tab** · **Notes Tab** · **Activity Tab** | The other three tabs. See 5 |
+ * | **Modal Comparison** | The same `ReservationContent` as a centred dialog — the other way Weston said he "can be convinced" of |
+ * | **Opening Scrolls Into View** | A booking late on the back nine, on a sheet that starts at 6:00 AM. Asserts it ends up wholly visible, below the sticky header and left of the panel |
+ * | **Opening Scrolls Into View List** | The same in list view, where the cards reflow as the list narrows |
+ * | **Already Visible Does Not Jump** | Clicks an early front-nine chip and asserts `scrollTop`/`scrollLeft` are unchanged 600ms later. No jump |
+ * | **Squeezes The Sheet** | Asserts the grid has **no** sideways overflow and that every chip's right edge lands left of the panel — the claim, measured rather than described |
+ *
+ * ## Still open
+ *
+ * - **Slide-over or modal.** Weston can be convinced either way; **Modal Comparison** is the
+ *   other way, on the same booking, so the choice can be made by looking.
+ * - **Width.** 640 ships; 820 and cover are one click away in 10.
+ * - **`playerIndex` is vestigial.** It survives on the state and in the URL from the Customer
+ *   tab, and `CustomerTab.tsx` — the only component that ever read it — is no longer rendered
+ *   anywhere. It is harmless, but it is dead weight until someone decides whether a link should
+ *   be able to name a seat.
+ * - **`presentation` is not linkable**, by design: a prototype URL never carries a variant.
  */
 const meta = {
   title: 'Weston Edits/1 · Reservation Panel/Tablet',

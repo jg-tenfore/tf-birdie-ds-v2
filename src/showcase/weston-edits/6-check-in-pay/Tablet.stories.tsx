@@ -20,10 +20,6 @@ import {
  * (`loadBooking`), and closes the panel. Its label carries the amount, and it is the same
  * number the register's Pay button will show, because both are built from the same cart.
  *
- * Secondary actions: Move, Delete, Close. A booking already on the order reads **Update
- * order** (retail on the order stays; only the golf is rebuilt). A fully paid booking reads
- * **Open in register** and charges nothing, rather than asking to pay again.
- *
  * It checks **everyone** in — every player not marked no-show — whatever step they were at.
  *
  * **Walk-ins go through a reservation too.** The register's **Walk-in** (and a CHECK IN
@@ -33,6 +29,85 @@ import {
  * and transport are set in the panel, **Walk-in · next open tee time · Change** picks
  * another time, and Check in & pay brings it to the order like any booking. The base
  * edition's fast walk-in is unchanged.
+ *
+ * ## The component
+ *
+ * `CheckInFooter` in `src/pos/components/ReservationPanel.tsx` — the panel's pinned bottom
+ * bar, outside the scrolling body so it is there on all four tabs. The primary button is the
+ * only place in the Weston edition where golf reaches the cart.
+ *
+ * | What it reads | Where from | Default | What it decides |
+ * |---|---|---|---|
+ * | `due` | `orderTotals(buildTeeTimeCart(b, state.courses, rateContext(state))).total` | — | The amount on the button and on the right of the summary line |
+ * | `fees` | `reservationDue(b, rates)` | — | The `fees` figure; `extras` is `due − fees − tax`, shown as `carts` |
+ * | `settled` | `reservationSettled(b)` — every seat `paid` or `noShow` | `false` | **Open in register**, charging nothing |
+ * | `onOrder` | `state.selectedBookingId === b.id` | `null` | **Update order · $x** instead of Check in & pay |
+ * | `allNoShow` | every seat `noShow` | `false` | Button reads **No-show** and is disabled |
+ * | `playing` / `eighteens` | non-no-show seats, and how many are on 18 | — | `3 playing · 1 on 18` on the left |
+ *
+ * ## What pressing it does
+ *
+ * 1. Unless the booking is already settled, `patchBooking` runs `checkInPlayer` over every seat
+ *    that is not a no-show — `step = max(step, ROUND_STEP.checkedIn)`, `noShow: false`. Not the
+ *    arrived-only seats: everyone, which is what Weston asked for on both devices.
+ * 2. `loadBooking` puts the golf on the order, selects the booking, forces `view: 'pos'`,
+ *    re-expands the order rail and closes the panel.
+ *
+ * **Check in & pay tops the order up.** `loadBooking` sets `orderSeats: null` and rebuilds the
+ * golf for the *whole* booking, keeping every non-golf line already rung up. Round 3 put an
+ * **Add to cart** on each player row (section 14), so an order can hold two of four seats;
+ * pressing Check in & pay after that completes the party rather than discarding what was done
+ * to the seats already on it, because the rebuild reads the reservation, not the cart.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 1366 × 840 (`shell` in `src/theme/tokens.ts`); panel 640 by default |
+ * | Footer | `12px 16px 14px`, `md3.onPrimary`, 1px `md3.outlineVariant` top rule, `flexShrink: 0` |
+ * | Amount type | 18px / 800, `md3.primary` when settled, else `md3.onSurface` |
+ * | Button labels | `Check in & pay · $x` · `Update order · $x` · `Open in register` · `No-show` (disabled) |
+ * | Right-hand read-out | `$x due` · `Paid in full` · `No-show · nothing due` |
+ * | Secondary actions | **Move** (`movePlayers` at this tee time), **Delete** (a confirm naming the booking and time, `onConfirm: deleteBooking:<id>`), **Close** |
+ * | Tax in the amount | `orderTotals` — the booking's own tax line for golf, `TAX_RATE` (8%) on anything else |
+ * | Walk-in clock | `demoNow()` — May 21 2026, 12:00 PM — so "next open tee time" is the same slot every run |
+ * | Walk-in identity | `walkin-1` / `W-0001`, one player, from `planWalkIn` |
+ * | Change-time menu | `openTeeTimes`, party-sized, after the demo now, on `walkInCourses`, `limit: 12`, current one ticked |
+ *
+ * ## Scope
+ *
+ * Weston edition, tablet. The base edition still goes tee time → register and keeps its fast
+ * register-first walk-in. `loadBooking` itself is shared by both editions, so the "keep the
+ * retail, rebuild the golf" rule holds everywhere.
+ *
+ * ## The stories
+ *
+ * | Story | Starting state | What it is for |
+ * |---|---|---|
+ * | **CheckInAndPay** | Panel open on `adjustedParty()` | The footer in full. The play test presses it and asserts the register's **Pay** asks for exactly the amount the button offered, and that the panel closed |
+ * | **InTheRegister** | `registerWith(adjustedParty())` | Where it lands: the golf summarised, the same total to pay |
+ * | **UpdateOrder** | The same order with the panel reopened on it | The **Update order** label — the booking is already `selectedBookingId` |
+ * | **PaidBooking** | `paidTwilight()` — Morris, G. from the Loom | **Paid in full**, action reads **Open in register**, no second charge |
+ * | **NoShowParty** | `noShowParty()` | Nothing due, nobody to check in, the action disabled |
+ * | **WalkInThroughReservation** | Empty register at the 18-hole club | The whole route: Walk-in → a `W-0001` reservation over today's sheet → Check in & pay → a register showing the golf summary, with no "+ modifier" or "Guest Details" |
+ * | **WalkInFromRate** | Register on the CHECK IN category | Ringing *Guest Rate 9 Holes* with an empty order lands a nine-hole walk-in at that rate |
+ * | **WalkInChangeTime** | As WalkInThroughReservation | **Change** opens the list of open times that fit the party |
+ *
+ * ## Still open
+ *
+ * **Check in & pay is one button doing two things.** Weston's flow wants the party checked in
+ * and the money taken in one press, which is right at the counter — but it means there is no
+ * way to check a party in from the panel *without* opening an order. The phone splits them (a
+ * separate **Check in** button sits beside the primary); the tablet does not, and nobody has
+ * said whether it should.
+ *
+ * **Update order tops up to the whole booking.** That is correct after a per-seat split where
+ * the rest of the party has now arrived, and wrong if the operator meant to keep charging two
+ * seats. There is no "update just these seats" — `rebuildOrderSeats` exists and does exactly
+ * that, but nothing in this footer calls it.
+ *
+ * **Taking a payment marks the seats paid; nothing un-marks them.** A refund flips `pay` but
+ * leaves `playerStates[].paid` alone, so a refunded booking reopened here reads settled.
  */
 const meta = {
   title: 'Weston Edits/6 · Check In & Pay/Tablet',

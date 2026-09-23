@@ -13,29 +13,114 @@ import type { Booking } from '../../../pos/types';
  * **rate somebody chooses**.
  *
  * Weston was clear that the counter does not want a price box — and equally clear that the list
- * it wants instead is not the whole price book. What opens on the row is "every rate that you
- * could possibly have for this specific tee time on this specific date": the catalog narrowed
- * by the slot itself — its band (early / peak / twilight), its day of the week, its hole count.
- * A Saturday-only rate is not offered on a Thursday, and an 18-only rate is not offered on a
- * nine.
+ * it wants instead is not the whole price book: *"this is not showing you every rate that you
+ * have in the system, it's showing you every rate that you could possibly have for this specific
+ * tee time on this specific date."* Within that list the system pre-picks what the player is
+ * owed from their own record — *"it'll automatically give you what you're supposed to get"* —
+ * and everything else stays one tap away, dimmed. That is deliberate: the counter's job includes
+ * saying "you're getting the member rate today" to someone who technically isn't, and a system
+ * that hides the rate cannot be told to do it.
  *
- * Within that list the system pre-picks what the player is **owed** from their own record —
- * "it'll automatically give you what you're supposed to get" — and everything else stays one
- * tap away, dimmed. That is deliberate: the counter's job includes saying "you're getting the
- * member rate today" to someone who technically isn't, and a system that hides the rate cannot
- * be told to do it.
- *
- * Why tiles and not a dropdown, in his words: "they're quick, you can just click them — you're
- * not opening a dropdown, scrolling to find it, and then finding it with your finger." The
+ * Tiles rather than a dropdown, in his words: *"they're quick, you can just click them — you're
+ * not opening a dropdown, scrolling to find it, and then finding it with your finger."* The
  * price sits on the tile because the price is the thing being chosen.
  *
- * It opens **in place** on the row — his suggestion, "maybe you click and this expands, instead
- * of taking over a full screen" — so the rest of the group never leaves the screen while one
- * player's money is being decided. Four rows in the order money gets decided: the green fee,
- * the ride, a discount, and the option to put the round on a punch card.
+ * It opens **in place** on the row — his suggestion, *"maybe you click and this expands, instead
+ * of taking over a full screen"* — so the rest of the group never leaves the screen while one
+ * player's money is being decided.
  *
- * The pieces live in `RateExpand.tsx`, the catalog and its eligibility rules in
- * `data/rate-catalog.ts`, and what a seat resolves to in `logic/seat-pricing.ts`.
+ * ## The component
+ *
+ * `RateExpand` (`src/pos/components/RateExpand.tsx`), rendered by `PlayerRows` under the seat
+ * whose ⚙ tuner is pressed, in a box marked `data-rate-expand="{seat}"`. Four sections in the
+ * order money gets decided — **green fee → transport → discount → punch card** — then a footer
+ * carrying Reset, Save fees to all, and the three running totals.
+ *
+ * Nothing it decides lives on the component. Every tile dispatches `patchBooking` and the editor
+ * re-reads the booking, which is why the row's meta line, the footer, the order rail and the
+ * register cannot disagree about what a seat costs. What it writes, all on `PlayerState`
+ * (`src/pos/types.ts`):
+ *
+ * | Field | Set by | Default | What it does |
+ * |---|---|---|---|
+ * | `rateId` | a green-fee tile | absent — the seat reads `autoRate` | The rate the seat is sold on. Pressing the tile the system had already picked clears it rather than pinning it |
+ * | `fee` | the row's tee-fee box | absent | A typed-over green fee. **Choosing a tile clears it** — the two cannot both be the price |
+ * | `transportRateId` | a transport tile | absent — the default row for the booking's mode | The transport row. It carries its own `mode`, so picking *Walking* also moves the seat's walk/ride/push state |
+ * | `transportFee` | typed | absent | A typed-over transport price, cleared the same way |
+ * | `discountId` · `discountManual` | a discount tile · **Amount…** | absent | The preset, and the amount when it is the typed one |
+ * | `punch` | the punch row (17 · Punch Cards) | absent | `{ customerId, cardName }` — settles the green fee, leaves the ride billed |
+ *
+ * Two pieces of local state, deliberately not on the store: `filter` (the search box) and
+ * `showAll` (the overflow toggle). They are about reading the grid, not about the booking, and
+ * they should not survive closing the editor.
+ *
+ * ## Eligible, and what that does *not* mean
+ *
+ * The grid is narrowed by the **slot** — band, day of week, hole count (`ratesForTeeTime`). Who
+ * is sitting in the seat only decides the **ordering and the pre-pick**: `isEligible` sorts and
+ * groups, it never removes a tile. A rate matches on **any** of the `customerTypes` or
+ * `memberships` it lists, not all of them — requiring all meant a customer carrying plain
+ * `Resident` failed the Weekday Resident row, which lists two spellings of the same thing.
+ *
+ * A seat resolves to a customer by **linked record or the booker's phone, never by name**
+ * (`seatRecord`). A name that looks like a customer is a suggestion elsewhere; it prices nothing.
+ *
+ * The full model — the eligibility fields, the standard and heavy cards, how `autoRate` picks —
+ * is written up once in **18 · Rate Catalog**, rather than repeated here.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Tile | min-width 92px, 9×5px padding, `radius.sm`, 11.5px/700 label over a 10.5px amount |
+ * | Selected tile | `md3.primary` 1.5px border on `md3.primaryContainer`, `aria-pressed="true"` |
+ * | Ineligible tile | `opacity: .55`, `title="Not this player's rate — staff override"`, **not disabled** |
+ * | Overflow kicks in | `grid.length > 12`. Below that there is no filter box and no Show/Hide |
+ * | Filter box | 130px, `aria-label="Filter rates"`, matches on rate name across both sections |
+ * | This slot | Thursday 4:00 PM twilight nine — **10** standard rates, **24 of 26** heavy ones |
+ * | Eligible here | 1 of 10 standard for an unlinked guest (the open rack row); 8 of 24 heavy |
+ * | Transport catalog | Riding Cart $26.82 · Cart Plus $32 · Member Cart $0 · **Walking $8.58** · Walking, member $0 · Push Cart $6 |
+ * | Discount presets | Comp · 50% off · 25% off · Employee, plus **Amount…** (typed, reason "Manual discount") |
+ * | Footer | Green fee (struck through when discounted or punched) · Transport · Total |
+ *
+ * ## Scope
+ *
+ * Weston edition only, on the reservation panel's **Players** tab, on an editable seat — a paid
+ * or no-show seat has no tuner, because changing settled money is a refund (Financial tab), not
+ * an edit. The phone reaches the same model through a full-screen dialog; see the **Mobile**
+ * half of this section.
+ *
+ * Two of the four Storybook toolbar globals land here: **Rates** swaps in the heavy catalog and
+ * **Panel width** decides how many tiles fit a row. The heavy-catalog stories below pin
+ * `rateCatalog` themselves, so the toolbar cannot collapse the comparison into one screenshot.
+ *
+ * ## The stories
+ *
+ * | Story | Scenario | What it is for |
+ * |---|---|---|
+ * | **Opens On The Row** | `openParty`, seat 1 | That the tuner expands under the seat rather than taking the screen. Asserts the grid and `aria-expanded` |
+ * | **The Whole Editor** | `openParty`, seat 1 | All four rows at rest, for reading |
+ * | **Eligible First Then The Rest** | `adjustedParty`, seat 2 — Kim, David, a member | That the member's rows sort above `Weekday Junior`, and that the override tile carries the warning instead of being disabled |
+ * | **Heavy Catalog** | `rateCatalog: 'heavy'` | 24 tiles: eight eligible shown, sixteen behind **Show**, filter box in the header |
+ * | **Show All Rates** | heavy | The override path — one tap, not a manager screen. Checks the control becomes **Hide** |
+ * | **Filtering The Heavy Catalog** | heavy | Typing `senior` over both sections at once |
+ * | **Transport Tiles** | `openParty` | That walking costs $8.58 and the member cart is dimmed, not hidden |
+ * | **Save Fees To All** | `openParty` | One decision across the party; checks all three tee-fee fields land on $21.00 |
+ * | **Reset Puts It Back** | `openParty` | That an accidental tap is one tap to undo |
+ *
+ * ## Still open
+ *
+ * - **Twelve is a guess.** The grid changes shape past twelve rows because twelve is roughly
+ *   where a 640px panel stops holding the tiles in three rows. It has not been measured against
+ *   a real club's card, and at 820 the threshold would be higher.
+ * - **The heavy catalog is story-only.** It is built from the naming the old prototype used, not
+ *   from a customer's price book. The real question — how many rates a course actually sells,
+ *   and how many a player qualifies for — is still open.
+ * - **Save fees to all copies the rate and nothing else.** Not the transport row, not the
+ *   discount, not a punch. That is almost certainly right (a group rarely shares a discount
+ *   reason) but it has not been put to Weston.
+ * - **Amount… has no tile state.** The typed discount commits on blur and then reads as
+ *   "Amount…" again; the reason shows on the row and in the footer, not on the tile.
  */
 const meta = {
   title: 'Weston Edits/11 · Rate Selector/Tablet',

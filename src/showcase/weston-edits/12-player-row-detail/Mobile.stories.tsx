@@ -11,42 +11,106 @@ import { CARTS_OUT, annotatedParty, at18, cardOf, punchHolder, withBookings } fr
  *
  * What a player row says underneath the name, at 402px.
  *
- * Weston's note on the old screen was about exactly this line: "we want to display that
- * there… we displayed those for a reason." A row that prints a dollar amount and nothing else
+ * Weston's note on the old screen was about exactly this line: *"we want to display that
+ * there… we displayed those for a reason."* A row that prints a dollar amount and nothing else
  * cannot answer the only question anybody ever asks at the counter — *why is he paying that*.
- * So every seat carries the reason on its face: the **name of the rate** it is sold on, the
- * **name of the transport row** (which can cost money even when the player walks), the linked
- * customer's id, and the cart key the player is holding.
  *
- * It is also what makes the register trustworthy. The same seat pricing
- * (`logic/seat-pricing.ts`) builds this line and the order line, so a golfer read back "$19,
- * senior resident rate, riding" at the cart barn sees the same words on the receipt.
+ * On the phone that line carries more weight than it does at the counter, because the phone has
+ * fewer places to put anything. There is no key glyph on the row and no rate editor open beside
+ * the group: **the caption is the only thing on screen that says what a seat is sold on and what
+ * cart it is holding.**
  *
- * **The density choice does not cross over, and there is nothing to choose.** On the terminal
- * this section is a trade between two treatments — *comfortable*, which gives the rate and the
- * ride a line each with a dotted leader, and *dense*, V1's one-liner — and `rowDensity` on the
- * Weston options picks between them. The phone has no such switch, and should not:
+ * ## The component
  *
- * - `rowDensity` is read in one place, `components/PlayerRows.tsx`, which is terminal-only.
- * - The terminal's argument for *comfortable* is that a long rate name gets ellipsised on one
+ * Not a component — a `Typography variant="caption"` at the foot of `PlayerRow` in
+ * `src/pos/mobile/screens/tee/ReservationPlayers.tsx`, built from the same `seatPrice` the
+ * terminal uses. One line, joined with ` · `, parts absent rather than blank:
+ *
+ * | Part | Source | Shown when |
+ * |---|---|---|
+ * | `{rate.name} : {greenFee}` | `sp.rate`, `sp.greenFee` | a rate resolves — which is always, on a real card |
+ * | the reason | `sp.reason` | punched (the **card's name**) or discounted (`50% off · was $26.00`) |
+ * | `{transport.name} : {transportFee}` | `sp.transport` | always — a walker's trail fee included |
+ * | `ID {record.id}` | `seatRecord(b, i)` | the seat resolves to a customer by **linked record or the booker's phone, never a name** |
+ * | `cart {n}` | `PlayerState.cartKey` | a key is signed out (16 · Cart Signout) |
+ *
+ * The controls above it are the other half of the row, and they are what the caption is written
+ * around: **9 | 18**, the **fee chip** (which opens 11 · Rate Selector), the **transport chip**,
+ * the **cart chip** (14 · Per-seat Cart) and **⋮**. Five controls is what fits; a sixth would
+ * shrink the five that get used every hour.
+ *
+ * ## Where it deliberately differs from the tablet
+ *
+ * **There is no density switch, and there should not be one.** The terminal offers *comfortable*
+ * (rate and ride on a line each, dotted leader) and *dense* (V1's one-liner), picked by
+ * `rowDensity` on the Weston options. The phone prints the one-liner, always:
+ *
+ * - `rowDensity` is read in `components/PlayerRows.tsx` and nowhere else. It is terminal-only in
+ *   the code, not merely unused here.
+ * - The terminal's argument for *comfortable* is that a long rate name gets **ellipsised** on one
  *   line, and a truncated rate name is a row that has stopped answering the question the line
- *   exists for. The phone's caption is not `noWrap`: when it runs out of width it **wraps to a
- *   second line** rather than cutting the name off. So the failure mode *comfortable* was
- *   invented to avoid does not occur here, and the packing that causes it costs nothing.
- * - The terminal's argument for *dense* — more seats on screen at once — is worth much less on
- *   a phone that scrolls one column with a thumb than on a panel with a fixed 618px of height.
+ *   exists for. The phone's caption is not `noWrap`: it **wraps to a second line** and keeps every
+ *   character. The failure mode *comfortable* was invented to avoid does not occur here.
+ * - The terminal's argument for *dense* — more seats on screen at once — is worth much less on a
+ *   phone that scrolls one column with a thumb than on a panel with a fixed 618px of height.
  *
- * So the phone prints the one-liner, always, and lets it wrap. Everything a line cannot fit is
- * one tap away in two directions: the **name** opens the customer's record (4 · Customer
- * Profile), the **fee chip** opens the rate editor (11 · Rate Selector).
+ * Two smaller differences:
  *
- * **One thing the phone's line does not carry, and the terminal's does.** `SeatPrice.reason` —
- * the *why* behind a cheap seat: "50% off", or the name of the punch card that settled the
- * round. The terminal prints it on the row beside the price it came down from; the phone's
- * one-liner leaves it out, so a discounted or punched seat reads as a smaller number with no
- * explanation until the rate editor is opened. That is a gap rather than a decision, and the
- * stories below show both halves of it: what the row says, and where the reason currently
- * lives.
+ * | | Tablet | Phone |
+ * |---|---|---|
+ * | Rewards balance · rounds played | on the `bits` line | **not printed** — the record is one tap away on the name |
+ * | The cart number | on the key glyph *and* the line | **only on the line** — the key lives in the ⋮ sheet |
+ *
+ * The phone's line does carry `SeatPrice.reason`, so a $13.00 or $0.00 seat explains itself
+ * without opening anything — the same rule the terminal's *comfortable* density follows, and one
+ * the terminal's *dense* density actually breaks.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame`) |
+ * | Caption | MUI `variant="caption"`, `md3.onSurfaceVariant`, `px: 1.5`, no `noWrap` — it wraps |
+ * | Row controls | 36px chips and a 48px ⋮; the row card sits on `mobile.surfaceContainerLow` |
+ * | Adjusted row | 1px `md3.primary` border instead of `md3.outlineVariant` |
+ * | Locked seat | a second caption — "Paid — refund on the Financial tab to change this player" |
+ * | This fixture | rack $26 · Weekday Senior Resident $19 · 50% off $13 · punched $0 · Riding Cart $26.82 · cart 14 |
+ *
+ * ## Scope
+ *
+ * Weston edition only, on the reservation's **Players** tab
+ * (`ReservationPlayersTab`), on every seat. It is reached at
+ * `{ name: 'bookingDetail', bookingId }`, a **push** (`PRESENTATION.bookingDetail`).
+ *
+ * None of the four Storybook toolbar globals change this screen: **Panel width** and **Row
+ * density** are terminal-only, **Transport** styling is read by the terminal's row, and **Rates**
+ * only reaches the editor behind the fee chip.
+ *
+ * ## The stories
+ *
+ * All six render `annotatedParty` — a four-seat party with one annotation each, so a single
+ * screenshot carries every case the line has to handle.
+ *
+ * | Story | Seat | What it is for |
+ * |---|---|---|
+ * | **The Meta Line** | all four | One line per seat, the booker's ending in `cart 14`, seat 2 naming its rate rather than printing a price alone |
+ * | **Long Names Wrap Rather Than Truncate** | 2 | `Weekday Senior Resident` — the longest name the standard card sells — at 402px. Asserts the element is not clipping its own content |
+ * | **A Discounted Seat** | 3 | Half of the rack rate it is still sold on, and the ride untouched beside it |
+ * | **Where The Reason Lives** | 3 | The rate editor over the same seat: the discount tile lit, and the reason printed again in the footer beside the price it produced |
+ * | **On A Punch Card** | 4 | The round settled at $0.00 and the **ride still charged** — a punch buys the round, not the cart (17 · Punch Cards) |
+ * | **A Cart Signed Out** | 1 | That the line is the sole answer to "what cart do I have", and that it cannot read `cart 14` and `Walking` at once |
+ *
+ * ## Still open
+ *
+ * - **The per-story notes below are one revision behind.** Several of them describe the caption
+ *   as leaving `SeatPrice.reason` out; it prints it now. The assertions are correct — they only
+ *   ever asserted what the row genuinely shows — but the prose needs a pass.
+ * - **The reason can push the line to three lines.** `Weekday Non Resident : $13.00 · 50% off ·
+ *   was $26.00 · Riding Cart : $26.82 · ID … · cart 14` is a lot for 402px. Wrapping is better
+ *   than truncating, but a seat carrying every annotation at once has not been designed for.
+ * - **No rewards or rounds.** The terminal prints them; the phone does not, on the grounds that
+ *   the record is one tap away. Nobody has checked that against the cart-barn job, where the
+ *   record is several taps away.
  */
 const meta = {
   title: 'Weston Edits/12 · Player Row Detail/Mobile',

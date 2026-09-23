@@ -9,45 +9,104 @@ import { CARTS_OUT, at18, cartKeyParty, cartsAlreadyOut, cartsFree, openParty, w
  * Weston Edits / 16 · Cart Signout / Mobile
  *
  * The old prototype put **Cart signout** on every player row and a key glyph on the booking once
- * a cart was out. It is a small feature with a real constraint behind it: the course owns a
- * fixed number of carts, two players cannot both be given cart 14, and the person handing over a
- * key needs to know what is already gone before reaching for one.
+ * a cart was out. It is a small feature with a real constraint behind it: the course owns a fixed
+ * number of carts, two players cannot both be given cart 14, and the person handing over a key
+ * needs to know what is already gone before reaching for one.
  *
  * **And this is arguably a phone job more than a counter one.** Keys are handed out at the cart
  * barn, not at the desk — the device in your hand while you are standing beside the fleet is the
  * phone. So the feature is at least as important here as on the terminal, even though it reaches
  * it by a different route.
  *
- * **Where it lives on the phone.** The terminal puts a key glyph on the player row beside the
- * transport toggle. At 402px that row's control strip is already holes, fee, transport, the
- * per-seat cart chip and a ⋮ — there is no sixth control's worth of width, and adding one would
- * shrink the four that get used every hour. So the key moves into the **⋮ sheet**, where it
- * reads `Cart signout · Hand over a key`, or `Cart 22 · Change or return it` once one is out.
- * It opens as a **push**, not a dialog: picking a cart is a drill-down into the fleet, not an
- * edit you abandon halfway.
+ * ## The screen
  *
- * The consequence is worth naming, because it makes 12 · Player Row Detail load-bearing: with no
- * glyph on the row, the seat's **caption line** (`… · cart 22`) is the only place the number
- * shows without opening anything. That line is how staff answer "what cart do I have".
+ * `CartSignoutScreen` (`src/pos/mobile/screens/tee/CartSignoutScreen.tsx`), route
+ * `{ name: 'cartSignout', bookingId, seat }`, presented as a **push**
+ * (`PRESENTATION.cartSignout = 'push'` in `navigation.tsx`) — picking a cart is a drill-down into
+ * the fleet, not an edit you abandon halfway, so it gets a back arrow rather than a ✕ / Save pair.
+ *
+ * It reads and writes exactly what the terminal's modal does: `CART_FLEET`, `availableCarts`,
+ * `cartHolder` from `src/pos/data/carts.ts`, and `signOutCart` / `returnCart` from
+ * `logic/reservation.ts`, dispatched as `patchBooking`. There is no phone-side fleet state.
+ *
+ * | | |
+ * |---|---|
+ * | Header | the player's name, then `{free} of 35 available` — plus `· holding cart {n}` when the seat has one |
+ * | Fleet | every number, wrapped across the phone's width |
+ * | Return | a full-width **Return cart {n}**, shown only when the seat holds one |
+ * | Out now | the day's signed-out carts, as `Cart {n} · {player} · {time}` |
  *
  * **Availability is derived, never stored.** A cart is out because a seat on the day's sheet is
  * holding its number (`PlayerState.cartKey`); the picker reads the day's bookings and subtracts.
- * That is worth saying plainly because it decides how the whole feature behaves:
+ * That decides how the whole feature behaves: returning a cart is just **clearing that seat**, a
+ * past tee time still holds its keys (a cart does not come back because its tee time passed), and
+ * moving or deleting a booking takes its keys with it, for free.
  *
- * - returning a cart is just **clearing that seat** — there is no second list to forget to
- *   update, and no way for the fleet view and the tee sheet to disagree;
- * - a past tee time still holds its keys, which is correct: a cart does not come back because
- *   its tee time passed;
- * - moving or deleting a booking takes its keys with it, for free.
+ * **Signing out a cart implies riding.** `signOutCart` moves the seat to `transport: 'cart'`;
+ * `returnCart` leaves them riding, because handing the key back is not a decision to walk.
  *
- * **A taken cart is shown, not hidden.** It is struck through, disabled, and its label names who
- * has it — "cart 14 is out with the 6:00" is the question actually being asked. Hiding it would
- * answer a different one. Under the grid, the carts that are out are listed by name and tee
- * time, which on a phone does the work the terminal's hover tooltip does.
+ * ## Where it deliberately differs from the tablet
  *
- * Numbers sit on 56×48 targets — the phone build's touch floor, and a 35-cart grid is no reason
- * to go under it. Signing out a cart implies riding, so the transport follows the key
- * (`signOutCart`); the fleet numbers skip 13, the way most fleets do.
+ * | | Tablet | Phone | Why |
+ * |---|---|---|---|
+ * | Where it starts | a key glyph on the player row | the **⋮ sheet** — `Cart signout · Hand over a key`, or `Cart {n} · Change or return it` once one is out | at 402 the row's control strip is already **9 \| 18**, fee, transport, the per-seat cart chip and ⋮. A sixth control would shrink the five that get used every hour |
+ * | Presentation | a 520px modal over the terminal | a pushed screen | a modal at 402 is a full screen with extra chrome |
+ * | Number target | 46 × 40 | **56 × 48** | `mobile.touchTarget` is 48, and a 35-cart grid is no reason to go under it |
+ * | Who has a taken cart | a hover tooltip | the **accessible label** — `Cart 14, out with {player}` — plus the list below | a phone has no hover |
+ * | "Out now" list | first **4**, under a "hover to see who has it" line | first **6**, under its own heading | the list is doing the tooltip's job, so it has to carry more |
+ * | Confirming | the modal stays open | it **pops** back to the reservation, with a toast | a drill-down that has done its one job should not need dismissing |
+ *
+ * The consequence is worth naming, because it makes **12 · Player Row Detail** load-bearing: with
+ * no glyph on the row, the seat's **caption line** (`… · cart 22`) is the only place the number
+ * shows without opening anything. That line is how staff answer "what cart do I have".
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame` in `src/theme/tokens.ts`) |
+ * | Fleet | **35 carts**, 1–12 and 14–36 — the numbers **skip 13**, the way most fleets do |
+ * | Number target | 56 × 48, `radius.md`, 16px/800 |
+ * | Taken | `md3.surfaceContainer` fill, `md3.outline` text, `line-through`, `disabled` |
+ * | This seat's own | `md3.primary` border on `md3.primaryContainer`, **enabled** |
+ * | Return button | full width, `min-height: 48`, outlined |
+ * | Accessible names | `Sign out cart {n}` · `Cart {n}, out with {player}` · `Cart {n}, signed out to {name}` · `Return cart {n}` |
+ * | Toast | `Cart {n} → {name}` on signout, `Cart {n} returned` on return |
+ * | Out-now cap | 6 — the point where a list stops being a glance |
+ *
+ * ## Scope
+ *
+ * Weston edition only, from a player row's ⋮ on the reservation's **Players** tab. The item is
+ * offered only on an **editable** seat: handing a cart to somebody who has already paid and gone
+ * out is not a thing this screen should make easy.
+ *
+ * None of the four Storybook toolbar globals change this screen.
+ *
+ * ## The stories
+ *
+ * Every story runs on a day where the morning's first two groups already hold **cart 14** and
+ * **cart 7** (`cartsAlreadyOut`), so the picker has something real to subtract.
+ *
+ * | Story | State | What it is for |
+ * |---|---|---|
+ * | **From The Row Menu** | reservation, ⋮ open on the booker | The route in, and the secondary line doing work — `Hand over a key` before, `Change or return it` after, so the sheet says what the item will do before it is tapped |
+ * | **The Key Picker** | picker on seat 1 | The fleet as the cart barn sees it. Asserts **33 of 35 available**, that 14 is disabled, that its label names the group holding it, that nothing held is offered, and that `CART_FLEET` skips 13 |
+ * | **What Is Out Now** | same | The list under the grid — the only way to read the fleet on a device with no hover, without tapping thirty-five numbers one at a time |
+ * | **Signing One Out** | same | Taps cart 3, then looks for it **on the reservation's caption line**: the number has to be readable from the party without opening anything, because the next question at the barn is always "which one is mine" |
+ * | **The Key On The Seat** | picker on a seat holding 22 | 22 shows **selected**, not struck through — it is theirs, not taken — the subtitle says `32 of 35 available · holding cart 22`, and the footer offers **Return cart 22** |
+ * | **Returning It** | same | Returns it and checks the caption has dropped the number. Note what it does *not* check: the transport. `returnCart` leaves the player riding, which is right |
+ *
+ * ## Still open
+ *
+ * - **The fleet is one pool.** No cart types, no out-of-service flag, no maintenance.
+ * - **Nothing ever ends a round.** Keys come back only by someone pressing Return; there is no
+ *   "round finished" mark to release them, which `signedOutCarts` already anticipates in its own
+ *   comment.
+ * - **The ⋮ is two taps deep.** At the barn, with a key ring in the other hand, the cart signout
+ *   is behind a row menu. It is the right trade for the row's width today, but if the phone turns
+ *   out to be *the* cart-barn device it probably deserves its own entry point.
+ * - **No scanning.** Numbers are typed by eye and tapped. A cart with a tag on it is the obvious
+ *   next step and is not modelled.
  */
 const meta = {
   title: 'Weston Edits/16 · Cart Signout/Mobile',

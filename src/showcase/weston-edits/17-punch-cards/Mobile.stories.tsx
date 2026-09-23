@@ -22,10 +22,10 @@ import {
  * Weston Edits / 17 · Punch Cards / Mobile
  *
  * **A punch card holds prepaid rounds.** That sentence is the whole design, and getting it wrong
- * is what the old prototype did: its transport list carried a row called *Free Punch Cart*,
- * which spent a punch to pay for a **ride**. Those are different goods. A walker and a rider
- * would hand over the same punch and get very different value for it, and the course would have
- * sold a round's worth of credit for a cart.
+ * is what the old prototype did: its transport list carried a row called *Free Punch Cart*, which
+ * spent a punch to pay for a **ride**. Those are different goods. A walker and a rider would hand
+ * over the same punch and get very different value for it, and the course would have sold a
+ * round's worth of credit for a cart.
  *
  * So the punch lives with the round, not the ride:
  *
@@ -35,35 +35,99 @@ import {
  * | **What is still billed** | Transport — the riding cart, the push cart, even the walking trail fee — and everything else on the order |
  * | **Whose card** | Not necessarily the player's. `PlayerState.punch` carries `customerId`, so one customer can cover another's round |
  * | **When it is spent** | At **check-in**, not when it is applied |
- * | **Where it lives** | The fourth section of the phone's rate editor, under green fee, transport and discount — the order money gets decided in |
+ * | **Where it lives** | The fourth section of the phone's rate editor, under green fee, transport and discount |
  *
- * The last two are worth dwelling on. **The punch comes off the card at check-in** because an
- * applied punch on a reservation nobody showed up for has not been used: pricing a reservation
- * stays a pure read of the booking, and a card is only decremented when a round actually
- * happens. The editor says so in as many words under the applied card, so nobody has to guess
- * whether cancelling the reservation costs the golfer a round.
+ * There is deliberately **no punch-card transport row** in `TRANSPORT_RATES`, on either surface.
+ * That absence is the fix, and it is worth stating as a rule rather than leaving as an omission.
  *
- * And a punch is **not a discount**. Applying one clears any discount on the seat, because "50%
- * off a fee that has already been paid by a punch" is not a thing anyone means. The seat keeps
- * the round's gross so it can still show what was covered.
+ * ## The component
  *
- * **Same model, one phone difference.** Everything above is the terminal's, unchanged — the same
- * `applyPunchCard`, the same `seatPrice`, the same section order. What differs is that the whole
- * editor is a full-screen dialog (11 · Rate Selector), so the punch section gets the width it
- * wants: the cards are full tiles reading "10-Round Punch Card · 6 of 10 left", and the search
- * for somebody else's card is a real text field rather than a squeezed inline one.
+ * `PunchSection`, a local component inside
+ * `src/pos/mobile/screens/tee/SeatRateScreen.tsx` — the fourth section of the full-screen rate
+ * dialog (11 · Rate Selector), under the heading **Punch card**.
  *
- * **A gap to know about.** The terminal prints the card's **name** on the player row, so a $0.00
- * seat explains itself at a glance. The phone's caption line does not carry `SeatPrice.reason`,
- * so a punched seat reads as a bare zero until the editor is opened — see 12 · Player Row
- * Detail, where the same gap shows up for discounts. The data is on the seat; the line just
- * doesn't print it.
+ * | | |
+ * |---|---|
+ * | Nothing applied | a tile per card the seat's own record still has rounds on (`usablePunchCards`), reading `{card.name}` over `{remaining} of {total} left`, then **Use a customer's card** |
+ * | Searching | a `Search a card holder…` text field over `searchRoster(query, 4)`, **filtered to holders with rounds left** — searching is not the place to discover somebody's card is empty |
+ * | Applied | one selected tile, `{card.name}` over `applied · tap to remove` |
+ * | The note | "The punch comes off the card at check-in, not now." |
  *
- * **A note on the fixtures.** Every punch-card holder in `ALL_GOLFERS` is a member, and members
- * price at $0 — so a punch on one of their seats settles nothing anyone can see, and proves
- * nothing. The holders below are picked out of the wider roster by predicate (`punchHolder`,
- * `cardDonor` in `mobile-scenarios.ts`): no membership, no rate-bearing customer type, so the
- * seat prices at rack and the punch has a real green fee to cover.
+ * Everything it writes goes through the terminal's own helpers — `applyPunchCard`,
+ * `clearPunchCard` in `logic/reservation.ts` — and everything it prices reads `seatPrice` in
+ * `logic/seat-pricing.ts`, where a punch sets `greenFee` to **0**, keeps `gross` so the coverage
+ * can still be shown, leaves `transportFee` alone, and makes `reason` the card's name. There is no
+ * phone-side punch logic at all.
+ *
+ * A punch is **not a discount**: applying one clears any discount on the seat. And removing one
+ * **reprices** rather than restores — the green fee goes back to whatever the seat's rate says
+ * now, not to a remembered number.
+ *
+ * ## Where it deliberately differs from the tablet
+ *
+ * | | Tablet | Phone | Why |
+ * |---|---|---|---|
+ * | Container | the fourth row of an in-place expand on a 640px panel | the fourth section of a **full-screen dialog** | four sections of tiles do not fit beside a 402px player row |
+ * | Tile | min-width 92, ~26px tall | `min-height: 48`, two to a row — "10-Round Punch Card · 6 of 10 left" gets real width | `mobile.touchTarget` |
+ * | The search field | a squeezed inline `InputBase` with an `aria-label` | a full-width MUI `TextField`, found by **placeholder** | the dialog has the room; the field has no label, which is a gap rather than a choice |
+ * | The running total | the editor's footer | the **app bar**, as `{holes} holes · {total}` | on a scrolling screen the footer leaves the viewport, and the number a punch changes has to stay in view while it changes |
+ * | "Another customer's card" note | printed under the applied card | **not printed** | the phone's note stops at "comes off the card at check-in"; `punch.customerId` is still recorded |
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame` in `src/theme/tokens.ts`) |
+ * | Tile | `min-height: 48`, `min-width: 108`, `flex: 1 1 46%`, `radius.md`, 13px/700 over an 11.5px amount |
+ * | Applied | `md3.primary` border on `md3.primaryContainer`, `aria-pressed="true"` |
+ * | Search | MUI `TextField size="small"`, full width, placeholder `Search a card holder…`, **4** results |
+ * | This fixture | seat 2 holds a **10-Round Punch Card, 6 of 10 left**; the riding cart beside it stays at **$26.82** |
+ * | Walking, punched | green fee $0.00, transport **$8.58** — the trail fee a walk/ride boolean cannot express |
+ *
+ * ## Scope
+ *
+ * Weston edition only, inside the rate dialog reached from a player row's **fee chip** on the
+ * reservation's Players tab, on an editable seat. A punched seat reads back on the reservation
+ * through **12 · Player Row Detail** — the caption prints the card's name as the reason — and on
+ * the order, because both come from the same `seatPrice`.
+ *
+ * None of the four Storybook toolbar globals change this screen.
+ *
+ * ## A note on the fixtures
+ *
+ * Every punch-card holder in `ALL_GOLFERS` is a member, and members price at **$0** — so a punch
+ * on one of their seats settles nothing anyone can see, and proves nothing. The holders below are
+ * picked out of the wider roster by predicate (`punchHolder`, `cardDonor` in
+ * `mobile-scenarios.ts`): no membership, no rate-bearing customer type, so the seat prices at rack
+ * and the punch has a real green fee to cover.
+ *
+ * ## The stories
+ *
+ * | Story | Seat | What it is for |
+ * |---|---|---|
+ * | **Their Own Card** | 2 of `punchParty` | The common case, asserted on the **app bar total**: it drops by exactly the green fee and **not by the cart**. The app bar is the target on purpose — it is the running number, in view the whole time the tiles are pressed, which is the argument for having it there |
+ * | **Applied** | 2 of `ownCardApplied` | The applied state at rest: one tile reading `applied · tap to remove`, and the footer printing the card's name beside the $0.00 it produced, so the zero is explained where it happened |
+ * | **Spent At Check-In** | 2 of `ownCardApplied` | One line that settles a question the counter would otherwise have to ask somebody: a party that never turns up keeps its rounds |
+ * | **Removing It Reprices Back** | 2 of `ownCardApplied` | Pressing the tile again. Asserts the total lands back exactly where it started |
+ * | **Another Customer's Card** | 3 of `punchParty` | An unlinked guest paying rack, covered by another customer's card. Afterwards the seat owes its **ride and nothing else** |
+ * | **Rounds Not Rides** | 2 and 3 of `punchedWalkerAndRider` | The case that made the point. Both green fees $0.00; the rider owes **$26.82** and the walker still owes **$8.58**, and the test asserts the two transport prices differ from each other |
+ * | **On The Row** | 2 of `ownCardApplied` | The punched seat back on the reservation: $0.00, the ride untouched, and `punch.cardName` recorded on the seat |
+ *
+ * ## Still open
+ *
+ * - **Nothing decrements a card.** "Spent at check-in" is the rule and the note says so, but
+ *   check-in does not actually write it: `usablePunchCards` reads the roster, and the roster is
+ *   never reduced. A real build needs that write, plus the reversal when a check-in is undone.
+ * - **The phone never says *whose* card it was.** The terminal adds "Another customer's card." to
+ *   the note; the phone does not, even though `punch.customerId` is stored. That is the one piece
+ *   of the model the phone displays less of, and it is the piece an owner asks about.
+ * - **The search field has no accessible label** — only a placeholder, which is why the story
+ *   queries by placeholder text.
+ * - **Some per-story notes below are one revision behind**, describing the caption line as leaving
+ *   the card's name out. It prints it now; the assertions were always written against what the row
+ *   genuinely shows, so they are correct, but the prose needs a pass.
+ * - **The first card wins.** The roster search applies `usablePunchCards(c)[0]` without asking
+ *   which card, for a customer holding more than one.
  */
 const meta = {
   title: 'Weston Edits/17 · Punch Cards/Mobile',
