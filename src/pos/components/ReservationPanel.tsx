@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Box, ButtonBase, Dialog, Tab, Tabs, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
 import { elevation, md3, reservationPanel } from '../../theme/tokens';
@@ -32,8 +33,27 @@ import { isFreshWalkIn } from '../logic/walk-in';
  * adjusted here — into the register.
  */
 export function ReservationPanel() {
-  const { state } = usePos();
+  const { state, dispatch } = usePos();
   const panel = state.reservationPanel;
+  const scrimmed = panel?.presentation !== 'modal' && panel?.backdrop === 'scrim';
+
+  // Escape closes a **scrimmed** panel, and only a scrimmed one.
+  //
+  // The scrim makes the panel modal: the terminal behind it is inert, so there is no longer a
+  // way out with the keyboard. A squeezed panel traps nothing — the tee sheet beside it is
+  // still live — so Escape stays out of the way there, and a stray keypress on a counter
+  // terminal cannot discard per-player edits that have not reached the cart yet.
+  useEffect(() => {
+    if (!scrimmed) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Let a dialog opened *from* the panel — the customer record, cart signout, a confirm —
+      // take the key first; those close themselves and leave the reservation standing.
+      if (e.key !== 'Escape' || state.modal || state.customerModal) return;
+      dispatch({ type: 'closeReservation' });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [scrimmed, state.modal, state.customerModal, dispatch]);
   const panelWidth = panel?.width ?? state.weston.panelWidth;
   const b = panel && state.bookings.find((x) => x.id === panel.bookingId);
   if (!panel || !b) return null;
@@ -41,34 +61,70 @@ export function ReservationPanel() {
   if (panel.presentation === 'modal') return <ReservationModal booking={b} />;
 
   return (
-    <Box
-      key="reservation-panel"
-      role="complementary"
-      aria-label={`Reservation · ${b.name}`}
-      data-reservation-panel
-      sx={{
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        // Weston: "I wonder if it should take up more space… I think it's more important to
-        // have this bigger than to show more of the tee sheet." Three sizes to choose between
-        // on the tablet; `cover` takes the sheet entirely and still exits with one ✕.
-        width: panelWidth === 'cover' ? '100%' : PANEL_WIDTHS[panelWidth],
-        // Over the tee-sheet toolbar (40) and multi-select bar (60); under popovers and dialogs.
-        zIndex: 80,
-        bgcolor: md3.onPrimary,
-        borderLeft: `1px solid ${md3.outlineVariant}`,
-        boxShadow: elevation.e3,
-        display: 'flex',
-        flexDirection: 'column',
-        animation: `${slideIn} ${reservationPanel.motion}`,
-      }}
-    >
-      <ReservationContent booking={b} tab={panel.tab} />
-    </Box>
+    <>
+      {/*
+        The scrim treatment: the terminal dims and the panel comes forward, instead of the tee
+        sheet narrowing beside it. The background is also marked `inert` in `PosApp`, so it is
+        out of the tab order and the accessibility tree, not merely covered. Squeezing keeps every tee time reachable, but it compresses
+        the time gutter, the slot columns and the front/back nine headers — and at 820 that is a
+        lot of compression for a sheet you are only glancing at. Dimming leaves those widths
+        alone, so the sheet reads the same whether the panel is open or not.
+
+        Over the whole terminal, order rail included: while the panel is open it is the thing in
+        focus, and a half-dimmed screen reads as a rendering fault rather than a choice.
+      */}
+      {panel.backdrop === 'scrim' && (
+        <Box
+          data-reservation-scrim
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            // Under the panel (80), over the tee-sheet toolbar and the multi-select bar.
+            zIndex: 79,
+            bgcolor: 'rgba(0,0,0,.7)',
+            animation: `${fadeIn} ${reservationPanel.motion}`,
+            // Deliberately not a way out. The reservation closes from the panel — ✕, Close,
+            // Move, Delete or Check in & pay — so a stray tap on a dimmed tee sheet cannot
+            // discard edits that have not reached the cart yet.
+            cursor: 'default',
+          }}
+        />
+      )}
+      <Box
+        key="reservation-panel"
+        role="complementary"
+        aria-label={`Reservation · ${b.name}`}
+        data-reservation-panel
+        sx={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          // Weston: "I wonder if it should take up more space… I think it's more important to
+          // have this bigger than to show more of the tee sheet." Three sizes to choose between
+          // on the tablet; `cover` takes the sheet entirely and still exits with one ✕.
+          width: panelWidth === 'cover' ? '100%' : PANEL_WIDTHS[panelWidth],
+          // Over the tee-sheet toolbar (40) and multi-select bar (60); under popovers and dialogs.
+          zIndex: 80,
+          bgcolor: md3.onPrimary,
+          borderLeft: `1px solid ${md3.outlineVariant}`,
+          boxShadow: elevation.e3,
+          display: 'flex',
+          flexDirection: 'column',
+          animation: `${slideIn} ${reservationPanel.motion}`,
+        }}
+      >
+        <ReservationContent booking={b} tab={panel.tab} />
+      </Box>
+    </>
   );
 }
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
 
 const slideIn = keyframes`
   from { transform: translateX(100%); }
@@ -290,8 +346,12 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
  */
 function NextInLine({ booking: b }: { booking: Booking }) {
   const { state, dispatch } = usePos();
+  // "The course in view", as agreed — `dayBookings` filters by date alone, so without this the
+  // stepper walks to a tee time on a course the operator has hidden and the sheet behind the
+  // panel does not move.
+  const onScreen = new Set(state.courses.filter((c) => c.visible).map((c) => c.id));
   const day = dayBookings(state)
-    .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+    .filter((x) => x.pay !== 'block' && x.pay !== 'event' && onScreen.has(x.course))
     .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
   const at = day.findIndex((x) => x.id === b.id);
   if (at < 0 || day.length < 2) return null;

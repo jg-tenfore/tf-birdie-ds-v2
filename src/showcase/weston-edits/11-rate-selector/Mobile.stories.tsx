@@ -17,32 +17,100 @@ import { adjustedParty, at18, openParty, withBookings } from '../mobile-scenario
  * Round 3's biggest change, on the phone: a player's fee stops being a number somebody types
  * and becomes a **rate somebody chooses**.
  *
- * The model is identical to the terminal's, because it has to be — the same catalog, the same
- * narrowing by the slot ("every rate that you could possibly have for this specific tee time on
- * this specific date"), the same pre-pick of what the player's own record entitles them to, and
- * the same refusal to hide the rest. What changes is only how it opens.
+ * The model is the terminal's, unchanged, because it has to be — the same catalog narrowed by
+ * the slot (*"every rate that you could possibly have for this specific tee time on this
+ * specific date"*), the same pre-pick of what the player's own record entitles them to, the same
+ * refusal to hide the rest. What changes is how it opens, and what the tiles are sized for.
  *
- * **Why a full-screen dialog and not the terminal's in-place expand.** Weston's suggestion was
- * "maybe you click and this expands, instead of taking over a full screen", and on a 640px
- * panel that works: the rest of the group is still beside the open row. At 402 it does not.
- * Four rows of tiles under an open player row pushes every other player off screen, so you lose
- * the group *and* have to scroll to get it back — strictly worse than the thing he was
- * objecting to. So the phone gives the tiles the whole screen and puts the group one tap away:
- * ✕ discards, **Save** commits, which is this build's pattern for editing one thing
- * (`PRESENTATION.seatRate = 'dialog'` in `navigation.tsx`). The reservation stays mounted
- * underneath the whole time.
+ * ## The screen
  *
- * Same four rows, in the same order money gets decided — the green fee, the ride, a discount,
- * and the option to put the round on a punch card (17 · Punch Cards) — with a footer that shows
- * the green fee, the ride and the total this seat now owes. The footer matters as much as the
- * tiles: every control up there changes a number, and the number is on screen while it changes.
+ * `SeatRateScreen` (`src/pos/mobile/screens/tee/SeatRateScreen.tsx`), route
+ * `{ name: 'seatRate', bookingId, seat }`, presented as a **full-screen dialog**
+ * (`PRESENTATION.seatRate = 'dialog'` in `src/pos/mobile/navigation.tsx`): it rises from the
+ * bottom over the reservation, ✕ discards, **Save** commits. The reservation stays mounted
+ * underneath the whole time, so closing it costs nothing.
  *
- * Tiles rather than a dropdown for Weston's reason — "they're quick, you can just click them —
- * you're not opening a dropdown, scrolling to find it, and then finding it with your finger" —
- * and at phone density they are 48px tall and two to a row, so a fat thumb can hit one.
+ * **Why a dialog and not the terminal's in-place expand.** Weston's suggestion was *"maybe you
+ * click and this expands, instead of taking over a full screen"*, and on a 640px panel that
+ * works — the rest of the group is still beside the open row. At 402 it does not. Four sections
+ * of tiles under an open player row pushes every other player off screen, so you lose the group
+ * *and* have to scroll to get it back: strictly worse than the thing he was objecting to. So the
+ * phone gives the tiles the whole screen and puts the group one tap away.
  *
- * The pieces live in `mobile/screens/tee/SeatRateScreen.tsx`, the catalog and its eligibility
- * rules in `data/rate-catalog.ts`, and what a seat resolves to in `logic/seat-pricing.ts`.
+ * It writes exactly the same `PlayerState` fields as `RateExpand` — `rateId`, `transportRateId`,
+ * `discountId` / `discountManual`, `punch`, clearing `fee` and `transportFee` as it goes —
+ * through the same `patchBooking` dispatch and the same `logic/reservation.ts` helpers. There is
+ * no phone-side pricing.
+ *
+ * | Part | What it holds | Default |
+ * |---|---|---|
+ * | App bar title | the player's name, and under it `{holes} holes · {total}` | recomputed from `seatPrice` on every tap |
+ * | Green fee | `What they qualify for` (or `What this tee time sells` for an unlinked seat), then `Other rates · staff override` | `autoRate` for whoever is in the seat |
+ * | Transport | all six `TRANSPORT_RATES`, ineligible ones dimmed | the default row for the booking's mode |
+ * | Discount | the four preset tiles | none — the typed **Amount…** is terminal-only |
+ * | Punch card | the seat's own cards, then **Use a customer's card** | none (17 · Punch Cards) |
+ * | Footer | rate name · transport name · **Total**, with the reason beside the green fee | — |
+ *
+ * ## Where it deliberately differs from the tablet
+ *
+ * | | Tablet | Phone | Why |
+ * |---|---|---|---|
+ * | Presentation | in-place expand on the row | full-screen dialog | four sections of tiles do not fit beside a 402px row |
+ * | Heavy catalog | eligible shown, the rest behind **Show** | everything, in one scroll | the screen is already the affordance; a Show control would put a tap between the operator and the override, which is what the section is *for* |
+ * | Filter box | present past 12 rates | none | same reason — and a keyboard on a phone covers half the grid it is filtering |
+ * | Tile size | min-width 92, ~26px tall | **min-height 48**, min-width 108, `flex: 1 1 46%` — two to a row | MD3's touch floor; a fat thumb has to hit one |
+ * | Running total | footer, at the bottom of the editor | **app bar**, pinned | on a scrolling screen the footer leaves the viewport; the number has to stay in view while the tiles are pressed |
+ * | Manual discount | **Amount…**, typed inline | not offered | a number pad inside a dialog inside a push is a stack too deep to be worth it yet — see Still open |
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame` in `src/theme/tokens.ts`) |
+ * | Touch floor | `mobile.touchTarget` = 48. Every tile meets it; nothing on this screen goes under |
+ * | Tile | `min-height: 48`, `min-width: 108`, `flex: 1 1 46%`, `radius.md`, 13px/700 over an 11.5px amount |
+ * | Selected | `md3.primary` border on `md3.primaryContainer`, `aria-pressed="true"` |
+ * | Override tile | `opacity: .55`, still pressable — never `disabled` |
+ * | Entry | `mobile.motion.sheet` 400ms on `mobile.motion.emphasized`; exit 200ms |
+ * | Transport catalog | Riding Cart $26.82 · Cart Plus $32 · Member Cart $0 · **Walking $8.58** · Walking, member $0 · Push Cart $6 |
+ * | This slot | Thursday twilight nine — 10 standard rates, **24 of 26** heavy, 8 eligible for an unlinked guest |
+ *
+ * ## Scope
+ *
+ * Weston edition only, reached from the **fee chip** on a player row in
+ * `ReservationPlayers.tsx`. The chip keeps reading as the *fee* rather than the rate name on
+ * purpose: the rate's name is already on the caption line directly below it (12 · Player Row
+ * Detail), and putting it on the chip too would make the chip longer, harder to read back to a
+ * golfer and harder to hit. A locked seat — paid or no-show — has no chip.
+ *
+ * The **Rates** toolbar global reaches this screen; the heavy-catalog story pins its own value.
+ * **Panel width** and **Row density** do not — neither has a phone equivalent.
+ *
+ * The eligibility model itself is written up once in **18 · Rate Catalog**.
+ *
+ * ## The stories
+ *
+ * | Story | Scenario | What it is for |
+ * |---|---|---|
+ * | **Opens From The Fee Chip** | `openParty` reservation | The route in. Taps seat 2's chip, waits for the green-fee grid, checks there is a **Save** |
+ * | **The Whole Editor** | `openParty`, seat 1 | All five sections at rest. Asserts the unlinked-seat hint reads *What this tee time sells* |
+ * | **Eligible First Then The Rest** | `adjustedParty`, seat 2 (a member) | That the membership rows sort first, the pre-pick is `aria-pressed`, and the override tile is dimmed rather than disabled |
+ * | **The Heavy Catalog Just Scrolls** | `rateCatalog: 'heavy'` | The phone's deliberate divergence. Asserts there is **no** Show button and **no** filter box |
+ * | **Transport Tiles** | `openParty`, seat 1 | Walking at $8.58, the booked riding row already pressed, the member cart dimmed and present |
+ * | **Save Fees To All** | `openParty`, seat 1 | Group action, then **Save**, then reads every fee chip back on the reservation — priced from the catalog so the assertion cannot drift |
+ * | **Reset Puts It Back** | `openParty`, seat 1 | Asserts on which tile is *pressed*, not on a number: the seat is back on its rate, not merely back at a matching price |
+ *
+ * ## Still open
+ *
+ * - **No typed discount.** The terminal's **Amount…** tile has no phone equivalent, so an
+ *   odd-amount comp cannot be done from the phone at all. It needs a number pad, and a number
+ *   pad inside a dialog needs a decision about what ✕ means at that depth.
+ * - **Sixty rates would need the filter.** The phone skips the overflow treatment because 24
+ *   tiles scroll fine. If a course turns up with sixty, this screen takes the terminal's Show +
+ *   filter rather than inventing a third treatment.
+ * - **Save is a no-op.** Every tile has already written to the booking, so ✕ and **Save** do the
+ *   same thing — there is nothing to discard. That is honest about the data model and slightly
+ *   dishonest about the button; a true cancel would mean staging the edit.
  */
 const meta = {
   title: 'Weston Edits/11 · Rate Selector/Mobile',

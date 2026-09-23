@@ -34,7 +34,7 @@ import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
  *   #/register?booking=p01&modal=checkout          a booking loaded, mid-payment
  *   #/register?order=walkin&modal=modifiers&i=0&p=1
  *   #/tee-sheet?modal=block&t=0912                 blocking the 9:12 row
- *   #/tee-sheet?res=p43&res-tab=customer&res-p=1   the reservation panel (Weston Edits)
+ *   #/tee-sheet?res=p43&res-tab=financial            the reservation panel (Weston Edits)
  *
  * Times are `HHMM` in 24-hour form (`0912`) rather than raw minutes — same information,
  * legible to a human scanning the link.

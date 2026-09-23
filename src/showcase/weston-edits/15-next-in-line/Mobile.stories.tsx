@@ -28,31 +28,89 @@ import {
  * you the whole time and closing the panel costs a glance; on a phone the sheet is a screen you
  * have left, so getting back to it, finding your place in a 402px-wide column and tapping the
  * next chip is four or five interactions. The stepper collapses all of that into one tap on a
- * control that is already under your thumb.
+ * control already under your thumb.
  *
- * The rules are the terminal's, because they are about not losing your place rather than about
- * the device:
+ * ## The component
+ *
+ * `NextInLine`, a local component at the foot of
+ * `src/pos/mobile/screens/tee/BookingDetailScreen.tsx`, rendered inside the reservation's
+ * `TopAppBar` — on its own line, above the status badges and the tabs, and only when
+ * `weston && !holder`.
  *
  * | | |
  * |---|---|
- * | **Order** | Tee time, then course, then slot — the order the day actually happens in, not the order the sheet stores |
- * | **Empty slots** | Skipped. There is nothing to open in an empty slot |
- * | **Blocks and events** | Skipped too. Course Maintenance and Shift Change are on the sheet but they are not parties, and a rate grid for a block is nonsense |
- * | **The ends** | The arrows **disable** rather than wrap. A silent jump from the last tee time back to the 6:00 AM is disorienting when you are moving fast, and the counter reads "88 of 88" as "that's the day" |
- * | **What a step does** | Switches the booking and resets to the **Players** tab. You are moving to new golf, not continuing the last thought |
+ * | Order | `dayBookings(state)`, filtered `pay !== 'block' && pay !== 'event'`, sorted **`timeMin` → `course` → `slot`** — the terminal's sort, to the character |
+ * | Position | `day.findIndex(x => x.id === booking.id)`, printed as `{at + 1} of {day.length}` |
+ * | Hides itself | `at < 0 \|\| day.length < 2` |
+ * | ‹ disabled | `at === 0`; **›** disabled at `at === day.length - 1` |
+ * | A step | `nav.replace({ name: 'bookingDetail', bookingId: next.id })` |
  *
- * **One thing is phone-only, and it is the important one.** A step is `nav.replace`, not
- * `nav.push` (`NextInLine` in `BookingDetailScreen.tsx`). Pushing would be the obvious thing and
- * it would be wrong: after walking nine tee times, Back would have to be pressed nine times to
- * get out, and the system back gesture would rewind the morning one reservation at a time
- * instead of returning to the sheet. Replacing keeps the stack two deep however far you walk, so
- * Back always means "done with reservations" — which is the only thing anyone wants it to mean.
+ * ## Where it deliberately differs from the tablet
  *
- * The counter — **n of m** — is doing real work beside the arrows: it is the only thing on the
- * screen that says how far through the day you are, and it is what tells you the arrow is
- * disabled because you have reached the end rather than because something is broken. The stepper
- * hides itself when there is nothing to step through (`day.length < 2`) rather than showing two
- * dead arrows, and it never appears on a block or league slot, which have no party to work.
+ * **It navigates instead of dispatching, and it `replace`s rather than `push`es.** The terminal
+ * dispatches `stepReservation`, which patches the open panel. The phone has no panel to patch —
+ * the reservation *is* the screen — so a step has to be a navigation.
+ *
+ * Pushing would be the obvious thing and it would be wrong: after walking nine tee times, Back
+ * would have to be pressed nine times to get out, and the system back gesture would rewind the
+ * morning one reservation at a time instead of returning to the sheet. **Replacing keeps the
+ * stack two deep however far you walk**, so Back always means "done with reservations" — which is
+ * the only thing anyone wants it to mean. **Back Still Leaves The Reservation** below is that
+ * rule as an assertion.
+ *
+ * | | Tablet | Phone |
+ * |---|---|---|
+ * | Mechanism | `stepReservation` patches `reservationPanel` | `nav.replace` swaps the top of the stack |
+ * | Tab reset | the reducer sets `tab: 'players'` | the replaced route carries **no `tab`**, and the screen defaults |
+ * | Where it sits | between the title and the ✕ | centred on its own line under the app bar's Back and ⋮ |
+ * | What tells you it landed | the sheet highlights a different chip | the app bar **re-titles itself** to the new booking's name |
+ * | Position width | `min-width: 34` | `min-width: 64` — the phone's caption type is larger |
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Frame | 402 × 797 (`mobile.frame` in `src/theme/tokens.ts`) |
+ * | Arrows | MUI `IconButton size="small"` — 34px, inside the 64px `mobile.topAppBarH` app bar |
+ * | Counter | MUI `variant="caption"`, `md3.onSurfaceVariant`, `min-width: 64`, centred, so the arrows do not shuffle between "9 of 88" and "10 of 88" |
+ * | Accessible names | `Previous tee time` · `Next tee time` |
+ * | Stack depth | **2**, always — tee sheet + one reservation, however many steps were taken |
+ * | The demo day | **88** steppable bookings at the 18-hole club |
+ *
+ * ## Scope
+ *
+ * Weston edition only, on `{ name: 'bookingDetail' }` (a **push**, `PRESENTATION.bookingDetail`).
+ * It never appears on a block or league slot: those render `HolderBody`, and the stepper is
+ * guarded on `!holder` — the same rule the sort's `pay !== 'block'` filter states from the other
+ * end.
+ *
+ * None of the four Storybook toolbar globals change this screen.
+ *
+ * ## The stories
+ *
+ * | Story | Starting booking | What it is for |
+ * |---|---|---|
+ * | **The Stepper** | `earlyFrontNine` (3 of 88) | The control in place, both arrows live |
+ * | **Stepping Forward And Back** | same | › then ‹ lands back where it started. Asserts the counter *and* the app bar heading, because the title is the phone's only "it landed" cue |
+ * | **Boom Boom Boom** | `firstInLine` | Three presses forward. Worth watching for what *doesn't* happen: no screen slides in, nothing closes, the sheet is never returned to |
+ * | **Back Still Leaves The Reservation** | `firstInLine` | `replace`-not-`push`, made visible: walk three, press Back once, and the navigation bar is showing — which only happens at a destination root |
+ * | **Stepping Resets To Players** | `earlyFrontNine`, opened on **Activity** | The next reservation comes up on Players. Landing on somebody else's Activity tab is a screen you have to read before you can tell it is not what you wanted |
+ * | **Blocks And Empty Slots Are Skipped** | `beforeBlock` | › steps **over** the day's first block, and the general rule is held so demo data cannot quietly put one back |
+ * | **At The Start Of The Day** | `firstInLine` (1 of 88) | ‹ disabled. On a phone, where you cannot glance at the sheet to check, "1 of 88" is the only thing standing between "the end of the day" and "the app is broken" |
+ * | **At The End Of The Day** | `lastInLine` (88 of 88) | › disabled. Moving to tomorrow is the date control's job (9 · Date Navigation) |
+ *
+ * ## Still open
+ *
+ * - **No swipe.** A horizontal swipe between tee times is the gesture a phone user would reach
+ *   for first, and the reservation body does not have one. The arrows are the whole affordance.
+ * - **It steps the whole day, across every course.** `dayBookings` filters on the date alone —
+ *   not on `visibleCourses`, not on the tee sheet's filters — so a filtered sheet and the stepper
+ *   disagree about what "next" means.
+ * - **A step throws away the sub-screen you were on.** Replace resets to Players by design, but
+ *   it also means a ⋮ sheet or an open dialog on the old reservation has nowhere to go; nothing
+ *   currently opens one and then steps, so it has not been designed for.
+ * - **88 is this demo day**, generated rather than authored; every assertion reads it from
+ *   `dayLine()` rather than hard-coding it.
  */
 const meta = {
   title: 'Weston Edits/15 · Next In Line/Mobile',

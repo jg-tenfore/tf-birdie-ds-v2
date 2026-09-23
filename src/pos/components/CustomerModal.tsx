@@ -11,6 +11,9 @@ import {
   type Customer,
 } from '../data/customers';
 import { liveCustomer, searchRoster } from '../data/roster';
+import { idMeGroupOf } from '../data/golfers';
+import { seatSuggestedRecord } from '../logic/seat-pricing';
+import { IdMeBadge } from './IdMeBadge';
 import { golferOf } from '../data/customers';
 import { assignPlayer } from '../logic/reservation';
 import { rainCheckBalance, rainChecksFor } from '../data/rain-checks';
@@ -60,6 +63,7 @@ function CustomerRecord({ customer }: { customer: Customer }) {
 
   const close = () => dispatch({ type: 'closeCustomerModal' });
   const tier = memberTierOf(customer);
+  const idMe = idMeGroupOf(customer.id);
   const credits = rainChecksFor(customer.id);
   const owed = rainCheckBalance(customer.id);
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
@@ -93,6 +97,13 @@ function CustomerRecord({ customer }: { customer: Customer }) {
       }
     >
       <Stack direction="column" gap={16}>
+        {/* The badge is on the player row; the record is where someone goes to check it. */}
+        {idMe && (
+          <Stack direction="row" alignItems="center" gap={8}>
+            <IdMeBadge group={idMe} />
+          </Stack>
+        )}
+
         {/* Contact — the half Weston actually needs to fix at the counter. */}
         <Box>
           <SectionLabel>Contact</SectionLabel>
@@ -226,6 +237,12 @@ function AssignCustomer() {
   const results = searchRoster(query, 6);
   const close = () => dispatch({ type: 'closeCustomerModal' });
 
+  // A seat *named* like a customer, but not linked to one. It pays the booking's rate until
+  // somebody links it — a name is not an identification — but there is no reason to make the
+  // counter search for a person the seat is already called.
+  const booking = state.bookings.find((x) => x.id === m?.bookingId);
+  const suggested = booking && m?.seat != null ? seatSuggestedRecord(booking, m.seat, state.customerEdits) : null;
+
   // Linking writes the crmId onto the seat, which is the only thing that makes this person
   // price the round — a matching name never has and never will.
   const link = (c: Customer) => {
@@ -257,6 +274,34 @@ function AssignCustomer() {
         </Stack>
       }
     >
+      {suggested && (
+        <Box
+          data-customer-suggestion
+          sx={{
+            mb: 1.25,
+            p: '10px 12px',
+            borderRadius: `${radius.md}px`,
+            border: `1.5px solid ${md3.primary}`,
+            bgcolor: md3.primaryContainer,
+          }}
+        >
+          <Typography sx={{ fontSize: 11, fontWeight: 700, color: md3.onPrimaryContainer, letterSpacing: 0.3 }}>
+            SUGGESTED · NOT LINKED
+          </Typography>
+          <Stack direction="row" alignItems="center" gap={1} sx={{ mt: 0.5 }}>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{suggested.displayName}</Typography>
+              <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
+                {formatPhone(suggested.phone)} · {suggested.email}
+              </Typography>
+            </Box>
+            <FilledButton onClick={() => link(suggested)}>Link</FilledButton>
+          </Stack>
+          <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: 0.75 }}>
+            The seat is named like this customer but pays the booking's rate until it is linked.
+          </Typography>
+        </Box>
+      )}
       <InputBase
         autoFocus
         value={query}

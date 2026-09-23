@@ -232,6 +232,10 @@ export const idMeGroups = {
  * its time gutter stay in view beside it.
  */
 export const reservationPanel = {
+  /**
+   * Superseded by `PANEL_WIDTHS` in `pos-store.ts` (640 / 820 / cover) and kept only so the
+   * number this started at is still findable. Nothing reads it.
+   */
   width: 480,
   /** The slide-in, shared by the panel and the tee sheet narrowing beside it. */
   motion: '.22s cubic-bezier(.2,0,0,1)',

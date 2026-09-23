@@ -18,36 +18,102 @@ import {
  *
  * What a player row says underneath the name.
  *
- * Weston's note on the old screen was about exactly this line: "we want to display that
- * there… we displayed those for a reason." A row that prints a dollar amount and nothing else
- * cannot answer the only question anybody ever asks at the counter — *why is he paying that*.
- * So every seat carries the reason on its face: the **name of the rate** it is sold on, the
- * **name of the transport row** (which can cost money even when the player walks), the reason
- * behind a discount with the price it came down from, the punch card that settled the round,
- * and the cart key the player is holding.
+ * Weston's note on the old screen was about exactly this line: *"we want to display that
+ * there… we displayed those for a reason."* A row that prints a dollar amount and nothing else
+ * cannot answer the only question anybody ever asks at the counter — *why is he paying that*. So
+ * every seat carries the reason on its face: the **name of the rate** it is sold on, the **name
+ * of the transport row** (which can cost money even when the player walks), the reason behind a
+ * discount with the price it came down from, the punch card that settled the round, and the cart
+ * key the player is holding.
  *
- * It is also what makes the register trustworthy. The same seat pricing (`logic/seat-pricing.ts`)
- * builds this line and the order line, so a golfer who is read back "$19, senior resident rate,
- * riding" at the counter sees the same words on the receipt.
+ * It is also what makes the register trustworthy. One function builds this line and the order
+ * line — `seatPrice` in `src/pos/logic/seat-pricing.ts` — so a golfer read back "$19, senior
+ * resident rate, riding" at the counter sees the same words on the receipt.
  *
- * **Two densities**, as agreed on the call:
+ * ## The component
  *
- * | | What it does | Costs |
+ * `SeatMeta`, a local component in `src/pos/components/PlayerRows.tsx`, rendered under the
+ * controls of every seat that is not a no-show. It renders no state of its own; it is a pure
+ * function of what the row already resolved:
+ *
+ * | Prop | Type | Where it comes from |
  * |---|---|---|
- * | **Comfortable** (default) | rate and ride get a line each, with a dotted leader to the price | 185px for the seat below, which carries a cart key |
- * | **Dense** | V1's one-liner, `rate : price · ride : price · ID · rounds · cart` | 150px for the same seat, and a long rate name ellipsises |
+ * | `booking` · `seat` | `Booking` · `number` | the row |
+ * | `price` | `SeatPrice` | `seatPrice(b, i, playerFee(b, i, rates), ctx)` — rate, gross, discount, greenFee, transport, transportFee, usesPunch, punch, reason, total |
+ * | `dense` | `boolean` | `state.weston.rowDensity === 'dense'` |
+ * | `record` | `Customer \| null` | `seatRecord(b, i, state.customerEdits)` — a **linked record or the booker's phone, never a name** |
+ *
+ * The trailing facts (`bits`) are assembled once and used by both densities: `ID {record.id}`,
+ * `+{rewardsBalance}` when it is above zero, `{n} rounds` when the record has any, and
+ * `cart {n}` when the seat holds a key. Everything that does not apply is absent rather than
+ * blank.
+ *
+ * ## The two densities
+ *
+ * | | Shape | What it costs |
+ * |---|---|---|
+ * | **Comfortable** (default) | two `MetaLine`s — rate → dotted leader → price, then transport → dotted leader → price — with the discount or punch reason set in brand colour between the name and the leader, and the `bits` on a third line | height |
+ * | **Dense** | V1's one-liner: `rate : price · ride : price · ID · +rewards · rounds · cart n`, `nowrap` with an ellipsis | the rate name truncates, and **the reason is dropped entirely** |
  *
  * Comfortable is the default because a truncated rate name is a row that has stopped answering
- * the question the line exists for. Dense stays because on a busy Saturday, seeing more seats at
- * once beats reading any one of them. `rowDensity` on the Weston options picks it.
+ * the question the line exists for. Dense stays because on a busy Saturday seeing more seats at
+ * once beats reading any one of them.
  *
- * One correction worth recording, because it was assumed the other way round before it was
- * measured: **dense does not get a foursome into the 640 panel without scrolling.** In the panel
- * below, the players list stands 823px tall comfortable and 734px dense against 618px of visible
- * panel — the party stepper and the three group actions take the top of it before a single seat
- * is drawn. Dense saves about 90px across a foursome, roughly half a seat; it does not save the
- * scroll. Fitting four seats outright is a job for the 820 panel (see 10 · Panel Size), not for
- * the row.
+ * **One correction worth recording, because it was assumed the other way round before it was
+ * measured: dense does not get a foursome into the 640 panel without scrolling.** In the panel
+ * below the players list stands **823px** comfortable and **734px** dense against **618px** of
+ * visible panel — the party stepper and the three group actions take the top of it before a
+ * single seat is drawn. Per row that is 185px down to 150px. Dense saves about 90px across a
+ * foursome, roughly half a seat; it does not save the scroll. Fitting four seats outright is a
+ * job for the **820** panel (10 · Panel Size), not for the row.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Comfortable line | 11.5px `md3.onSurfaceVariant` label, `1px dotted md3.outlineVariant` leader, 11.5px/700 price |
+ * | Reason | 10.5px/700 `md3.primary`, `flex-shrink: 0` — `50% off · was $26.00`, or the card's name |
+ * | `bits` line | 10.5px `md3.outline` |
+ * | Dense line | 10.5px, `nowrap` + `text-overflow: ellipsis`, parts joined with ` · ` |
+ * | Row height | 185px comfortable · 150px dense (the booker, carrying a cart key) |
+ * | Foursome | 823px comfortable · 734px dense · 618px of visible panel at 640 |
+ * | This fixture | rack $26 · Weekday Senior Resident $19 · 50% off $13 · punched $0 · Riding Cart $26.82 throughout |
+ *
+ * ## Scope
+ *
+ * Weston edition only, on the reservation panel's **Players** tab, on every seat that is not a
+ * no-show — a no-show has no money to explain. `rowDensity` is one of the four Storybook toolbar
+ * globals and reaches every section; **Dense** below pins its own value so the comparison cannot
+ * be collapsed into one screenshot by the toolbar.
+ *
+ * The phone prints a single caption line and has no density switch at all — `rowDensity` is read
+ * in `PlayerRows.tsx` and nowhere else. See the **Mobile** half for why.
+ *
+ * ## The stories
+ *
+ * All four use `annotatedFoursome` — one annotation per seat, so a single screenshot carries
+ * every case the line has to handle — except where noted.
+ *
+ * | Story | Seat | What it is for |
+ * |---|---|---|
+ * | **Comfortable** | 2 | That `Weekday Senior Resident` renders whole (asserts `scrollWidth ≤ clientWidth`) and the ride is a line of its own |
+ * | **Dense** | 2 | The V1 packing, asserted as one line matching `rate : … · Riding Cart : …`, with all four rows present |
+ * | **A Discounted Seat** | 2 of `discountedParty` | `50% off · was $26.00 … $13.00` on the row, and the gross struck through in the rate editor's footer |
+ * | **On A Punch Card** | 3 of `punchedParty` | The card's name, the $0.00 green fee — and the **$26.82 ride still charged**. That last number is the point |
+ * | **A Cart Signed Out** | 1 of `cartKeyParty` | The number in both places it appears: the key glyph and the meta line |
+ *
+ * ## Still open
+ *
+ * - **Which density ships.** Weston has not chosen, and the measurement above changes the
+ *   argument: dense is now a "more seats per screen" trade, not a "fits a foursome" one.
+ * - **Dense drops the reason.** The dense branch prints rate, ride and the `bits` — it does not
+ *   print `SeatPrice.reason`, so a comped or punched seat reads as a bare $0.00 with no
+ *   explanation. If dense ships, that has to be fixed, not documented.
+ * - **A typed-over transport price has no reason.** `MetaLine` takes a `note`, and the transport
+ *   line never passes one, so `transportFee` set by hand reads as an ordinary catalog price.
+ * - **The measurements are from this fixture.** 823 / 734 / 618 are a four-player party with one
+ *   annotation each at 640. A party with longer names, or a seat carrying rewards *and* rounds
+ *   *and* a cart, is taller in both densities.
  */
 const meta = {
   title: 'Weston Edits/12 · Player Row Detail/Tablet',

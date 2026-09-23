@@ -9,15 +9,88 @@ import { openParty, paidTwilight, registerWith, twilightNine } from '../tablet-s
 /**
  * Weston Edits / 8 · Bug Fixes / Tablet
  *
- * Five bugs the Loom caught in the register, fixed in **every** edition — these stories
- * render the base POS (the one the three published prototypes run) to show it. Each JSDoc
- * says what was wrong and why. The pure-function versions are asserted in
- * `src/pos/logic/tee-time-cart.test.ts`.
+ * Five bugs Weston's Loom caught in the register, and everything found chasing them since.
+ * **All of it ships in every edition** — the fixes live in shared logic, not behind
+ * `useEdition()` — which is why most stories here render the **base** POS, the one the other
+ * seven prototypes run. If it is only true in Weston Edits it is not in this section.
  *
- * Two follow-ups, also every edition: **one tax calculation** (`orderTotals`, asserted in
- * `order-totals.test.ts`) that the register, checkout and the reader all charge; and
- * **corrected demo data** — `R-` reservations the seed marked walk-in are `booked`, so a
- * reservation reads "Reserved" and a true walk-in (`W-`) reads "Walk-in".
+ * Each story's own note says what was wrong and why. The arithmetic is pinned by unit tests
+ * rather than by screenshots: `src/pos/logic/tee-time-cart.test.ts` (one `describe` per bug),
+ * `order-totals.test.ts`, `seat-pricing.test.ts` and `src/pos/icons.test.ts`.
+ *
+ * ## What was wrong, and where the fix lives
+ *
+ * **Round 1 — the register (stories below):**
+ *
+ * | # | The bug | The fix |
+ * |---|---|---|
+ * | 3 | A reserved tee time read **Walk-in 9 holes**, with a blank course. The line was named from `status`, and holes came from looking the course up in the three-nines `COURSES`, which has no 18-hole course | `roundLabel(b)` names the *round* — `Tee Time 9 holes`, `9/18` for a mixed party, `Member Check-in`. Holes per player (`playerHoles`), course resolved against the club's own list |
+ * | 4 | The register charged a price the booking never quoted: `$59.00/ea` less a `−$3` Twilight discount against a $29 booking, with a modifier offering to "override to $29" | Every seat prices at the booking's own rate (`playerFee`, per player), with no time-of-day discount stacked on it |
+ * | 5 | A **paid** booking loaded asking `Pay $117.00` — the cart ignored each seat's `paid` flag | Paid and no-show seats come across marked, at $0, carrying no tax; the button reads **Paid in full · nothing due**. Taking payment now marks the seats paid, so a reload cannot ask twice |
+ * | 6 | Removing the round left its hidden tax row: Subtotal $0.00, Tax $5.00, **Pay $5.00** | `removeItem` takes the `isSubItem` tax rows that hang off a round with it, and `cartTotals` / `payableTotal` ignore a tax row with nothing chargeable beside it (`hasChargeableLines`) |
+ * | 7 | After that, the tee sheet still read `booking=p43` and the empty order still charged | An order with no round no longer belongs to the booking: `selectedBookingId` clears and the tee-time card goes |
+ *
+ * **Round 1 follow-ups:** one tax calculation (`orderTotals`) for the register, checkout, tip
+ * screen, reader and change due — before this, retail on a tee-time order went untaxed, checkout
+ * counted the golf tax twice, and the reader added a flat 8% on top of the tax line. And
+ * corrected demo data: `statusForConf` reads an `R-` code as a reservation, so the seed's
+ * mislabelled twilight nines are `booked` and only a `W-` code reads Walk-in.
+ *
+ * **Round 3 — found while building the rate catalog.** No stories in this file; each is
+ * demonstrated in the section that introduced it and pinned by tests:
+ *
+ * | The bug | The fix | Where to see it |
+ * |---|---|---|
+ * | **Pricing was a display layer.** A discount, a punch card or a chosen transport row changed the player row and nothing else: the row read $0.00 while Check in & pay and the register's Pay still charged the full green fee. On a foursome, applying a punch left the order at $223.50 — unchanged | `buildTeeTimeCart`, `seatCharges` and `reservationDue` price through **`seatNetGreenFee`**. Tax follows the net, so a comped seat carries no green-fee tax; transport bills the catalog row only once someone picks one, which keeps an untouched booking pricing exactly as before | 11 · Rate Selector, 17 · Punch Cards. **Five regression tests** in `seat-pricing.test.ts` → *what the row says and what the register charges* |
+ * | **Clearing the order asked nothing.** It is destructive and has no undo | A confirm, and the count now excludes the tax line — a threesome no longer offers to remove "4 items" | 13 · Order Rail → *ItemsOnTheOrderClear* |
+ * | **Three icons shipped as dots.** `iconFor` falls back to a neutral bullet for a name it does not know, which is right at runtime and silent at build: `menu`, `vpn_key` and `person_search` were never registered and drew as solid dots while the whole suite stayed green | All three registered, and `src/pos/icons.test.ts` now scans every literal `name="…"` / `icon="…"` in `src` against `ICONS` and names the file when one is missing | `src/pos/icons.test.ts` |
+ * | **A shared household phone could price a member as a guest.** Households share a number — a member and their spouse, a parent and two juniors — and whichever record sorted first in the file decided how the booking priced | The phone index (`byPhone` in `src/pos/data/roster.ts`) prefers the **member** record. Linking a specific person to the seat still overrides it, and a name alone never prices anything | `src/pos/data/roster.test.ts` → *resolves a shared household number to the member* |
+ * | **A split order came back whole on the phone** — see **Mobile** | | |
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Tax | `orderTotals` — golf by the booking's own `Taxes` line, everything else at `TAX_RATE` = **8%**. A `Tax Exempt` line zeroes both |
+ * | Golf tax per seat | Each chargeable seat's own green-fee tax by its rate class (`seatCharges`); a $0 seat carries none |
+ * | Settled seats | `paid` or `noShow` → `playerPrice` returns 0, no tax, and the round still shows them so the party reads whole |
+ * | Demo clock | `demoNow()` — May 21 2026, 12:00 PM — so the reader amounts and timestamps in these tests are stable |
+ * | Frame | 1366 × 840 (`shell` in `src/theme/tokens.ts`) |
+ *
+ * ## Scope
+ *
+ * **All editions, all eight prototypes.** Nothing in this section is gated on Weston Edits.
+ * **InWestonEdition** is the only story here that renders the Weston edition, and only to show
+ * the same fixes under the golf summary.
+ *
+ * ## The stories
+ *
+ * | Story | Edition | What it is for |
+ * |---|---|---|
+ * | **ReservedNotWalkIn** | base | Bug 3: `Tee Time 9 holes`, the course named, no "Walk-in" |
+ * | **EighteenReadsEighteen** | base | Bug 3, the other side: an 18-hole booking at this club reads 18, not 9 |
+ * | **PriceMatchesBooking** | base | Bug 4: the rate card's `$26.00/ea`, and no TWILIGHT DISCOUNT line |
+ * | **PaidBookingNothingDue** | base | Bug 5: **Paid in full · nothing due**, and no Pay button at all |
+ * | **RemovingTheRoundClearsTaxAndBooking** | base | Bugs 6 and 7 together: the test removes the round, then checks Tax is $0.00, the tee-time card is gone and nothing is payable |
+ * | **InWestonEdition** | weston | The same four fixes where the golf is a read-only summary |
+ * | **TaxConsistency** | base | A tee-time order with $70 of retail: the test asserts the register's Pay, the checkout Total and the **card reader's** amount are one number |
+ * | **ReaderChargesCheckoutTotalWithTip** | base | The same order with a $5.00 tip keyed in and recalculated — the reader charges the checkout total, tip included |
+ * | **WalkInLabelFromCorrectedData** | base | `statusForConf` at work: the Loom's `R-` twilight nine is `booked`, and the card says **Reserved · 9 holes** |
+ * | **TrueWalkInReadsWalkIn** | base | The control: a `W-` code still reads **Walk-in · 9 holes** |
+ *
+ * ## Still open
+ *
+ * **The round-3 fixes have no story on this page.** They are real and tested, but they are
+ * demonstrated in the sections that introduced them, so this page under-reports what was fixed.
+ * If this section is meant to be the one place a client can see every fix, five stories are
+ * missing from it.
+ *
+ * **A refund does not un-pay the seats.** `financialActions` records it and `pay` flips to
+ * `refund`, but `playerStates[].paid` stays true — so a refunded booking reloaded into the
+ * register still reads settled. Not a bug Weston raised; found while writing this up.
+ *
+ * **The icon scan only catches literal names.** A dynamic `icon={cond ? 'a' : 'b'}` is not
+ * matched, and is not meant to be. That is the honest limit of the guard.
  */
 const meta = {
   title: 'Weston Edits/8 · Bug Fixes/Tablet',

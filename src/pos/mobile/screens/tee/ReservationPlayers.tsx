@@ -283,8 +283,21 @@ function PlayerRow({
         overflow: 'hidden',
       }}
     >
+      {/*
+        The name opens the **customer record**, as it does on the tablet. Weston asked for this
+        directly — "if I click on Michael Thompson… does something else open?" — and the phone
+        was pushing Player Detail instead, so the one gesture round 3 is built around behaved
+        differently on the two devices. Player Detail is still reachable from the ⋮.
+      */}
       <ButtonBase
-        onClick={() => nav.push({ name: 'playerDetail', bookingId: b.id, playerIndex: i })}
+        onClick={() =>
+          nav.push({
+            name: 'customerRecord',
+            customerId: record?.id ?? null,
+            bookingId: b.id,
+            seat: i,
+          })
+        }
         sx={{ width: '100%', justifyContent: 'flex-start', gap: 1.5, pl: 1.5, pr: 1, pt: 1.25, pb: 0.75, textAlign: 'left' }}
       >
         <PlayerAvatar name={name} index={i} dim={p.noShow} />
@@ -563,6 +576,12 @@ function RowActions({ booking: b, index: i, onDone, onRemove }: { booking: Booki
     ...(golfer
       ? [{ icon: 'swap_horiz', label: 'Swap customer', secondary: `Replace ${playerName(b, i)}`, run: () => nav.push({ name: 'golferPicker', target: { bookingId: b.id, playerIndex: i } }) }]
       : []),
+    {
+      icon: 'person',
+      label: 'Player detail',
+      secondary: 'Their round, holes and status',
+      run: () => nav.push({ name: 'playerDetail', bookingId: b.id, playerIndex: i }),
+    },
     // Keys are handed out at the cart barn, where the phone is the device in hand.
     ...(editable
       ? [

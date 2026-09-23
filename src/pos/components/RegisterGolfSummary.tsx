@@ -4,6 +4,9 @@ import { TRANSPORT_META } from '../data/config';
 import * as cart from '../logic/cart';
 import type { Booking, CartItem } from '../types';
 import { usePos } from '../state/PosProvider';
+import { rateContext } from '../state/pos-store';
+import { seatPrice } from '../logic/seat-pricing';
+import { playerFee } from '../logic/reservation';
 import { BookingMemberDot, Icon, MemberDot, SectionLabel } from './primitives';
 import { Stack } from './Stack';
 
@@ -24,6 +27,19 @@ export function RegisterGolfSummary({ booking: b, lines }: { booking: Booking; l
   const course = state.courses.find((c) => c.id === b.course);
   const players = lines.flatMap((l) => (l.players ?? []).map((p) => ({ p, unit: l.unitPrice ?? l.price })));
   const total = players.reduce((s, x) => s + cart.playerPrice(x.unit, x.p), 0);
+
+  /**
+   * Why seat `i` is cheap, if it is — the same sentence the reservation's player row shows.
+   *
+   * The order's seats are built from the booking in order, so the index lines up. Read from the
+   * booking rather than the cart line because a discount and a punch live on `playerStates`;
+   * the cart only carries the resulting number.
+   */
+  const reasonFor = (i: number): string | null => {
+    const sp = seatPrice(b, i, playerFee(b, i, rateContext(state)));
+    if (sp.usesPunch) return sp.reason;
+    return sp.discount > 0 ? `${sp.reason} · was ${cart.money(sp.gross)}` : null;
+  };
 
   return (
     <Box
@@ -65,9 +81,22 @@ export function RegisterGolfSummary({ booking: b, lines }: { booking: Booking; l
               sx={{ p: '6px 8px', bgcolor: md3.onPrimary, borderRadius: `${radius.sm}px`, opacity: p.noShow ? 0.6 : 1 }}
             >
               {i === 0 ? <BookingMemberDot booking={b} size={6} /> : <MemberDot name={p.name} size={6} />}
-              <Typography sx={{ fontSize: 12.5, fontWeight: 700, flex: 1, minWidth: 0 }} noWrap>
-                {p.name}
-              </Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: 12.5, fontWeight: 700 }} noWrap>
+                  {p.name}
+                </Typography>
+                {/*
+                  Why the seat is cheap, on the order as well as on the reservation.
+                  The player row says "Comped · was $26.00"; the line the register charges said
+                  only $0.00, so the explanation stopped at the door of the thing that takes the
+                  money — which is the one place it actually gets questioned.
+                */}
+                {reasonFor(i) && (
+                  <Typography sx={{ fontSize: 10.5, fontWeight: 700, color: md3.primary }} noWrap>
+                    {reasonFor(i)}
+                  </Typography>
+                )}
+              </Box>
               <Typography sx={{ fontSize: 11, fontWeight: 800, color: md3.onSurfaceVariant }}>{p.holes ?? 9}H</Typography>
               <Icon name={TRANSPORT_META[p.transport]?.icon ?? 'directions_walk'} size={14} color={md3.onSurfaceVariant} />
               <Box sx={{ minWidth: 64, textAlign: 'right' }}>

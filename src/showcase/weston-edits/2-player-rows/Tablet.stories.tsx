@@ -10,23 +10,110 @@ import { adjustedParty, fullParty, mixedGroup, noShowParty, openParty, sheetWith
 /**
  * Weston Edits / 2 · Player Rows / Tablet
  *
- * The Players tab: one row per player. Weston listed what the golf needs before it is rung
- * up — "change the players, the amount of players, the tee fee, or change from 9 to 18 holes
- * per player" — and that "modifiers are used for food and beverage", so golf shouldn't be
- * adjusted through them. Each row therefore carries:
+ * The Players tab: one row per player, and the only place the golf is adjusted.
  *
- * - name, member dot, **ID.me** badge, and a link to the player's customer record;
- * - **9 / 18** (an 18-hole course sells both; a nine-hole course shows 9 only);
- * - the **tee fee**, per player on that **player's** rate class — a member plays on the
- *   membership row even in a guest's group, a guest on rack even in a member's — defaulting
- *   to the booking's own rate for the holes it was booked for and to the **rate card** for
- *   anything else (the band's price, or the row's price override), editable, with a reset;
- * - **transport** — walk, riding cart, push cart — per player, in one place;
- * - the check-in step, paid state, no-show and remove (not the booker).
+ * Weston listed what has to be changeable before a tee time is rung up — *"change the players,
+ * the amount of players, the tee fee, or change from 9 to 18 holes per player"* — and ruled out
+ * the mechanism Birdie uses for it today: *"modifiers are used for food and beverage."* So
+ * nothing here goes through a modifier. Holes, fee and transport are **per seat**, and the order
+ * the register builds is assembled from exactly these rows.
  *
- * Above the rows: the player-count stepper, bounded by the open slots beside the tee time
- * (`maxPlayers`), and "Everyone rides / walks" and "Check in all". A row tints amber when it
- * differs from the booking. Paid and no-show seats are read-only.
+ * The one rule that governs the whole section: **a seat is priced by its own player, not by the
+ * booking.** A member sitting in a guest's foursome plays on the membership row; a guest in a
+ * member's group pays rack. And a seat only *has* a player when a record is linked to it, or
+ * when the seat is the booker and the booking's phone matches one — **never by name**. "Kim, D."
+ * is a string until somebody links it.
+ *
+ * ## The component
+ *
+ * `src/pos/components/PlayerRows.tsx` exports two things: `PlayerRows` (the tab body — party
+ * stepper, group actions, the list, Add player) and `PlayerRow` (one seat).
+ *
+ * | Region | What is in it |
+ * |---|---|
+ * | **Who** | Avatar on the seat's accent, member dot, name, `BOOKER`, `IdMeBadge` (3), **Link** when nobody is in the seat. The whole strip is one button — it opens the customer record (4) |
+ * | **Order** | **Add** / **In order** — one seat onto the order for a group splitting the bill (14) |
+ * | **State** | `PaidPill` (PAID · UNPAID · NO SHOW), the no-show toggle, and ✕ remove (never on the booker) |
+ * | **What they play** | `Segmented` 9 / 18, `FeeField`, the `tune` button that expands the rate editor in place (11), the cart-key glyph (16), `Segmented` transport |
+ * | **What they're sold on** | `SeatMeta` — the rate's *name* and price, the transport row's name and price, a discount with its reason, the punch card, the customer id, rewards, rounds (12) |
+ * | **Where they are** | `RoundRail`, the five-step check-in rail |
+ *
+ * The pricing behind it is not in this file: `logic/seat-pricing.ts` (`seatPrice`, `seatRecord`,
+ * `seatCanSwitchHoles`), `logic/rates.ts` (`rateCardFee`) and `logic/reservation.ts` (every
+ * `setPlayer*`, `resizeParty`, `removePlayer`, `maxPlayers`, `playerIsAdjusted`).
+ *
+ * ## What a row reads
+ *
+ * Per-seat overrides live on `PlayerState` (`src/pos/types.ts`). **Absent means the booking's
+ * own value** — which is why two hundred authored bookings still price exactly as they did
+ * before any of this existed.
+ *
+ * | Field | Default when absent | What it does |
+ * |---|---|---|
+ * | `holes` | `booking.holes` | 9 or 18 for this seat |
+ * | `fee` | the rate's price | A typed-over green fee. A reset appears the moment it differs |
+ * | `transport` | `booking.cart` | walk · riding cart · push cart |
+ * | `rateId` | `autoRate` from the player's record | The **named** rate the seat is sold on (11) |
+ * | `transportRateId`, `transportFee` | the default row for the mode | The transport row and its price (11) |
+ * | `discountId`, `discountManual` | none | A preset, carrying its reason onto the row and the register line |
+ * | `punch` | none | `{ customerId, cardName }` — a prepaid **round**; the ride is still billed (17) |
+ * | `cartKey` | none | The cart signed out to this seat (16) |
+ * | `paid`, `noShow`, `step` | — | `paid` and `noShow` make the seat read-only |
+ *
+ * Two story-driven switches change the row without a second code path: `state.weston.rowDensity`
+ * (`comfortable` default / `dense`) and `state.weston.rateCatalog` (`standard` / `heavy`). Both
+ * are on the Storybook toolbar.
+ *
+ * ## Specs
+ *
+ * | | |
+ * |---|---|
+ * | Row | `radius.md` (12px), padding 10px 12px, 3px left border in `playerAccents[i % 5]` — #17a34a · #2563eb · #d97706 · #7c3aed · #dc2626 |
+ * | Fill | `md3.surfaceContainer` (#eef1ee); **adjusted** → `reservationPanel.adjusted` (#fffbeb on #fde68a, reset control #92400e) |
+ * | No-show | `opacity: .62`, and the golf controls, meta line and rail all step aside |
+ * | Avatar | 26px circle, initials at 10.5/800 |
+ * | `Segmented` | 28px tall, 34px minimum per option, 1.5px `md3.outlineVariant`; the selected option fills `md3.onSurface` |
+ * | `FeeField` | 84 × 28. Commits on **blur or Enter** — typing "4" on the way to "45" must not reprice the order |
+ * | `PaidPill` | `radius.xl` pill, 9.5/800, fills from `payBadges` |
+ * | Add player | Full-width, 1.5px dashed, and it says how many seats are open beside the tee time |
+ * | Stepper | Two 28px circles, ceiling `maxPlayers(booking, course, day)` — a party cannot straddle the booking beside it |
+ * | Density | Comfortable = a line each for the rate and the ride; dense = one 10.5px line, ellipsised |
+ *
+ * **Measured, because it was asserted wrongly first:** the players list is **823px comfortable
+ * and 734px dense** against **618px** of visible panel at 640 — the stepper and the three group
+ * actions take the top before a seat is drawn. Dense buys back about half a seat, not a scroll.
+ * Fitting a foursome outright is the **820** panel's job (10), not the row's.
+ *
+ * ## Scope
+ *
+ * Weston edition, 18-hole club, counter terminal. A nine-hole course shows **9** only; the
+ * toggle appears when the course has 18 holes or the booking was booked for 18. All of these
+ * stories squeeze the sheet — the scrim is scoped to 10.
+ *
+ * ## The stories
+ *
+ * | Story | What it is for |
+ * |---|---|
+ * | **As Booked** | An untouched party: every row reads the booking's own holes, rate and transport. Nothing is tinted |
+ * | **Player Switched To 18** | Seat 2 on 18, priced from the rate card, row tinted, footer total following |
+ * | **Switch 18 By Click** | The same switch driven through the UI. Asserts the radio flips *and* the fee changes |
+ * | **Rate Card Fee On Switch** | Asserts the switched seat reads **exactly** `rateCardFee(b, h)` — the card's price for that hole count in this tee time's band — and that the booker, untouched, still reads the booking's rate. Not a ratio of the booking's price |
+ * | **Rate Card Override On Switch** | The same with a price override on the row (an "Aeration special" at $44 from the time label's menu): the override is the green fee, so the switched seat defaults to it |
+ * | **Adjusted Fees** | Every kind of edit at once — a linked member, a switch to 18 on a different transport, a typed-in $25 with its reset |
+ * | **Mixed Member Guest Group** | The section's rule, measured. Seat 2 is a member at **$0.00** inside a guest booking; the footer is checked against `buildTeeTimeCart`; **tax is per seat by the seat's class**, so the member's $0 seat carries none; and the member switched to 18 stays on the membership row while a guest reads rack |
+ * | **Player Count At Max** | A party filling every slot it can: **+** disabled, Add player gone |
+ * | **Add Player** | The stepper adding an unnamed, unpaid seat on the booking's defaults |
+ * | **No Show** | Rows dimmed, golf controls withdrawn, the toggle as the undo, and a footer that says nothing is due |
+ *
+ * ## Still open
+ *
+ * - **Row density** is a variant, not a decision: reading a long rate name back to a golfer
+ *   against seeing more seats at once. The toolbar switches it; 12 shows both against a row that
+ *   has something to say.
+ * - **Transport style** likewise — the walk/ride/push icons, or the transport rate it actually
+ *   bills. A walker paying an $8.58 trail fee is not expressible as a toggle.
+ * - **Remove has no confirm on the tablet** (the phone confirms in a sheet). It is one ✕ beside
+ *   a no-show toggle, and a mis-tap costs the seat's edits.
  */
 const meta = {
   title: 'Weston Edits/2 · Player Rows/Tablet',

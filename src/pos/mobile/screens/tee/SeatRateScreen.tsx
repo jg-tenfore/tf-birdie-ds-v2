@@ -54,14 +54,31 @@ import { BookingGone, SectionHeader } from './parts';
 export function SeatRateScreen({ route }: ScreenProps<'seatRate'>) {
   const { state, dispatch } = usePos();
   const nav = useMobileNav();
-  const b = state.bookings.find((x) => x.id === route.bookingId);
+  const saved = state.bookings.find((x) => x.id === route.bookingId);
 
-  if (!b) return <BookingGone />;
+  /**
+   * Edits are held here until Save.
+   *
+   * Every tile used to write straight through to the booking, which made ✕ and Save do exactly
+   * the same thing — the dialog offered a way to back out that did not back anything out. The
+   * phone's other full-screen dialogs (book a tee time, move players, a booking action) all
+   * commit on confirm, so this one does too.
+   */
+  const [draft, setDraft] = useState<Booking | null>(saved ?? null);
 
+  if (!saved || !draft) return <BookingGone />;
+
+  const b = draft;
   const i = route.seat;
   const rates = rateContext(state);
   const ctx = { catalog: state.weston.rateCatalog };
-  const patch = (x: Partial<Booking>) => dispatch({ type: 'patchBooking', bookingId: b.id, patch: x });
+  const patch = (x: Partial<Booking>) => setDraft((d) => (d ? { ...d, ...x } : d));
+  const commit = () => {
+    // Only the seats can have changed in here; nothing else on the booking is editable.
+    dispatch({ type: 'patchBooking', bookingId: saved.id, patch: { playerStates: draft.playerStates } });
+    nav.pop();
+  };
+  const dirty = draft.playerStates !== saved.playerStates;
 
   const holes = playerHoles(b, i);
   const grid = seatRateGrid(b, holes, ctx);
@@ -88,7 +105,8 @@ export function SeatRateScreen({ route }: ScreenProps<'seatRate'>) {
             </Box>
           }
           confirmLabel="Save"
-          onConfirm={() => nav.pop()}
+          onConfirm={commit}
+          confirmDisabled={!dirty}
           onClose={() => nav.pop()}
         />
       }
@@ -163,7 +181,7 @@ export function SeatRateScreen({ route }: ScreenProps<'seatRate'>) {
           ))}
         </Tiles>
 
-        <PunchSection booking={b} seat={i} />
+        <PunchSection booking={b} seat={i} onPatch={patch} />
 
         <Stack direction="row" gap={1} sx={{ mt: 2 }}>
           <ButtonBase
@@ -206,11 +224,17 @@ export function SeatRateScreen({ route }: ScreenProps<'seatRate'>) {
  * The card need not be the player's own — a member covering a guest's round is a normal
  * Saturday, which is why the old prototype had "use other customer's punchcards".
  */
-function PunchSection({ booking: b, seat: i }: { booking: Booking; seat: number }) {
-  const { dispatch } = usePos();
+function PunchSection({
+  booking: b,
+  seat: i,
+  onPatch: patch,
+}: {
+  booking: Booking;
+  seat: number;
+  onPatch: (x: Partial<Booking>) => void;
+}) {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const patch = (x: Partial<Booking>) => dispatch({ type: 'patchBooking', bookingId: b.id, patch: x });
 
   const applied = b.playerStates[i]?.punch;
   const own = usablePunchCards(seatRecord(b, i));
@@ -250,6 +274,7 @@ function PunchSection({ booking: b, seat: i }: { booking: Booking; seat: number 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search a card holder…"
+                label="Search a card holder"
               />
               <Tiles>
                 {holders.map((c) => (

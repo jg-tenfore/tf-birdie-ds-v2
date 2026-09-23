@@ -116,6 +116,21 @@ export interface ReservationPanelState {
    * page can show the same booking at three sizes.
    */
   width?: PanelWidth;
+  /**
+   * What happens to the tee sheet while the panel is open.
+   *
+   *  - `squeeze` (the default) narrows the sheet into the room left beside the panel. Every
+   *    column tightens, so nothing hides underneath — but the time gutter, the slot columns and
+   *    the front/back nine headers all compress with it, and at 820 that is a lot of
+   *    compression for a sheet you are only glancing at.
+   *  - `scrim` leaves the sheet at its natural width and dims the terminal behind the panel
+   *    instead. The times and the nines keep the widths they have when nothing is open, so the
+   *    sheet reads the same whether the panel is there or not; it is simply in the background.
+   *
+   * Scoped rather than switched globally, so section 10 can show the treatment before it is
+   * adopted everywhere.
+   */
+  backdrop?: 'squeeze' | 'scrim';
 }
 
 /**
@@ -672,8 +687,11 @@ export function reducer(state: PosState, action: Action): PosState {
       // ends rather than wrapping — a silent jump back to the morning is disorienting.
       const panel = state.reservationPanel;
       if (!panel) return state;
+      // Visible courses only, matching the arrows that dispatch this — stepping to a tee time
+      // on a hidden course moves the panel to something the sheet behind it cannot show.
+      const onScreen = new Set(state.courses.filter((c) => c.visible).map((c) => c.id));
       const day = dayBookings(state)
-        .filter((x) => x.pay !== 'block' && x.pay !== 'event')
+        .filter((x) => x.pay !== 'block' && x.pay !== 'event' && onScreen.has(x.course))
         .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
       const at = day.findIndex((x) => x.id === panel.bookingId);
       const next = day[at + action.delta];
@@ -811,13 +829,27 @@ export function reducer(state: PosState, action: Action): PosState {
         bookings: [...state.bookings, ...action.bookings],
         generatedDates: [...state.generatedDates, action.date],
       };
-    case 'patchBooking':
+    case 'patchBooking': {
+      const bookings = state.bookings.map((b) =>
+        b.id === action.bookingId ? { ...b, ...action.patch } : b,
+      );
+      const next = { ...state, bookings };
+      // A split order follows the reservation it was built from.
+      //
+      // Seats added one at a time were priced when they were added and never again, so
+      // comping a seat already on the order left the rail charging the old amount until
+      // Check in & pay rebuilt everything. The phone had a re-sync for this on its order
+      // screen; the terminal had none, and a fix that only works on one device is half a fix.
+      // Repricing here covers both, because both edit through this action.
+      if (!state.orderSeats || state.selectedBookingId !== action.bookingId) return next;
+      const b = bookings.find((x) => x.id === action.bookingId);
+      if (!b) return next;
+      const extras = state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes');
       return {
-        ...state,
-        bookings: state.bookings.map((b) =>
-          b.id === action.bookingId ? { ...b, ...action.patch } : b,
-        ),
+        ...next,
+        cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(next), state.orderSeats), ...extras],
       };
+    }
     case 'patchBookings': {
       const ids = new Set(action.bookingIds);
       return {

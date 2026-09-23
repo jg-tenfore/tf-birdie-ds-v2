@@ -42,11 +42,7 @@ export function LeftPanel() {
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();
-  // Tax is a line on the order, not a thing anyone added, so counting it made clearing a
-  // threesome's golf read "4 items will be removed".
-  const orderCount = state.cart
-    .filter((item) => !item.isTax && item.name !== 'Taxes')
-    .reduce((n, item) => n + (item.qty ?? 1), 0);
+  const orderCount = orderItemCount(state.cart);
   const hasOrder = orderCount > 0;
   const runQuickAction = useQuickAction();
 
@@ -1048,7 +1044,10 @@ export { dominantTransport };
 function RailStrip() {
   const { state, dispatch } = usePos();
   const runQuickAction = useQuickAction();
-  const count = state.cart.reduce((n, item) => n + (item.qty ?? 1), 0);
+  // Same count the clear-confirm uses. Tax is a line on the order but not a thing anyone
+  // added, and the strip badging 4 while the confirm offers to remove 3 is the kind of
+  // disagreement that makes someone stop trusting both numbers.
+  const count = orderItemCount(state.cart);
   const expand = () => dispatch({ type: 'toggleLeftPanel', collapsed: false });
 
   return (
@@ -1170,4 +1169,14 @@ function useQuickAction() {
     dispatch({ type: 'setFlowMode', mode });
     dispatch({ type: 'setCategory', category: 'CHECK IN' });
   };
+}
+
+/**
+ * How many things are on the order, as a person would count them.
+ *
+ * Tax is a line but not a thing anyone added, so it is excluded — clearing a threesome's golf
+ * offers to remove three items, not four, and the collapsed rail badges the same number.
+ */
+function orderItemCount(cart: CartItem[]): number {
+  return cart.filter((i) => !i.isTax && i.name !== 'Taxes').reduce((n, i) => n + (i.qty ?? 1), 0);
 }

@@ -13,7 +13,9 @@ import {
   type RateCatalogKey,
   type TransportRate,
 } from '../data/rate-catalog';
-import { customerForPhone, liveCustomer, type CustomerEdits } from '../data/roster';
+import { customerForPhone, liveCustomer, roster, type CustomerEdits } from '../data/roster';
+import { bookingName } from '../data/customers';
+
 import type { Customer } from '../data/customers';
 import type { Booking } from '../types';
 import { rateBand } from './rates';
@@ -249,4 +251,56 @@ export function seatTransportOverride(b: Booking, i: number): number | undefined
   if (p?.transportFee != null) return p.transportFee;
   if (p?.transportRateId != null) return seatTransportRate(b, i).price;
   return undefined;
+}
+
+/**
+ * A customer this seat's name *might* be — display only, never pricing.
+ *
+ * The counterpart to `seatRecord`'s strictness. A seat called "Kim, D." on a guest booking
+ * pays the booking's rate, because a name is not an identification; but the counter can still
+ * see that Kim, David exists and link him in one tap, which is what makes the seat his.
+ *
+ * This existed from round 1 on the Customer tab and was lost when the tab was replaced by the
+ * customer record. Restoring it here rather than in `seat-customer.ts` so it resolves against
+ * the deep roster, and so the two halves of the rule — what prices a seat, and what is merely
+ * offered — sit next to each other where nobody can confuse them.
+ *
+ * Returns nothing for a seat that already resolves, and nothing for "Guest 3".
+ */
+export function seatSuggestedRecord(b: Booking, i: number, edits: CustomerEdits = {}): Customer | null {
+  if (seatRecord(b, i, edits)) return null;
+  const name = i === 0 ? b.name : b.guests?.[i]?.name;
+  if (!name || /^Guest \d+$/.test(name)) return null;
+  const match = matchRosterByName(name);
+  return match ? liveCustomer(match.id, edits) : null;
+}
+
+/**
+ * The roster record whose booking name a seat's name looks like.
+ *
+ * Tolerates the sheet's abbreviated form — "Farnsworth, W." should suggest Farnsworth, Weston —
+ * by matching on surname plus a first-name prefix. Deliberately searched over the whole roster
+ * rather than the 28-record golfer list: the suggestion is about who the demo actually knows,
+ * and the narrow list would have quietly suggested nobody for most seats.
+ *
+ * A surname shared by several people suggests none of them. Offering one of three Brennevins
+ * with a Link button is worse than offering nothing, because it invites a tap that silently
+ * prices the round as the wrong person.
+ */
+function matchRosterByName(name: string): Customer | null {
+  const norm = (x: string) => x.toLowerCase().replace(/[,.\s]+/g, ' ').trim();
+  const target = norm(name);
+  if (!target) return null;
+
+  const exact = roster.filter((c) => norm(bookingName(c)) === target);
+  if (exact.length === 1) return exact[0];
+  if (exact.length > 1) return null;
+
+  const [surname, initial] = target.split(' ');
+  if (!surname || !initial) return null;
+  const near = roster.filter((c) => {
+    const [s, f] = norm(bookingName(c)).split(' ');
+    return s === surname && f?.startsWith(initial.replace(/\.$/, ''));
+  });
+  return near.length === 1 ? near[0] : null;
 }
