@@ -73,11 +73,22 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // summary, the register's tee-time picker — sees the same filled day.
   useDemoDayFill(useWestonEdits());
 
+  // A scrimmed reservation panel is modal: nothing behind it is usable until an action on the
+  // panel itself dismisses it. The scrim alone only stops the mouse — Tab still walks straight
+  // into the tee sheet behind it — so the background is marked `inert`, which takes it out of
+  // the tab order, out of the accessibility tree and out of pointer events together.
+  const panel = state.reservationPanel;
+  const panelIsModal = Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop === 'scrim';
+
   return (
     <PosShell>
       {syncUrl && <UrlSync />}
-      <LeftPanel />
-      {state.view === 'pos' ? <PosView /> : <TeeSheetView />}
+      {/* `display: contents` so marking the background inert costs it no layout. */}
+      <Box component="div" inert={panelIsModal || undefined} sx={{ display: 'contents' }}>
+        <LeftPanel />
+        {state.view === 'pos' ? <PosView /> : <TeeSheetView />}
+        <TeeSheetSidebar />
+      </Box>
 
       <ReservationPanel />
       {/* The customer record layers over everything, including the reservation. */}
@@ -85,7 +96,6 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       <CartSignoutModal />
       <ModalHost />
       <ContextMenus />
-      <TeeSheetSidebar />
 
       <Snackbar
         open={Boolean(state.toast)}
