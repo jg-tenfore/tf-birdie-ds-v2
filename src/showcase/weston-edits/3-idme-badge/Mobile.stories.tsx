@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
-import { adjustedParty, at18, loadedOrder, withBookings } from '../mobile-scenarios';
+import { adjustedParty, at18, bookerWithRecord, loadedOrder, withBookings } from '../mobile-scenarios';
 import { seatRecord } from '../../../pos/logic/seat-pricing';
 
 /**
@@ -55,7 +55,7 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
  * | Reservation player row | compact | `ReservationPlayers.tsx` |
  * | Player Detail, under the name | full | `PlayerDetailScreen.tsx` (Weston edition only) |
  * | The order's golf summary | compact | `screens/register/OrderScreen.tsx` — so the counter sees who is verified while taking payment |
- * | The customer's own record | **not drawn** | `CustomerRecordScreen.tsx`. See **Still open** |
+ * | The customer's own record | compact | `CustomerRecordScreen.tsx`, beside the customer id |
  *
  * ## Scope
  *
@@ -69,7 +69,7 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
  * |---|---|
  * | **On Player Rows** | The compact badge on the reservation's rows — seat 2 is Thompson, Michael (veteran), seat 3 Walsh, Patricia (nurse), both linked in by `adjustedParty` |
  * | **On Player Detail** | The full **"ID.me · Veteran"** badge under the player's name on the pushed detail screen |
- * | **On The Customer Record** | **Does not currently show what its name says.** It opens seat 0's record, and this party's booker resolves to nobody, so the route lands in assign mode — *"Who is in seat 1?"*. Even with a record it would show no badge: the record screen does not draw one. See **Still open** |
+ * | **On The Customer Record** | The badge on the record itself, opened from the booker's name. Uses `bookerWithRecord()` — most demo bookings have a booker who resolves to nobody, so a story wanting a *record* has to pick one that has one |
  * | **On Order Summary** | The compact badge on the register's golf summary, where payment is actually taken |
  *
  * ## Still open
@@ -78,12 +78,6 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
  *   seen how Birdie presents ID.me at the counter today — a redirect, a code read back on the
  *   phone, or something the golfer did before arriving — and a second flow built blind is a
  *   guess with a green tick on it.
- * - **The record does not show the badge**, on either device. A counter looking at a customer's
- *   record cannot see that they are verified; only their seat says so. That is a one-line
- *   addition to `CustomerRecordScreen.tsx` waiting on a decision about where it goes.
- * - **`On The Customer Record` needs a booking whose booker resolves** (`bookerWithRecord`), the
- *   way 4 · Customer Profile's own **Booker Record** story does. As written it demonstrates the
- *   name-is-not-an-identification rule by accident rather than the badge on purpose.
  * - **`teacher` is never drawn on the phone** — no demo customer carries it. The tablet's **All
  *   Groups** story is the only place all five are visible.
  */
@@ -132,7 +126,11 @@ export const OnPlayerDetail: Story = {
 /** On the customer's own record, opened from the player's name. */
 export const OnTheCustomerRecord: Story = {
   render: () => {
-    const { b, state } = party();
+    // A booking whose booker actually resolves. `adjustedParty()`'s does not, so this story
+    // used to land on "Who is in seat 1?" rather than on a record — showing the assign screen
+    // under a heading promising a badge.
+    const b = bookerWithRecord();
+    const state = at18(withBookings(b));
     return (
       <MobileStory
         edition="weston"
