@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
-import { md3, radius } from '../../theme/tokens';
+import { idMeGroups, md3, radius } from '../../theme/tokens';
 import {
   CUSTOMER_TYPES,
   EMAIL_DOMAINS,
@@ -12,6 +12,7 @@ import {
 } from '../data/customers';
 import { liveCustomer, searchRoster } from '../data/roster';
 import { idMeGroupOf } from '../data/golfers';
+import type { IdMeGroup } from '../types';
 import { seatSuggestedRecord } from '../logic/seat-pricing';
 import { IdMeBadge } from './IdMeBadge';
 import { golferOf } from '../data/customers';
@@ -20,7 +21,7 @@ import { rainCheckBalance, rainChecksFor } from '../data/rain-checks';
 import { money } from '../logic/cart';
 import { ModalFrame, FilledButton, OutlineButton } from '../modals/ModalFrame';
 import { usePos } from '../state/PosProvider';
-import { SectionLabel } from './primitives';
+import { Icon } from './primitives';
 import { Stack } from './Stack';
 
 /**
@@ -55,11 +56,10 @@ export function CustomerModal() {
 
 function CustomerRecord({ customer }: { customer: Customer }) {
   const { dispatch } = usePos();
-  const [email, setEmail] = useState(customer.email);
-  const [phone, setPhone] = useState(formatPhone(customer.phone));
-  const [notes, setNotes] = useState(customer.notes ?? '');
+  const [draft, setDraft] = useState<Partial<Customer>>({});
   const [types, setTypes] = useState<string[]>(customer.customerTypes);
   const [showAllTypes, setShowAllTypes] = useState(false);
+  const [idOpen, setIdOpen] = useState(false);
 
   const close = () => dispatch({ type: 'closeCustomerModal' });
   const tier = memberTierOf(customer);
@@ -67,6 +67,12 @@ function CustomerRecord({ customer }: { customer: Customer }) {
   const credits = rainChecksFor(customer.id);
   const owed = rainCheckBalance(customer.id);
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
+  const booked = customer.teeTimes.filter((t) => t.status).length;
+
+  // One draft object rather than a `useState` per field: the record carries ten of them now,
+  // and `field('city')` is the difference between a form and a wall of hooks.
+  const val = (k: keyof Customer) => String(draft[k] ?? customer[k] ?? '');
+  const set = (k: keyof Customer) => (v: string) => setDraft({ ...draft, [k]: v });
 
   // Saved into state rather than discarded: Weston's case is fixing a wrong email at the
   // counter, and an edit that vanishes on close demonstrates a form, not a fix. It lives as
@@ -75,7 +81,7 @@ function CustomerRecord({ customer }: { customer: Customer }) {
     dispatch({
       type: 'patchCustomer',
       customerId: customer.id,
-      patch: { email, phone: normalizePhone(phone), notes, customerTypes: types },
+      patch: { ...draft, phone: normalizePhone(String(draft.phone ?? customer.phone ?? '')), customerTypes: types },
     });
     dispatch({ type: 'toast', message: `${bookingName(customer)} saved` });
     close();
@@ -86,140 +92,407 @@ function CustomerRecord({ customer }: { customer: Customer }) {
       title={`${customer.firstName} ${customer.lastName}`}
       subtitle={`Customer ID ${customer.id} · Course ID ${customer.courseId}`}
       icon="person"
-      width={720}
+      width={780}
       tall
       onClose={close}
       actions={
-        <Stack direction="row" gap={8} sx={{ justifyContent: 'flex-end', width: '100%' }}>
+        <Stack direction="row" gap={1} sx={{ justifyContent: 'flex-end', width: '100%' }}>
           <OutlineButton onClick={close}>Cancel</OutlineButton>
           <FilledButton onClick={save}>Save</FilledButton>
         </Stack>
       }
     >
-      <Stack direction="column" gap={16}>
-        {/* The badge is on the player row; the record is where someone goes to check it. */}
-        {idMe && (
-          <Stack direction="row" alignItems="center" gap={8}>
-            <IdMeBadge group={idMe} />
-          </Stack>
-        )}
+      {/*
+        Everything below is one 12px rhythm.
+
+        The record Weston looked at used `<Stack gap={16}>`, and `gap` goes through MUI's
+        spacing scale — so sixteen meant **128px**, not sixteen. Six sections separated by
+        128px of nothing is what "it's just very spaced out… this looks bad" was describing,
+        and why a record with no punch cards and no gift cards showed an empty half-screen
+        between the account tiles and the history.
+      */}
+      <Stack direction="column" gap={1.5}>
+        {/*
+          Who this is, as the course knows them — membership, tier, verification — on one
+          line under the name. Weston: "I do like that we have the customer ID… we'd probably
+          display membership there too if they had one."
+        */}
+        <Stack direction="row" alignItems="center" gap={0.75} sx={{ flexWrap: 'wrap' }}>
+          {tier && <Chip label={tier} tone="member" />}
+          {customer.memberships.map((mem) => (
+            <Chip key={mem.name} label={`${mem.name} · to ${mem.expires}`} tone="member" />
+          ))}
+          {customer.memberships.length === 0 && !tier && <Muted>No membership</Muted>}
+          <Box sx={{ flex: 1 }} />
+          {idMe && (
+            <>
+              <IdMeBadge group={idMe} />
+              {/*
+                The whole of ID.me, as Weston described it on the fourth call.
+
+                "It's a membership that we mark as a verified membership… they pass back a
+                document, which is their ID, so we get a picture of their ID that we have
+                saved. It's a button right here — you click on it and all it does is show the
+                picture of their ID. It's a way to say, oh, let me see that picture. Okay,
+                yep, that's Justin, he's in front of me, he's going to get the correct rate.
+                All the other rate stuff will be handled by the membership."
+
+                So: no verify flow, no rate logic, no sign-up. One button that shows the
+                document, which is the only problem there was to solve.
+              */}
+              <ButtonBase
+                onClick={() => setIdOpen(true)}
+                sx={{
+                  height: 32,
+                  px: 1.25,
+                  gap: 0.5,
+                  borderRadius: `${radius.xl}px`,
+                  border: `1.5px solid ${md3.outlineVariant}`,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: md3.onSurface,
+                }}
+              >
+                <Icon name="badge" size={14} />
+                View ID
+              </ButtonBase>
+            </>
+          )}
+        </Stack>
 
         {/* Contact — the half Weston actually needs to fix at the counter. */}
-        <Box>
-          <SectionLabel>Contact</SectionLabel>
-          <Stack direction="column" gap={8}>
-            <Field label="Email" value={email} onChange={setEmail} />
-            <Stack direction="row" gap={6} sx={{ flexWrap: 'wrap' }}>
-              {EMAIL_DOMAINS.map((d) => (
-                <Chip
-                  key={d}
-                  label={d}
-                  onClick={() => setEmail(`${email.split('@')[0]}${d}`)}
-                />
-              ))}
-            </Stack>
-            <Field label="Phone" value={phone} onChange={setPhone} />
-            <Field label="Notes" value={notes} onChange={setNotes} placeholder="Notes for this customer" />
+        <FieldGrid>
+          <Field label="First name" value={val('firstName')} onChange={set('firstName')} />
+          <Field label="Last name" value={val('lastName')} onChange={set('lastName')} />
+          <Field label="Email" value={val('email')} onChange={set('email')} />
+          <Field label="Phone" value={formatPhone(val('phone'))} onChange={set('phone')} />
+          <Field label="Birthday" value={val('birthday')} onChange={set('birthday')} placeholder="MM/DD/YYYY" />
+          <Field label="Notes" value={val('notes')} onChange={set('notes')} placeholder="Notes for this customer" />
+          <Field label="Street" value={val('street')} onChange={set('street')} />
+          <Field label="City" value={val('city')} onChange={set('city')} />
+          <Stack direction="row" gap={1}>
+            <Box sx={{ flex: 1 }}>
+              <Field label="State" value={val('state')} onChange={set('state')} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Field label="Zip" value={val('zip')} onChange={set('zip')} />
+            </Box>
           </Stack>
-        </Box>
+        </FieldGrid>
 
-        {/* Memberships and types. Weston: "it should just be like expandable — show the one you
-            have, and if you want to assign more you can." Not eighteen checkboxes. */}
-        <Box>
-          <SectionLabel>Membership & types</SectionLabel>
-          <Stack direction="row" gap={6} sx={{ flexWrap: 'wrap', mb: '8px' }}>
-            {customer.memberships.length === 0 && <Muted>No memberships</Muted>}
-            {customer.memberships.map((mem) => (
-              <Chip key={mem.name} label={`${mem.name} · to ${mem.expires}`} tone="member" />
-            ))}
-            {tier && <Chip label={tier} tone="member" />}
-          </Stack>
-          <Stack direction="row" gap={6} sx={{ flexWrap: 'wrap' }}>
-            {types.map((t) => (
-              <Chip key={t} label={t} tone="on" onClick={() => setTypes(types.filter((x) => x !== t))} />
-            ))}
-            <Chip
-              label={showAllTypes ? 'Done' : '+ Add type'}
-              onClick={() => setShowAllTypes(!showAllTypes)}
-            />
-          </Stack>
-          {showAllTypes && (
-            <Stack direction="row" gap={6} sx={{ flexWrap: 'wrap', mt: '8px' }}>
-              {CUSTOMER_TYPES.filter((t) => !types.includes(t)).map((t) => (
-                <Chip key={t} label={t} onClick={() => setTypes([...types, t])} />
-              ))}
-            </Stack>
-          )}
-        </Box>
+        <Stack direction="row" gap={0.75} sx={{ flexWrap: 'wrap' }}>
+          {EMAIL_DOMAINS.map((d) => (
+            <Chip key={d} label={d} onClick={() => set('email')(`${val('email').split('@')[0]}${d}`)} />
+          ))}
+        </Stack>
 
         {/* What they're owed and what they've got — the questions asked at the counter. */}
+        <Stack direction="row" gap={0.75} sx={{ flexWrap: 'wrap' }}>
+          <Stat label="Rewards" value={`+${customer.rewardsBalance}`} />
+          <Stat label="Balance" value={money(customer.balance)} alert={customer.balance > 0} />
+          <Stat label="Rain checks" value={money(owed)} />
+          <Stat label="Rounds" value={String(customer.teeTimes.length)} />
+          <Stat label="No-shows" value={String(noShows)} alert={noShows > 0} />
+          {customer.cardOnFile && <Stat label="Card" value={`•••• ${customer.cardOnFile}`} />}
+        </Stack>
+
+        {/*
+          The sectioned half of the record, ported from v1's Customer Search screen.
+
+          Justin: "I like the details, however I want to use our current design framework we
+          have in v1." v1 gives each of these its own collapsing bar with the answer already
+          on it, so a closed section still answers its question — the gift-card balance is on
+          the Gift Cards bar whether or not anyone opens it.
+        */}
         <Box>
-          <SectionLabel>Account</SectionLabel>
-          <Stack direction="row" gap={8} sx={{ flexWrap: 'wrap' }}>
-            <Stat label="Rewards" value={`+${customer.rewardsBalance}`} />
-            <Stat label="Balance" value={money(customer.balance)} alert={customer.balance > 0} />
-            <Stat label="Rain checks" value={money(owed)} />
-            <Stat label="Rounds" value={String(customer.teeTimes.length)} />
-            <Stat label="No-shows" value={String(noShows)} alert={noShows > 0} />
-            {customer.cardOnFile && <Stat label="Card" value={`•••• ${customer.cardOnFile}`} />}
-          </Stack>
-        </Box>
+          <CustomerSection title="Gift cards" summary={money(customer.giftCards.reduce((s, g) => s + g.balance, 0))}>
+            {customer.giftCards.length === 0 ? (
+              <Muted>No gift cards.</Muted>
+            ) : (
+              /*
+                One row per card, not one total.
 
-        {customer.punchCards.length > 0 && (
-          <Box>
-            <SectionLabel>Punch cards</SectionLabel>
-            {customer.punchCards.map((p) => (
-              <Row key={p.name} left={p.name} right={`${p.remaining} of ${p.total} left`} sub={`Expires ${p.expires}`} />
-            ))}
-          </Box>
-        )}
-
-        {customer.giftCards.length > 0 && (
-          <Box>
-            <SectionLabel>Gift cards</SectionLabel>
-            {customer.giftCards.map((g) => (
-              <Row key={g.id} left={`${g.type} · ${g.upc}`} right={money(g.balance)} sub={`Expires ${g.expires}`} />
-            ))}
-          </Box>
-        )}
-
-        {credits.length > 0 && (
-          <Box>
-            <SectionLabel>Rain checks</SectionLabel>
-            {credits.map((r) => (
-              <Row
-                key={r.id}
-                left={`${r.id} · ${r.teeTime}`}
-                right={money(r.balance)}
-                // A credit that is partly spent has to say where the rest went — that is the
-                // argument the counter actually has to settle.
-                sub={
-                  r.redemptions?.length
-                    ? `${money(r.awarded)} awarded · ${money(r.spent)} spent on ${r.redemptions[0].what}`
-                    : `${money(r.awarded)} awarded · ${r.holesPlayed} of ${r.totalHoles} played`
-                }
+                Weston: "we probably want to know each gift card, like as a line item. Same
+                with probably rain checks. So instead of a dollar amount, like they could
+                have five, you know? Just to see them all."
+              */
+              <DataTable
+                columns={['UPC', 'Type', 'Expires', 'Awarded', 'Spent', 'Balance']}
+                widths="1.4fr .9fr .9fr .8fr .8fr .8fr"
+                rows={customer.giftCards.map((g) => ({
+                  key: g.id,
+                  cells: [g.upc, g.type, g.expires, money(g.awarded), money(g.spent), money(g.balance)],
+                  strongLast: true,
+                }))}
               />
-            ))}
-          </Box>
-        )}
+            )}
+          </CustomerSection>
 
-        <Box>
-          <SectionLabel>Tee time history</SectionLabel>
-          {customer.teeTimes.slice(0, 8).map((t) => (
-            <Row
-              key={t.id}
-              left={t.date}
-              right={t.status ?? '—'}
-              sub={`${t.players} player${t.players === 1 ? '' : 's'} · ${t.id}`}
-              alert={t.status === 'No show'}
+          <CustomerSection title="Rain checks" summary={money(owed)}>
+            {credits.length === 0 ? (
+              <Muted>No rain checks.</Muted>
+            ) : (
+              <DataTable
+                columns={['Raincheck', 'Tee time', 'Holes', 'Awarded', 'Spent', 'Balance']}
+                widths="1fr 1.4fr .6fr .8fr .8fr .8fr"
+                rows={credits.map((r) => ({
+                  key: r.id,
+                  cells: [
+                    r.id,
+                    r.teeTime,
+                    `${r.holesPlayed}/${r.totalHoles}`,
+                    money(r.awarded),
+                    money(r.spent),
+                    money(r.balance),
+                  ],
+                  strongLast: true,
+                  // A credit that is partly spent has to say where the rest went — that is the
+                  // argument the counter actually has to settle.
+                  sub: r.redemptions?.length
+                    ? `${money(r.redemptions[0].amount)} spent on ${r.redemptions[0].what} · ${r.redemptions[0].at}`
+                    : undefined,
+                }))}
+              />
+            )}
+          </CustomerSection>
+
+          <CustomerSection title="Punch cards" summary={customer.punchCards.length ? `${customer.punchCards.length}` : 'None'}>
+            {customer.punchCards.length === 0 ? (
+              <Muted>No punch cards.</Muted>
+            ) : (
+              <DataTable
+                columns={['Card', 'Remaining', 'Total', 'Expires']}
+                widths="2fr .9fr .7fr 1fr"
+                rows={customer.punchCards.map((c) => ({
+                  key: c.name,
+                  cells: [c.name, String(c.remaining), String(c.total), c.expires],
+                }))}
+              />
+            )}
+          </CustomerSection>
+
+          <CustomerSection title="Tee time history" summary={`${booked} on the sheet · ${customer.teeTimes.length - booked} played`}>
+            <DataTable
+              columns={['TeeTime ID', 'Date', 'Players', 'Status']}
+              widths="1fr 1.6fr .7fr .9fr"
+              rows={customer.teeTimes.slice(0, 12).map((t) => ({
+                key: t.id,
+                cells: [t.id, t.date, String(t.players), t.status ?? '—'],
+                alert: t.status === 'No show',
+              }))}
             />
-          ))}
-          {customer.teeTimes.length > 8 && <Muted>{customer.teeTimes.length - 8} earlier rounds</Muted>}
+            {customer.teeTimes.length > 12 && <Muted>{customer.teeTimes.length - 12} earlier rounds</Muted>}
+          </CustomerSection>
+
+          {/* Weston: "it should just be expandable — show the one you have, and if you want to
+              assign more you can." Not eighteen checkboxes. */}
+          <CustomerSection title="Customer types" summary={`${types.length} of ${CUSTOMER_TYPES.length}`} defaultOpen={false}>
+            <Stack direction="row" gap={0.75} sx={{ flexWrap: 'wrap' }}>
+              {types.map((t) => (
+                <Chip key={t} label={t} tone="on" onClick={() => setTypes(types.filter((x) => x !== t))} />
+              ))}
+              <Chip label={showAllTypes ? 'Done' : '+ Add type'} onClick={() => setShowAllTypes(!showAllTypes)} />
+            </Stack>
+            {showAllTypes && (
+              <Stack direction="row" gap={0.75} sx={{ flexWrap: 'wrap', mt: 1 }}>
+                {CUSTOMER_TYPES.filter((t) => !types.includes(t)).map((t) => (
+                  <Chip key={t} label={t} onClick={() => setTypes([...types, t])} />
+                ))}
+              </Stack>
+            )}
+          </CustomerSection>
         </Box>
       </Stack>
+
+      {idOpen && <IdDocumentDialog customer={customer} group={idMe} onClose={() => setIdOpen(false)} />}
     </ModalFrame>
   );
 }
+
+/**
+ * A collapsing section with its answer on the bar, ported from v1's customer record.
+ *
+ * The summary is the point. A counter opening this record is usually answering one question —
+ * "do I still have that gift card" — and a closed section that already says `$275.00` has
+ * answered it without being opened. v1 put the owed figure on the bar for exactly this reason;
+ * the bar here is v2's dark neutral rather than v1's navy so it belongs to this terminal, but
+ * it behaves the same.
+ */
+function CustomerSection({
+  title,
+  summary,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  summary?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Box sx={{ mb: 1 }}>
+      <ButtonBase
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        sx={{
+          width: '100%',
+          // 44dp: Weston asked for bigger targets throughout — "let's make this as big as we
+          // can, just because we need to plan for those" on a touchscreen.
+          height: 44,
+          px: 1.5,
+          gap: 1,
+          justifyContent: 'space-between',
+          borderRadius: `${radius.sm}px`,
+          bgcolor: md3.onSurface,
+          color: md3.surface,
+        }}
+      >
+        <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{title}</Typography>
+        <Stack direction="row" alignItems="center" gap={0.75}>
+          {summary && <Typography sx={{ fontSize: 13, opacity: 0.85 }}>{summary}</Typography>}
+          <Icon name={open ? 'expand_less' : 'expand_more'} size={18} color={md3.surface} />
+        </Stack>
+      </ButtonBase>
+      {open && <Box sx={{ px: 1.5, py: 1 }}>{children}</Box>}
+    </Box>
+  );
+}
+
+/** A compact table. One grid, so every row's columns line up without a `<table>`. */
+function DataTable({
+  columns,
+  widths,
+  rows,
+}: {
+  columns: string[];
+  widths: string;
+  rows: { key: string; cells: string[]; sub?: string; alert?: boolean; strongLast?: boolean }[];
+}) {
+  const grid = { display: 'grid', gridTemplateColumns: widths, gap: '8px', alignItems: 'baseline' } as const;
+  return (
+    <Box>
+      <Box sx={{ ...grid, pb: 0.5, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+        {columns.map((c, n) => (
+          <Typography
+            key={c}
+            sx={{ fontSize: 11, color: md3.onSurfaceVariant, textAlign: n === 0 ? 'left' : n < 2 ? 'left' : 'right' }}
+          >
+            {c}
+          </Typography>
+        ))}
+      </Box>
+      {rows.map((r) => (
+        <Box key={r.key} sx={{ borderBottom: `1px solid ${md3.outlineVariant}`, py: 0.625 }}>
+          <Box sx={grid}>
+            {r.cells.map((cell, n) => (
+              <Typography
+                key={n}
+                noWrap
+                sx={{
+                  fontSize: 12.5,
+                  textAlign: n < 2 ? 'left' : 'right',
+                  fontWeight: r.strongLast && n === r.cells.length - 1 ? 700 : 400,
+                  color: r.alert && n === r.cells.length - 1 ? md3.error : md3.onSurface,
+                }}
+              >
+                {cell}
+              </Typography>
+            ))}
+          </Box>
+          {r.sub && <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{r.sub}</Typography>}
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+/**
+ * The picture of the ID the customer passed back through ID.me.
+ *
+ * This is the entire feature Weston described: *"all it does is show the picture of their ID…
+ * okay, yep, that's Justin, I can see he's in front of me, he's gonna get the correct rate."*
+ *
+ * The prototype has no document store and will never have a real photograph of anybody, so the
+ * card is **drawn from the record** and labelled as a stand-in. What it is demonstrating is the
+ * layout of the moment — name, date of birth and address at a size readable across a counter,
+ * with the portrait where the portrait goes — not the image itself.
+ */
+function IdDocumentDialog({
+  customer,
+  group,
+  onClose,
+}: {
+  customer: Customer;
+  group?: IdMeGroup;
+  onClose: () => void;
+}) {
+  return (
+    <ModalFrame
+      title="ID on file"
+      subtitle={`Passed back by ID.me${group ? ` · ${idMeGroups[group].label}` : ''}`}
+      icon="badge"
+      width={480}
+      onClose={onClose}
+      actions={<OutlineButton onClick={onClose}>Close</OutlineButton>}
+    >
+      <Box
+        sx={{
+          borderRadius: `${radius.md}px`,
+          border: `1.5px solid ${md3.outlineVariant}`,
+          bgcolor: md3.surfaceContainer,
+          p: 2,
+        }}
+      >
+        <Stack direction="row" gap={1.5}>
+          <Box
+            aria-hidden
+            sx={{
+              width: 92,
+              height: 112,
+              borderRadius: `${radius.sm}px`,
+              bgcolor: md3.surfaceHigh,
+              border: `1px solid ${md3.outlineVariant}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="person" size={44} color={md3.outline} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontSize: 19, fontWeight: 800, color: md3.onSurface }}>
+              {customer.firstName} {customer.lastName}
+            </Typography>
+            <IdLine label="Date of birth" value={customer.birthday ?? '—'} />
+            <IdLine label="Address" value={customer.street ?? '—'} />
+            <IdLine label="" value={[customer.city, customer.state, customer.zip].filter(Boolean).join(', ') || '—'} />
+          </Box>
+        </Stack>
+      </Box>
+      <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mt: 1.25 }}>
+        Drawn from the customer record — the prototype holds no document images. In Birdie this
+        is the scan ID.me returned, shown so the counter can check the face against the person.
+      </Typography>
+    </ModalFrame>
+  );
+}
+
+const IdLine = ({ label, value }: { label: string; value: string }) => (
+  <Stack direction="row" gap={0.75} sx={{ mt: 0.5 }}>
+    {label && (
+      <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, width: 84, flexShrink: 0 }}>{label}</Typography>
+    )}
+    {!label && <Box sx={{ width: 84, flexShrink: 0 }} />}
+    <Typography sx={{ fontSize: 13.5, color: md3.onSurface }}>{value}</Typography>
+  </Stack>
+);
+
+/** The contact block: three columns on a 780 panel, so ten fields take three rows. */
+const FieldGrid = ({ children }: { children: React.ReactNode }) => (
+  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>{children}</Box>
+);
 
 // ─── Assign mode ────────────────────────────────────────────────────────────
 
@@ -259,7 +532,13 @@ function AssignCustomer() {
 
   return (
     <ModalFrame
-      title={m?.seat != null ? `Who is in seat ${m.seat + 1}?` : 'Find a customer'}
+      /*
+        Not "seat". Weston, round 4: "I wouldn't wanna call it a seat. I think we could just
+        say add golfer, for position 2 — just because the seat is what we use for food and
+        beverage." Two different things called the same word on one terminal is how a counter
+        ends up sending a hot dog to the ninth tee.
+      */
+      title={m?.seat != null ? `Add golfer · position ${m.seat + 1}` : 'Find a customer'}
       subtitle="Search by name, phone, email or customer ID"
       icon="person_search"
       width={560}
@@ -365,6 +644,9 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        // The caption above is a `Typography`, not a `<label>`, so without this the field is
+        // unnamed to a screen reader and unfindable by its label in a test.
+        inputProps={{ 'aria-label': label }}
         sx={{
           width: '100%',
           fontSize: 14,
@@ -424,41 +706,6 @@ function Stat({ label, value, alert }: { label: string; value: string; alert?: b
         {value}
       </Typography>
     </Box>
-  );
-}
-
-function Row({
-  left,
-  right,
-  sub,
-  alert,
-}: {
-  left: string;
-  right: string;
-  sub?: string;
-  alert?: boolean;
-}) {
-  return (
-    <Stack
-      direction="row"
-      gap={8}
-      sx={{
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        py: '6px',
-        borderBottom: `1px solid ${md3.outlineVariant}`,
-      }}
-    >
-      <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ fontSize: 13, color: md3.onSurface }}>{left}</Typography>
-        {sub && <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{sub}</Typography>}
-      </Box>
-      <Typography
-        sx={{ fontSize: 13, fontWeight: 600, color: alert ? md3.error : md3.onSurface, whiteSpace: 'nowrap' }}
-      >
-        {right}
-      </Typography>
-    </Stack>
   );
 }
 

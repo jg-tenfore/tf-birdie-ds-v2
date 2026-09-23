@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, ButtonBase, InputBase, Tooltip, Typography } from '@mui/material';
-import { md3, payBadges, playerAccents, radius, reservationPanel } from '../../theme/tokens';
+import { md3, noteColors, payBadges, playerAccents, radius, reservationPanel } from '../../theme/tokens';
 import { ROUND_STEP, TRANSPORT_META } from '../data/config';
 import { checkInPlayer } from '../logic/bookings';
 import { money } from '../logic/cart';
@@ -189,6 +189,35 @@ export function PlayerRow({
       assigning: liveRecord == null,
     });
 
+  /**
+   * Swap the person in this position for somebody else.
+   *
+   * Round 4 spent a while on what to call this. "Link" meant nothing to Weston — *"I don't
+   * understand this link thing"* — and **Edit** was worse, because both of us read it as
+   * editing the profile you are standing on: *"I'd be thinking, wait, I'm editing, I want to
+   * edit his profile."* His own answer was **Change golfer**, and it is a separate control
+   * rather than a mode of the name, because the name already has a job: tapping it opens that
+   * person's record, which he agreed with immediately — *"I agree with clicking on the name,
+   * it should open."*
+   *
+   * The unlink-then-search two-step this replaces was the thing he pushed back on: *"seems
+   * like a lot of steps to click unlink, and then go back… then it's a guest, then I'm
+   * clicking on guest, and then I'm searching."* One tap, straight to search.
+   */
+  const changeGolfer = () =>
+    dispatch({
+      type: 'openCustomerModal',
+      customerId: null,
+      bookingId: b.id,
+      seat: i,
+      assigning: true,
+    });
+
+  // A note written about this player. Weston: "I don't even know if we need to show the note…
+  // maybe it just alerts, right? It shows you that there's a note and you click on it." The
+  // note itself lives in the Notes tab, which is where this goes.
+  const note = b.playerNotes?.[i]?.trim() || liveRecord?.notes?.trim() || '';
+
   return (
     <Box
       data-player-row={i}
@@ -238,13 +267,56 @@ export function PlayerRow({
           {!customer && (
             <Box
               component="span"
-              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, fontSize: 10.5, color: md3.primary, fontWeight: 700, flexShrink: 0 }}
+              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, fontSize: 10.5, color: md3.outline, fontWeight: 700, flexShrink: 0 }}
             >
-              <Icon name="link" size={13} color={md3.primary} />
-              Link
+              NOT LINKED
             </Box>
           )}
         </ButtonBase>
+
+        {/* The note alert, not the note. Tapping it goes to where the note is written. */}
+        {note && (
+          <Tooltip title={note}>
+            <ButtonBase
+              aria-label={`Note about ${name}`}
+              onClick={() => dispatch({ type: 'setReservationTab', tab: 'notes' })}
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                color: noteColors.yellow.text,
+                bgcolor: noteColors.yellow.bg,
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="sticky_note_2" size={17} />
+            </ButtonBase>
+          </Tooltip>
+        )}
+
+        {editable && (
+          <Tooltip title={customer ? 'Put a different golfer in this position' : 'Find this golfer in the database'}>
+            <ButtonBase
+              aria-label={`Change golfer in position ${i + 1}`}
+              onClick={changeGolfer}
+              sx={{
+                height: 40,
+                px: 1.25,
+                gap: 0.5,
+                borderRadius: `${radius.sm}px`,
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: customer ? md3.onSurfaceVariant : md3.primary,
+                bgcolor: customer ? 'transparent' : md3.primaryContainer,
+                flexShrink: 0,
+                '&:hover': { bgcolor: md3.primaryContainer },
+              }}
+            >
+              <Icon name="swap_horiz" size={15} />
+              Change golfer
+            </ButtonBase>
+          </Tooltip>
+        )}
 
         {/* Weston: "you hit add to cart for each player, and then you hit save." The fast path
             (Check in & pay) stays; this is for a group splitting the bill. */}
@@ -255,12 +327,13 @@ export function PlayerRow({
               aria-pressed={inOrder}
               onClick={() => dispatch({ type: 'addSeatToOrder', bookingId: b.id, seat: i })}
               sx={{
-                px: 0.75,
-                py: 0.25,
-                gap: 0.375,
+                height: 40,
+                px: 1.25,
+                gap: 0.5,
                 borderRadius: `${radius.sm}px`,
-                fontSize: 10.5,
+                fontSize: 11.5,
                 fontWeight: 700,
+                flexShrink: 0,
                 color: inOrder ? md3.primary : md3.onSurfaceVariant,
                 bgcolor: inOrder ? md3.primaryContainer : 'transparent',
                 '&:hover': { bgcolor: md3.primaryContainer },
@@ -283,7 +356,7 @@ export function PlayerRow({
                 ),
               })
             }
-            sx={{ p: 0.5, borderRadius: '50%', color: p.noShow ? md3.error : md3.outline }}
+            sx={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, color: p.noShow ? md3.error : md3.outline }}
           >
             <Icon name="person_off" size={16} />
           </ButtonBase>
@@ -295,7 +368,7 @@ export function PlayerRow({
                 patch(removePlayer(b, i));
                 toast(`${name} removed`);
               }}
-              sx={{ p: 0.5, borderRadius: '50%', color: md3.outline, '&:hover': { color: md3.error } }}
+              sx={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, color: md3.outline, '&:hover': { color: md3.error } }}
             >
               <Icon name="close" size={16} />
             </ButtonBase>
@@ -339,7 +412,7 @@ export function PlayerRow({
                 aria-expanded={expanded}
                 disabled={!editable}
                 onClick={() => onToggleExpand(expanded ? null : i)}
-                sx={{ p: 0.4, borderRadius: `${radius.sm}px`, color: expanded ? md3.primary : md3.outline }}
+                sx={{ width: 40, height: 40, borderRadius: `${radius.sm}px`, flexShrink: 0, color: expanded ? md3.primary : md3.outline }}
               >
                 <Icon name={expanded ? 'expand_less' : 'tune'} size={16} />
               </ButtonBase>
@@ -388,7 +461,7 @@ export function PlayerRow({
       {!p.noShow && <SeatMeta booking={b} seat={i} price={money9} dense={dense} record={liveRecord} />}
 
       {/* ── The rate editor, in place ── */}
-      {expanded && !p.noShow && <RateExpand booking={b} seat={i} />}
+      {expanded && !p.noShow && <RateExpand booking={b} seat={i} onClose={() => onToggleExpand(null)} />}
 
       {/* ── Where they are ── */}
       {!p.noShow && (

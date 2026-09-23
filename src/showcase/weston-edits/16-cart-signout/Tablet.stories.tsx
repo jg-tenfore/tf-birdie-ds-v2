@@ -59,7 +59,8 @@ import {
  * | Fleet | **35 carts**, numbered 1–12 and 14–36 — the numbers **skip 13**, the way most fleets do |
  * | Dialog | `ModalFrame`, 520px, icon `golf_course`, title `Cart signout · {name}` |
  * | Subtitle | `{free} of 35 available`, recomputed from the day |
- * | Number target | **46 × 40**, `radius.sm`, 14px/800 — big numbers, one look and one tap, made while holding a key ring |
+ * | Number target | **4-column grid, 56dp tall**, `radius.sm`, 17px/800 — big numbers, one look and one tap, made while holding a key ring |
+ * | Gap | **8px**. It was `<Stack gap={6}>`, and `gap` goes through MUI's spacing scale — so six meant 48px, which is the whole reason this grid looked the way it did |
  * | Taken | `md3.surfaceContainer` fill, `md3.outline` text, `line-through`, `disabled`, tooltip `Out with {player} · {time}` |
  * | This seat's own | `md3.primary` border on `md3.primaryContainer`, **enabled**, tooltip `Signed out to {name}` |
  * | Under the grid | "A struck-through number is already out. Hover to see who has it." then the **first 4** carts out, as `Cart {n} · {player} · {time}` |
@@ -133,8 +134,19 @@ const dayWithCartsOut = (extra: Parameters<typeof sheetWithPanel>[2] = {}) => {
  * because earlier groups have them, and the subtitle counting what is left. The play test
  * checks the count, that cart 14 is disabled, and that its tooltip names the group holding it.
  *
- * Big numbers on 46×40 targets rather than a dropdown of "Cart 01 — available": this is a
- * decision made while holding a key ring, and it should take one look and one tap.
+ * Big numbers on a tight four-column grid rather than a dropdown of "Cart 01 — available": this
+ * is a decision made while holding a key ring, and it should take one look and one tap.
+ *
+ * It did not always look like this. Weston, round 4, clicking into it: *"the hell is that? Oh,
+ * that grid's nasty. Yikes."* The keys were 46×40 floating **48px** apart, because the layout
+ * was a `<Stack gap={6}>` and MUI's `gap` is a spacing multiplier, not pixels. Justin's note
+ * afterwards: *"make sure this grid in the cart number is super cleaned up, it's too spaced
+ * out — 4 column grid maybe with bigger buttons and a lot tighter."*
+ *
+ * So: a real CSS grid, four columns of full-width keys 8px apart, each 56dp tall. The keys
+ * roughly doubled in area while the block they sit in got shorter. Thirty-five of them do not
+ * fit a dialog at that size, so the fleet scrolls rather than pushing the hint and the out-list
+ * off the bottom.
  */
 export const TheKeyPicker: Story = {
   render: () => (
@@ -229,5 +241,36 @@ export const ReturningIt: Story = {
     const reopened = within(await picker());
     await expect(reopened.getByText(`${free + 1} of ${CART_FLEET.length} available`)).toBeTruthy();
     await expect(reopened.getByRole('button', { name: '22' })).toBeEnabled();
+  },
+};
+
+/**
+ * **The grid, measured.** Four columns, 8px apart, keys at least 56dp tall — asserted rather
+ * than described, because this is a layout that has already drifted once without anybody
+ * noticing until it was on a call.
+ */
+export const TheGridIsTight: Story = {
+  render: () => (
+    <Screen
+      edition="weston"
+      initialState={dayWithCartsOut({ modal: { kind: 'cartSignout', bookingId: openParty().id, seat: 0 } })}
+    />
+  ),
+  play: async () => {
+    const dialog = await picker();
+    const keys = [...(dialog as unknown as HTMLElement).querySelectorAll<HTMLElement>('button')].filter((el) =>
+      /^\d+$/.test(el.textContent ?? ''),
+    );
+    await expect(keys.length).toBe(35);
+    await expect(keys[0].getBoundingClientRect().height).toBeGreaterThanOrEqual(56);
+
+    // Four per row: the first four keys share a top edge, the fifth starts a new one.
+    const top = (n: number) => Math.round(keys[n].getBoundingClientRect().top);
+    await expect(top(3)).toBe(top(0));
+    await expect(top(4)).toBeGreaterThan(top(0));
+
+    // And they are 8px apart, not 48.
+    const gap = keys[1].getBoundingClientRect().left - keys[0].getBoundingClientRect().right;
+    await expect(Math.round(gap)).toBe(8);
   },
 };

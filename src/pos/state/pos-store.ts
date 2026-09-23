@@ -119,16 +119,19 @@ export interface ReservationPanelState {
   /**
    * What happens to the tee sheet while the panel is open.
    *
-   *  - `squeeze` (the default) narrows the sheet into the room left beside the panel. Every
-   *    column tightens, so nothing hides underneath — but the time gutter, the slot columns and
-   *    the front/back nine headers all compress with it, and at 820 that is a lot of
-   *    compression for a sheet you are only glancing at.
-   *  - `scrim` leaves the sheet at its natural width and dims the terminal behind the panel
-   *    instead. The times and the nines keep the widths they have when nothing is open, so the
+   *  - `scrim` — **the default, and what the prototype ships.** The sheet keeps its natural
+   *    width and the terminal dims behind the panel at 70% black. The times, the slot columns
+   *    and the front/back nine headers keep the widths they have when nothing is open, so the
    *    sheet reads the same whether the panel is there or not; it is simply in the background.
+   *    The background is also `inert` (see `PosApp`), so it is frozen rather than merely dim.
+   *  - `squeeze` — the old behaviour, now an explicit opt-in kept for one comparison story.
+   *    The sheet narrows into the room left beside the panel; every column tightens, so nothing
+   *    hides underneath, but at 820 that compressed the sheet to about one nine.
    *
-   * Scoped rather than switched globally, so section 10 can show the treatment before it is
-   * adopted everywhere.
+   * Weston settled this on the fourth call — "I like the 820… seems like we're always doing
+   * something to this screen, so the more real estate we can have, probably the better" — with
+   * the sheet frozen rather than squeezed. Nothing but
+   * **10 · Panel Size → Squeeze For Comparison** sets this now.
    */
   backdrop?: 'squeeze' | 'scrim';
 }
@@ -143,9 +146,13 @@ export interface ReservationPanelState {
  *
  *  - `standard` — 640. Wider than the 480 he was looking at; with the order rail collapsed the
  *    sheet still shows both nines.
- *  - `wide` — 820. Room for the rate tiles beside a two-column player row; the sheet keeps
- *    about one nine.
+ *  - `wide` — **820, the shipped default.** Room for the rate tiles beside a two-column player
+ *    row. Weston picked it on the fourth call: "I like the 820. I just feel like… seems like
+ *    we're always doing something to this screen, so the more real estate we can have, probably
+ *    the better."
  *  - `cover` — the whole sheet. Maximum room, still one ✕ back to where you were.
+ *
+ * The sheet behind the panel no longer narrows at any of these — see `backdrop`.
  */
 export type PanelWidth = 'standard' | 'wide' | 'cover';
 
@@ -185,7 +192,7 @@ export interface WestonOptions {
 }
 
 export const DEFAULT_WESTON_OPTIONS: WestonOptions = {
-  panelWidth: 'standard',
+  panelWidth: 'wide',
   rowDensity: 'comfortable',
   transportStyle: 'toggle',
   rateCatalog: 'standard',

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { venue } from '../../../pos/data/venues';
 import { buildTeeTimeCart, money, orderTotals, seatCharges } from '../../../pos/logic/cart';
 import { bookingRowKey, rateCardFee } from '../../../pos/logic/rates';
@@ -260,4 +260,105 @@ export const AddPlayer: Story = {
  */
 export const NoShow: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithPanel(noShowParty())} />,
+};
+
+// ─── Round 4: the language of the row ───────────────────────────────────────
+
+/**
+ * **"Change golfer", not "Link".**
+ *
+ * Round 4 spent a while on three words and landed on the third. `Link` meant nothing —
+ * *"I don't understand this link thing"* — and `Edit` was worse, because both Weston and Justin
+ * read it as editing the profile rather than replacing the person:
+ *
+ * > *"Maybe instead of link, it's like edit — there's like an edit golfer, some sort of
+ * > something where it's a deliberate action to just, hey, I'm changing this person in slot 1 to
+ * > somebody completely new."*
+ * > *"The thing I would interpret edit as is you're editing the existing customer details."*
+ * > *"Yeah, I did think about that too… could we call it change golfer?"*
+ *
+ * So the row now carries two separate affordances, which was the other half of the agreement —
+ * *"I agree with clicking on the name, it should open"*:
+ *
+ * | Tap | Goes to |
+ * |---|---|
+ * | The **name** | That person's record — history, gift cards, notes |
+ * | **Change golfer** | Customer search, to put somebody else in this position |
+ *
+ * It replaces an unlink-then-search two-step Weston pushed back on: *"seems like a lot of steps
+ * to click unlink and then go back… then it's a guest, then I'm clicking on guest, and then I'm
+ * searching."* One tap.
+ */
+export const ChangeGolfer: Story = {
+  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>('[data-player-row="1"]')!;
+    await userEvent.click(within(row).getByRole('button', { name: /Change golfer in position 2/ }));
+    // Straight to search, not to a profile and not to an unlink confirm.
+    const dialog = within(await screen.findByRole('dialog'));
+    await expect(dialog.getByText(/Add golfer · position 2/)).toBeTruthy();
+    await expect(dialog.getByPlaceholderText('Search customers')).toBeTruthy();
+  },
+};
+
+/**
+ * **A note announces itself; it doesn't print itself.**
+ *
+ * Weston on player notes: *"I don't even know if we need to show the note… maybe it just alerts,
+ * right? It shows you that there's a note and you click on it and it could take you to here."*
+ * And on why the Notes tab alone is not enough: *"I like them in a separate tab, because you can
+ * have more space and write out the full note — but they just go hidden if no one clicks on that
+ * tab."*
+ *
+ * So the row gets a 40dp note glyph when there is one, carrying the note as its tooltip, and
+ * tapping it switches to the Notes tab where the note can actually be read and edited. The tab
+ * itself grows a dot when there is a **group** note, for the same reason.
+ */
+export const PlayerNoteAlert: Story = {
+  render: () => (
+    <Screen
+      edition="weston"
+      initialState={sheetWithPanel({
+        ...adjustedParty(),
+        playerNotes: { 1: 'Needs an accessible cart — knee replacement in March.' },
+        groupNote: 'Corporate outing, bill to the account.',
+      })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>('[data-player-row="1"]')!;
+    const alert = within(row).getByRole('button', { name: /^Note about/ });
+    await userEvent.click(alert);
+    // It takes you to where the note is written, rather than printing it on the row.
+    await waitFor(() =>
+      expect(
+        within(canvasElement).getByPlaceholderText('Anything the starter or counter should know…'),
+      ).toBeTruthy(),
+    );
+    // And the group note it was carrying is the one the Notes tab opens on.
+    await expect(
+      within(canvasElement).getByDisplayValue('Corporate outing, bill to the account.'),
+    ).toBeTruthy();
+  },
+};
+
+/**
+ * **Touch targets.** Weston, looking at the row on a tablet: *"I feel like these would probably
+ * need to be bigger… don't you think, for a touchscreen? Let's make this as big as we can, just
+ * because we need to plan for those."*
+ *
+ * Add, the no-show toggle, remove, the rate tuner, Change golfer and the note alert are all
+ * **40dp** now. The play test measures them rather than trusting the styles, because a target
+ * that shrinks under a flex parent still looks right in a screenshot.
+ */
+export const TouchTargets: Story = {
+  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>('[data-player-row="1"]')!;
+    const names = [/Change golfer in position 2/, /^Add .* to the order$/];
+    for (const name of names) {
+      const el = within(row).getByRole('button', { name });
+      await expect(el.getBoundingClientRect().height).toBeGreaterThanOrEqual(40);
+    }
+  },
 };

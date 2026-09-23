@@ -28,7 +28,7 @@ export function usePanelSqueeze(): SxProps<Theme> {
   // A scrimmed panel does not squeeze: the whole point is that the times, the slot columns and
   // the nine headers keep the widths they have when nothing is open, so the sheet reads the
   // same behind the panel as it does in front of it.
-  const squeezes = open && width !== 'cover' && panel?.backdrop !== 'scrim';
+  const squeezes = open && width !== 'cover' && panel?.backdrop === 'squeeze';
   return {
     mr: squeezes ? `${PANEL_WIDTHS[width]}px` : 0,
     transition: `margin-right ${reservationPanel.motion}`,

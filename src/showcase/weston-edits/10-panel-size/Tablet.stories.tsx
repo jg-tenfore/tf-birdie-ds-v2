@@ -11,13 +11,27 @@ import { PANEL_WIDTHS } from '../../../pos/state/pos-store';
  * has it. Two separate decisions that were tangled together until this section pulled them
  * apart: **how wide** the panel runs, and **how the background yields** to it.
  *
- * Weston, on the third call: *"I wonder if it should take up more space. Just because I feel
- * like that's like, especially with it being touch… I don't know if we need to collapse the tee
- * sheet. I get the context, you don't lose the context, but I think it's more important to have
- * this bigger than to show more of the tee sheet."*
+ * ## Both are now decided
  *
- * He asked to feel the difference rather than pick from a description, so every combination is
- * built and clickable here.
+ * Weston, on the third call: *"I wonder if it should take up more space… I don't know if we need
+ * to collapse the tee sheet. I get the context, you don't lose the context, but I think it's
+ * more important to have this bigger than to show more of the tee sheet."* He asked to feel the
+ * difference rather than pick from a description, so every combination was built here.
+ *
+ * On the fourth call he picked, twice:
+ *
+ * > **"I think I like the 820."** … *"I just feel like — seems like we're always doing something
+ * > to this screen, so the more real estate we can have, probably the better."*
+ *
+ * and the sheet is **frozen behind a scrim**, not squeezed. So `wide` (820) with `backdrop:
+ * 'scrim'` is now the default everywhere in the Weston edition, not a variant scoped to this
+ * page. This section survives as the comparison that produced the decision, and as the place
+ * the three widths can still be felt side by side.
+ *
+ * The order rail is left exactly as the counter had it. It does not auto-collapse to make room
+ * and it is not forced open: whatever state it is in when the reservation opens, it freezes and
+ * dims with everything else behind the scrim, so its width stops mattering while the panel has
+ * focus.
  *
  * ## The component
  *
@@ -30,8 +44,8 @@ import { PANEL_WIDTHS } from '../../../pos/state/pos-store';
  *
  * | Field | Values | Default | What it does |
  * |---|---|---|---|
- * | `width` | `standard` · `wide` · `cover` | falls back to `state.weston.panelWidth` | How wide the panel runs |
- * | `backdrop` | `squeeze` · `scrim` | `squeeze` | What the tee sheet does while it is open |
+ * | `width` | `standard` · `wide` · `cover` | falls back to `state.weston.panelWidth`, now **`wide`** | How wide the panel runs |
+ * | `backdrop` | `squeeze` · `scrim` | **`scrim`** | What the tee sheet does while it is open |
  * | `presentation` | `panel` · `modal` | `panel` | Slide-over, or the centred dialog from section 1 |
  *
  * `width` is also a Storybook toolbar global (**Panel width**), which every other section obeys.
@@ -45,8 +59,8 @@ import { PANEL_WIDTHS } from '../../../pos/state/pos-store';
  *
  * | Key | Panel | Frame is 1366 wide | Built for |
  * |---|---|---|---|
- * | `standard` | **640px** | leaves 726 | The shipped default. Wider than the 480 Weston reacted to |
- * | `wide` | **820px** | leaves 546 | The rate editor — tiles sit in two rows instead of four |
+ * | `standard` | **640px** | leaves 726 | Wider than the 480 Weston reacted to. No longer the default |
+ * | `wide` | **820px** | leaves 546 | **The shipped default.** The rate editor's tiles sit in two rows instead of four |
  * | `cover` | **100%** | leaves none | Maximum room, still one ✕ back to where you were |
  *
  * ## Backdrop: squeeze or scrim
@@ -90,33 +104,30 @@ import { PANEL_WIDTHS } from '../../../pos/state/pos-store';
  *
  * ## Scope
  *
- * The scrim is **scoped to this section**. Everywhere else still squeezes, so the two can be
- * compared before either is adopted — **Squeeze For Comparison** below is the old behaviour on
- * the same booking, and **1 · Reservation Panel → Squeezes The Sheet** shows it in context.
- *
- * Adopting it everywhere is a one-line default change on `backdrop` in `pos-store.ts`; there
- * are no call sites to chase.
+ * No longer scoped. The scrim is the default for every panel in the edition, and `squeeze` is
+ * an explicit opt-in that exactly one story still sets — **Squeeze For Comparison** below, kept
+ * so the thing that was replaced can still be seen next to the thing that replaced it.
  *
  * ## The stories
  *
  * | Story | Width | Backdrop | What it is for |
  * |---|---|---|---|
- * | **Six Forty** | 640 | scrim | The shipped width with the new treatment. Asserts both the scrim and the un-squeezed sheet |
- * | **Eight Twenty** | 820 | scrim | The width squeezing served worst, and the one the scrim helps most |
+ * | **Six Forty** | 640 | scrim | The narrower width, kept for comparison. Asserts both the scrim and the un-squeezed sheet |
+ * | **Eight Twenty** | 820 | scrim | **What ships.** The width squeezing served worst, and the one the scrim helps most |
  * | **Cover** | 100% | scrim | Maximum room. The scrim is still drawn, so all three open and close alike |
  * | **Six Forty With The Rail** | 640 | scrim | Order rail expanded, dimming with everything else |
  * | **Squeeze For Comparison** | 640 | squeeze | The old behaviour, side by side. Asserts there is no scrim |
  * | **Widths** | — | — | The three numbers, read from `PANEL_WIDTHS` |
  *
- * ## Still open
+ * ## Settled
  *
- * Which width ships, and whether the scrim replaces the squeeze everywhere. Both are Weston's
- * calls; this page exists so he can make them by clicking rather than from a description.
+ * Both questions this page existed to answer have been answered: **820**, and **scrim**.
  *
- * One measurement worth having before deciding: **dense row density does not fit four players
- * at 640 without scrolling.** The players list is 823px comfortable and 734px dense against
- * 618px of visible panel — dense buys back about half a seat. If four seats on screen matters,
- * 820 is the width that does it, not the tighter rows. See **12 · Player Row Detail**.
+ * The measurement that supported it: **dense row density does not fit four players at 640
+ * without scrolling.** The players list is 823px comfortable and 734px dense against 618px of
+ * visible panel — dense buys back about half a seat. Four players on screen needed the width,
+ * not tighter rows, which is the other reason 820 rather than 640. See **12 · Player Row
+ * Detail**.
  */
 const meta = {
   title: 'Weston Edits/10 · Panel Size/Tablet',
@@ -128,7 +139,8 @@ export default meta;
 type Story = StoryObj;
 
 /**
- * **640 — what the prototype ships.** Wider than the 480 Weston was reacting to. The sheet
+ * **640 — the narrower option.** Wider than the 480 Weston was reacting to, and what the
+ * prototype shipped until he chose 820 on the fourth call. Kept as the comparison. The sheet
  * behind it is at full width and dimmed, so the times and the nines are exactly where they were
  * before the panel opened.
  */
@@ -155,9 +167,12 @@ export const SixForty: Story = {
 };
 
 /**
- * **820 — room for the rate tiles.** The player rows get a second column of breathing space and
- * the rate grid stops wrapping so hard. This is the width that squeezing served worst — it took
- * the sheet down to about one nine — and the one the scrim helps most.
+ * **820 — what ships.** Weston: *"I think I like the 820… seems like we're always doing
+ * something to this screen, so the more real estate we can have, probably the better."*
+ *
+ * The player rows get a second column of breathing space and the rate grid stops wrapping so
+ * hard. This is also the width that squeezing served worst — it took the sheet down to about
+ * one nine — which is why the two decisions were made together.
  */
 export const EightTwenty: Story = {
   render: () => (
@@ -217,8 +232,8 @@ export const Widths: Story = {
         <tbody>
           {(
             [
-              ['standard', '640 — ships in the prototype'],
-              ['wide', '820 — room for the rate tiles'],
+              ['standard', '640 — the narrower option'],
+              ['wide', '820 — ships in the prototype'],
               ['cover', 'the whole frame'],
             ] as const
           ).map(([key, note]) => (

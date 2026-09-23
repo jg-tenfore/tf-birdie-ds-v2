@@ -57,8 +57,8 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
  * | `tab` | `players` · `financial` · `notes` · `activity` | `players` | Which body renders (`RESERVATION_TABS`) |
  * | `playerIndex` | number | `0` | Carried from the removed Customer tab. Still written and still in the URL; nothing on the tablet reads it any more — see **Still open** |
  * | `presentation` | `panel` · `modal` | `panel` | Slide-over, or the centred dialog comparison below |
- * | `width` | `standard` · `wide` · `cover` | falls back to `state.weston.panelWidth` (`standard`) | How wide the panel runs. See 10 |
- * | `backdrop` | `squeeze` · `scrim` | `squeeze` | What the tee sheet does while it is open. **Sections 1–4 all squeeze** — the scrim is scoped to 10 |
+ * | `width` | `standard` · `wide` · `cover` | falls back to `state.weston.panelWidth`, now **`wide`** (820) | How wide the panel runs. See 10 |
+ * | `backdrop` | `squeeze` · `scrim` | **`scrim`** | What the tee sheet does while it is open. Weston chose the scrim in round 4; `squeeze` is now the opt-in, set by one story in 10 |
  *
  * ## Deep links
  *
@@ -78,11 +78,13 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
  * | | |
  * |---|---|
  * | Frame | 1366 × 840 (`shell` in `theme/tokens.ts`) |
- * | Width | **640** (`PANEL_WIDTHS.standard`). `theme/tokens.ts`'s `reservationPanel.width` (480) is the pre-round-3 number and nothing reads it any more |
+ * | Width | **820** (`PANEL_WIDTHS.wide`) since round 4. `theme/tokens.ts`'s `reservationPanel.width` (480) is the pre-round-3 number and nothing reads it any more |
  * | z-index | 80 — over the tee-sheet toolbar (40) and the multi-select bar (60), under popovers and dialogs |
  * | Surface | `md3.onPrimary` (#ffffff), 1px `md3.outlineVariant` on the left edge, `elevation.e3` |
- * | Motion | `.22s cubic-bezier(.2,0,0,1)` (`reservationPanel.motion`). The panel slides `translateX(100%) → 0`; the sheet's `margin-right` animates on the same easing, so the two move as one |
- * | Squeeze | `margin-right: PANEL_WIDTHS[width]` on `[data-panel-squeeze]`. Zero at `cover` (nothing left to squeeze) and zero under a scrim |
+ * | Motion | `.22s cubic-bezier(.2,0,0,1)` (`reservationPanel.motion`), shared by the panel's slide and the scrim's fade |
+ * | Scrim | `rgba(0,0,0,.7)` at z-index 79, over the whole terminal including the order rail. Clicking it does nothing — the reservation closes from the panel |
+ * | Inert | The background is marked `inert` in `PosApp`, so it leaves pointer events, the tab order and the accessibility tree together. A scrim alone only stops the mouse |
+ * | Squeeze | The old behaviour: `margin-right: PANEL_WIDTHS[width]` on `[data-panel-squeeze]`. Zero under a scrim, which is now every panel but one story's |
  * | Scroll-into-view | 16px clearance below `[data-sticky-header]`; an off-screen booking is centred vertically, an on-screen one is not moved at all |
  * | Tabs | `variant="fullWidth"`, 40px tall, 1px `md3.outlineVariant` underline |
  * | Modal comparison | MUI `Dialog`, paper 620 × `min(740px, 90%)` |
@@ -94,29 +96,32 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
  * modes are covered — the grid and the list narrow and scroll alike. The base edition has no
  * panel at all; clicking a chip there still loads the register.
  *
- * Still pending: whether this ships as a slide-over or as the centred dialog, and at which
- * width. Both are below, and both are Weston's call.
+ * The width question is **settled — 820** — and so is what the sheet does behind it: it freezes
+ * under a scrim rather than narrowing. The order rail is left in whatever state the counter had
+ * it; it neither auto-collapses nor forces open, because behind the scrim its width stops
+ * mattering. Whether this ships as a slide-over or as the centred dialog is still Weston's call;
+ * **Modal Comparison** below is the other way.
  *
  * ## The stories
  *
  * | Story | What it is for |
  * |---|---|
- * | **Over The Tee Sheet** | The panel open on an unpaid party, beside a squeezed sheet. The reference shot |
+ * | **Over The Tee Sheet** | The panel open on an unpaid party, over a frozen sheet. The reference shot |
  * | **Click A Booking Opens It** | Clicks a chip on a live sheet. Asserts the panel opened on Players *and* that the order is still empty — "the order comes after the golf", as a test |
  * | **Switches Booking** | Clicks a second chip while the panel is open; the panel switches rather than closing |
  * | **Customer Record Over Panel** | The record layered over the panel, opened from a player's name. The panel keeps its place underneath. See 4 |
  * | **Financial Tab** · **Notes Tab** · **Activity Tab** | The other three tabs. See 5 |
  * | **Modal Comparison** | The same `ReservationContent` as a centred dialog — the other way Weston said he "can be convinced" of |
- * | **Opening Scrolls Into View** | A booking late on the back nine, on a sheet that starts at 6:00 AM. Asserts it ends up wholly visible, below the sticky header and left of the panel |
- * | **Opening Scrolls Into View List** | The same in list view, where the cards reflow as the list narrows |
+ * | **Opening Scrolls Into View** | A booking late on the back nine, on a sheet that starts at 6:00 AM. Asserts it ends up wholly visible below the sticky header |
+ * | **Opening Scrolls Into View List** | The same in list view |
  * | **Already Visible Does Not Jump** | Clicks an early front-nine chip and asserts `scrollTop`/`scrollLeft` are unchanged 600ms later. No jump |
- * | **Squeezes The Sheet** | Asserts the grid has **no** sideways overflow and that every chip's right edge lands left of the panel — the claim, measured rather than described |
+ * | **Freezes The Sheet** | Asserts the scrim is painted, the sheet took **no** squeeze margin, and the background is `inert` — frozen, not merely dark |
  *
  * ## Still open
  *
  * - **Slide-over or modal.** Weston can be convinced either way; **Modal Comparison** is the
  *   other way, on the same booking, so the choice can be made by looking.
- * - **Width.** 640 ships; 820 and cover are one click away in 10.
+ * - ~~Width.~~ **Settled in round 4: 820.** 640 and cover are still one click away in 10.
  * - **`playerIndex` is vestigial.** It survives on the state and in the URL from the Customer
  *   tab, and `CustomerTab.tsx` — the only component that ever read it — is no longer rendered
  *   anywhere. It is harmless, but it is dead weight until someone decides whether a link should
@@ -242,21 +247,24 @@ function scrollParent(el: HTMLElement): HTMLElement {
 }
 
 /** True when the booking is wholly inside its scroller, below any sticky header, left of the panel. */
-function inViewBesidePanel(canvasElement: HTMLElement, bookingId: string): boolean {
+/**
+ * Is the booking's row scrolled into the visible part of the sheet?
+ *
+ * This used to also require the row to sit *left of the panel*, because the sheet narrowed
+ * beside it. Since round 4 the sheet keeps its full width and dims instead, so a row can
+ * legitimately be behind the panel horizontally — the scroll's job is the vertical half, and
+ * asserting the old horizontal half would now fail on correct behaviour.
+ */
+function rowScrolledIntoView(canvasElement: HTMLElement, bookingId: string): boolean {
   const el = canvasElement.querySelector<HTMLElement>(`[data-booking-id="${bookingId}"]`);
   if (!el) return false;
   const scroller = scrollParent(el);
   const header = scroller.querySelector<HTMLElement>('[data-sticky-header]');
-  const panel = canvasElement.querySelector<HTMLElement>('[data-reservation-panel]');
-  const shell = canvasElement.querySelector<HTMLElement>('[data-pos-shell]');
-  const panelLeft = panel && shell ? shell.getBoundingClientRect().right - panel.offsetWidth : Infinity;
   const s = scroller.getBoundingClientRect();
   const r = el.getBoundingClientRect();
   return (
     r.top >= s.top + (header?.offsetHeight ?? 0) - 1 &&
-    r.bottom <= s.top + scroller.clientHeight + 1 &&
-    r.left >= s.left - 1 &&
-    r.right <= Math.min(s.left + scroller.clientWidth, panelLeft) + 1
+    r.bottom <= s.top + scroller.clientHeight + 1
   );
 }
 
@@ -272,7 +280,7 @@ export const OpeningScrollsIntoView: Story = {
   play: async ({ canvasElement }) => {
     const b = lateBackNine();
     await within(canvasElement).findByRole('complementary', { name: `Reservation · ${b.name}` });
-    await waitFor(() => expect(inViewBesidePanel(canvasElement, b.id)).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(rowScrolledIntoView(canvasElement, b.id)).toBe(true), { timeout: 4000 });
   },
 };
 
@@ -286,7 +294,7 @@ export const OpeningScrollsIntoViewList: Story = {
   ),
   play: async ({ canvasElement }) => {
     const b = lateBackNine();
-    await waitFor(() => expect(inViewBesidePanel(canvasElement, b.id)).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(rowScrolledIntoView(canvasElement, b.id)).toBe(true), { timeout: 4000 });
   },
 };
 
@@ -313,22 +321,37 @@ export const AlreadyVisibleDoesNotJump: Story = {
 };
 
 /**
- * **The panel squeezes the sheet, it doesn't cover it.** While the panel is open the grid
- * takes a right margin the panel's width, animated with the panel's slide: the columns
- * tighten, and nothing is left under the panel or off to the side. The play test checks the
- * grid has no sideways overflow and that every booking chip ends left of the panel.
+ * **The panel freezes the sheet, it doesn't squeeze it.**
+ *
+ * This story used to assert the opposite. Until round 4 the grid took a right margin the width
+ * of the panel and every column tightened; Weston chose 820 and asked for the background to be
+ * held still instead — *"I like the 820… seems like we're always doing something to this
+ * screen, so the more real estate we can have, probably the better."*
+ *
+ * So the sheet keeps the width it has when nothing is open — the time gutter, the slot columns
+ * and the FRONT 9 / BACK 9 headers are where they were — and the terminal dims behind the
+ * panel at 70% black. The play test checks three things that together mean *frozen* rather
+ * than merely *dark*: the scrim is painted, the sheet did **not** take a squeeze margin, and
+ * the background is `inert`, which takes it out of pointer events, the tab order and the
+ * accessibility tree at once.
+ *
+ * The old behaviour is still buildable and still has a story — **10 · Panel Size → Squeeze For
+ * Comparison**.
  */
-export const SqueezesTheSheet: Story = {
+export const FreezesTheSheet: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
-    const panel = await within(canvasElement).findByRole('complementary', { name: `Reservation · ${openParty().name}` });
-    const scroller = canvasElement.querySelector<HTMLElement>('[data-tee-sheet-scroller]')!;
-    // After the slide (and the margin) finish.
+    await within(canvasElement).findByRole('complementary', { name: `Reservation · ${openParty().name}` });
+    // After the slide and the fade finish.
     await new Promise((r) => setTimeout(r, 400));
-    await expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth);
-    const edge = panel.getBoundingClientRect().left;
-    const chips = [...scroller.querySelectorAll<HTMLElement>('[data-booking-id]')];
-    await expect(chips.length).toBeGreaterThan(0);
-    await expect(chips.filter((c) => c.getBoundingClientRect().right > edge + 1).map((c) => c.dataset.bookingId)).toEqual([]);
+
+    await expect(canvasElement.querySelector('[data-reservation-scrim]')).toBeTruthy();
+
+    // The sheet is still at its natural width: no right margin was applied.
+    const squeezed = canvasElement.querySelector<HTMLElement>('[data-panel-squeeze]')!;
+    await expect(getComputedStyle(squeezed).marginRight).toBe('0px');
+
+    // And it is genuinely out of reach, not just dimmed.
+    await expect(canvasElement.querySelector('[inert]')).toBeTruthy();
   },
 };

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Box, ButtonBase, Dialog, Tab, Tabs, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
-import { elevation, md3, reservationPanel } from '../../theme/tokens';
+import { elevation, md3, noteColors, reservationPanel } from '../../theme/tokens';
 import { formatTimeLabel } from '../data/courses';
 import { checkInPlayer } from '../logic/bookings';
 import { buildTeeTimeCart, money, orderTotals } from '../logic/cart';
@@ -35,7 +35,7 @@ import { isFreshWalkIn } from '../logic/walk-in';
 export function ReservationPanel() {
   const { state, dispatch } = usePos();
   const panel = state.reservationPanel;
-  const scrimmed = panel?.presentation !== 'modal' && panel?.backdrop === 'scrim';
+  const scrimmed = panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze';
 
   // Escape closes a **scrimmed** panel, and only a scrimmed one.
   //
@@ -73,7 +73,7 @@ export function ReservationPanel() {
         Over the whole terminal, order rail included: while the panel is open it is the thing in
         focus, and a half-dimmed screen reads as a rendering fault rather than a choice.
       */}
-      {panel.backdrop === 'scrim' && (
+      {scrimmed && (
         <Box
           data-reservation-scrim
           aria-hidden
@@ -229,7 +229,31 @@ export function ReservationContent({
           sx={{ mt: 1, minHeight: 40, borderBottom: `1px solid ${md3.outlineVariant}` }}
         >
           {RESERVATION_TABS.map((t) => (
-            <Tab key={t} value={t} label={TAB_LABELS[t]} sx={{ minHeight: 40, py: 0, minWidth: 0, px: 1 }} />
+            <Tab
+              key={t}
+              value={t}
+              /*
+                A dot on Notes when there is one. Weston: "I like them in a separate tab,
+                because you can have more space and write out the full note — they just go
+                hidden if no one clicks on that tab. Maybe we could show group note as a
+                notification here."
+              */
+              label={
+                t === 'notes' && (b.groupNote ?? b.note ?? '').trim() ? (
+                  <Stack direction="row" alignItems="center" gap={0.5} component="span">
+                    {TAB_LABELS[t]}
+                    <Box
+                      component="span"
+                      aria-label="has a group note"
+                      sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: noteColors.yellow.dot }}
+                    />
+                  </Stack>
+                ) : (
+                  TAB_LABELS[t]
+                )
+              }
+              sx={{ minHeight: 40, py: 0, minWidth: 0, px: 1 }}
+            />
           ))}
         </Tabs>
       </Box>

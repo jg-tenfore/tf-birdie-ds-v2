@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Screen } from '../../pos/screen-helpers';
-import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer } from '../tablet-scenarios';
+import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, sheetWithPanel } from '../tablet-scenarios';
 
 /**
  * Weston Edits / 4 · Customer Profile / Tablet
@@ -33,8 +33,34 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer }
  *
  * | Body | When | What it is |
  * |---|---|---|
- * | `CustomerRecord` | a record resolves and `assigning` is false | Contact · Membership & types · Account · Punch cards · Gift cards · Rain checks · Tee time history |
- * | `AssignCustomer` | no record, or `assigning` | "Who is in seat 2?" — `searchRoster` over the 340-record roster, plus **New customer** |
+ * | `CustomerRecord` | a record resolves and `assigning` is false | An identity line, a contact grid, an account strip, then v1's collapsing sections — Gift cards · Rain checks · Punch cards · Tee time history · Customer types |
+ * | `AssignCustomer` | no record, or `assigning` | "Add golfer · position 2" — `searchRoster` over the 340-record roster, plus **New customer** |
+ *
+ * ## Round 4 rebuilt the record
+ *
+ * Weston, clicking into it: *"the customer one's kind of bad… this looks bad."* And after:
+ * *"the customer detail modal is just very spaced out, so I would like clean that up, tighten
+ * it up."*
+ *
+ * The cause was arithmetic rather than judgement. The body was a `<Stack gap={16}>`, and MUI's
+ * `gap` resolves through the spacing scale — **sixteen meant 128px**. Six sections separated by
+ * 128px, and because the empty ones render nothing at all, a sparse record showed a half-screen
+ * of white between the account tiles and the history. The same unit bug produced the cart-key
+ * grid he called "nasty" (16) — it is worth grepping for.
+ *
+ * What replaced it is the layout Justin asked for by name — *"I like the details, however I want
+ * to use our current design framework we have in v1"* — ported from v1's Customer Search screen:
+ *
+ * | Band | What |
+ * |---|---|
+ * | Identity line | Member tier, membership chips, the ID.me badge and **View ID** (3) |
+ * | Contact grid | Ten fields in three columns — name, email, phone, birthday, notes, address — all editable |
+ * | Account strip | Rewards · Balance · Rain checks · Rounds · No-shows · Card |
+ * | Sections | Collapsing bars, each carrying its own answer on the right so a closed one still answers the question it is there for |
+ *
+ * **Gift cards and rain checks are line items now**, which was an explicit ask: *"we probably
+ * want to know each gift card, like as a line item. Same with probably rain checks. So instead
+ * of a dollar amount — like they could have five, you know? Just to see them all."*
  *
  * It is rendered by `PosApp` as a sibling of the reservation panel, **outside** the region a
  * scrimmed panel marks `inert` — so it stays live over a modal panel, and closing it returns to
@@ -64,18 +90,20 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer }
  *
  * | Section | Editable | Why |
  * |---|---|---|
- * | Contact — email, phone, notes | **Yes**, in place, with six one-tap domain chips (`EMAIL_DOMAINS`) | Weston's actual case. Nobody should type a whole address on glass to fix `@hotmail` → `@gmail` |
+ * | Contact — name, email, phone, birthday, notes, address | **Yes**, in place, with six one-tap domain chips (`EMAIL_DOMAINS`) | Weston's actual case. Nobody should type a whole address on glass to fix `@hotmail` → `@gmail` |
  * | Customer types | **Yes** — chips, with **+ Add type** expanding the rest (`CUSTOMER_TYPES`, eighteen of them) | "Show the one you have, and if you want to assign more you can." Not the column of eighteen checkboxes he called ugly |
  * | Memberships, tier | No | Sold, not toggled |
  * | Account — rewards, balance, rain-check value, rounds, no-shows, card on file | No | Read-back figures |
  * | Punch cards, gift cards, rain checks | No | Taking money is the register's job, and a second place to do it is a second place for the totals to disagree |
- * | Tee time history | No | First 8, then "n earlier rounds" |
+ * | Tee time history | No | First 12, then "n earlier rounds" |
  *
  * ## Specs
  *
  * | | |
  * |---|---|
- * | Record dialog | 720px wide, `tall` → `min(720px, 88vh)`, `maxWidth: 94%` inside the story frame |
+ * | Record dialog | 780px wide, `tall` → `min(720px, 88vh)`, `maxWidth: 94%` inside the story frame |
+ * | Section bar | 44dp tall, `md3.onSurface` ground, title left and summary right — v1's navy bar in this terminal's palette |
+ * | Rhythm | 12px between bands. It was 128 |
  * | Assign dialog | 560px wide, same height rule |
  * | Search | Two characters minimum; matches name, phone, email or customer id; **6 results** on the terminal |
  * | Stat tiles | `md3.surfaceContainer`, 84px minimum, value turns `md3.error` on a balance owed or a no-show count |
@@ -94,16 +122,21 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer }
  *
  * | Story | What it is for |
  * |---|---|
- * | **Booker Record** | The booker's own record, on a booking whose phone *does* resolve. Asserts Contact, Account and Tee time history are all there |
+ * | **Booker Record** | The booker's own record, on a booking whose phone *does* resolve. Asserts the contact grid, the account strip and the section bars are all there |
  * | **Linked Guest** | Seat 2's record, not the booker's. The record follows the seat |
  * | **Fix A Typo** | Weston's case, executed: taps **@gmail.com** and asserts the field now ends in it |
- * | **Customer Types** | **+ Add type** expanding the remaining types as chips |
+ * | **Customer Types** | The section opened, then **+ Add type** expanding the remaining types as chips |
  * | **Assign A Seat** | An empty seat in assign mode. Searches "Walsh" and asserts **more than one** result — the roster carries households and namesakes on purpose, so the search has to return all of them rather than guess which one is meant |
  * | **Name Is Not An Identification** | A seat *named* "Kim, D." but unlinked. It still opens in assign mode, and until someone links it the seat pays the booking's rate |
+ * | **The Record Tightened** | A record with something in every section — Kelsey Sutton, two gift cards, two rain checks, a punch card, eight rounds |
+ * | **Gift Cards As Line Items** | One row per card: UPC, type, expiry, awarded, spent, balance |
+ * | **Rain Checks As Line Items** | The same for credits, with what emptied a partly-spent one underneath |
+ * | **Closed Sections Still Answer** | Collapses Gift cards and asserts the balance is still readable on the bar |
  *
  * ## Still open
  *
- * - **No ID.me badge on the record** (3). The seat shows it; the person's own record does not.
+ * - ~~No ID.me badge on the record.~~ **Closed in round 4** — the badge and **View ID** are on
+ *   the identity line. See 3.
  * - **No "suggested profile" here.** `seatSuggestion` can already offer "Kim, D. → Kim, David ·
  *   Link", and the assign view does not use it — a named seat starts from an empty search box
  *   rather than from the obvious candidate.
@@ -125,9 +158,11 @@ export const BookerRecord: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
-    await record.findByText('Contact');
-    await expect(record.getByText('Account')).toBeTruthy();
-    await expect(record.getByText('Tee time history')).toBeTruthy();
+    // The contact grid, the account strip and the sectioned half, in that order.
+    await record.findByLabelText('Email');
+    await expect(record.getByText('Rewards')).toBeTruthy();
+    await expect(record.getByRole('button', { name: /Gift cards/ })).toBeTruthy();
+    await expect(record.getByRole('button', { name: /Tee time history/ })).toBeTruthy();
   },
 };
 
@@ -144,7 +179,7 @@ export const FixATypo: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
-    await record.findByText('Contact');
+    await record.findByLabelText('Email');
     await userEvent.click(record.getByRole('button', { name: '@gmail.com' }));
     await expect(await record.findByDisplayValue(/@gmail\.com$/)).toBeTruthy();
   },
@@ -158,6 +193,8 @@ export const CustomerTypes: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
+    // Collapsed by default now — the bar carries "3 of 18", which is usually the whole answer.
+    await userEvent.click(await record.findByRole('button', { name: /Customer types/ }));
     await userEvent.click(await record.findByRole('button', { name: '+ Add type' }));
     await expect(await record.findByRole('button', { name: 'Diamond' })).toBeTruthy();
   },
@@ -171,7 +208,7 @@ export const AssignASeat: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithCustomer(openParty(), 1)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
-    await record.findByText(/Who is in seat 2\?/);
+    await record.findByText(/Add golfer · position 2/);
     await userEvent.type(record.getByPlaceholderText('Search customers'), 'Walsh');
     // Three Walshes — the roster has households and namesakes on purpose, so the search has to
     // return all of them rather than guess which one is meant.
@@ -187,6 +224,94 @@ export const NameIsNotAnIdentification: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithCustomer(nameOnlyGuest(), 1)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
-    await record.findByText(/Who is in seat 2\?/);
+    await record.findByText(/Add golfer · position 2/);
+  },
+};
+
+// ─── Round 4: the record, rebuilt ───────────────────────────────────────────
+
+/**
+ * A record with something in every section.
+ *
+ * `458349` — Kelsey Sutton — carries **two gift cards, two rain checks, a punch card and eight
+ * rounds**, which is rare on purpose: most of the hundred are sparse, and a demo where everyone
+ * has a credit makes the lookup look far easier than it is. This one exists so the sections can
+ * be read rather than inferred.
+ */
+const richRecord = () => {
+  const b = adjustedParty();
+  return sheetWithPanel(b, 'players', {
+    customerModal: { customerId: '458349', bookingId: b.id, seat: 0 },
+  });
+};
+
+/**
+ * **The record, tightened.** Weston on what was here before: *"the customer modal is just very
+ * spaced out… I didn't realise how bad it was looking. Make sure that's priority."*
+ *
+ * The cause was not judgement, it was arithmetic. The body was a `<Stack gap={16}>`, and MUI's
+ * `gap` goes through the spacing scale — so sixteen meant **128px**. Six sections separated by
+ * 128px of nothing, and on a record with no punch cards and no gift cards those sections
+ * collapsed to headings, leaving the half-screen of white Weston was looking at between the
+ * account tiles and the history.
+ *
+ * What replaced it is v1's Customer Search layout, which Justin asked for by name: *"I like the
+ * details, however I want to use our current design framework we have in v1."* A contact grid,
+ * an account strip, then collapsing section bars that carry their own answer — the gift-card
+ * balance is on the **Gift cards** bar whether or not anyone opens it.
+ */
+export const TheRecordTightened: Story = {
+  render: () => <Screen edition="weston" initialState={richRecord()} />,
+};
+
+/**
+ * **Gift cards as line items.** Weston: *"we probably want to know each gift card, like as a
+ * line item. Same with probably rain checks. So instead of a dollar amount — like they could
+ * have five, you know? Just to see them all."*
+ *
+ * UPC, type, expiry, awarded, spent and balance per card, with the total still on the bar so a
+ * closed section answers the common question on its own.
+ */
+export const GiftCardsAsLineItems: Story = {
+  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  play: async () => {
+    const record = within(await screen.findByRole('dialog'));
+    await record.findByText('UPC');
+    // "Awarded" heads both this table and the rain-check one, which is the point — they are
+    // the same shape of thing and read the same way.
+    await expect(record.getAllByText('Awarded').length).toBe(2);
+    // Two cards, so two rows — not one summed figure.
+    await expect(record.getAllByText(/^Winnings|^Purchased/).length).toBeGreaterThan(1);
+  },
+};
+
+/**
+ * **Rain checks as line items**, the same way: the credit, the round it was cut from, how much
+ * of the round was played, and what is left. A partly-spent credit prints where the rest went
+ * underneath, because that is the argument a counter actually has to settle.
+ */
+export const RainChecksAsLineItems: Story = {
+  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  play: async () => {
+    const record = within(await screen.findByRole('dialog'));
+    await record.findByText('Raincheck');
+    await expect(record.getByText('Tee time')).toBeTruthy();
+  },
+};
+
+/**
+ * **A closed section still answers its question.** Every bar carries its own summary, so the
+ * counter asked "do I still have that gift card" reads the answer without opening anything.
+ * The play test collapses Gift cards and checks the balance is still on screen.
+ */
+export const ClosedSectionsStillAnswer: Story = {
+  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  play: async () => {
+    const record = within(await screen.findByRole('dialog'));
+    const bar = await record.findByRole('button', { name: /Gift cards/ });
+    await userEvent.click(bar);
+    await waitFor(() => expect(record.queryByText('UPC')).toBeNull());
+    // Collapsed, and the figure is still readable on the bar itself.
+    await expect(bar.textContent).toMatch(/\$\d/);
   },
 };
