@@ -1,5 +1,6 @@
 import type { Booking, Course } from '../types';
 import { createBookings, generateDayBookings } from './bookings';
+import { linkDemoSeats } from './demo-links';
 
 /**
  * Venue configurations — the three shapes of club this POS is shown against.
@@ -144,7 +145,7 @@ export function venueBookings(id: VenueId): Booking[] {
   const cached = cache.get(id);
   if (cached) return cached;
 
-  const remapped = rehome(createBookings(), id);
+  const remapped = rehome(linkDemoSeats(createBookings()), id);
   cache.set(id, remapped);
   return remapped;
 }
@@ -168,7 +169,7 @@ export function venueDayBookings(id: VenueId, dateStr: string): Booking[] {
   const key = `${id}|${dateStr}`;
   const cached = dayCache.get(key);
   if (cached) return cached;
-  const out = rehome(generateDayBookings(dateStr), id);
+  const out = rehome(linkDemoSeats(generateDayBookings(dateStr)), id);
   dayCache.set(key, out);
   return out;
 }

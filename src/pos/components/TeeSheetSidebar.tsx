@@ -1,5 +1,7 @@
-import { Box, ButtonBase, Drawer, Typography } from '@mui/material';
-import { md3, radius } from '../../theme/tokens';
+import { useEffect } from 'react';
+import { keyframes } from '@emotion/react';
+import { Box, ButtonBase, Typography } from '@mui/material';
+import { elevation, md3, radius, reservationPanel } from '../../theme/tokens';
 import { TRANSPORT_META } from '../data/config';
 import { formatTimeLabel } from '../data/courses';
 import { dayBookings } from '../state/pos-store';
@@ -15,10 +17,39 @@ import { useOpenBooking } from './use-open-booking';
  * menu). It answers the questions a starter asks over the radio: how many out, how
  * many carts, who hasn't paid — then lists the day in time order so staff can work
  * down it.
+ *
+ * ## Why it is not a `Drawer`
+ *
+ * It was one, and a `Drawer` is a `Modal`: it portals to `document.body` and positions itself
+ * against the **browser window**. Invisible while the window happens to be exactly 1366×840,
+ * and obvious the moment it is not — the terminal becomes a letterboxed card on black and the
+ * summary runs the full height of the *screen* down the right edge, beside the frame rather
+ * than inside it.
+ *
+ * Handing MUI a `container` fixes the geometry and breaks something worse: while a modal is
+ * open MUI marks its container's ancestors `aria-hidden`, so a drawer portalled into the app
+ * puts the whole app — including itself — inside an `aria-hidden` subtree.
+ *
+ * So it is built the way `ReservationPanel` is instead: a sibling of the tee sheet, positioned
+ * absolutely against `PosShell`, clipped by the shell's own `overflow: hidden`. No portal, no
+ * `aria-hidden`, and the rounded corners hold.
  */
+const slideIn = keyframes`from { transform: translateX(100%) } to { transform: translateX(0) }`;
+
 export function TeeSheetSidebar() {
   const { state, dispatch } = usePos();
   const openBooking = useOpenBooking();
+  const close = () => dispatch({ type: 'closeSidebar' });
+
+  // The `Drawer` gave us Escape for free; a plain panel has to ask.
+  useEffect(() => {
+    if (!state.sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dispatch({ type: 'closeSidebar' });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [state.sidebarOpen, dispatch]);
   const course = state.sidebarCourse
     ? state.courses.find((c) => c.id === state.sidebarCourse)
     : null;
@@ -41,13 +72,42 @@ export function TeeSheetSidebar() {
     .toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric', year: 'numeric' })
     .toUpperCase();
 
+  // The `Drawer` rendered nothing when closed; a plain panel has to say so itself.
+  if (!state.sidebarOpen) return null;
+
   return (
-    <Drawer
-      anchor="right"
-      open={state.sidebarOpen}
-      onClose={() => dispatch({ type: 'closeSidebar' })}
-      slotProps={{ paper: { sx: { width: 400, borderLeft: `1px solid ${md3.outlineVariant}` } } }}
-    >
+    <>
+      {/* Dims the terminal behind it, and is the way out — unlike the reservation panel,
+          nothing here is an unsaved edit, so a tap outside can safely close it. */}
+      <Box
+        data-summary-scrim
+        onClick={close}
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 84,
+          bgcolor: 'rgba(0,0,0,.5)',
+        }}
+      />
+      <Box
+        role="complementary"
+        aria-label={course ? `${course.name} summary` : 'Day summary'}
+        data-day-summary
+        sx={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 400,
+          zIndex: 85,
+          bgcolor: md3.onPrimary,
+          borderLeft: `1px solid ${md3.outlineVariant}`,
+          boxShadow: elevation.e3,
+          display: 'flex',
+          flexDirection: 'column',
+          animation: `${slideIn} ${reservationPanel.motion}`,
+        }}
+      >
       <Stack
         direction="row"
         alignItems="flex-start"
@@ -156,7 +216,8 @@ export function TeeSheetSidebar() {
           })}
         </Stack>
       </Box>
-    </Drawer>
+      </Box>
+    </>
   );
 }
 

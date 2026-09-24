@@ -46,8 +46,11 @@ import { Stack } from './Stack';
  * refund or a rain check (Financial tab), not an edit.
  */
 export function PlayerRows({ booking: b }: { booking: Booking }) {
-  const [expandedSeat, setExpandedSeat] = useState<number | null>(null);
   const { state, dispatch, toast } = usePos();
+  // Panel state rather than component state, so a QA link can open the editor on a seat.
+  // See `ReservationPanelState.expandedSeat`.
+  const expandedSeat = state.reservationPanel?.expandedSeat ?? null;
+  const setExpandedSeat = (seat: number | null) => dispatch({ type: 'expandSeat', seat });
   const course = state.courses.find((c) => c.id === b.course);
   const cap = maxPlayers(b, course, dayBookings(state));
   const patch = (p: Partial<Booking>) => dispatch({ type: 'patchBooking', bookingId: b.id, patch: p });
@@ -234,7 +237,7 @@ export function PlayerRow({
       <Stack direction="row" alignItems="center" gap={1}>
         <ButtonBase
           onClick={openCustomer}
-          title={customer ? 'Open customer profile' : 'Link a customer'}
+          title={liveRecord ? 'Open customer profile' : 'Find this golfer in the database'}
           sx={{ flex: 1, minWidth: 0, justifyContent: 'flex-start', gap: 0.75, borderRadius: `${radius.sm}px` }}
         >
           <Box
@@ -264,7 +267,15 @@ export function PlayerRow({
             <Typography sx={{ fontSize: 10, color: md3.outline, fontWeight: 700, flexShrink: 0 }}>BOOKER</Typography>
           )}
           {idMe && <IdMeBadge group={idMe} compact />}
-          {!customer && (
+          {/*
+            Keyed off `liveRecord`, the same thing the name tap branches on.
+
+            It used to read `customer`, which is `seatCustomer` — the *golfer* projection the
+            member dot uses, resolved by a different path. The two disagree: a seat linked to a
+            CRM record but with no golfer entry printed **NOT LINKED** while its name opened a
+            full profile. Two answers to one question, on the same row, a centimetre apart.
+          */}
+          {!liveRecord && (
             <Box
               component="span"
               sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, fontSize: 10.5, color: md3.outline, fontWeight: 700, flexShrink: 0 }}
@@ -306,8 +317,8 @@ export function PlayerRow({
                 borderRadius: `${radius.sm}px`,
                 fontSize: 11.5,
                 fontWeight: 700,
-                color: customer ? md3.onSurfaceVariant : md3.primary,
-                bgcolor: customer ? 'transparent' : md3.primaryContainer,
+                color: liveRecord ? md3.onSurfaceVariant : md3.primary,
+                bgcolor: liveRecord ? 'transparent' : md3.primaryContainer,
                 flexShrink: 0,
                 '&:hover': { bgcolor: md3.primaryContainer },
               }}

@@ -108,6 +108,33 @@ export interface Customer {
   cardExpires?: string;
 }
 
+/**
+ * How many golfers joined on this customer's referral code.
+ *
+ * A loyalty figure the course keeps, not something derivable from the tee sheet — unlike
+ * Rounds (what is on the record) or the rain-check balance (what is owed), nothing in the
+ * booking history says who sent whom. So it is **seeded from the customer id**: stable across
+ * reloads and across machines, so a screenshot taken today and one taken next week show the
+ * same number, and no two people who look alike share one.
+ *
+ * Weighted rather than uniform, because a referral programme is not evenly distributed. Most
+ * golfers have referred nobody; a handful have referred a dozen, and those are the accounts a
+ * counter is told to look after. A flat 0–14 spread would make every record look the same and
+ * hide the only interesting case.
+ */
+export function referralsOf(c: Pick<Customer, 'id'>): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < c.id.length; i++) {
+    h ^= c.id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const roll = (h >>> 0) % 100;
+  if (roll < 55) return 0;
+  if (roll < 80) return 1 + (roll % 2);
+  if (roll < 95) return 3 + (roll % 4);
+  return 8 + (roll % 7);
+}
+
 export const customers = records as Customer[];
 
 /**

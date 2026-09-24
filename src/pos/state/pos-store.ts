@@ -134,6 +134,17 @@ export interface ReservationPanelState {
    * **10 · Panel Size → Squeeze For Comparison** sets this now.
    */
   backdrop?: 'squeeze' | 'scrim';
+  /**
+   * Which seat's rate editor is open, if any.
+   *
+   * This lived in `PlayerRows`' own `useState` until QA needed to link to it. A reviewer
+   * asked to hand someone a URL that lands *inside* the thing being reviewed rather than
+   * three taps away from it, and component state cannot be addressed. It is panel state
+   * rather than global state because closing the panel should close the editor with it.
+   */
+  expandedSeat?: number | null;
+  /** The "+N more…" rate catalog dialog, open over the editor. Only meaningful with `expandedSeat`. */
+  rateCatalogOpen?: boolean;
 }
 
 /**
@@ -172,6 +183,13 @@ export interface CustomerModalState {
   seat?: number;
   /** Opened on an empty seat: the record starts in search-and-assign mode. */
   assigning?: boolean;
+  /**
+   * The ID.me document dialog, open over the record (3 · ID.me Badge).
+   *
+   * Lifted out of `CustomerModal`'s own `useState` so a QA link can land on the document
+   * itself — it is two taps deep and the thing most likely to need a second opinion.
+   */
+  viewingId?: boolean;
 }
 
 /**
@@ -399,6 +417,12 @@ export type Action =
       assigning?: boolean;
     }
   | { type: 'closeCustomerModal' }
+  /** Open one seat's rate editor, or close whichever is open (`seat: null`). */
+  | { type: 'expandSeat'; seat: number | null }
+  /** The rate catalog dialog over the editor. */
+  | { type: 'setRateCatalogOpen'; open: boolean }
+  /** The ID.me document dialog over the customer record. */
+  | { type: 'setViewingId'; open: boolean }
   | { type: 'addSeatToOrder'; bookingId: string; seat: number }
   | { type: 'rebuildOrderSeats'; bookingId: string }
   | { type: 'stepReservation'; delta: 1 | -1 }
@@ -506,6 +530,27 @@ export function reducer(state: PosState, action: Action): PosState {
       };
     case 'closeCustomerModal':
       return { ...state, customerModal: null };
+    case 'expandSeat':
+      return state.reservationPanel
+        ? {
+            ...state,
+            reservationPanel: {
+              ...state.reservationPanel,
+              expandedSeat: action.seat,
+              // Collapsing the row takes the catalog with it — a dialog belonging to an
+              // editor that is no longer on screen would have nothing to return to.
+              ...(action.seat == null && { rateCatalogOpen: false }),
+            },
+          }
+        : state;
+    case 'setRateCatalogOpen':
+      return state.reservationPanel
+        ? { ...state, reservationPanel: { ...state.reservationPanel, rateCatalogOpen: action.open } }
+        : state;
+    case 'setViewingId':
+      return state.customerModal
+        ? { ...state, customerModal: { ...state.customerModal, viewingId: action.open } }
+        : state;
     case 'setWestonOption':
       return { ...state, weston: { ...state.weston, ...action.patch } };
     case 'patchCustomer':
@@ -596,6 +641,10 @@ export function reducer(state: PosState, action: Action): PosState {
         ...state,
         modal: null,
         reservationPanel: null,
+        // Reset for the same reason as `modal`: a link with no `cust=` means the record is
+        // closed, so Back out of one has to close it rather than leave it floating over the
+        // sheet it no longer belongs to.
+        customerModal: null,
         contextMenu: null,
         sidebarOpen: false,
         sidebarCourse: null,

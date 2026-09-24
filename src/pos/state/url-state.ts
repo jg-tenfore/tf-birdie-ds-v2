@@ -5,8 +5,9 @@ import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { buildTeeTimeCart } from '../logic/cart';
 import type { MainView, TeeSheetViewMode } from '../types';
 import type { ListFilters, Modal, PosState } from './pos-store';
-import { RESERVATION_TABS, emptyListFilters } from './pos-store';
-import type { ReservationTab } from './pos-store';
+import { DEFAULT_WESTON_OPTIONS, PANEL_WIDTHS, RESERVATION_TABS, emptyListFilters } from './pos-store';
+import type { PanelWidth, ReservationTab, WestonOptions } from './pos-store';
+import { roster } from '../data/roster';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
@@ -39,6 +40,45 @@ import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
  * Times are `HHMM` in 24-hour form (`0912`) rather than raw minutes — same information,
  * legible to a human scanning the link.
  *
+ * ## Linking inside a reservation (Weston Edits, tablet)
+ *
+ * The panel has been linkable since round 3, but everything reached *from* it was component
+ * state — so a reviewer could be handed a link to the reservation and a sentence describing
+ * the three taps that follow. For QA that is the wrong way round: the link should land on the
+ * thing being reviewed.
+ *
+ * So the record, the ID document, a seat's rate editor and the rate catalog all moved onto the
+ * store (`ReservationPanelState.expandedSeat` / `rateCatalogOpen`, `CustomerModalState.viewingId`)
+ * and each has a parameter:
+ *
+ * | Param | Value | What it opens |
+ * |---|---|---|
+ * | `res` | booking id | The reservation panel |
+ * | `res-tab` | `players` · `financial` · `notes` · `activity` | Which tab. Omitted for `players` |
+ * | `rate` | seat index, 0-based | That seat's rate editor, expanded in place |
+ * | `rate-all` | `1` | The "+N more…" catalog dialog over the editor. Needs `rate` |
+ * | `cust` | customer id, or `assign` | The customer record. `assign` is the search screen with nobody resolved |
+ * | `cust-seat` | seat index | Which position it was opened from — what a link or create will fill |
+ * | `cust-assign` | `1` | Force the search screen even though the id resolves |
+ * | `id-doc` | `1` | The ID.me document dialog over the record. Needs a resolving `cust` |
+ * | `pw` | `standard` · `wide` · `cover` | Width for *this* panel, overriding the edition default |
+ * | `backdrop` | `scrim` · `squeeze` | What the sheet does behind it |
+ * | `width` | `standard` · `wide` · `cover` | The edition default, i.e. every panel |
+ * | `density` | `comfortable` · `dense` | Player row density |
+ * | `transport` | `toggle` · `named` | Transport as icons, or as the rate it bills |
+ * | `catalog` | `standard` · `heavy` | Swap in the 26-rate course |
+ *
+ *   #/tee-sheet?res=v06_m6&cust=G004&cust-seat=0        a customer record, over its reservation
+ *   #/tee-sheet?res=v06_m6&cust=G004&id-doc=1           …with the ID.me document open
+ *   #/tee-sheet?res=v06_m6&rate=1                       seat 2's rate editor
+ *   #/tee-sheet?res=v06_m6&rate=1&rate-all=1&catalog=heavy   …the 26-rate catalog, open
+ *   #/tee-sheet?res=v06_m6&pw=cover                     the same reservation, full width
+ *
+ * **Stale links fail visibly rather than approximately.** A `cust=` matching nobody drops the
+ * record instead of degrading to the "Add golfer" screen, and a `rate=` past the party size is
+ * dropped instead of clamped — in both cases landing on a plausible neighbouring screen would
+ * look like the link worked.
+ *
  * ## What it deliberately does not carry
  *
  * - **The cart, item by item.** An order is far too big for a URL. Instead `?order=` names
@@ -49,6 +89,9 @@ import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
  *   linking to a question with no context.
  * - **Transient chrome** — toasts, context menus, the open state of a popover menu.
  */
+
+/** Narrows a raw query value to a `PanelWidth`. */
+const isPanelWidth = (v: string | null): v is PanelWidth => v != null && v in PANEL_WIDTHS;
 
 // ─── Time helpers ───────────────────────────────────────────────────────────
 
@@ -332,7 +375,35 @@ export function stateToHash(state: PosState): string {
     q.set('res', panel.bookingId);
     if (panel.tab !== 'players') q.set('res-tab', panel.tab);
     if (panel.playerIndex) q.set('res-p', String(panel.playerIndex));
+    // The rate editor open on a seat, and the catalog dialog over it. Both were component
+    // state until QA asked for links that land *inside* what is being reviewed.
+    if (panel.expandedSeat != null) q.set('rate', String(panel.expandedSeat));
+    if (panel.rateCatalogOpen) q.set('rate-all', '1');
+    // Panel geometry. Normally the edition's default, so normally absent — but a QA link
+    // comparing 640 against 820 has to be able to say which.
+    if (panel.width) q.set('pw', panel.width);
+    if (panel.backdrop) q.set('backdrop', panel.backdrop);
   }
+
+  // The customer record, over whatever is behind it. `res=` usually comes with it, which is
+  // the point: the record is opened *from* a seat and closing it returns to the reservation,
+  // so a link that carries both restores the whole position rather than a floating dialog.
+  const cm = state.customerModal;
+  if (cm) {
+    q.set('cust', cm.customerId ?? 'assign');
+    if (cm.seat != null) q.set('cust-seat', String(cm.seat));
+    // Only worth emitting when it isn't already implied by having no customer.
+    if (cm.assigning && cm.customerId) q.set('cust-assign', '1');
+    if (cm.viewingId) q.set('id-doc', '1');
+  }
+
+  // The three variant switches. Emitted only when they differ from the shipped defaults, so
+  // an ordinary link stays clean and a comparison link says exactly what it is comparing.
+  if (state.weston.rowDensity !== DEFAULT_WESTON_OPTIONS.rowDensity) q.set('density', state.weston.rowDensity);
+  if (state.weston.transportStyle !== DEFAULT_WESTON_OPTIONS.transportStyle)
+    q.set('transport', state.weston.transportStyle);
+  if (state.weston.rateCatalog !== DEFAULT_WESTON_OPTIONS.rateCatalog) q.set('catalog', state.weston.rateCatalog);
+  if (state.weston.panelWidth !== DEFAULT_WESTON_OPTIONS.panelWidth) q.set('width', state.weston.panelWidth);
 
   if (state.modal) encodeModal(state.modal, q);
 
@@ -497,12 +568,60 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   if (res && bookings.some((b) => b.id === res)) {
     const tab = q.get('res-tab');
     const p = Number(q.get('res-p'));
+    const booking = bookings.find((b) => b.id === res)!;
+    // A seat the booking does not have is dropped rather than clamped: `rate=7` on a
+    // threesome is a stale link, and silently opening seat 3 instead would hide that.
+    const seat = Number(q.get('rate'));
+    const validSeat = q.has('rate') && Number.isInteger(seat) && seat >= 0 && seat < booking.players;
+    const pw = q.get('pw');
+    const backdrop = q.get('backdrop');
     patch.reservationPanel = {
       bookingId: res,
       tab: tab && (RESERVATION_TABS as readonly string[]).includes(tab) ? (tab as ReservationTab) : 'players',
       playerIndex: Number.isInteger(p) && p > 0 ? p : 0,
+      ...(validSeat && { expandedSeat: seat }),
+      // The catalog only opens over an editor; without one there is nothing to return to.
+      ...(validSeat && q.get('rate-all') === '1' && { rateCatalogOpen: true }),
+      ...(isPanelWidth(pw) && { width: pw }),
+      ...((backdrop === 'squeeze' || backdrop === 'scrim') && { backdrop }),
     };
   }
+
+  // ── Customer record ──
+  const cust = q.get('cust');
+  if (cust) {
+    const seat = Number(q.get('cust-seat'));
+    const hasSeat = q.has('cust-seat') && Number.isInteger(seat) && seat >= 0;
+    // `assign` is the search screen with nobody resolved. Any other value has to name a real
+    // record — an id that matches nobody drops the modal rather than quietly landing on the
+    // "Add golfer" screen, which would look like the link worked.
+    const record = cust === 'assign' ? null : roster.find((c) => c.id === cust);
+    // A seat number is meaningless without the booking it is a seat in. `?res=v35&cust=assign`
+    // — a booking id that does not exist — used to drop the panel but still open the search
+    // screen, leaving a dialog floating over a tee sheet with nothing behind it to return to.
+    const seatIsOrphaned = q.has('cust-seat') && !(res && bookings.some((b) => b.id === res));
+    if ((cust === 'assign' || record) && !seatIsOrphaned) {
+      patch.customerModal = {
+        customerId: record?.id ?? null,
+        ...(res && bookings.some((b) => b.id === res) && { bookingId: res }),
+        ...(hasSeat && { seat }),
+        ...((cust === 'assign' || q.get('cust-assign') === '1') && { assigning: true }),
+        ...(q.get('id-doc') === '1' && record && { viewingId: true }),
+      };
+    }
+  }
+
+  // ── Variant switches ──
+  const weston: Partial<WestonOptions> = {};
+  const density = q.get('density');
+  if (density === 'comfortable' || density === 'dense') weston.rowDensity = density;
+  const transport = q.get('transport');
+  if (transport === 'toggle' || transport === 'named') weston.transportStyle = transport;
+  const catalog = q.get('catalog');
+  if (catalog === 'standard' || catalog === 'heavy') weston.rateCatalog = catalog;
+  const width = q.get('width');
+  if (isPanelWidth(width)) weston.panelWidth = width;
+  if (Object.keys(weston).length) patch.weston = { ...DEFAULT_WESTON_OPTIONS, ...weston };
 
   // ── Modal ──
   const modal = decodeModal(q);
@@ -533,6 +652,10 @@ export function isNavigation(prev: PosState, next: PosState): boolean {
     prev.modal?.kind !== next.modal?.kind ||
     prev.selectedBookingId !== next.selectedBookingId ||
     prev.reservationPanel?.bookingId !== next.reservationPanel?.bookingId ||
+    // Opening or closing the customer record is a step worth a Back press; expanding a rate
+    // row is not, or walking back through a foursome would bury the real navigation.
+    prev.customerModal?.customerId !== next.customerModal?.customerId ||
+    Boolean(prev.customerModal) !== Boolean(next.customerModal) ||
     toDateStr(prev.currentDate) !== toDateStr(next.currentDate)
   );
 }

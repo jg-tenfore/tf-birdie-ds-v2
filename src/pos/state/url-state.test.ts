@@ -7,6 +7,7 @@ import { missingDemoDay } from './demo-days';
 import { createInitialState, reducer } from './pos-store';
 import type { Modal, PosState } from './pos-store';
 import { demoBookings } from './scenarios';
+import { seatRecord } from '../logic/seat-pricing';
 import { hashToState, isNavigation, stateToHash } from './url-state';
 
 /**
@@ -435,5 +436,160 @@ describe('back and forward restore the day and band', () => {
     const home = back(away, '#/tee-sheet');
     expect(toDateStr(home.currentDate)).toBe(toDateStr(DEMO_TODAY()));
     expect(home.shift).toBe('full');
+  });
+});
+
+// ─── Weston Edits: linking into the reservation ─────────────────────────────
+
+/**
+ * Deep links that land *inside* a reservation, for QA.
+ *
+ * The `res=` panel has been linkable since round 3, but everything reached from it —
+ * the customer record, the ID document, a seat's rate editor, the rate catalog — was
+ * component state, so a reviewer could only be handed a link to the reservation and a
+ * sentence describing the three taps that follow. These tests pin the round trip for
+ * each of those, and pin the two ways a stale link is allowed to fail.
+ */
+describe('weston deep links', () => {
+  const eighteen = venueBookings('eighteen');
+  /** A four-player booking whose booker resolves to a record — most do not. */
+  const party = eighteen.find((b) => b.players >= 3 && seatRecord(b, 0))!;
+  const record = seatRecord(party, 0)!;
+
+  const teeSheet = (overrides: Partial<PosState>) =>
+    createInitialState({ view: 'tee', venueId: 'eighteen', bookings: eighteen, ...overrides });
+
+  const panel = (extra: Partial<NonNullable<PosState['reservationPanel']>> = {}) => ({
+    bookingId: party.id,
+    tab: 'players' as const,
+    playerIndex: 0,
+    ...extra,
+  });
+
+  it('round-trips the customer record opened from a seat', () => {
+    const state = teeSheet({
+      reservationPanel: panel(),
+      customerModal: { customerId: record.id, bookingId: party.id, seat: 0 },
+    });
+    const hash = stateToHash(state);
+    expect(hash).toContain(`cust=${record.id}`);
+    expect(hash).toContain('cust-seat=0');
+    expect(stateToHash(createInitialState({ ...teeSheet({}), ...hashToState(hash, state) }))).toBe(hash);
+  });
+
+  it('round-trips the ID document open over the record', () => {
+    const state = teeSheet({
+      reservationPanel: panel(),
+      customerModal: { customerId: record.id, bookingId: party.id, seat: 0, viewingId: true },
+    });
+    const hash = stateToHash(state);
+    expect(hash).toContain('id-doc=1');
+    const back = hashToState(hash, state);
+    expect(back.customerModal?.viewingId).toBe(true);
+  });
+
+  it('round-trips a seat’s rate editor and the catalog over it', () => {
+    const state = teeSheet({ reservationPanel: panel({ expandedSeat: 1, rateCatalogOpen: true }) });
+    const hash = stateToHash(state);
+    expect(hash).toContain('rate=1');
+    expect(hash).toContain('rate-all=1');
+    const back = hashToState(hash, state);
+    expect(back.reservationPanel?.expandedSeat).toBe(1);
+    expect(back.reservationPanel?.rateCatalogOpen).toBe(true);
+  });
+
+  it('opens the search screen with nobody resolved on cust=assign', () => {
+    const back = hashToState(`#/tee-sheet?res=${party.id}&cust=assign&cust-seat=2`, teeSheet({}));
+    expect(back.customerModal).toMatchObject({ customerId: null, seat: 2, assigning: true });
+  });
+
+  it('drops a customer id that matches nobody, rather than showing the assign screen', () => {
+    // Degrading to "Add golfer" would look like the link worked. It did not.
+    const back = hashToState(`#/tee-sheet?res=${party.id}&cust=nosuchperson`, teeSheet({}));
+    expect(back.customerModal).toBeUndefined();
+  });
+
+  it('drops a seat the booking does not have, rather than clamping it', () => {
+    // `rate=7` on a foursome is a stale link. Opening seat 3 instead would hide that.
+    const back = hashToState(`#/tee-sheet?res=${party.id}&rate=7`, teeSheet({}));
+    expect(back.reservationPanel?.expandedSeat).toBeUndefined();
+  });
+
+  it('will not open the rate catalog without an editor under it', () => {
+    const back = hashToState(`#/tee-sheet?res=${party.id}&rate-all=1`, teeSheet({}));
+    expect(back.reservationPanel?.rateCatalogOpen).toBeUndefined();
+  });
+
+  it('round-trips the variant switches, and leaves them out at their defaults', () => {
+    expect(stateToHash(teeSheet({ reservationPanel: panel() }))).not.toContain('density=');
+    const state = teeSheet({
+      reservationPanel: panel(),
+      weston: { panelWidth: 'standard', rowDensity: 'dense', transportStyle: 'named', rateCatalog: 'heavy' },
+    });
+    const hash = stateToHash(state);
+    expect(hash).toContain('density=dense');
+    expect(hash).toContain('transport=named');
+    expect(hash).toContain('catalog=heavy');
+    expect(hash).toContain('width=standard');
+    const back = hashToState(hash, state);
+    expect(back.weston).toEqual(state.weston);
+  });
+
+  it('round-trips a per-panel width override, separately from the edition default', () => {
+    const state = teeSheet({ reservationPanel: panel({ width: 'cover', backdrop: 'squeeze' }) });
+    const hash = stateToHash(state);
+    expect(hash).toContain('pw=cover');
+    expect(hash).toContain('backdrop=squeeze');
+    const back = hashToState(hash, state);
+    expect(back.reservationPanel?.width).toBe('cover');
+    expect(back.reservationPanel?.backdrop).toBe('squeeze');
+  });
+
+  it('counts opening the customer record as a Back step, but not expanding a rate row', () => {
+    const base = teeSheet({ reservationPanel: panel() });
+    const withRecord = createInitialState({
+      ...base,
+      customerModal: { customerId: record.id, bookingId: party.id, seat: 0 },
+    });
+    expect(isNavigation(base, withRecord)).toBe(true);
+    // Otherwise walking a foursome would bury the real navigation under four entries.
+    const expanded = createInitialState({ ...base, reservationPanel: panel({ expandedSeat: 2 }) });
+    expect(isNavigation(base, expanded)).toBe(false);
+  });
+});
+
+describe('back out of a customer record closes it', () => {
+  const eighteen = venueBookings('eighteen');
+  const party = eighteen.find((b) => b.players >= 3 && seatRecord(b, 0))!;
+
+  it('closes the record when the link no longer carries one', () => {
+    const open = reducer(
+      createInitialState({ view: 'tee', venueId: 'eighteen', bookings: eighteen }),
+      { type: 'applyUrl', patch: hashToState(`#/tee-sheet?res=${party.id}&cust=${seatRecord(party, 0)!.id}`) },
+    );
+    expect(open.customerModal).not.toBeNull();
+    const back = reducer(open, { type: 'applyUrl', patch: hashToState(`#/tee-sheet?res=${party.id}`, open) });
+    expect(back.customerModal).toBeNull();
+    // …and the reservation it was opened from is still there underneath.
+    expect(back.reservationPanel?.bookingId).toBe(party.id);
+  });
+});
+
+describe('a seat without its booking', () => {
+  const eighteen = venueBookings('eighteen');
+  const teeSheet = () => createInitialState({ view: 'tee', venueId: 'eighteen', bookings: eighteen });
+
+  it('drops the customer screen when the booking id does not exist', () => {
+    // The search screen used to open anyway on a booking id that does not exist, floating
+    // over a sheet with nothing behind it and a Cancel that returned to nowhere.
+    const back = hashToState('#/tee-sheet?res=nosuchbooking&cust=assign&cust-seat=0', teeSheet());
+    expect(back.reservationPanel).toBeUndefined();
+    expect(back.customerModal).toBeUndefined();
+  });
+
+  it('still opens a record addressed on its own, with no seat', () => {
+    // Without `cust-seat` there is no seat to be orphaned from — this is a link to a person.
+    const back = hashToState('#/tee-sheet?cust=458349', teeSheet());
+    expect(back.customerModal?.customerId).toBe('458349');
   });
 });

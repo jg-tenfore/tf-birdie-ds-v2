@@ -247,6 +247,7 @@ const preview: Preview = {
             '16 · Cart Signout', ['Tablet', 'Mobile'],
             '17 · Punch Cards', ['Tablet', 'Mobile'],
             '18 · Rate Catalog',
+            '19 · Deep Links', ['Tablet'],
           ],
           '*',
         ],

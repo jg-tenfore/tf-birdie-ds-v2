@@ -114,7 +114,8 @@ export function RateExpand({
   /** How many eligible tiles stay on the row when the catalog is heavy — two rows of four. */
   const INLINE_CAP = 8;
 
-  const [catalogOpen, setCatalogOpen] = useState(false);
+  const catalogOpen = state.reservationPanel?.rateCatalogOpen ?? false;
+  const setCatalogOpen = (open: boolean) => dispatch({ type: 'setRateCatalogOpen', open });
 
   // On a heavy catalog the row shows the best eight and a door; on a normal one it shows
   // everything, which is the layout Weston already signed off on.
