@@ -53,8 +53,39 @@ export const growableParty = (): Booking =>
   find((b) => sellable(b) && b.pay === 'open' && b.price > 0 && b.players >= 2 && b.players <= 3 && notArrived(b) && room(b) > b.players);
 
 /** An unpaid, paying foursome (or the largest open party) that hasn't arrived. */
+
+/**
+ * The party with its guest seats empty again.
+ *
+ * The fixtures link about a third of guest seats to real customers (`linkDemoSeats`), which is
+ * what makes the prototype's sheet look like a real day. It also means a seat a story picked
+ * because it was empty may not be by the time the story runs.
+ *
+ * So the scenarios that build *on* this one state their own premise: seats 1+ start unlinked,
+ * and a story that wants somebody in one puts them there (`seatedWith`). A test whose subject
+ * is "an empty seat" should not depend on the fixture happening to have one.
+ */
+const withoutGuestLinks = (b: Booking): Booking => {
+  if (!b.guests?.some((g) => g?.crmId)) return b;
+  return {
+    ...b,
+    guests: b.guests.map((g, i) => {
+      if (!g?.crmId) return g;
+      // Seat 0 keeps its name — the chip on the sheet prints it — and loses only the link, so
+      // the booker still resolves by phone exactly as it did before the fixtures gained links.
+      if (i === 0) {
+        const { crmId: _dropped, ...rest } = g;
+        return rest;
+      }
+      return { name: `Guest ${i + 1}` };
+    }),
+  };
+};
+
 export const openParty = (): Booking =>
-  find((b) => sellable(b) && b.pay === 'open' && b.price > 0 && b.players >= 3 && notArrived(b));
+  withoutGuestLinks(
+    find((b) => sellable(b) && b.pay === 'open' && b.price > 0 && b.players >= 3 && notArrived(b)),
+  );
 
 /** A booking everyone has already paid for. */
 export const paidParty = (): Booking =>

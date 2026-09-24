@@ -53,10 +53,17 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, 
  *
  * | Band | What |
  * |---|---|
- * | Identity line | Member tier, membership chips, the ID.me badge and **View ID** (3) |
- * | Contact grid | Ten fields in three columns — name, email, phone, birthday, notes, address — all editable |
- * | Account strip | Rewards · Balance · Rain checks · Rounds · No-shows · Card |
+ * | Header | The name with the **membership chips on the same line**, the customer and course id under it beside the avatar, and ID.me + **View ID** (3) on the right |
+ * | Account strip | **Six even boxes across the full width** — Rewards · Balance · Rain checks · Rounds · Referrals · No-shows — **above** the form. Card on file moved into the subtitle beside the two ids, where it reads as an identifier rather than a count |
+ * | Contact | An address block, one thing per line: first/last, email, phone, street, city/state/zip, then birthday/notes |
  * | Sections | Collapsing bars, each carrying its own answer on the right so a closed one still answers the question it is there for |
+ *
+ * The order is deliberate and was Justin's call: *"put rewards, balance, rainchecks, etc above
+ * the form field."* The account strip is the half of the record a counter **reads**; the contact
+ * fields are the half they occasionally **fix**. Reading order follows that rather than the
+ * order the data happens to be stored in. The contact block is one field per line for the same
+ * reason — a phone number on its own line is found faster than one in the middle column of a
+ * three-wide grid.
  *
  * **Gift cards and rain checks are line items now**, which was an explicit ask: *"we probably
  * want to know each gift card, like as a line item. Same with probably rain checks. So instead
@@ -84,16 +91,21 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, 
  * what the seat pays. A record that shows one thing while the row charges another is the bug
  * class this whole round kept running into.
  *
- * **Not deep-linkable.** `?res=` carries the reservation; the record has no query of its own.
+ * **Deep-linkable** since round 4's QA pass: `?cust=<id>` opens the record, `&cust-seat=<n>`
+ * says which position it was opened from, `&cust=assign` is the search screen with nobody
+ * resolved, and `&id-doc=1` opens the ID.me document over it. Carried alongside `?res=`, so a
+ * link restores the reservation underneath and closing the record returns to it. A `cust=`
+ * matching nobody drops the record rather than degrading to the "Add golfer" screen — landing
+ * on a plausible neighbour would look like the link worked. See **19 · Deep Links**.
  *
  * ## What is editable, and what is not
  *
  * | Section | Editable | Why |
  * |---|---|---|
- * | Contact — name, email, phone, birthday, notes, address | **Yes**, in place, with six one-tap domain chips (`EMAIL_DOMAINS`) | Weston's actual case. Nobody should type a whole address on glass to fix `@hotmail` → `@gmail` |
+ * | Contact — name, email, phone, street, city/state/zip, birthday, notes | **Yes**, in place | Weston's actual case: *"is your email jonah.hamlet@hotmail? No, actually it's at Gmail."* The six one-tap domain chips that used to sit under the field were cut — they cost more room than they saved, and the field is still there to type in. The phone keeps them |
  * | Customer types | **Yes** — chips, with **+ Add type** expanding the rest (`CUSTOMER_TYPES`, eighteen of them) | "Show the one you have, and if you want to assign more you can." Not the column of eighteen checkboxes he called ugly |
  * | Memberships, tier | No | Sold, not toggled |
- * | Account — rewards, balance, rain-check value, rounds, no-shows, card on file | No | Read-back figures |
+ * | Account — rewards, balance, rain-check value, rounds, referrals, no-shows | No | Read-back figures. **Referrals** is the one with no source data: nothing in the booking history says who sent whom, so `referralsOf` seeds it from the customer id — stable across reloads and weighted, because most golfers have referred nobody and the handful who referred a dozen are the accounts worth noticing |
  * | Punch cards, gift cards, rain checks | No | Taking money is the register's job, and a second place to do it is a second place for the totals to disagree |
  * | Tee time history | No | First 12, then "n earlier rounds" |
  *
@@ -124,7 +136,7 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, 
  * |---|---|
  * | **Booker Record** | The booker's own record, on a booking whose phone *does* resolve. Asserts the contact grid, the account strip and the section bars are all there |
  * | **Linked Guest** | Seat 2's record, not the booker's. The record follows the seat |
- * | **Fix A Typo** | Weston's case, executed: taps **@gmail.com** and asserts the field now ends in it |
+ * | **Fix A Typo** | Weston's case, executed: retypes the address and asserts the field takes it |
  * | **Customer Types** | The section opened, then **+ Add type** expanding the remaining types as chips |
  * | **Assign A Seat** | An empty seat in assign mode. Searches "Walsh" and asserts **more than one** result — the roster carries households and namesakes on purpose, so the search has to return all of them rather than guess which one is meant |
  * | **Name Is Not An Identification** | A seat *named* "Kim, D." but unlinked. It still opens in assign mode, and until someone links it the seat pays the booking's rate |
@@ -179,8 +191,9 @@ export const FixATypo: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
-    await record.findByLabelText('Email');
-    await userEvent.click(record.getByRole('button', { name: '@gmail.com' }));
+    const email = await record.findByLabelText('Email');
+    await userEvent.clear(email);
+    await userEvent.type(email, 'jonah.hamlet@gmail.com');
     await expect(await record.findByDisplayValue(/@gmail\.com$/)).toBeTruthy();
   },
 };

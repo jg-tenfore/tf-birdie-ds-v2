@@ -16,8 +16,13 @@ import { Stack } from '../components/Stack';
  */
 
 export interface ModalFrameProps {
-  title: string;
-  subtitle?: string;
+  /**
+   * `ReactNode` rather than `string` so a header can carry more than words — the customer
+   * record puts its membership chips on the same line as the name, which is where someone
+   * looks for "what is this person entitled to".
+   */
+  title: ReactNode;
+  subtitle?: ReactNode;
   icon?: string;
   iconColor?: string;
   width?: number;
@@ -26,6 +31,11 @@ export interface ModalFrameProps {
   actions?: ReactNode;
   /** Fills the dialog height and scrolls the body — for tabbed or long content. */
   tall?: boolean;
+  /**
+   * Header content between the title cluster and the ✕ — status that belongs to the whole
+   * dialog rather than to its body. The customer record puts ID.me and **View ID** here.
+   */
+  headerAside?: ReactNode;
   onClose?: () => void;
 }
 
@@ -38,6 +48,7 @@ export function ModalFrame({
   children,
   actions,
   tall,
+  headerAside,
   onClose,
 }: ModalFrameProps) {
   const { dispatch } = usePos();
@@ -96,14 +107,21 @@ export function ModalFrame({
             </Box>
           )}
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>{title}</Typography>
+            <Typography component="div" sx={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>
+              {title}
+            </Typography>
             {subtitle && (
-              <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant, mt: '2px' }}>
+              <Typography component="div" sx={{ fontSize: 12, color: md3.onSurfaceVariant, mt: '2px' }}>
                 {subtitle}
               </Typography>
             )}
           </Box>
         </Stack>
+        {headerAside && (
+          <Stack direction="row" alignItems="center" gap={0.75} sx={{ flexShrink: 0, ml: 'auto', mr: 1 }}>
+            {headerAside}
+          </Stack>
+        )}
         <ButtonBase
           onClick={close}
           sx={{ p: 0.75, borderRadius: '50%', color: md3.onSurfaceVariant, flexShrink: 0, '&:hover': { bgcolor: md3.surfaceContainer } }}

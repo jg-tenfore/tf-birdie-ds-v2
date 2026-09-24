@@ -69,6 +69,14 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
  * | `?res=<booking>` | Open the panel on that booking. A booking this club doesn't have drops the panel rather than rendering an empty frame |
  * | `&res-tab=<tab>` | One of the four. Omitted for `players`; a tab that isn't one of the four degrades to `players` |
  * | `&res-p=<n>` | `playerIndex`. Negative or non-integer degrades to `0` |
+ * | `&rate=<seat>` | A seat's rate editor, expanded in place. 0-based; a seat past the party size is dropped, not clamped |
+ * | `&rate-all=1` | The rate catalog over the editor. Needs `rate=` |
+ * | `&cust=<id>` · `&cust-seat=<n>` · `&id-doc=1` | The customer record, and the ID document over it. See 4 |
+ * | `&pw=` · `&backdrop=` | Geometry for this one panel. See 10 |
+ *
+ * The four after `res-p` were added in round 4 for QA: everything reached *from* the panel used
+ * to be component state, so the most a reviewer could be handed was a link to the reservation
+ * and a description of the taps that follow. **19 · Deep Links** is the full list, clickable.
  *
  * An old `?res-tab=customer` link — saved before round 3 removed the tab — opens the right
  * booking on **Players** instead of breaking. There is a test pinning that.

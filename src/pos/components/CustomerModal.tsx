@@ -3,11 +3,11 @@ import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { idMeGroups, md3, radius } from '../../theme/tokens';
 import {
   CUSTOMER_TYPES,
-  EMAIL_DOMAINS,
   bookingName,
   formatPhone,
   normalizePhone,
   memberTierOf,
+  referralsOf,
   type Customer,
 } from '../data/customers';
 import { liveCustomer, searchRoster } from '../data/roster';
@@ -55,11 +55,12 @@ export function CustomerModal() {
 // ─── The record ─────────────────────────────────────────────────────────────
 
 function CustomerRecord({ customer }: { customer: Customer }) {
-  const { dispatch } = usePos();
+  const { state, dispatch } = usePos();
   const [draft, setDraft] = useState<Partial<Customer>>({});
   const [types, setTypes] = useState<string[]>(customer.customerTypes);
   const [showAllTypes, setShowAllTypes] = useState(false);
-  const [idOpen, setIdOpen] = useState(false);
+  const idOpen = Boolean(state.customerModal?.viewingId);
+  const setIdOpen = (open: boolean) => dispatch({ type: 'setViewingId', open });
 
   const close = () => dispatch({ type: 'closeCustomerModal' });
   const tier = memberTierOf(customer);
@@ -67,6 +68,9 @@ function CustomerRecord({ customer }: { customer: Customer }) {
   const credits = rainChecksFor(customer.id);
   const owed = rainCheckBalance(customer.id);
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
+  // Seeded from the customer id — see `referralsOf`. Nothing in the booking history says who
+  // sent whom, so this is a record field rather than something counted off the tee sheet.
+  const referrals = referralsOf(customer);
   const booked = customer.teeTimes.filter((t) => t.status).length;
 
   // One draft object rather than a `useState` per field: the record carries ten of them now,
@@ -89,12 +93,61 @@ function CustomerRecord({ customer }: { customer: Customer }) {
 
   return (
     <ModalFrame
-      title={`${customer.firstName} ${customer.lastName}`}
-      subtitle={`Customer ID ${customer.id} · Course ID ${customer.courseId}`}
+      /*
+        The name, and what this person is entitled to, on one line.
+        Justin: "put the yellow tags with the name, customer id with the avatar." Membership
+        is the first thing a counter needs off a record — it decides the rate — so it belongs
+        beside the name rather than on a line of its own below the header.
+      */
+      title={
+        <Stack direction="row" alignItems="center" gap={0.75} sx={{ flexWrap: 'wrap' }}>
+          <span>
+            {customer.firstName} {customer.lastName}
+          </span>
+          {tier && <Chip label={tier} tone="member" />}
+          {customer.memberships.map((mem) => (
+            <Chip key={mem.name} label={`${mem.name} · to ${mem.expires}`} tone="member" />
+          ))}
+        </Stack>
+      }
+      /* Card on file moved here when the sixth metric box took its place — it is an
+         identifier, so it belongs with the other two rather than in a row of counts. */
+      subtitle={
+        `Customer ID ${customer.id} · Course ID ${customer.courseId}` +
+        (customer.cardOnFile ? ` · Card •••• ${customer.cardOnFile}` : '')
+      }
       icon="person"
       width={780}
       tall
       onClose={close}
+      headerAside={
+        idMe && (
+          <>
+            <IdMeBadge group={idMe} />
+            {/*
+              The whole of ID.me, as Weston described it on the fourth call: "you click on it
+              and all it does is show the picture of their ID… okay, yep, that's Justin, I can
+              see he's in front of me, he's gonna get the correct rate."
+            */}
+            <ButtonBase
+              onClick={() => setIdOpen(true)}
+              sx={{
+                height: 32,
+                px: 1.25,
+                gap: 0.5,
+                borderRadius: `${radius.xl}px`,
+                border: `1.5px solid ${md3.outlineVariant}`,
+                fontSize: 12,
+                fontWeight: 700,
+                color: md3.onSurface,
+              }}
+            >
+              <Icon name="badge" size={14} />
+              View ID
+            </ButtonBase>
+          </>
+        )
+      }
       actions={
         <Stack direction="row" gap={1} sx={{ justifyContent: 'flex-end', width: '100%' }}>
           <OutlineButton onClick={close}>Cancel</OutlineButton>
@@ -113,87 +166,67 @@ function CustomerRecord({ customer }: { customer: Customer }) {
       */}
       <Stack direction="column" gap={1.5}>
         {/*
-          Who this is, as the course knows them — membership, tier, verification — on one
-          line under the name. Weston: "I do like that we have the customer ID… we'd probably
-          display membership there too if they had one."
+          What they are owed and what they have, before the form rather than after it.
+
+          Justin: "put rewards, balance, rainchecks, etc above the form field." It is the half
+          of the record a counter reads; the contact fields are the half they occasionally fix.
+          Reading order should follow that, not the order the data happens to be stored in.
         */}
-        <Stack direction="row" alignItems="center" gap={0.75} sx={{ flexWrap: 'wrap' }}>
-          {tier && <Chip label={tier} tone="member" />}
-          {customer.memberships.map((mem) => (
-            <Chip key={mem.name} label={`${mem.name} · to ${mem.expires}`} tone="member" />
-          ))}
-          {customer.memberships.length === 0 && !tier && <Muted>No membership</Muted>}
-          <Box sx={{ flex: 1 }} />
-          {idMe && (
-            <>
-              <IdMeBadge group={idMe} />
-              {/*
-                The whole of ID.me, as Weston described it on the fourth call.
-
-                "It's a membership that we mark as a verified membership… they pass back a
-                document, which is their ID, so we get a picture of their ID that we have
-                saved. It's a button right here — you click on it and all it does is show the
-                picture of their ID. It's a way to say, oh, let me see that picture. Okay,
-                yep, that's Justin, he's in front of me, he's going to get the correct rate.
-                All the other rate stuff will be handled by the membership."
-
-                So: no verify flow, no rate logic, no sign-up. One button that shows the
-                document, which is the only problem there was to solve.
-              */}
-              <ButtonBase
-                onClick={() => setIdOpen(true)}
-                sx={{
-                  height: 32,
-                  px: 1.25,
-                  gap: 0.5,
-                  borderRadius: `${radius.xl}px`,
-                  border: `1.5px solid ${md3.outlineVariant}`,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: md3.onSurface,
-                }}
-              >
-                <Icon name="badge" size={14} />
-                View ID
-              </ButtonBase>
-            </>
-          )}
-        </Stack>
-
-        {/* Contact — the half Weston actually needs to fix at the counter. */}
-        <FieldGrid>
-          <Field label="First name" value={val('firstName')} onChange={set('firstName')} />
-          <Field label="Last name" value={val('lastName')} onChange={set('lastName')} />
-          <Field label="Email" value={val('email')} onChange={set('email')} />
-          <Field label="Phone" value={formatPhone(val('phone'))} onChange={set('phone')} />
-          <Field label="Birthday" value={val('birthday')} onChange={set('birthday')} placeholder="MM/DD/YYYY" />
-          <Field label="Notes" value={val('notes')} onChange={set('notes')} placeholder="Notes for this customer" />
-          <Field label="Street" value={val('street')} onChange={set('street')} />
-          <Field label="City" value={val('city')} onChange={set('city')} />
-          <Stack direction="row" gap={1}>
-            <Box sx={{ flex: 1 }}>
-              <Field label="State" value={val('state')} onChange={set('state')} />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Field label="Zip" value={val('zip')} onChange={set('zip')} />
-            </Box>
-          </Stack>
-        </FieldGrid>
-
-        <Stack direction="row" gap={0.75} sx={{ flexWrap: 'wrap' }}>
-          {EMAIL_DOMAINS.map((d) => (
-            <Chip key={d} label={d} onClick={() => set('email')(`${val('email').split('@')[0]}${d}`)} />
-          ))}
-        </Stack>
-
-        {/* What they're owed and what they've got — the questions asked at the counter. */}
-        <Stack direction="row" gap={0.75} sx={{ flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
           <Stat label="Rewards" value={`+${customer.rewardsBalance}`} />
           <Stat label="Balance" value={money(customer.balance)} alert={customer.balance > 0} />
           <Stat label="Rain checks" value={money(owed)} />
           <Stat label="Rounds" value={String(customer.teeTimes.length)} />
+          <Stat label="Referrals" value={String(referrals)} />
           <Stat label="No-shows" value={String(noShows)} alert={noShows > 0} />
-          {customer.cardOnFile && <Stat label="Card" value={`•••• ${customer.cardOnFile}`} />}
+        </Box>
+
+        {/*
+          Contact, as an address block rather than a grid.
+
+          It was three even columns, which read as a form to fill in. This is the shape the
+          information actually has — one name, one email, one phone, then an address that is
+          a street line and a city/state/zip line. Someone scanning for a phone number finds
+          it on its own line instead of in the middle column of row two.
+
+          The one-tap `@gmail.com` domain chips are gone at Justin's request. They solved
+          Weston's original example — "is your email jonah.hamlet@hotmail? No, actually it's at
+          Gmail" — but six chips under the field cost more room than they saved, and the field
+          is still there to type in.
+        */}
+        <Stack direction="column" gap={1.25}>
+          <Row2>
+            <Field label="First name" value={val('firstName')} onChange={set('firstName')} />
+            <Field label="Last name" value={val('lastName')} onChange={set('lastName')} />
+          </Row2>
+          <Row2>
+            <Field label="Email" value={val('email')} onChange={set('email')} />
+            <Field label="Phone" value={formatPhone(val('phone'))} onChange={set('phone')} />
+          </Row2>
+          <Field label="Street" value={val('street')} onChange={set('street')} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '10px' }}>
+            <Field label="City" value={val('city')} onChange={set('city')} />
+            <Field label="State" value={val('state')} onChange={set('state')} />
+            <Field label="Zip" value={val('zip')} onChange={set('zip')} />
+          </Box>
+          {/*
+            Not in the list Justin gave, kept because dropping them would lose data the record
+            carries and Weston asked for notes to be reachable. Below the address so the five
+            lines he named stay in the order he named them.
+          */}
+          <Field label="Birthday" value={val('birthday')} onChange={set('birthday')} placeholder="MM/DD/YYYY" />
+          {/*
+            Notes takes a paragraph and a line of its own. Weston's note about a player is prose
+            — "needs an accessible cart, knee replacement in March" — and a single-line input
+            that scrolls sideways is a box you cannot read back what you wrote into.
+          */}
+          <Field
+            label="Notes"
+            value={val('notes')}
+            onChange={set('notes')}
+            placeholder="Anything the counter or starter should know about this customer…"
+            multiline
+          />
         </Stack>
 
         {/*
@@ -489,9 +522,9 @@ const IdLine = ({ label, value }: { label: string; value: string }) => (
   </Stack>
 );
 
-/** The contact block: three columns on a 780 panel, so ten fields take three rows. */
-const FieldGrid = ({ children }: { children: React.ReactNode }) => (
-  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>{children}</Box>
+/** Two fields sharing a line — first/last, birthday/notes. */
+const Row2 = ({ children }: { children: React.ReactNode }) => (
+  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>{children}</Box>
 );
 
 // ─── Assign mode ────────────────────────────────────────────────────────────
@@ -631,11 +664,14 @@ function Field({
   value,
   onChange,
   placeholder,
+  multiline,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  /** Three rows rather than one — for prose, where a sideways-scrolling input is unreadable. */
+  multiline?: boolean;
 }) {
   return (
     <Box>
@@ -644,6 +680,8 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        multiline={multiline}
+        minRows={multiline ? 3 : undefined}
         // The caption above is a `Typography`, not a `<label>`, so without this the field is
         // unnamed to a screen reader and unfindable by its label in a test.
         inputProps={{ 'aria-label': label }}

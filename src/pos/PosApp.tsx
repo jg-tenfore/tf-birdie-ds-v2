@@ -41,7 +41,20 @@ import type { Edition } from './edition';
  * throughout — a fluid layout would be a different design, not the same one scaled.
  */
 
-/** The device frame. Exported so Storybook screen stories can reuse it. */
+/**
+ * The device frame. Exported so Storybook screen stories can reuse it.
+ *
+ * `position: relative` with `overflow: hidden` is what lets a slide-over be clipped to the
+ * terminal: the reservation panel and the day summary both position themselves against this
+ * box, so they stop at the rounded corners instead of running to the edges of the browser
+ * window. That matters the moment the window is bigger than 1366×840 and the terminal becomes
+ * a letterboxed card on black.
+ *
+ * Dialogs are a different matter and deliberately still portal to `document.body`. Scoping
+ * them in here was tried and reverted: MUI marks the container's ancestors `aria-hidden` while
+ * a modal is open, so a dialog portalled *into* the app ends up inside an `aria-hidden`
+ * subtree — invisible to a screen reader, and to any query that respects it.
+ */
 export function PosShell({ children }: { children: React.ReactNode }) {
   return (
     <Box

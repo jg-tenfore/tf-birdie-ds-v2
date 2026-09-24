@@ -51,8 +51,39 @@ const reservedNine = (b: Booking) =>
   b.conf.startsWith('R-') && b.holes === '9H' && rateBand(b.timeMin) === 'twilight' && b.price > 0;
 
 /** A party that hasn't arrived, owes, and has room beside it to grow — the main example. */
+
+/**
+ * The party with its guest seats empty again.
+ *
+ * The fixtures link about a third of guest seats to real customers (`linkDemoSeats`), which is
+ * what makes the prototype's sheet look like a real day. It also means a seat a story picked
+ * because it was empty may not be by the time the story runs.
+ *
+ * So the scenarios that build *on* this one state their own premise: seats 1+ start unlinked,
+ * and a story that wants somebody in one puts them there (`seatedWith`). A test whose subject
+ * is "an empty seat" should not depend on the fixture happening to have one.
+ */
+const withoutGuestLinks = (b: Booking): Booking => {
+  if (!b.guests?.some((g) => g?.crmId)) return b;
+  return {
+    ...b,
+    guests: b.guests.map((g, i) => {
+      if (!g?.crmId) return g;
+      // Seat 0 keeps its name — the chip on the sheet prints it — and loses only the link, so
+      // the booker still resolves by phone exactly as it did before the fixtures gained links.
+      if (i === 0) {
+        const { crmId: _dropped, ...rest } = g;
+        return rest;
+      }
+      return { name: `Guest ${i + 1}` };
+    }),
+  };
+};
+
 export const openParty = (): Booking =>
-  find((b) => front(b) && b.status === 'booked' && notArrived(b) && b.players >= 2 && room(b) > b.players);
+  withoutGuestLinks(
+    find((b) => front(b) && b.status === 'booked' && notArrived(b) && b.players >= 2 && room(b) > b.players),
+  );
 
 /**
  * A twilight nine still to pay — an `R-` reservation. The seed slate marked these

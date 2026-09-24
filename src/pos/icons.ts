@@ -44,6 +44,7 @@ import ElectricScooter from '@mui/icons-material/ElectricScooter';
 import EmojiEvents from '@mui/icons-material/EmojiEvents';
 import Error from '@mui/icons-material/Error';
 import EventAvailable from '@mui/icons-material/EventAvailable';
+import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import Flag from '@mui/icons-material/Flag';
 import FormatListBulleted from '@mui/icons-material/FormatListBulleted';
@@ -167,6 +168,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   emoji_events: EmojiEvents,
   error: Error,
   event_available: EventAvailable,
+  expand_less: ExpandLess,
   expand_more: ExpandMore,
   flag: Flag,
   format_list_bulleted: FormatListBulleted,
