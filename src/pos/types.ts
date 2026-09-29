@@ -365,6 +365,11 @@ export interface CartItem {
   memberName?: string;
   /** Locks the cart to 9 or 18 holes once a round is on it. */
   holes?: string;
+  /**
+   * The court or bay booking this line pays for (V1 → V2). Set by Check in & pay on a
+   * resource booking, and read by `recordPayment` to mark that booking paid.
+   */
+  resourceBookingId?: string;
 }
 
 // ─── Operator annotations ───────────────────────────────────────────────────
@@ -389,6 +394,10 @@ export interface TimeRowPrice {
 
 // ─── Views ──────────────────────────────────────────────────────────────────
 
-export type MainView = 'pos' | 'tee';
+/**
+ * Which screen fills the terminal. `courts` and `bays` are V1 → V2's resource sheets — the same
+ * scheduler configured twice, see `data/resources.ts`.
+ */
+export type MainView = 'pos' | 'tee' | 'courts' | 'bays';
 export type TeeSheetViewMode = 'cal' | 'list';
 export type FlowMode = '' | 'walkin' | 'reserve';

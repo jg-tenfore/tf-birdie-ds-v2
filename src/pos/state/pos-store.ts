@@ -4,6 +4,8 @@ import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY, demoNow } from '../data/bookings';
 import { ALL_GOLFERS } from '../data/golfers';
+import { seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
+import { resourceCartLine } from '../logic/resource-booking';
 import type { OrderScenario } from './scenarios';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -311,6 +313,16 @@ export interface PosState {
    * not grow a stray back button for orders reached any other way.
    */
   returnToBooking: string | null;
+
+  /**
+   * Courts and bays (V1 → V2). One list for both sheets, because they are one model — see
+   * `data/resources.ts`. Seeded a day at a time as the sheets are visited, and recorded in
+   * `resourceSeeded` so a day is filled once and edits to it survive navigating away.
+   */
+  resourceBookings: ResourceBooking[];
+  resourceSeeded: string[];
+  /** The court or bay booking open in its slide-over, if any. */
+  resourcePanel: { bookingId: string } | null;
   /**
    * Tee sheet settings, lifted out of `TeeSheetView`'s local state.
    *
@@ -419,6 +431,9 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     navOpen: false,
     teeSheetSettingsOpen: false,
     returnToBooking: null,
+    resourceBookings: [],
+    resourceSeeded: [],
+    resourcePanel: null,
     timeNotes: {},
     timePrices: {},
     listFilters: { ...emptyListFilters },
@@ -493,6 +508,14 @@ export type Action =
   | { type: 'closeSidebar' }
   | { type: 'setNavOpen'; open: boolean }
   | { type: 'openPaidOrder'; bookingId: string }
+  // Courts and bays (V1 → V2)
+  | { type: 'seedResourceDay'; kind: ResourceKind; date: string }
+  | { type: 'createResourceBooking'; booking: ResourceBooking }
+  | { type: 'patchResourceBooking'; id: string; patch: Partial<ResourceBooking> }
+  | { type: 'removeResourceBooking'; id: string }
+  | { type: 'openResourceBooking'; bookingId: string }
+  | { type: 'closeResourcePanel' }
+  | { type: 'checkInResource'; id: string }
   | { type: 'clearReturnToBooking' }
   | { type: 'setTeeSheetSettings'; open: boolean }
   // Bookings
@@ -688,6 +711,9 @@ export function reducer(state: PosState, action: Action): PosState {
         navOpen: false,
         teeSheetSettingsOpen: false,
         returnToBooking: null,
+        // The panel, not the bookings: courts and bays are session data like the tee sheet's,
+        // and must survive Back / Forward. Only what a link describes is reset.
+        resourcePanel: null,
         multiSelectActive: false,
         multiSelectIds: [],
         ...rest,
@@ -873,6 +899,13 @@ export function reducer(state: PosState, action: Action): PosState {
         bookings: state.selectedBookingId
           ? state.bookings.map((b) => (b.id === state.selectedBookingId ? markChargedPaid(b, state.cart) : b))
           : state.bookings,
+        // Courts and bays paid on this order, found by the id their line carries.
+        resourceBookings: (() => {
+          const paid = new Set(state.cart.map((i) => i.resourceBookingId).filter(Boolean));
+          return paid.size
+            ? state.resourceBookings.map((b) => (paid.has(b.id) ? { ...b, paid: true } : b))
+            : state.resourceBookings;
+        })(),
         lastPayment: {
           method: action.method,
           amount: action.amount,
@@ -921,6 +954,64 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...reducer(state, { type: 'loadBooking', bookingId: action.bookingId }), returnToBooking: action.bookingId };
     case 'clearReturnToBooking':
       return { ...state, returnToBooking: null };
+
+    // ─── Courts and bays (V1 → V2) ─────────────────────────────────────────
+    case 'seedResourceDay': {
+      const key = `${action.kind}|${action.date}`;
+      if (state.resourceSeeded.includes(key)) return state;
+      // "Now" only means something on the demo's own day; any other day is all future or all
+      // past, and the seed treats both as not-yet-started.
+      const now = demoNow();
+      const nowMin = action.date === toDateStr(DEMO_TODAY()) ? now.getHours() * 60 + now.getMinutes() : null;
+      return {
+        ...state,
+        resourceBookings: [...state.resourceBookings, ...seedResourceDay(action.kind, action.date, nowMin)],
+        resourceSeeded: [...state.resourceSeeded, key],
+      };
+    }
+    case 'createResourceBooking':
+      return {
+        ...state,
+        resourceBookings: [...state.resourceBookings, action.booking],
+        resourcePanel: { bookingId: action.booking.id },
+      };
+    case 'patchResourceBooking':
+      return {
+        ...state,
+        resourceBookings: state.resourceBookings.map((b) => (b.id === action.id ? { ...b, ...action.patch } : b)),
+      };
+    case 'removeResourceBooking':
+      return {
+        ...state,
+        resourceBookings: state.resourceBookings.filter((b) => b.id !== action.id),
+        resourcePanel: state.resourcePanel?.bookingId === action.id ? null : state.resourcePanel,
+        // A booking that is gone cannot still be on the order.
+        cart: state.cart.filter((i) => i.resourceBookingId !== action.id),
+      };
+    case 'openResourceBooking':
+      return { ...state, resourcePanel: { bookingId: action.bookingId }, contextMenu: null };
+    case 'closeResourcePanel':
+      return { ...state, resourcePanel: null };
+    case 'checkInResource': {
+      // The tee time's Check in & pay, for a court or a bay: check the party in, put the
+      // booking on the order, and hand over to the register. Already on the order means the
+      // line is refreshed rather than added twice — a duration changed after the first tap
+      // should change the charge, not add a second one.
+      const b = state.resourceBookings.find((x) => x.id === action.id);
+      if (!b) return state;
+      const line = resourceCartLine(b);
+      const onOrder = state.cart.some((i) => i.resourceBookingId === b.id);
+      return {
+        ...state,
+        resourceBookings: state.resourceBookings.map((x) => (x.id === b.id ? { ...x, checkedIn: true } : x)),
+        cart: onOrder
+          ? state.cart.map((i) => (i.resourceBookingId === b.id ? line : i))
+          : [...state.cart, line],
+        resourcePanel: null,
+        view: 'pos',
+        leftPanelCollapsed: false,
+      };
+    }
     case 'setTeeSheetSettings':
       // Opening settings from the nav has to close the nav, or the panel opens behind it.
       return { ...state, teeSheetSettingsOpen: action.open, navOpen: false };

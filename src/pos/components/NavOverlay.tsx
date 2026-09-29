@@ -3,6 +3,7 @@ import { keyframes } from '@emotion/react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius, reservationPanel } from '../../theme/tokens';
 import { APP_IDENTITY, NAV_GROUPS, type NavItem, type NavKey } from '../data/nav';
+import { useWestonEdits } from '../edition';
 import { usePos } from '../state/PosProvider';
 import { Icon } from './primitives';
 import { Stack } from './Stack';
@@ -37,6 +38,7 @@ const fadeIn = keyframes`from { opacity: 0 } to { opacity: 1 }`;
 
 export function NavOverlay() {
   const { state, dispatch, toast } = usePos();
+  const weston = useWestonEdits();
   const close = () => dispatch({ type: 'setNavOpen', open: false });
 
   useEffect(() => {
@@ -48,7 +50,9 @@ export function NavOverlay() {
     return () => window.removeEventListener('keydown', onKey);
   }, [state.navOpen, dispatch]);
 
-  if (!state.navOpen) return null;
+  // Weston's editions only. The base edition has no main nav, and a stray `nav=1` in a link
+  // must not conjure one.
+  if (!state.navOpen || !weston) return null;
 
   const go = (key: NavKey) => {
     switch (key) {
