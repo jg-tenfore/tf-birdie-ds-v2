@@ -124,6 +124,12 @@ export function LeftPanel() {
         pointerEvents: state.leftPanelCollapsed ? 'none' : 'auto',
       }}
     >
+      {/* ── Back to the reservation ──
+          Only after arriving by tapping an order number, which closes the panel it came from.
+          Without this the way back is a fresh hunt through the tee sheet for a tee time the
+          operator was reading a second ago. */}
+      <ReturnToReservation />
+
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
         <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.25 }}>
@@ -132,13 +138,15 @@ export function LeftPanel() {
 
             With something in the order it is the back arrow, and it clears — behind a confirm,
             because clearing an order is destructive and there is no undo. Once the order is
-            empty there is nothing to clear, so it becomes a hamburger that collapses the rail:
-            the control only offers the thing that is actually available, and the rail can only
-            be put away when hiding it costs nothing. That is Weston's point exactly — "it takes
-            up a lot of space if there's nothing in it".
+            empty there is nothing to clear, so it becomes the hamburger, which opens the
+            navigation — the same thing it does on the collapsed strip. A hamburger that means
+            "menu" in one state and "collapse" in another is the ambiguity Weston ran into
+            ("it can't expand the nav and do the cart"), so it means one thing everywhere.
+
+            Collapsing is the empty state's job instead: see the cart block below.
           */}
           <ButtonBase
-            aria-label={hasOrder ? 'Clear order' : 'Collapse the order rail'}
+            aria-label={hasOrder ? 'Clear order' : 'Open navigation'}
             onClick={() =>
               hasOrder
                 ? dispatch({
@@ -151,9 +159,9 @@ export function LeftPanel() {
                       onConfirm: 'clearOrder',
                     },
                   })
-                : dispatch({ type: 'toggleLeftPanel', collapsed: true })
+                : dispatch({ type: 'setNavOpen', open: true })
             }
-            title={hasOrder ? 'Clear order' : 'Collapse the order rail'}
+            title={hasOrder ? 'Clear order' : 'Menu'}
             sx={{
               width: 38,
               height: 38,
@@ -320,7 +328,24 @@ export function LeftPanel() {
       {/* ── Cart ── */}
       <Box sx={{ flex: 1, overflowY: 'auto', p: '10px 14px', minHeight: 0 }}>
         {state.cart.length === 0 ? (
-          <EmptyState icon="shopping_cart" label="No items added yet" />
+          weston ? (
+            /*
+              The empty state is how you collapse the rail (Weston's ask on the fifth call).
+              An empty order is the only time the rail is pure cost, so the thing saying it is
+              empty is the thing that gets it out of the way — no extra chevron to find, and
+              the gesture pairs with tapping the strip to bring it back.
+            */
+            <ButtonBase
+              aria-label="Collapse the order rail"
+              data-rail-collapse
+              onClick={() => dispatch({ type: 'toggleLeftPanel', collapsed: true })}
+              sx={{ width: '100%', height: '100%', borderRadius: `${radius.md}px` }}
+            >
+              <EmptyState icon="shopping_cart" label="No items added yet" />
+            </ButtonBase>
+          ) : (
+            <EmptyState icon="shopping_cart" label="No items added yet" />
+          )
         ) : (
           <>
             {weston && booking ? (
@@ -1033,17 +1058,25 @@ export { dominantTransport };
 /**
  * The order rail, collapsed.
  *
- * A 56px strip rather than nothing at all. Weston wanted the tee sheet to get the space back
- * when the order is empty, but collapsing the rail to zero takes Walk-in and Reserve with it —
- * and the two things staff reach for most cannot live behind a panel that is gone. So the strip
- * keeps them, plus the count of whatever is in the order, and one tap brings the rail back.
+ * A 56px strip rather than nothing at all, so the tee sheet gets its width back without the
+ * order disappearing entirely.
+ *
+ * ## The hamburger changed jobs
+ *
+ * It used to expand this rail. Weston, fifth call: *"I actually don't hate this to be the main
+ * nav. But it can't expand the nav and do the cart."* One control cannot own both, so the
+ * hamburger now opens the navigation and the rail is expanded by **tapping the strip itself** —
+ * the empty space between the hamburger and the cart. A large, obvious target that cannot be
+ * confused with going somewhere else.
+ *
+ * Walk-in and Reserve came off the strip in the same pass ("I wouldn't have these 2 options
+ * there"). They live in the expanded rail, which is one tap away.
  *
  * Adding anything to the order re-expands automatically: an order you cannot see is one nobody
  * checks before charging it.
  */
 function RailStrip() {
   const { state, dispatch } = usePos();
-  const runQuickAction = useQuickAction();
   // Same count the clear-confirm uses. Tax is a line on the order but not a thing anyone
   // added, and the strip badging 4 while the confirm offers to remove 3 is the kind of
   // disagreement that makes someone stop trusting both numbers.
@@ -1067,21 +1100,24 @@ function RailStrip() {
         transition: 'width .25s cubic-bezier(.4,0,.2,1)',
       }}
     >
-      <Tooltip title="Expand the order rail" placement="right">
+      <Tooltip title="Menu" placement="right">
         <ButtonBase
-          aria-label="Expand the order rail"
-          onClick={expand}
+          aria-label="Open navigation"
+          onClick={() => dispatch({ type: 'setNavOpen', open: true })}
           sx={{ width: 34, height: 34, borderRadius: `${radius.sm}px`, color: md3.onSurfaceVariant }}
         >
           <Icon name="menu" size={18} />
         </ButtonBase>
       </Tooltip>
 
-      {QUICK_ACTIONS.map((a) => (
-        <StripButton key={a.mode} icon={a.icon} label={a.label} onClick={() => runQuickAction(a.mode)} />
-      ))}
-
-      <Box sx={{ flex: 1 }} />
+      {/* The strip's own body is the expand control — see the note above. It fills the space
+          the quick actions used to occupy, so the target is most of the rail's height. */}
+      <ButtonBase
+        aria-label="Expand the order rail"
+        data-rail-expand
+        onClick={expand}
+        sx={{ flex: 1, width: '100%', borderRadius: 0 }}
+      />
 
       <Tooltip title={count ? `${count} in the order` : 'Order is empty'} placement="right">
         <ButtonBase
@@ -1125,26 +1161,6 @@ function RailStrip() {
   );
 }
 
-function StripButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
-  return (
-    <Tooltip title={label} placement="right">
-      <ButtonBase
-        aria-label={label}
-        onClick={onClick}
-        sx={{
-          width: 34,
-          height: 34,
-          borderRadius: `${radius.sm}px`,
-          color: md3.onSurfaceVariant,
-          '&:hover': { bgcolor: md3.primaryContainer, color: md3.onPrimaryContainer },
-        }}
-      >
-        <Icon name={icon} size={18} />
-      </ButtonBase>
-    </Tooltip>
-  );
-}
-
 /**
  * The rail's quick actions — one definition, used expanded and collapsed.
  *
@@ -1179,4 +1195,52 @@ function useQuickAction() {
  */
 function orderItemCount(cart: CartItem[]): number {
   return cart.filter((i) => !i.isTax && i.name !== 'Taxes').reduce((n, i) => n + (i.qty ?? 1), 0);
+}
+
+/**
+ * A way back to the reservation whose order number was tapped.
+ *
+ * Tapping the number is the route Weston asked for — *"a way for them to easily go to that
+ * order and refund"* — but it is one-way: `loadBooking` closes the panel, switches to the
+ * register and leaves no trail. This is the trail. It appears only on that route, so an order
+ * reached any other way does not grow a back button pointing at a reservation nobody opened.
+ *
+ * Going back returns to the tee sheet with the reservation open, and clears the flag so it does
+ * not linger over the next order.
+ */
+function ReturnToReservation() {
+  const { state, dispatch } = usePos();
+  const id = state.returnToBooking;
+  const booking = id ? state.bookings.find((b) => b.id === id) : null;
+  if (!booking) return null;
+
+  return (
+    <ButtonBase
+      data-return-to-reservation
+      aria-label={`Back to the reservation for ${booking.name}`}
+      onClick={() => {
+        dispatch({ type: 'clearReturnToBooking' });
+        // `openReservation` alone would float the panel over the register. The trip started on
+        // the tee sheet, so it ends there.
+        dispatch({ type: 'setView', view: 'tee' });
+        dispatch({ type: 'openReservation', bookingId: booking.id });
+      }}
+      sx={{
+        width: '100%',
+        gap: 0.75,
+        px: 1.75,
+        py: 1.125,
+        justifyContent: 'flex-start',
+        flexShrink: 0,
+        bgcolor: md3.primaryContainer,
+        color: md3.onPrimaryContainer,
+        fontSize: 12.5,
+        fontWeight: 700,
+        borderBottom: `1px solid ${md3.outlineVariant}`,
+      }}
+    >
+      <Icon name="arrow_back" size={16} />
+      Back to {booking.name}
+    </ButtonBase>
+  );
 }

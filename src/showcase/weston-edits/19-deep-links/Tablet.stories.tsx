@@ -47,6 +47,9 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
  * | `catalog` | `standard` · `heavy` | Swap in the 26-rate course |
  * | `date` · `shift` | `2026-05-23` · `peak` | Day and band |
  * | `panel` | `open` · `collapsed` | The order rail |
+ * | `nav` | `1` | The main navigation, full screen |
+ * | `sheet-settings` | `1` | The tee sheet's settings panel |
+ * | `from-res` | booking id | Arrived from that reservation's order number — draws the way back |
  *
  * ## Two ways a stale link is allowed to fail
  *
@@ -94,6 +97,14 @@ function linkGroups(): { group: string; links: Link[] }[] {
   const { party, record } = sample();
   const b = party.id;
   const v = 'venue=eighteen';
+  // The three-nines club carries the hand-written fixtures — a paid party and a group note —
+  // so these links deliberately leave `venue` off rather than pointing at the 18-hole club.
+  const threeNines = venueBookings('three-nines');
+  const paid = threeNines.find((x) => (x.playerStates ?? []).some((p) => p.paid))!;
+  const noted = threeNines.find((x) => (x.groupNote ?? x.note ?? '').trim() && x.players > 1)!;
+  const paidId = paid.id;
+  const paidName = paid.name;
+  const notedId = noted.id;
   return [
     {
       group: 'The reservation',
@@ -139,6 +150,28 @@ function linkGroups(): { group: string; links: Link[] }[] {
         { what: 'Edition default at 640', hash: `#/tee-sheet?${v}&res=${b}&width=standard` },
         { what: 'Dense player rows', hash: `#/tee-sheet?${v}&res=${b}&density=dense` },
         { what: 'Everything at once', hash: `#/tee-sheet?${v}&res=${b}&width=standard&density=dense&transport=named&catalog=heavy` },
+      ],
+    },
+    {
+      group: 'Navigation and chrome',
+      links: [
+        { what: 'The main navigation', hash: `#/tee-sheet?${v}&nav=1`, note: 'four live, fourteen dimmed' },
+        { what: 'Tee sheet settings', hash: `#/tee-sheet?${v}&sheet-settings=1`, note: 'the nav’s Settings tile lands here' },
+        { what: 'The order rail, collapsed to its strip', hash: `#/tee-sheet?${v}&panel=collapsed` },
+      ],
+    },
+    {
+      group: 'A paid order',
+      links: [
+        { what: 'A settled reservation', hash: `#/tee-sheet?res=${paidId}`, note: `${paidName} — the footer carries its order number` },
+        { what: 'Its Financial tab', hash: `#/tee-sheet?res=${paidId}&res-tab=financial`, note: 'the number again, above the balance' },
+        { what: 'The register, arrived from it', hash: `#/pos?from-res=${paidId}`, note: 'with the way back to the reservation' },
+      ],
+    },
+    {
+      group: 'Notes',
+      links: [
+        { what: 'A group note', hash: `#/tee-sheet?res=${notedId}`, note: 'a banner above the rows — it is about everyone' },
       ],
     },
     {

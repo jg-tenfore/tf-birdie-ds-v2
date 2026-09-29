@@ -3,6 +3,7 @@ import { Box, Snackbar } from '@mui/material';
 import { elevation, md3, radius, shell } from '../theme/tokens';
 import { ContextMenus } from './components/ContextMenus';
 import { LeftPanel } from './components/LeftPanel';
+import { NavOverlay } from './components/NavOverlay';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
@@ -125,6 +126,8 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       <ReservationPanel />
       {/* The customer record layers over everything, including the reservation. */}
       <CustomerModal />
+      {/* Above both: navigating away is the one action that outranks whatever is open. */}
+      <NavOverlay />
       <CartSignoutModal />
       <ModalHost />
       <ContextMenus />

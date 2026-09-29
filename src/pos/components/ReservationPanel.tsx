@@ -12,7 +12,7 @@ import { PANEL_WIDTHS, RESERVATION_TABS, dayBookings, rateContext } from '../sta
 import type { ReservationTab } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
-import { BookingActivity, BookingFinancial, BookingNotes } from './BookingTabs';
+import { BookingActivity, BookingFinancial, BookingNotes, OrderNumberLink } from './BookingTabs';
 import { PlayerRows } from './PlayerRows';
 import { BookingMemberDot, Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
@@ -317,11 +317,17 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   return (
     <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, p: '12px 16px 14px', flexShrink: 0, bgcolor: md3.onPrimary }}>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 1.25 }}>
-        <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
-          {playing} playing
-          {eighteens > 0 && eighteens < playing ? ` · ${eighteens} on 18` : ''}
-          {settled ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
-        </Typography>
+        <Stack direction="row" alignItems="baseline" gap={0.75} sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
+            {playing} playing
+            {eighteens > 0 && eighteens < playing ? ` · ${eighteens} on 18` : ''}
+            {settled ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
+          </Typography>
+          {/* The order this was paid under, where the eye already is. Weston asked for it
+              beside "paid"; the Financial tab carries it too, because that is where a refund
+              actually happens. */}
+          <OrderNumberLink booking={b} />
+        </Stack>
         <Typography sx={{ fontSize: 18, fontWeight: 800, color: settled ? md3.primary : md3.onSurface }}>
           {allNoShow ? 'No-show · nothing due' : settled ? 'Paid in full' : `${money(due)} due`}
         </Typography>
@@ -406,3 +412,4 @@ function NextInLine({ booking: b }: { booking: Booking }) {
     </Stack>
   );
 }
+

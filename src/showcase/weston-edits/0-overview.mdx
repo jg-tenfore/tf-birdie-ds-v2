@@ -286,15 +286,69 @@ they could have five, you know? Just to see them all."*
   — and it changes how much room the dialog needs.
 - **The phone has no View ID**, no **Change golfer** and no note alert. Round 4 was a tablet
   conversation; mobile parity is the obvious follow-on.
-- **Global navigation.** The longest unresolved thread of the call. Birdie has restaurant
-  booking, simulators, pickleball, F&B and CRM lookup, and none of them have a home on this
-  terminal. Weston: *"there's just things other than the tee sheet and point of sale that get
-  used, that we'll have to have a way to navigate to all of those."* Justin's instinct is the
-  hamburger over the rail; neither has been drawn.
+- **Global navigation.** The longest unresolved thread of the call — **closed in round 5**, see
+  below.
 - **Twelve is still a guess** as the threshold where the rate grid truncates, and it has not been
   measured against a real club's price book.
 - **✕ and Save changes do the same thing** in the rate editor — both close and keep — while
   Cancel beside them discards. That matches what Weston asked for, but it is worth one more look.
+
+## Round 5: a main nav, and two things made readable
+
+A call on **29 September 2026**. Most of it was the Settings UI, which is a different product;
+three items landed here.
+
+### The hamburger finally means one thing
+
+Weston, looking at the collapsed order rail:
+
+> *"We still need a main nav… I actually don't hate this to be the main nav. But it can't expand
+> the nav and do the cart. So I don't know how we do that."*
+
+A structural knot, not a preference. The 56px strip **was** the order rail collapsed, and its
+hamburger expanded that rail — so its one expansion was already spoken for. No arrangement of
+icons resolves one control owning two expansions.
+
+The fix was to split the gestures. The hamburger means **menu**, on the strip and on the expanded
+rail alike. The strip's **body** expands the rail. The rail's **empty state** collapses it, which
+was Weston's own instruction — the thing telling you the rail is pointless right now is the thing
+that puts it away. Walk-in and Reserve came off the strip in the same pass (*"I wouldn't have
+these 2 options there"*) and live on the expanded rail.
+
+The nav itself is a full-screen sheet of sectioned tiles, contents taken verbatim from v1's
+drawer so the two prototypes cannot drift on what the product contains. Four of the nineteen
+destinations exist here; the rest are **dimmed and disabled** rather than opening placeholder
+screens, which Weston chose — a nav that opens fourteen apologies teaches people to distrust it.
+See **20 · Main Nav**.
+
+### The note that could not be read
+
+The player row put the note text in a `Tooltip`, which on a tablet never fires at all: the row
+announced a note existed and gave no way to read it. Weston caught it — *"this hover state
+wouldn't really work for touchscreen"* — and also caught the wrinkle underneath, that a **group**
+note is about everyone and must not render as if it belonged to one seat. So they split: group
+notes become a banner above the rows, per-golfer notes a line on their own row.
+
+### The order number
+
+*"When it's paid… we need to display the order number somewhere on here. And have it clickable."*
+There was no order number anywhere in the app. It is now **derived** from the booking id rather
+than stored — nothing to keep in step through refunds and reopenings, and stable across machines,
+which is what makes screenshots reproducible. It shows in the footer and in the Financial tab,
+and tapping it loads the paid order into the register with a breadcrumb back. See
+**21 · Notes & Order Number**.
+
+### Still open after round 5
+
+- **Panel width.** Weston: *"I really like how this is feeling. I'm almost wondering if we make
+  it bigger."* He is asking around; 820 stands until he reports back. There is no size between
+  820 and full-cover, so bigger means adding one.
+- **Mobile parity**, now the largest remaining block. *"I get that there's different experiences,
+  but we still want to look the same, right? Roughly."*
+- **NOT LINKED / "Link" wording** and the loud green **Change golfer** on guest rows — offered
+  three times, still unanswered.
+- **Smarter search**, raised about Settings but true here too: *"somebody just doesn't know about
+  a setting and they don't know where to ask."*
 
 ## How the edition works
 

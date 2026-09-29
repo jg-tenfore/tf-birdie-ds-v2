@@ -62,7 +62,7 @@ import { openParty, sheetWithOrder, sheetWithPanel } from '../tablet-scenarios';
  * | Strip buttons | 34×34, 18px glyph, tooltips placed `right` |
  * | Badge | min-width 15, `md3.primary` on `md3.onPrimary`, 9px/800 |
  * | Confirm | "Clear this order?" · "{n} items will be removed. This cannot be undone." · **Clear order** / Cancel |
- * | Accessible names | `Clear order` · `Collapse the order rail` · `Expand the order rail` · `Order · {n} items` / `Order is empty` |
+ * | Accessible names | `Open navigation` · `Clear order` · `Collapse the order rail` (the empty state) · `Expand the order rail` (the strip body) · `Order · {n} items` / `Order is empty` |
  *
  * **The confirm does not count the tax line.** A three-player check-in builds one golf line at
  * `qty: 3` plus a `Taxes` line, and the confirm says **3 items** — tax is on the order but it is
@@ -87,7 +87,7 @@ import { openParty, sheetWithOrder, sheetWithPanel } from '../tablet-scenarios';
  * |---|---|---|
  * | **Empty And So Collapsible** | rail expanded, order empty | The state Weston was looking at. Clicks the hamburger and asserts the strip is exactly **56px** |
  * | **Items On The Order Clear** | `sheetWithOrder(openParty())` | The other job. Asserts the confirm's wording, cancels, and checks the order survived |
- * | **Cleared Back To The Hamburger** | same | The hand-over: confirming empties the order and the button becomes **Collapse the order rail** |
+ * | **Cleared Back To The Hamburger** | same | The hand-over: confirming empties the order and the button becomes the **hamburger**, which opens the nav |
  * | **The Collapsed Strip** | order on it, collapsed | Everything the 56px carries — hamburger, both quick actions, and a counting badge |
  * | **The Collapsed Strip Empty** | nothing on the order | The state the tee sheet spends most of the morning in. Asserts the badge reads **Order is empty** |
  * | **Adding Something Re-expands** | reservation open, rail collapsed | Weston's split-the-bill path. Asserts the strip is gone and the button is now the clear |
@@ -127,8 +127,13 @@ const strip = (canvasElement: HTMLElement) =>
  * nothing to pay. This is the state Weston was looking at — 320px of tee sheet spent on a form
  * that has not started.
  *
- * Because there is nothing to clear, the top-left control is a **hamburger**, and it collapses
- * the rail. The play test clicks it and checks the 56px strip takes over.
+ * Because there is nothing to clear, the top-left control is a **hamburger** — which as of
+ * round 5 opens the navigation, not the collapse. Collapsing is the **empty state's** job:
+ * tapping "No items added yet" puts the rail away, which is Weston's own instruction and pairs
+ * with tapping the strip to bring it back. The thing telling you the rail is pointless right
+ * now is the thing that gets rid of it.
+ *
+ * The play test taps the empty state and checks the 56px strip takes over.
  */
 export const EmptyAndSoCollapsible: Story = {
   render: () => <Screen edition="weston" initialState={atVenue('eighteen', { leftPanelCollapsed: false })} />,
@@ -136,6 +141,7 @@ export const EmptyAndSoCollapsible: Story = {
     const canvas = within(canvasElement);
     await expect(strip(canvasElement)).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse the order rail' }));
+    // (that name is now on the empty state, not the hamburger — see the note above)
     await waitFor(() => expect(strip(canvasElement)).not.toBeNull());
     await expect(strip(canvasElement)!.offsetWidth).toBe(56);
   },
@@ -175,7 +181,7 @@ export const ItemsOnTheOrderClear: Story = {
  * it, the same control turns into the hamburger, so the rail can now be put away. The two jobs
  * hand over at exactly the moment the space becomes free to take.
  *
- * The play test confirms the clear and checks the button has become "Collapse the order rail".
+ * The play test confirms the clear and checks the button has become the nav hamburger.
  */
 export const ClearedBackToTheHamburger: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithOrder(openParty())} />,
@@ -184,27 +190,33 @@ export const ClearedBackToTheHamburger: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Clear order' }));
     const dialog = within(await screen.findByRole('dialog'));
     await userEvent.click(dialog.getByRole('button', { name: 'Clear order' }));
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Collapse the order rail' })).toBeTruthy());
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open navigation' })).toBeTruthy());
   },
 };
 
 // ─── Collapsed ──────────────────────────────────────────────────────────────
 
 /**
- * **The 56px strip.** What "collapsed" actually means: the hamburger to bring the rail back,
- * **Walk-in** and **Reserve tee time** still one tap from the tee sheet, and at the foot a cart
- * glyph with a badge counting what is on the order. Tapping the badge — or the hamburger — puts
- * the rail back.
+ * **The 56px strip.** What "collapsed" means after round 5: the **hamburger at the top, which
+ * now opens the main navigation**, the strip's own body as the target that brings the rail
+ * back, and at the foot a cart glyph badged with what is on the order.
+ *
+ * ## The hamburger changed jobs
+ *
+ * It used to expand the rail. Weston, fifth call: *"I actually don't hate this to be the main
+ * nav. But it can't expand the nav and do the cart. So I don't know how we do that."* One
+ * control cannot own both expansions, so they were split: the hamburger means **menu**
+ * everywhere — on the strip and on the expanded rail's header — and expanding is the strip
+ * body's job. Neither gesture can be mistaken for the other.
+ *
+ * **Walk-in** and **Reserve tee time** came off the strip in the same pass ("I wouldn't have
+ * these 2 options there"). They live on the expanded rail, one tap away.
  *
  * The badge exists because a hidden order is the one real risk in collapsing at all. The count
  * says there is something to come back to, and the rail is one tap away from saying what.
  *
- * The two quick actions are defined once and rendered in both states (`QUICK_ACTIONS`). They
- * used to be written twice, which is how the collapsed Walk-in ended up opening a different
- * dialog from the expanded one, and the collapsed Reserve ended up on an icon name that does
- * not exist — see 8 · Bug Fixes.
- *
- * The play test checks the strip's width and everything on it.
+ * The play test checks the strip's width, that the hamburger is the nav, and that the two quick
+ * actions are gone from it.
  */
 export const TheCollapsedStrip: Story = {
   render: () => <Screen edition="weston" initialState={sheetWithOrder(openParty(), { leftPanelCollapsed: true })} />,
@@ -212,9 +224,11 @@ export const TheCollapsedStrip: Story = {
     const el = strip(canvasElement)!;
     await expect(el.offsetWidth).toBe(56);
     const rail = within(el);
+    await expect(rail.getByRole('button', { name: 'Open navigation' })).toBeTruthy();
     await expect(rail.getByRole('button', { name: 'Expand the order rail' })).toBeTruthy();
-    await expect(rail.getByRole('button', { name: 'Walk-in' })).toBeTruthy();
-    await expect(rail.getByRole('button', { name: 'Reserve tee time' })).toBeTruthy();
+    // Off the strip as of round 5 — they are on the expanded rail instead.
+    await expect(rail.queryByRole('button', { name: 'Walk-in' })).toBeNull();
+    await expect(rail.queryByRole('button', { name: 'Reserve tee time' })).toBeNull();
     // The badge says there is an order to come back to.
     await expect(rail.getByRole('button', { name: /^Order · \d+ items$/ })).toBeTruthy();
   },
@@ -222,9 +236,9 @@ export const TheCollapsedStrip: Story = {
 
 /**
  * **The strip with nothing on the order.** The same 56px with the badge quiet: the cart glyph
- * greys back, the tooltip reads "Order is empty", and the two quick actions are still where
- * they were. This is the state the tee sheet spends most of the morning in, and it is the whole
- * return on the trade — 264px of columns back, for a rail that was showing nothing.
+ * greys back and the tooltip reads "Order is empty". This is the state the tee sheet spends
+ * most of the morning in, and it is the whole return on the trade — 264px of columns back, for
+ * a rail that was showing nothing.
  */
 export const TheCollapsedStripEmpty: Story = {
   render: () => <Screen edition="weston" initialState={atVenue('eighteen')} />,

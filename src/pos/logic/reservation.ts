@@ -236,6 +236,32 @@ export const reservationSettled = (b: Booking): boolean =>
   b.playerStates.length > 0 && b.playerStates.every((p) => p.paid || p.noShow);
 
 /**
+ * The order number a settled reservation was paid under.
+ *
+ * Weston, fifth call: *"when it's paid, we need to display the order number somewhere on here.
+ * And have it clickable… it's just a way for them to easily go to that order and refund."*
+ *
+ * Derived from the booking id rather than stored on it. A stored number would have to be
+ * written at checkout and kept in step through refunds, rain checks and reopenings — four
+ * places to forget — and the fixtures would need one seeded per paid booking anyway. Deriving
+ * it means the number is the same every time the panel opens, on every machine, and there is
+ * no second field that can disagree with the booking it belongs to.
+ *
+ * Returns `null` when nothing has been paid, because an unpaid reservation has no order.
+ */
+export function orderNumber(b: Booking): string | null {
+  if (!b.playerStates.some((p) => p.paid)) return null;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < b.id.length; i++) {
+    h ^= b.id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const n = (h >>> 0) % 90000;
+  // `A-` then five digits, matching the format on the register's own receipts.
+  return `#A-${String(10000 + n)}`;
+}
+
+/**
  * The round's name on the order: `Tee Time 9 holes`, `Tee Time 9/18 holes` when the party is
  * mixed, `Member Check-in` for members. Never "Walk-in" — a booking on the sheet is a tee
  * time however it was made, and the order is for the golf, not the channel.

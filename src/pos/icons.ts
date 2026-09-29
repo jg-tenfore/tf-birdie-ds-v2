@@ -111,6 +111,15 @@ import WbCloudy from '@mui/icons-material/WbCloudy';
 import WbSunny from '@mui/icons-material/WbSunny';
 import WbTwilight from '@mui/icons-material/WbTwilight';
 import WorkspacePremium from '@mui/icons-material/WorkspacePremium';
+import Storefront from '@mui/icons-material/Storefront';
+import SportsTennis from '@mui/icons-material/SportsTennis';
+import Bolt from '@mui/icons-material/Bolt';
+import Restaurant from '@mui/icons-material/Restaurant';
+import AssignmentTurnedIn from '@mui/icons-material/AssignmentTurnedIn';
+import GridView from '@mui/icons-material/GridView';
+import CalendarMonth from '@mui/icons-material/CalendarMonth';
+import Logout from '@mui/icons-material/Logout';
+import SwitchAccount from '@mui/icons-material/SwitchAccount';
 
 /**
  * Material Symbols name → MUI icon component.
@@ -131,6 +140,11 @@ import WorkspacePremium from '@mui/icons-material/WorkspacePremium';
  */
 export const ICONS: Record<string, SvgIconComponent> = {
   add: Add,
+  assignment_turned_in: AssignmentTurnedIn,
+  bolt: Bolt,
+  calendar_month: CalendarMonth,
+  grid_view: GridView,
+  logout: Logout,
   remove: Remove,
   link: LinkIcon,
   add_circle: AddCircle,
@@ -208,6 +222,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   repeat: Repeat,
   reply: Reply,
   restart_alt: RestartAlt,
+  restaurant: Restaurant,
   schedule: Schedule,
   search: Search,
   search_off: SearchOff,
@@ -216,8 +231,11 @@ export const ICONS: Record<string, SvgIconComponent> = {
   shopping_cart: ShoppingCart,
   sort: Sort,
   sports_golf: SportsGolf,
+  sports_tennis: SportsTennis,
   sticky_note_2: StickyNote2,
+  storefront: Storefront,
   swap_horiz: SwapHoriz,
+  switch_account: SwitchAccount,
   sync: Sync,
   sync_alt: SyncAlt,
   timer: Timer,

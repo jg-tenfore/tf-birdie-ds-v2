@@ -74,7 +74,9 @@ function TeeSheetToolbar() {
   const { state, dispatch } = usePos();
   const [dateAnchor, setDateAnchor] = useState<HTMLElement | null>(null);
   const [dayMenuOpen, setDayMenuOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Lifted to the store so the nav's Settings tile can open it too — see `teeSheetSettingsOpen`.
+  const settingsOpen = state.teeSheetSettingsOpen;
+  const setSettingsOpen = (open: boolean) => dispatch({ type: 'setTeeSheetSettings', open });
 
   const golfers = dayGolferCount(state);
   const dateLabel = state.currentDate.toLocaleDateString('en-US', {

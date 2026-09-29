@@ -4,7 +4,7 @@ import { md3, playerAccents, radius } from '../../theme/tokens';
 import { ROUND_STEPS, roundStepOf } from '../data/config';
 import { formatTimeLabel } from '../data/courses';
 import { money } from '../logic/cart';
-import { playerFee, playerName, reservationDue } from '../logic/reservation';
+import { orderNumber, playerFee, playerName, reservationDue } from '../logic/reservation';
 import { seatNetGreenFee } from '../logic/seat-pricing';
 import { rateContext } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
@@ -147,6 +147,10 @@ export function BookingFinancial({ booking: b }: { booking: Booking }) {
 
   return (
     <>
+      {/* The order this was paid under, above the money it paid for. Weston named this tab and
+          the footer as the two places it could live; a refund starts here, so it belongs in
+          both rather than one. */}
+      <OrderNumberLink booking={b} />
       <ModalSection title="Balance">
         <Stack
           direction="row"
@@ -455,5 +459,44 @@ export function BookingActivity({ booking: b }: { booking: Booking }) {
         ))}
       </Stack>
     </>
+  );
+}
+
+/**
+ * The order number on a settled reservation, as a link into the register.
+ *
+ * Weston: *"we need to display the order number somewhere on here. And have it clickable… a
+ * way for them to easily go to that order and refund."* Tapping loads that paid order into the
+ * register, exactly as **Open in register** does, and leaves a breadcrumb back — see
+ * `returnToBooking`, because this route closes the panel you were reading.
+ *
+ * Renders nothing until something has actually been paid: an unpaid tee time has no order, and
+ * a number shown before one exists is a number someone will quote down the phone.
+ */
+export function OrderNumberLink({ booking: b }: { booking: Booking }) {
+  const { dispatch } = usePos();
+  const number = orderNumber(b);
+  if (!number) return null;
+
+  return (
+    <ButtonBase
+      data-order-number
+      aria-label={`Open order ${number} in the register`}
+      onClick={() => dispatch({ type: 'openPaidOrder', bookingId: b.id })}
+      sx={{
+        gap: 0.375,
+        px: 0.75,
+        py: 0.25,
+        borderRadius: `${radius.sm}px`,
+        fontSize: 12,
+        fontWeight: 700,
+        color: md3.primary,
+        flexShrink: 0,
+        '&:hover': { bgcolor: md3.primaryContainer },
+      }}
+    >
+      <Icon name="receipt_long" size={14} />
+      {number}
+    </ButtonBase>
   );
 }

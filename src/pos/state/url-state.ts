@@ -353,6 +353,10 @@ export function stateToHash(state: PosState): string {
   if (state.view === 'tee' && !state.leftPanelCollapsed) q.set('panel', 'open');
   if (state.view === 'pos' && state.leftPanelCollapsed) q.set('panel', 'collapsed');
   if (state.sidebarOpen) q.set('summary', state.sidebarCourse ?? 'day');
+  // The main navigation and the tee sheet's settings panel, so a QA link can land on either.
+  if (state.navOpen) q.set('nav', '1');
+  if (state.teeSheetSettingsOpen) q.set('sheet-settings', '1');
+  if (state.returnToBooking) q.set('from-res', state.returnToBooking);
   if (state.multiSelectActive) q.set('select', state.multiSelectIds.join(',') || 'on');
   if (state.settings.compactMode) q.set('compact', '1');
   if (state.settings.hideEmpty) q.set('hide-empty', '1');
@@ -532,6 +536,13 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
     patch.sidebarCourse = summary === 'day' ? null : summary;
   }
 
+  if (q.get('nav')) patch.navOpen = true;
+  if (q.get('sheet-settings')) patch.teeSheetSettingsOpen = true;
+  // Only meaningful with an order loaded; a bare `from-res` would draw a back button to a
+  // reservation the operator never came from.
+  const fromRes = q.get('from-res');
+  if (fromRes && bookings.some((b) => b.id === fromRes)) patch.returnToBooking = fromRes;
+
   const select = q.get('select');
   if (select) {
     patch.multiSelectActive = true;
@@ -656,6 +667,9 @@ export function isNavigation(prev: PosState, next: PosState): boolean {
     // row is not, or walking back through a foursome would bury the real navigation.
     prev.customerModal?.customerId !== next.customerModal?.customerId ||
     Boolean(prev.customerModal) !== Boolean(next.customerModal) ||
+    // Opening the main navigation covers the screen, so Back should close it rather than
+    // leaving the tee sheet underneath.
+    prev.navOpen !== next.navOpen ||
     toDateStr(prev.currentDate) !== toDateStr(next.currentDate)
   );
 }
