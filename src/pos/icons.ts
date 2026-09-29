@@ -120,6 +120,12 @@ import GridView from '@mui/icons-material/GridView';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Logout from '@mui/icons-material/Logout';
 import SwitchAccount from '@mui/icons-material/SwitchAccount';
+// ── Register extras (V1 → V2): combos, hold, cash payout, gift cards ──
+import Fastfood from '@mui/icons-material/Fastfood';
+import PauseCircle from '@mui/icons-material/PauseCircle';
+import PlayCircle from '@mui/icons-material/PlayCircle';
+import Redeem from '@mui/icons-material/Redeem';
+import Savings from '@mui/icons-material/Savings';
 
 /**
  * Material Symbols name → MUI icon component.
@@ -261,6 +267,12 @@ export const ICONS: Record<string, SvgIconComponent> = {
   handyman: Handyman,
   speed: Speed,
   inventory_2: Inventory2,
+  // ── Register extras (V1 → V2): combos, hold, cash payout, gift cards ──
+  fastfood: Fastfood,
+  pause_circle: PauseCircle,
+  play_circle: PlayCircle,
+  redeem: Redeem,
+  savings: Savings,
 };
 
 /**

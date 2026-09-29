@@ -26,6 +26,7 @@ import {
 } from './ModalFrame';
 import { Stack } from '../components/Stack';
 import { checkInPlayer } from '../logic/bookings';
+import type { GiftCardRecipientTarget } from '../state/register-extras';
 import { demoNow } from '../data/bookings';
 
 /**
@@ -178,13 +179,32 @@ export function MemberLookup({ itemName, requiredType }: { itemName: string; req
 
 // ─── Golfer search ──────────────────────────────────────────────────────────
 
-/** Attach a CRM golfer to the order, or to one seat on it. */
+/**
+ * Attach a CRM golfer to the order, or to one seat on it — or, in V1 → V2, pick who a gift card
+ * is for.
+ *
+ * The gift-card target is a third target rather than a second picker: v1's gift-card form had
+ * four lookup fields per party, each its own search over the same customers, and a person found
+ * in one could not be found the same way in another. One picker means one way to find someone.
+ * That target returns to the gift-card dialog with its draft intact, on a pick and on Cancel.
+ */
 export function GolferSearch({
   target,
 }: {
-  target: 'primary' | { itemIdx: number; playerIdx: number } | { resourceBookingId: string };
+  target: 'primary' | { itemIdx: number; playerIdx: number } | { resourceBookingId: string } | GiftCardRecipientTarget;
 }) {
   const { dispatch, toast } = usePos();
+  const giftCard = typeof target === 'object' && 'giftCard' in target ? target.giftCard : null;
+  const backToGiftCard = (recipient?: Golfer) =>
+    dispatch({
+      type: 'openModal',
+      modal: {
+        kind: 'giftCard',
+        draft: recipient
+          ? { ...giftCard!, recipient: { name: recipient.name, customerId: recipient.id, email: recipient.email || undefined } }
+          : giftCard!,
+      },
+    });
   const roster = useGolferRoster();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string>('all');
@@ -199,6 +219,7 @@ export function GolferSearch({
   }, [query, filter, roster]);
 
   const choose = (g: Golfer) => {
+    if (giftCard) return backToGiftCard(g);
     if (target === 'primary') {
       dispatch({ type: 'selectGolfer', golfer: g });
     } else if ('resourceBookingId' in target) {
@@ -208,7 +229,7 @@ export function GolferSearch({
         id: target.resourceBookingId,
         patch: { name: g.name, crmId: g.id, phone: g.phone },
       });
-    } else {
+    } else if ('itemIdx' in target) {
       dispatch({
         type: 'updatePlayer',
         itemIndex: target.itemIdx,
@@ -224,16 +245,23 @@ export function GolferSearch({
     <ModalFrame
       width={520}
       tall
-      title="Find golfer"
+      title={giftCard ? 'Gift card for…' : 'Find golfer'}
       subtitle="Search the member roster and guest records"
       icon="person"
+      onClose={giftCard ? () => backToGiftCard() : undefined}
       actions={
         <>
-          <OutlineButton onClick={() => dispatch({ type: 'openModal', modal: { kind: 'newCustomer' } })}>
-            New customer
-          </OutlineButton>
+          {/* A gift card for someone not on the roster is typed on the card itself, so the
+              card's draft is never abandoned for the new-customer form. */}
+          {!giftCard && (
+            <OutlineButton onClick={() => dispatch({ type: 'openModal', modal: { kind: 'newCustomer' } })}>
+              New customer
+            </OutlineButton>
+          )}
           <Box sx={{ flex: 1 }} />
-          <OutlineButton onClick={() => dispatch({ type: 'closeModal' })}>Cancel</OutlineButton>
+          <OutlineButton onClick={() => (giftCard ? backToGiftCard() : dispatch({ type: 'closeModal' }))}>
+            {giftCard ? 'Back' : 'Cancel'}
+          </OutlineButton>
         </>
       }
     >

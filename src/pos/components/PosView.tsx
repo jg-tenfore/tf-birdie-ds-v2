@@ -17,6 +17,10 @@ import type { CatalogItem } from '../types';
 import { EmptyState, Icon, SectionLabel } from './primitives';
 import { Stack } from './Stack';
 import { useStartWalkIn } from './use-start-walk-in';
+import { useV1V2 } from '../edition';
+import { COMBOS_CATEGORY } from '../data/combos';
+import { ComboGrid, RegisterCategoryRow } from './RegisterExtras';
+import { CategoryButton } from './CategoryButton';
 
 /**
  * The POS catalog: search, colored category buttons, and the item grid.
@@ -31,6 +35,7 @@ export function PosView() {
   const holesLock = cart.cartHolesLock(state.cart);
   const hasCheckIn = state.cart.some((i) => i.isCheckIn);
   const walkIn = useStartWalkIn();
+  const v1v2 = useV1V2();
 
   /**
    * Route an item tap.
@@ -92,46 +97,15 @@ export function PosView() {
               const d = CATALOG[catName];
               const active = state.currentCategory === catName;
               return (
-                <ButtonBase
+                <CategoryButton
                   key={catName}
-                  onClick={() =>
-                    dispatch({ type: 'setCategory', category: active ? null : catName })
-                  }
-                  sx={{
-                    height: 66,
-                    borderRadius: `${radius.md}px`,
-                    bgcolor: d.color,
-                    color: d.tc,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: '.6px',
-                    textTransform: 'uppercase',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    textAlign: 'left',
-                    p: '9px 10px',
-                    lineHeight: 1.2,
-                    boxShadow: elevation.e1,
-                    transition: 'all .13s',
-                    ...(active
-                      ? {
-                          outline: '3px solid rgba(0,0,0,.5)',
-                          outlineOffset: '-2px',
-                          filter: 'brightness(.9)',
-                        }
-                      : {
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: elevation.e3,
-                            filter: 'brightness(1.06)',
-                          },
-                        }),
-                  }}
-                >
-                  <Icon name={CATEGORY_ICONS[catName] ?? 'sell'} size={20} />
-                  {catName}
-                </ButtonBase>
+                  label={catName}
+                  icon={CATEGORY_ICONS[catName] ?? 'sell'}
+                  color={d.color}
+                  tc={d.tc}
+                  active={active}
+                  onClick={() => dispatch({ type: 'setCategory', category: active ? null : catName })}
+                />
               );
             })}
             {/* Keep the 5-column rhythm when a row is short. */}
@@ -140,12 +114,16 @@ export function PosView() {
               Array.from({ length: 5 - row.length }, (_, i) => <Box key={`pad${i}`} />)}
           </Box>
         ))}
+        {/* V1 → V2: Combos and Gift card, a row of their own so the catalog's rows don't move. */}
+        {v1v2 && <RegisterCategoryRow />}
       </Box>
 
       {/* ── Item grid ── */}
       <Box sx={{ flex: 1, overflowY: 'auto', p: '12px 18px 18px', minHeight: 0 }}>
         {!state.currentCategory ? (
           <EmptyState icon="sports_golf" label="Select a category" />
+        ) : v1v2 && state.currentCategory === COMBOS_CATEGORY ? (
+          <ComboGrid />
         ) : (
           <ItemGrid
             categoryName={state.currentCategory}

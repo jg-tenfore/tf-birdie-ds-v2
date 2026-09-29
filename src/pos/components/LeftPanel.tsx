@@ -3,7 +3,9 @@ import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Tooltip, Typography }
 import { elevation, grid, md3, payBadges, radius } from '../../theme/tokens';
 import { SETTINGS_MENU_ITEMS, TRANSPORT_META } from '../data/config';
 import { COURSES, TIMES } from '../data/courses';
-import { useWestonEdits } from '../edition';
+import { useV1V2, useWestonEdits } from '../edition';
+import { CASH_PAYOUT_MENU_ITEM } from '../data/register-extras';
+import { ComboLine, GiftCardLine, HeldOrdersBar, HoldButton } from './RegisterExtras';
 import { roundLabel } from '../logic/reservation';
 import { seatRecord } from '../logic/seat-pricing';
 import { useStartWalkIn } from './use-start-walk-in';
@@ -42,6 +44,9 @@ export function LeftPanel() {
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();
+  const v1v2 = useV1V2();
+  // V1 → V2 adds Cash payout to the cog — a drawer action, not part of any order.
+  const menuItems = v1v2 ? [...SETTINGS_MENU_ITEMS, CASH_PAYOUT_MENU_ITEM] : SETTINGS_MENU_ITEMS;
   const orderCount = orderItemCount(state.cart);
   const hasOrder = orderCount > 0;
   const runQuickAction = useQuickAction();
@@ -97,6 +102,8 @@ export function LeftPanel() {
         return dispatch({ type: 'openModal', modal: { kind: 'actionPanel', action: 'refund' } });
       case 'raincheck':
         return dispatch({ type: 'openModal', modal: { kind: 'actionPanel', action: 'raincheck' } });
+      case 'cashPayout':
+        return dispatch({ type: 'openModal', modal: { kind: 'cashPayout' } });
       default:
         return toast(`${action} — coming soon`);
     }
@@ -129,6 +136,9 @@ export function LeftPanel() {
           Without this the way back is a fresh hunt through the tee sheet for a tee time the
           operator was reading a second ago. */}
       <ReturnToReservation />
+
+      {/* ── Held orders (V1 → V2) ── only while something is held. */}
+      {v1v2 && <HeldOrdersBar />}
 
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
@@ -228,7 +238,7 @@ export function LeftPanel() {
             onClose={() => setCogAnchor(null)}
             slotProps={{ paper: { sx: { width: 264 } } }}
           >
-            {SETTINGS_MENU_ITEMS.map((item) => (
+            {menuItems.map((item) => (
               <MenuItem
                 key={item.action}
                 onClick={() => handleSettingsAction(item.action)}
@@ -363,6 +373,10 @@ export function LeftPanel() {
             {state.cart.map((item, i) =>
               item.isSubItem || (weston && booking && item.isCheckIn) ? null : item.isCheckIn ? (
                 <CheckInLines key={`${item.name}-${i}`} item={item} index={i} />
+              ) : item.combo ? (
+                <ComboLine key={`${item.name}-${i}`} item={item} index={i} />
+              ) : item.giftCard ? (
+                <GiftCardLine key={`${item.name}-${i}`} item={item} index={i} />
               ) : (
                 <StandardLine key={`${item.name}-${i}`} item={item} index={i} />
               ),
@@ -423,6 +437,7 @@ export function LeftPanel() {
               {b.label}
             </ButtonBase>
           ))}
+          {v1v2 && <HoldButton />}
         </Stack>
 
         <Box

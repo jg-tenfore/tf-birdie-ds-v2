@@ -169,6 +169,20 @@ describe('the store', () => {
     expect(gone.cart.some((i) => i.resourceBookingId === b.id)).toBe(false);
   });
 
+  it('cancelling a booking that is on a held order takes it off that order too', () => {
+    // Courts and holding a ticket were built in parallel; this is where they meet. Scrubbing
+    // only the live cart would let resuming the held order revive a charge for a cancelled court.
+    const s = seeded();
+    const b = s.resourceBookings[0];
+    const held = reducer(reducer(s, { type: 'checkInResource', id: b.id }), { type: 'holdOrder', name: 'Court' });
+    expect(held.cart).toHaveLength(0);
+    expect(held.heldOrders[0].order.cart.some((i) => i.resourceBookingId === b.id)).toBe(true);
+
+    const gone = reducer(held, { type: 'removeResourceBooking', id: b.id });
+    const resumed = reducer(gone, { type: 'resumeHeldOrder', id: gone.heldOrders[0].id });
+    expect(resumed.cart.some((i) => i.resourceBookingId === b.id)).toBe(false);
+  });
+
   it('keeps courts and bays across Back / Forward — a link resets the panel, not the day', () => {
     // The first cut of this reset wiped every booking on navigation: a string replace matched
     // the defaults and, as a substring, `applyUrl` too.

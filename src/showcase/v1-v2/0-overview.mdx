@@ -62,13 +62,31 @@ Two destinations are not tiles. **Log Out** sits in the nav's header, beside Swi
 - **The register's missing functions** — combos, holding a ticket, a cash payout and issuing a
   gift card. See section 1.
 
-### A decision made along the way
+### Decisions made along the way
+
+Each is the most defensible call without a club to ask, and each is one place to change.
 
 **Courts are paid for, like bays.** v1 never charged for a court: a booking stored a display name
 and nothing else. With one model for both sheets, a court needed a price, and the call was to
 charge it the way a bay and a tee time are charged — **Check in & pay**, to the register. The
 per-court rates are placeholders (tennis $20/hr, pickleball $15, basketball $25, the pool $10)
 and are the first thing to correct against a real club. Bays keep v1's own $45/hr.
+
+**Gift cards are not taxed when sold.** A gift card is stored value, not a sale; the tax is
+charged when it is *spent*, so taxing the sale would tax the same dollars twice. v1's own model
+marked a gift card `taxable: false`. This is the one change to shared pricing in wave 1, and it
+only applies to a gift-card line — which only V1 → V2 can create.
+
+**Gift cards expire five years after sale**, the US federal (CARD Act) minimum. v1 defaulted to a
+century out and flagged it as needing a decision. Some states forbid expiry altogether, so this
+is the setting most likely to need a per-club override.
+
+**Entry limits guard against keypad slips**: a cash payout tops out at $5,000 and a gift card at
+$1,000. An extra zero typed into a payout empties a drawer.
+
+**A cash payout is not a sale.** v1 rang it as a negative line inside an order. Here it is a
+*drawer event* that never touches the order, recorded so that closing the shift (wave 3) can
+account for it.
 
 ### Deep links
 
