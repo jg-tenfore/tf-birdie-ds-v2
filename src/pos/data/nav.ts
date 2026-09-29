@@ -8,7 +8,11 @@
  * `live` is the honest part. Weston asked for the unbuilt destinations to be dimmed rather
  * than faked, so this flag is the single place that decides it — a destination becomes real by
  * being wired here, not by someone remembering to un-dim a tile.
+ *
+ * It is per edition, because V1 → V2 has screens Weston Edits does not. `true` means live
+ * wherever the nav exists; `'v1v2'` means live only in V1 → V2. `isLive` is the one reader.
  */
+import type { Edition } from '../edition';
 
 export type NavKey =
   | 'proshop'
@@ -35,8 +39,11 @@ export interface NavItem {
   label: string;
   /** A registered name in `icons.ts` — the icon test fails the build on an unregistered one. */
   icon: string;
-  /** False renders the tile dimmed and unclickable: the screen does not exist yet. */
-  live?: boolean;
+  /**
+   * Where the screen exists. Unset renders the tile dimmed and unclickable everywhere; `'v1v2'`
+   * makes it live in V1 → V2 only, which is how a migrated destination arrives.
+   */
+  live?: true | 'v1v2';
 }
 
 export interface NavGroup {
@@ -51,8 +58,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'proshop', label: 'Pro Shop', icon: 'storefront', live: true },
       { key: 'teesheet', label: 'Tee Sheet', icon: 'golf_course', live: true },
-      { key: 'courtsheet', label: 'Court Sheet', icon: 'sports_tennis' },
-      { key: 'baysheet', label: 'Bay Sheet', icon: 'sports_golf' },
+      { key: 'courtsheet', label: 'Court Sheet', icon: 'sports_tennis', live: 'v1v2' },
+      { key: 'baysheet', label: 'Bay Sheet', icon: 'sports_golf', live: 'v1v2' },
     ],
   },
   {
@@ -102,3 +109,10 @@ export const APP_IDENTITY = {
   facility: 'The Dunes of Delgado PROD',
   device: 'sdk_gphone64_arm64',
 } as const;
+
+/** Whether a destination opens in this edition. The only reader of `live`. */
+export function isLive(item: NavItem, edition: Edition): boolean {
+  if (item.live === true) return true;
+  if (item.live === 'v1v2') return edition === 'v1v2';
+  return false;
+}

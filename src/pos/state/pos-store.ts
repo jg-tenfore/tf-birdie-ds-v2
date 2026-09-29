@@ -56,7 +56,11 @@ export type Modal =
   | { kind: 'teePicker'; is18H?: boolean; pendingRate?: string }
   | { kind: 'reserveConfirm'; payMode: 'now' | 'later' }
   | { kind: 'memberLookup'; itemName: string; requiredType: string }
-  | { kind: 'golferSearch'; target: 'primary' | { itemIdx: number; playerIdx: number } }
+  | {
+      kind: 'golferSearch';
+      /** The order, one seat on it, or a court / bay booking (V1 → V2). */
+      target: 'primary' | { itemIdx: number; playerIdx: number } | { resourceBookingId: string };
+    }
   | { kind: 'guestDetail'; guestIndex: number; returnTo?: Modal }
   | { kind: 'newCustomer' }
   | { kind: 'walkIn' }

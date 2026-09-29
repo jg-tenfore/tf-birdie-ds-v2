@@ -182,7 +182,7 @@ export function MemberLookup({ itemName, requiredType }: { itemName: string; req
 export function GolferSearch({
   target,
 }: {
-  target: 'primary' | { itemIdx: number; playerIdx: number };
+  target: 'primary' | { itemIdx: number; playerIdx: number } | { resourceBookingId: string };
 }) {
   const { dispatch, toast } = usePos();
   const roster = useGolferRoster();
@@ -201,6 +201,13 @@ export function GolferSearch({
   const choose = (g: Golfer) => {
     if (target === 'primary') {
       dispatch({ type: 'selectGolfer', golfer: g });
+    } else if ('resourceBookingId' in target) {
+      // A court or bay booking takes the person, not a seat — there are no seats on a court.
+      dispatch({
+        type: 'patchResourceBooking',
+        id: target.resourceBookingId,
+        patch: { name: g.name, crmId: g.id, phone: g.phone },
+      });
     } else {
       dispatch({
         type: 'updatePlayer',

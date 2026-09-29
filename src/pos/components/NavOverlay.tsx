@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { keyframes } from '@emotion/react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius, reservationPanel } from '../../theme/tokens';
-import { APP_IDENTITY, NAV_GROUPS, type NavItem, type NavKey } from '../data/nav';
-import { useWestonEdits } from '../edition';
+import { APP_IDENTITY, NAV_GROUPS, isLive, type NavItem, type NavKey } from '../data/nav';
+import { useEdition, useWestonEdits } from '../edition';
 import { usePos } from '../state/PosProvider';
 import { Icon } from './primitives';
 import { Stack } from './Stack';
@@ -39,6 +39,7 @@ const fadeIn = keyframes`from { opacity: 0 } to { opacity: 1 }`;
 export function NavOverlay() {
   const { state, dispatch, toast } = usePos();
   const weston = useWestonEdits();
+  const edition = useEdition();
   const close = () => dispatch({ type: 'setNavOpen', open: false });
 
   useEffect(() => {
@@ -69,6 +70,13 @@ export function NavOverlay() {
         // The tee sheet owns the settings panel, so arrive there first.
         dispatch({ type: 'setView', view: 'tee' });
         return dispatch({ type: 'setTeeSheetSettings', open: true });
+      // V1 → V2's resource sheets. `NavTile` has already refused these outside V1 → V2.
+      case 'courtsheet':
+        dispatch({ type: 'setView', view: 'courts' });
+        return close();
+      case 'baysheet':
+        dispatch({ type: 'setView', view: 'bays' });
+        return close();
       default:
         return;
     }
@@ -151,7 +159,7 @@ export function NavOverlay() {
               }}
             >
               {group.items.map((item) => (
-                <NavTile key={item.key} item={item} onClick={() => go(item.key)} />
+                <NavTile key={item.key} item={item} live={isLive(item, edition)} onClick={() => go(item.key)} />
               ))}
             </Box>
           </Box>
@@ -195,8 +203,7 @@ function HeaderAction({
  * A dimmed tile is `disabled` rather than merely faded, so it is skipped by the keyboard and
  * announced as unavailable instead of looking tappable to everyone except a mouse.
  */
-function NavTile({ item, onClick }: { item: NavItem; onClick: () => void }) {
-  const live = Boolean(item.live);
+function NavTile({ item, live, onClick }: { item: NavItem; live: boolean; onClick: () => void }) {
   return (
     <ButtonBase
       disabled={!live}

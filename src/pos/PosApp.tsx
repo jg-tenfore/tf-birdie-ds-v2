@@ -4,6 +4,8 @@ import { elevation, md3, radius, shell } from '../theme/tokens';
 import { ContextMenus } from './components/ContextMenus';
 import { LeftPanel } from './components/LeftPanel';
 import { NavOverlay } from './components/NavOverlay';
+import { ResourcePanel } from './components/ResourcePanel';
+import { ResourceSheetView } from './components/ResourceSheetView';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
@@ -103,7 +105,10 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // into the tee sheet behind it — so the background is marked `inert`, which takes it out of
   // the tab order, out of the accessibility tree and out of pointer events together.
   const panel = state.reservationPanel;
-  const panelIsModal = Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze';
+  // The court / bay panel always dims the sheet, so it makes the background inert the same way.
+  const panelIsModal =
+    (Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze') ||
+    Boolean(state.resourcePanel);
 
   return (
     <PosShell>
@@ -117,6 +122,9 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
           <Suspense fallback={<Box sx={{ flex: 1, bgcolor: md3.surface }} />}>
             <PosView />
           </Suspense>
+        ) : state.view === 'courts' || state.view === 'bays' ? (
+          // V1 → V2: one scheduler, configured per sheet — see `data/resources.ts`.
+          <ResourceSheetView kind={state.view === 'courts' ? 'court' : 'bay'} />
         ) : (
           <TeeSheetView />
         )}
@@ -124,6 +132,7 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       </Box>
 
       <ReservationPanel />
+      <ResourcePanel />
       {/* The customer record layers over everything, including the reservation. */}
       <CustomerModal />
       {/* Above both: navigating away is the one action that outranks whatever is open. */}

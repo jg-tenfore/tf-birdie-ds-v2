@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ICONS } from '../icons';
-import { NAV_GROUPS, NAV_KEYS, isNavKey } from './nav';
+import type { Edition } from '../edition';
+import { NAV_GROUPS, NAV_KEYS, isLive, isNavKey } from './nav';
 
 /**
  * The navigation's own guards.
@@ -22,15 +23,23 @@ describe('nav data', () => {
     expect(new Set(NAV_KEYS).size).toBe(NAV_KEYS.length);
   });
 
-  it('marks exactly the destinations this prototype can actually open', () => {
+  it('marks exactly the destinations each edition can actually open', () => {
     // Weston asked for unbuilt destinations to be dimmed rather than faked. If a screen gets
-    // built, this list is the deliberate place to say so — and if one is flipped to `live`
-    // without a screen behind it, this fails rather than shipping a tile that does nothing.
-    const live = NAV_GROUPS.flatMap((g) => g.items)
-      .filter((i) => i.live)
-      .map((i) => i.key)
-      .sort();
-    expect(live).toEqual(['customersearch', 'proshop', 'settings', 'teesheet']);
+    // built, this is the deliberate place to say so — and if one is flipped live without a
+    // screen behind it, this fails rather than shipping a tile that does nothing.
+    const liveIn = (e: Edition) =>
+      NAV_GROUPS.flatMap((g) => g.items)
+        .filter((i) => isLive(i, e))
+        .map((i) => i.key)
+        .sort();
+    expect(liveIn('weston')).toEqual(['customersearch', 'proshop', 'settings', 'teesheet']);
+    // V1 → V2 is Weston's four plus whatever has been migrated so far.
+    expect(liveIn('v1v2')).toEqual(['baysheet', 'courtsheet', 'customersearch', 'proshop', 'settings', 'teesheet']);
+  });
+
+  it('never makes a V1 → V2 destination live in Weston Edits', () => {
+    const v1v2Only = NAV_GROUPS.flatMap((g) => g.items).filter((i) => i.live === 'v1v2');
+    for (const i of v1v2Only) expect(isLive(i, 'weston')).toBe(false);
   });
 
   it('keeps the shipping app’s grouping', () => {

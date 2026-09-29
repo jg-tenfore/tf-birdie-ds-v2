@@ -1,0 +1,89 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { SiteLink } from '../../stories/SiteLink';
+import { CoverageTable } from './CoverageTable';
+
+<Meta title="V1 → V2 Migration/Overview" />
+
+# V1 → V2 Migration
+
+The rest of the application, brought over from v1 one destination at a time and rebuilt
+rather than reproduced.
+
+<SiteLink to="v1-v2" tone="filled" size="md">Open the V1 → V2 tablet prototype</SiteLink>
+
+## What this is
+
+The shipping app's navigation (`tf-birdie-ds-v1`, `references/072926/0-sidebarnav/`) has
+nineteen entries: **eighteen destinations** and Log Out, reaching about thirty-four screens.
+Before V1 → V2 began, this design system had rebuilt three of the eighteen — the register, the
+tee sheet and its settings — and parts of three more: Customer Search, Gift Cards and Events.
+The nav already listed all of them; almost everything behind the tiles was missing.
+
+V1 → V2 fills them in. It is a **tablet prototype** of its own, at `/v1-v2/`, alongside Weston
+Edits rather than replacing it.
+
+## The rule: keep the jobs, drop the conventions
+
+The instruction for this migration is to audit what v1 *does* — every function a golf course
+needs at the counter — and **not** to carry over *how* it does it. v1 documented the shipping
+app faithfully, and its own notes are candid about what is wrong with it: a search form whose
+three fields read as AND and behave as OR, a validation rule you only discover by failing to
+save, a spent gift card signalled only by a dimmed row, two different schedulers for booking a
+court and booking a bay.
+
+So every destination here starts from v1's job and v1's warts, and each section opens by saying
+which is which: **what v1 did, what was wrong with it, and what this does instead.**
+
+## How it is built
+
+- **On top of Weston Edits.** V1 → V2 is its own edition, `v1v2`, and it inherits everything
+  Weston's five rounds settled — the 820 reservation panel, the main nav, notes, the rate
+  selector, the customer record. A future Weston round lands once and reaches both prototypes.
+  In code, `useWestonEdits()` is true here, and only what is new is gated on `useV1V2()`.
+- **The nav keeps v1's groups.** Pro Shop, Restaurant, and the unheaded block — all eighteen
+  destinations, in the shipping app's order. What changes is behind each tile.
+- **Built in nav order.** Wave 1 finishes the Pro Shop group, wave 2 is the Restaurant, wave 3
+  is the rest.
+- **Fully working.** Each destination is stateful, deep-linkable and play-tested, to the tee
+  sheet's standard — something to use, not only to look at.
+- **Tiles go live as they land.** A destination is dimmed in the nav until its screen exists,
+  and becomes live by one flag in `pos/data/nav.ts`. The table below reads that same flag.
+
+## Coverage
+
+<CoverageTable />
+
+Two destinations are not tiles. **Log Out** sits in the nav's header, beside Switch user, and
+**PIN sign-in** — the front door it leads to — arrives in wave 3 with the other shift functions.
+
+## Wave 1 · the Pro Shop group
+
+- **Court Sheet** and **Bay Sheet** — one scheduler, configured twice. See sections 3 and 4.
+- **The register's missing functions** — combos, holding a ticket, a cash payout and issuing a
+  gift card. See section 1.
+
+### A decision made along the way
+
+**Courts are paid for, like bays.** v1 never charged for a court: a booking stored a display name
+and nothing else. With one model for both sheets, a court needed a price, and the call was to
+charge it the way a bay and a tee time are charged — **Check in & pay**, to the register. The
+per-court rates are placeholders (tennis $20/hr, pickleball $15, basketball $25, the pool $10)
+and are the first thing to correct against a real club. Bays keep v1's own $45/hr.
+
+### Deep links
+
+Everything hangs off the same dev server with `?edition=v1v2`, and every Weston Edits link
+(**Weston Edits › 19 · Deep Links**) works here too.
+
+| Link | Opens |
+|---|---|
+| `#/courts` | Court Sheet, on the demo day |
+| `#/bays` | Bay Sheet |
+| `#/courts?rb=<booking id>` | A court or bay booking, in its panel. An id that no longer exists shows the sheet with no panel, rather than an empty frame |
+| `#/courts?date=2026-05-23` | Another day — seeded the first time either sheet visits it |
+
+### Worth knowing
+
+**Order Lookup comes in wave 3**, under nav order. Until then, the order number on a paid
+reservation (Weston Edits round 5) opens the paid order in the register rather than in a lookup
+screen, because the lookup screen does not exist yet.

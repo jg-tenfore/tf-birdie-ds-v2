@@ -129,6 +129,10 @@ export function ConfirmDialog({
     } else if (kind === 'clearOrder') {
       dispatch({ type: 'clearOrder' });
       toast('Order cleared');
+    } else if (kind === 'removeResourceBooking' && arg) {
+      // A court or bay booking (V1 → V2). Its line comes off the order with it.
+      dispatch({ type: 'removeResourceBooking', id: arg });
+      toast('Booking cancelled');
     }
 
     dispatch({ type: 'closeModal' });

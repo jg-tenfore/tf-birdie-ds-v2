@@ -165,7 +165,7 @@ function linkGroups(): { group: string; links: Link[] }[] {
       links: [
         { what: 'A settled reservation', hash: `#/tee-sheet?res=${paidId}`, note: `${paidName} — the footer carries its order number` },
         { what: 'Its Financial tab', hash: `#/tee-sheet?res=${paidId}&res-tab=financial`, note: 'the number again, above the balance' },
-        { what: 'The register, arrived from it', hash: `#/pos?from-res=${paidId}`, note: 'with the way back to the reservation' },
+        { what: 'The register, arrived from it', hash: `#/register?from-res=${paidId}`, note: 'with the way back to the reservation' },
       ],
     },
     {

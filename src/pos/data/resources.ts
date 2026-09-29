@@ -124,6 +124,11 @@ export interface ResourceBooking {
   checkedIn: boolean;
   paid: boolean;
   note?: string;
+  /**
+   * Just created by tapping the sheet, and not yet confirmed. Closing the panel on a draft
+   * removes it, so a stray tap on an empty stretch of the sheet does not leave a booking behind.
+   */
+  draft?: boolean;
 }
 
 // ─── Seeding ────────────────────────────────────────────────────────────────
