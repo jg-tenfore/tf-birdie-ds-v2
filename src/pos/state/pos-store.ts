@@ -293,6 +293,33 @@ export interface PosState {
   multiSelectIds: string[];
   multiSelectActive: boolean;
 
+  /**
+   * The full-screen navigation (Weston Edits).
+   *
+   * Weston on the fifth call: "we still need a main nav… I actually don't hate this to be the
+   * main nav. But it can't expand the nav and do the cart." The order rail's hamburger used to
+   * expand the rail, which left one control owning two jobs. It now opens this instead, and the
+   * rail is expanded by tapping the strip itself — see `RailStrip`.
+   */
+  navOpen: boolean;
+  /**
+   * The reservation to offer a way back to, after its order number was tapped.
+   *
+   * Tapping the number loads the paid order into the register, which is what Weston asked for
+   * — but it closes the panel, and without this the way back is a fresh hunt through the tee
+   * sheet for a tee time you were just looking at. Set only on that route, so the register does
+   * not grow a stray back button for orders reached any other way.
+   */
+  returnToBooking: string | null;
+  /**
+   * Tee sheet settings, lifted out of `TeeSheetView`'s local state.
+   *
+   * It only ever had one way in — the toolbar cog — so local state was enough. The nav's
+   * **Settings** tile is a second, and a panel two different controls open cannot own its own
+   * flag.
+   */
+  teeSheetSettingsOpen: boolean;
+
   /** Operator annotations, keyed `YYYY-M-D_minutesFromMidnight`. */
   timeNotes: Record<string, TimeRowNote>;
   timePrices: Record<string, TimeRowPrice>;
@@ -389,6 +416,9 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     sidebarCourse: null,
     multiSelectIds: [],
     multiSelectActive: false,
+    navOpen: false,
+    teeSheetSettingsOpen: false,
+    returnToBooking: null,
     timeNotes: {},
     timePrices: {},
     listFilters: { ...emptyListFilters },
@@ -461,6 +491,10 @@ export type Action =
   | { type: 'focusCourse'; courseId: string }
   | { type: 'openSidebar'; courseId?: string | null }
   | { type: 'closeSidebar' }
+  | { type: 'setNavOpen'; open: boolean }
+  | { type: 'openPaidOrder'; bookingId: string }
+  | { type: 'clearReturnToBooking' }
+  | { type: 'setTeeSheetSettings'; open: boolean }
   // Bookings
   | { type: 'addBookings'; bookings: Booking[] }
   /**
@@ -648,6 +682,12 @@ export function reducer(state: PosState, action: Action): PosState {
         contextMenu: null,
         sidebarOpen: false,
         sidebarCourse: null,
+        // Same reason again: a link with no `nav=`, `sheet-settings=` or `from-res=` means
+        // those are closed. Without the reset the navigation stayed open across every
+        // subsequent link and its flag accumulated in the URL.
+        navOpen: false,
+        teeSheetSettingsOpen: false,
+        returnToBooking: null,
         multiSelectActive: false,
         multiSelectIds: [],
         ...rest,
@@ -874,6 +914,16 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, sidebarOpen: true, sidebarCourse: action.courseId ?? null };
     case 'closeSidebar':
       return { ...state, sidebarOpen: false, sidebarCourse: null };
+    case 'setNavOpen':
+      return { ...state, navOpen: action.open };
+    case 'openPaidOrder':
+      // Same handoff as "Open in register", plus a breadcrumb back to the reservation.
+      return { ...reducer(state, { type: 'loadBooking', bookingId: action.bookingId }), returnToBooking: action.bookingId };
+    case 'clearReturnToBooking':
+      return { ...state, returnToBooking: null };
+    case 'setTeeSheetSettings':
+      // Opening settings from the nav has to close the nav, or the panel opens behind it.
+      return { ...state, teeSheetSettingsOpen: action.open, navOpen: false };
 
     // ─── Bookings ─────────────────────────────────────────────────────────
     case 'addBookings':

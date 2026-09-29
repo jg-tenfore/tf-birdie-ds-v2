@@ -248,6 +248,8 @@ const preview: Preview = {
             '17 · Punch Cards', ['Tablet', 'Mobile'],
             '18 · Rate Catalog',
             '19 · Deep Links', ['Tablet'],
+            '20 · Main Nav', ['Tablet'],
+            '21 · Notes & Order Number', ['Tablet'],
           ],
           '*',
         ],

@@ -65,8 +65,47 @@ export function PlayerRows({ booking: b }: { booking: Booking }) {
 
   const checkedIn = b.playerStates.filter((p) => p.step >= 0 && !p.noShow).length;
 
+  // The note written about the whole party, as opposed to one written about one golfer.
+  const groupNote = (b.groupNote ?? b.note ?? '').trim();
+
   return (
     <Box>
+      {/* ── The group's note ──
+          Weston raised the ambiguity himself: "the group would be — yeah, like it'd be like
+          both of these golfers." A group note rendered on a seat reads as being about that
+          person, so it gets its own banner above every row instead, and only per-golfer notes
+          appear on the rows. */}
+      {groupNote && (
+        <ButtonBase
+          data-group-note
+          aria-label="Group note"
+          onClick={() => dispatch({ type: 'setReservationTab', tab: 'notes' })}
+          sx={{
+            width: '100%',
+            mb: 1.5,
+            p: '9px 12px',
+            gap: 1,
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            textAlign: 'left',
+            borderRadius: `${radius.md}px`,
+            bgcolor: noteColors.yellow.bg,
+            color: noteColors.yellow.text,
+            border: `1px solid ${noteColors.yellow.text}22`,
+          }}
+        >
+          <Icon name="sticky_note_2" size={17} />
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', opacity: 0.8 }}>
+              GROUP NOTE
+            </Typography>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.45 }}>
+              {groupNote}
+            </Typography>
+          </Box>
+        </ButtonBase>
+      )}
+
       {/* ── Party size + group actions ── */}
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
         <SectionLabel color={md3.outline} sx={{ flex: 1 }}>
@@ -285,26 +324,6 @@ export function PlayerRow({
           )}
         </ButtonBase>
 
-        {/* The note alert, not the note. Tapping it goes to where the note is written. */}
-        {note && (
-          <Tooltip title={note}>
-            <ButtonBase
-              aria-label={`Note about ${name}`}
-              onClick={() => dispatch({ type: 'setReservationTab', tab: 'notes' })}
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                color: noteColors.yellow.text,
-                bgcolor: noteColors.yellow.bg,
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="sticky_note_2" size={17} />
-            </ButtonBase>
-          </Tooltip>
-        )}
-
         {editable && (
           <Tooltip title={customer ? 'Put a different golfer in this position' : 'Find this golfer in the database'}>
             <ButtonBase
@@ -386,6 +405,38 @@ export function PlayerRow({
           </Tooltip>
         )}
       </Stack>
+
+      {/* ── This golfer's note ──
+          It used to be a yellow button with the text in a `Tooltip`. Weston: "this hover state
+          wouldn't really work for touchscreen, but I do like the hover. If you just click on
+          it, it takes you to the note." On a tablet the tooltip never fires, so the row said a
+          note existed and gave no way to read it. Now the note itself is on the row — one
+          truncated line, tapping through to the Notes tab for the rest. */}
+      {note && (
+        <ButtonBase
+          data-player-note={i}
+          aria-label={`Note about ${name}`}
+          onClick={() => dispatch({ type: 'setReservationTab', tab: 'notes' })}
+          sx={{
+            mt: 0.75,
+            width: '100%',
+            gap: 0.625,
+            justifyContent: 'flex-start',
+            color: noteColors.yellow.text,
+            fontSize: 11.5,
+            fontWeight: 600,
+            minWidth: 0,
+          }}
+        >
+          <Icon name="sticky_note_2" size={14} />
+          <Box
+            component="span"
+            sx={{ flex: 1, minWidth: 0, textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            {note}
+          </Box>
+        </ButtonBase>
+      )}
 
       {/* ── What they play ── */}
       {!p.noShow && (
