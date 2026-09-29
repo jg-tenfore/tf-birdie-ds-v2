@@ -264,7 +264,10 @@ export function orderTotals(cart: CartItem[]): OrderTotals {
   const golfTax = golfTaxed ? cents(cart.filter(isTaxRow).reduce((s, i) => s + i.price, 0)) : 0;
   // The golf a tax line already covers; sales tax is on the rest.
   const golfGoods = golfTaxed ? payableTotal(lines.filter((i) => i.isCheckIn)) : 0;
-  const sales = salesTax(Math.max(0, goods - golfGoods));
+  // A gift card is stored value, not a sale: tax is charged when it is spent, so taxing it
+  // here would tax the same dollars twice (V1 → V2 — v1's own model marked it `taxable: false`).
+  const giftGoods = payableTotal(lines.filter((i) => i.giftCard));
+  const sales = salesTax(Math.max(0, goods - golfGoods - giftGoods));
   const tax = exempt ? 0 : cents(golfTax + sales);
 
   return {

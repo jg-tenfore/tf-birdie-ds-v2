@@ -3,6 +3,8 @@ import { BookingDetail } from './BookingDetail';
 import { NewBooking, ReserveConfirm, TeePicker } from './Booking';
 import { Checkout, PaymentReader } from './Checkout';
 import { ConfirmDialog, OpenItem, TeeSheetSearch } from './Misc';
+import { RegisterDialog } from './RegisterDialogs';
+import { isRegisterExtrasModal } from '../state/register-extras';
 import {
   ActionPanel,
   GolferSearch,
@@ -98,6 +100,7 @@ export function ModalHost() {
         />
       );
     default:
-      return null;
+      // Hold, held orders, cash payout, gift card (V1 → V2).
+      return isRegisterExtrasModal(m) ? <RegisterDialog modal={m} /> : null;
   }
 }

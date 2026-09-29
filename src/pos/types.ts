@@ -370,6 +370,59 @@ export interface CartItem {
    * resource booking, and read by `recordPayment` to mark that booking paid.
    */
   resourceBookingId?: string;
+  /** A combo rung as one line (V1 → V2). See `CartCombo`. */
+  combo?: CartCombo;
+  /** A gift card to be issued when this order is paid (V1 → V2). See `CartGiftCard`. */
+  giftCard?: CartGiftCard;
+}
+
+// ─── Register extras (V1 → V2) ──────────────────────────────────────────────
+// Combos and gift cards on the order. The rest of the register's V1 → V2 state (held orders,
+// drawer events, issued cards) lives in `state/register-extras.ts`.
+
+/** One component of a combo, as the line carries it: a catalog item at its list price. */
+export interface CartComboComponent {
+  name: string;
+  qty: number;
+  /** List price of one, from the catalog — what the component would cost on its own. */
+  p: number;
+}
+
+/**
+ * What a combo line carries besides its price.
+ *
+ * The components ride on the line rather than as lines of their own. v1 rang each component as
+ * its own `[c]` line, so a combo could be half-removed or one piece re-priced, and the order no
+ * longer said what had been sold. Here the line's `price` is the combo price, full stop; the
+ * components are a description of it.
+ */
+export interface CartCombo {
+  /** `Combo.id` in `data/combos.ts`. */
+  id: string;
+  components: CartComboComponent[];
+  /** Sum of the components at list price, for one combo — the saving is `listPrice − price`. */
+  listPrice: number;
+}
+
+/** Who a gift card is for: a customer on the roster, or a name typed at the counter. */
+export interface GiftCardRecipient {
+  name: string;
+  /** Set when picked from the roster. The card is issued onto this record when the order is paid. */
+  customerId?: string;
+  email?: string;
+}
+
+/**
+ * A gift card waiting on the order. Nothing exists yet — the card is created by `recordPayment`,
+ * and a line removed (or an order never paid) issues nothing.
+ */
+export interface CartGiftCard {
+  /** Stable for the life of the line, so paying cannot issue the same card twice. */
+  id: string;
+  amount: number;
+  recipient: GiftCardRecipient;
+  from?: string;
+  message?: string;
 }
 
 // ─── Operator annotations ───────────────────────────────────────────────────

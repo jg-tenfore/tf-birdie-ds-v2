@@ -9,6 +9,7 @@ import { DEFAULT_WESTON_OPTIONS, PANEL_WIDTHS, RESERVATION_TABS, emptyListFilter
 import type { PanelWidth, ReservationTab, WestonOptions } from './pos-store';
 import { roster } from '../data/roster';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
+import { isRegisterExtrasModal } from './register-extras';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
@@ -160,6 +161,11 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
   // Cart signout is a momentary decision about a physical key, not a place. A link that
   // reopened it would restore a picker over a fleet whose availability has since moved on.
   if (m.kind === 'cartSignout') return false;
+  // The register's V1 → V2 dialogs are not places either. Held orders and a half-typed gift
+  // card are session state that a fresh page load does not have, and a payout is an action
+  // taken once — a link that reopened one would be inviting a second.
+  if (isRegisterExtrasModal(m)) return false;
+  if (m.kind === 'golferSearch' && typeof m.target === 'object' && 'giftCard' in m.target) return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);
   switch (m.kind) {
@@ -180,7 +186,7 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
     case 'golferSearch':
       q.set(
         'target',
-        m.target === 'primary' ? 'primary' : `${m.target.itemIdx}.${m.target.playerIdx}`,
+        m.target === 'primary' ? 'primary' : 'itemIdx' in m.target ? `${m.target.itemIdx}.${m.target.playerIdx}` : 'primary',
       );
       break;
     case 'guestDetail':

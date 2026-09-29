@@ -7,6 +7,16 @@ import { ALL_GOLFERS } from '../data/golfers';
 import { seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
 import { resourceCartLine } from '../logic/resource-booking';
 import type { OrderScenario } from './scenarios';
+import {
+  issueGiftCardsOnPayment,
+  isRegisterExtrasAction,
+  registerExtrasDefaults,
+  registerExtrasReducer,
+  type GiftCardRecipientTarget,
+  type RegisterExtrasAction,
+  type RegisterExtrasModal,
+  type RegisterExtrasState,
+} from './register-extras';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
 import * as cartLogic from '../logic/cart';
@@ -56,7 +66,7 @@ export type Modal =
   | { kind: 'teePicker'; is18H?: boolean; pendingRate?: string }
   | { kind: 'reserveConfirm'; payMode: 'now' | 'later' }
   | { kind: 'memberLookup'; itemName: string; requiredType: string }
-  | { kind: 'golferSearch'; target: 'primary' | { itemIdx: number; playerIdx: number } }
+  | { kind: 'golferSearch'; target: 'primary' | { itemIdx: number; playerIdx: number } | GiftCardRecipientTarget }
   | { kind: 'guestDetail'; guestIndex: number; returnTo?: Modal }
   | { kind: 'newCustomer' }
   | { kind: 'walkIn' }
@@ -86,7 +96,9 @@ export type Modal =
   | { kind: 'confirm'; title: string; body: string; confirmLabel: string; onConfirm: string }
   | { kind: 'teeSheetSearch' }
   /** Handing a cart key to one player (Weston Edits, round 3). */
-  | { kind: 'cartSignout'; bookingId: string; seat: number };
+  | { kind: 'cartSignout'; bookingId: string; seat: number }
+  /** Hold, held orders, cash payout, gift card (V1 → V2) — `state/register-extras.ts`. */
+  | RegisterExtrasModal;
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -226,7 +238,8 @@ export type ContextMenuState =
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
-export interface PosState {
+/** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
+export interface PosState extends RegisterExtrasState {
   view: MainView;
 
   /**
@@ -446,6 +459,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     contextMenu: null,
     toast: null,
     lastPayment: null,
+    ...registerExtrasDefaults(),
     ...overrides,
   };
 }
@@ -557,7 +571,9 @@ export type Action =
   | { type: 'closeContextMenu' }
   | { type: 'toast'; message: string | null }
   // Deep linking: merge a state patch parsed from the URL (initial load, or back/forward).
-  | { type: 'applyUrl'; patch: Partial<PosState> };
+  | { type: 'applyUrl'; patch: Partial<PosState> }
+  // Register extras (V1 → V2): combos, hold, cash payout, gift cards — `state/register-extras.ts`.
+  | RegisterExtrasAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -911,6 +927,8 @@ export function reducer(state: PosState, action: Action): PosState {
           amount: action.amount,
           time: demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
         },
+        // Gift cards on the order exist from this moment, not before (V1 → V2).
+        ...issueGiftCardsOnPayment(state),
       };
 
     // ─── Tee sheet ────────────────────────────────────────────────────────
@@ -1114,7 +1132,9 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, listFilters: { ...emptyListFilters } };
 
     default:
-      return state;
+      return isRegisterExtrasAction(action)
+        ? registerExtrasReducer(state, action, (s) => reducer(s, { type: 'clearOrder' }))
+        : state;
   }
 }
 
