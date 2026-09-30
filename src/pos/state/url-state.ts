@@ -9,6 +9,7 @@ import { DEFAULT_WESTON_OPTIONS, PANEL_WIDTHS, RESERVATION_TABS, emptyListFilter
 import type { PanelWidth, ReservationTab, WestonOptions } from './pos-store';
 import { roster } from '../data/roster';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
+import { isRegisterExtrasModal } from './register-extras';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
@@ -160,6 +161,11 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
   // Cart signout is a momentary decision about a physical key, not a place. A link that
   // reopened it would restore a picker over a fleet whose availability has since moved on.
   if (m.kind === 'cartSignout') return false;
+  // The register's V1 → V2 dialogs are not places either. Held orders and a half-typed gift
+  // card are session state that a fresh page load does not have, and a payout is an action
+  // taken once — a link that reopened one would be inviting a second.
+  if (isRegisterExtrasModal(m)) return false;
+  if (m.kind === 'golferSearch' && typeof m.target === 'object' && 'giftCard' in m.target) return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);
   switch (m.kind) {
@@ -180,7 +186,15 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
     case 'golferSearch':
       q.set(
         'target',
-        m.target === 'primary' ? 'primary' : `${m.target.itemIdx}.${m.target.playerIdx}`,
+        m.target === 'primary'
+          ? 'primary'
+          : 'resourceBookingId' in m.target
+            ? `rb.${m.target.resourceBookingId}`
+            : 'itemIdx' in m.target
+              ? `${m.target.itemIdx}.${m.target.playerIdx}`
+              // A gift card's picker never gets here — it is refused above — so this is only
+              // the type's last case, not a place a link can land.
+              : 'primary',
       );
       break;
     case 'guestDetail':
@@ -260,6 +274,8 @@ function decodeModal(q: URLSearchParams): Modal | null {
     case 'golferSearch': {
       const target = q.get('target') ?? 'primary';
       if (target === 'primary') return { kind, target: 'primary' };
+      // A court or bay booking — `rb.` then the id, which itself contains dots-free dashes.
+      if (target.startsWith('rb.')) return { kind, target: { resourceBookingId: target.slice(3) } };
       const [i, p] = target.split('.').map(Number);
       return Number.isFinite(i) && Number.isFinite(p)
         ? { kind, target: { itemIdx: i, playerIdx: p } }
@@ -326,14 +342,21 @@ function decodeModal(q: URLSearchParams): Modal | null {
 export function stateToHash(state: PosState): string {
   const q = new URLSearchParams();
 
-  const path =
-    state.view === 'tee'
-      ? state.teeSheetMode === 'list'
-        ? '/tee-sheet/list'
-        : '/tee-sheet'
-      : state.currentCategory
-        ? `/register/${encodeURIComponent(state.currentCategory)}`
-        : '/register';
+  const path = (() => {
+    switch (state.view) {
+      // V1 → V2's resource sheets.
+      case 'courts':
+        return '/courts';
+      case 'bays':
+        return '/bays';
+      case 'tee':
+        return state.teeSheetMode === 'list' ? '/tee-sheet/list' : '/tee-sheet';
+      default:
+        return state.currentCategory
+          ? `/register/${encodeURIComponent(state.currentCategory)}`
+          : '/register';
+    }
+  })();
 
   // Which club. Omitted when it matches the build's own venue, so each deployed
   // prototype's links stay clean and only a deliberate cross-venue link carries it.
@@ -357,6 +380,8 @@ export function stateToHash(state: PosState): string {
   if (state.navOpen) q.set('nav', '1');
   if (state.teeSheetSettingsOpen) q.set('sheet-settings', '1');
   if (state.returnToBooking) q.set('from-res', state.returnToBooking);
+  // A court or bay booking's panel (V1 → V2).
+  if (state.resourcePanel) q.set('rb', state.resourcePanel.bookingId);
   if (state.multiSelectActive) q.set('select', state.multiSelectIds.join(',') || 'on');
   if (state.settings.compactMode) q.set('compact', '1');
   if (state.settings.hideEmpty) q.set('hide-empty', '1');
@@ -463,6 +488,10 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
     teeSheetMode = segments[1] === 'list' ? 'list' : 'cal';
     // The tee sheet defaults to full width; a link can override with ?panel=open.
     patch.leftPanelCollapsed = q.get('panel') !== 'open';
+  } else if (screen === 'courts' || screen === 'bays') {
+    // V1 → V2's resource sheets. Full width, like the tee sheet.
+    view = screen;
+    patch.leftPanelCollapsed = q.get('panel') !== 'open';
   } else if (screen === 'register' || !screen) {
     view = 'pos';
     if (segments[1]) patch.currentCategory = decodeURIComponent(segments[1]);
@@ -542,6 +571,11 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   // reservation the operator never came from.
   const fromRes = q.get('from-res');
   if (fromRes && bookings.some((b) => b.id === fromRes)) patch.returnToBooking = fromRes;
+  // The id is resolved when the sheet seeds its day, so it is taken on trust here; the panel
+  // renders nothing for an id that never resolves, which is the visible failure a stale link
+  // should have.
+  const rb = q.get('rb');
+  if (rb) patch.resourcePanel = { bookingId: rb };
 
   const select = q.get('select');
   if (select) {

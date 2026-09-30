@@ -14,6 +14,7 @@
  *   /mobile-9/       the phone app      — the single nine
  *   /weston-edits/        Weston's edits — the 18-hole terminal, golf-first reservation flow
  *   /weston-edits-mobile/ Weston's edits — the same on the phone
+ *   /v1-v2/          V1 → V2           — Weston's edits plus the rest of v1, migrated. Tablet only
  *   /reference/      the original HTML  — read-only, what the port is measured against
  *
  * The three prototypes are the *same build* run three times with a different `VITE_VENUE`.
@@ -71,6 +72,9 @@ const PROTOTYPES = [
   { dir: 'prototype-9', venue: 'nine' },
   // Weston's edits: the 18-hole club with the golf-first reservation flow switched on.
   { dir: 'weston-edits', venue: 'eighteen', edition: 'weston' },
+  // V1 → V2: Weston's edits plus every destination migrated from v1. Tablet only for now, so
+  // it has no counterpart in MOBILE_PROTOTYPES below.
+  { dir: 'v1-v2', venue: 'eighteen', edition: 'v1v2' },
 ];
 
 for (const { dir, venue, edition = 'base' } of PROTOTYPES) {

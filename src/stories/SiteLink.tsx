@@ -68,6 +68,12 @@ export const SURFACES = {
     label: 'Weston Edits · Mobile',
     detail: 'The same edits on the phone, at the 18-hole club.',
   },
+  'v1-v2': {
+    dir: 'v1-v2',
+    venue: 'eighteen',
+    label: 'V1 → V2 · Tablet',
+    detail: 'Weston’s edits plus the rest of the application, migrated from v1 a destination at a time.',
+  },
   reference: {
     dir: 'reference',
     venue: null,
@@ -111,6 +117,10 @@ function surfaceUrl(id: SurfaceId, path = ''): string {
     }
     if (id === 'weston-edits-mobile') {
       return `${DEV_PROTOTYPE_ORIGIN}/mobile/?edition=weston&venue=eighteen${path}`;
+    }
+    // V1 → V2: the same dev server with `?edition=v1v2`.
+    if (id === 'v1-v2') {
+      return `${DEV_PROTOTYPE_ORIGIN}/?edition=v1v2${path || '#/tee-sheet'}${path.includes('?') ? '&' : '?'}venue=eighteen`;
     }
 
     // The mobile prototypes are the same dev server on its own path; `?venue=` picks the club.

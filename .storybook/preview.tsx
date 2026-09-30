@@ -251,6 +251,16 @@ const preview: Preview = {
             '20 · Main Nav', ['Tablet'],
             '21 · Notes & Order Number', ['Tablet'],
           ],
+          // V1 → V2: numbered by the shipping app's nav order, which is also the build order.
+          // Sections arrive as their wave lands, so gaps in the numbering are destinations
+          // still to come — 2 · Tee Sheet is Weston Edits' own and lives there.
+          'V1 → V2 Migration',
+          [
+            'Overview',
+            '1 · Pro Shop', ['Tablet'],
+            '3 · Court Sheet', ['Tablet'],
+            '4 · Bay Sheet', ['Tablet'],
+          ],
           '*',
         ],
       },

@@ -297,7 +297,8 @@ function TeeSheetToolbar() {
 }
 
 /** Pill button used across the tee-sheet toolbar; icon-only when given no label. */
-function ToolbarButton({
+/** A toolbar pill. Exported so the court and bay sheets share the tee sheet's chrome. */
+export function ToolbarButton({
   label,
   icon,
   title,
