@@ -238,7 +238,8 @@ const GROUPS: Array<{
   title: string;
   spec: string;
   body: string;
-  links: Array<{ to: SurfaceId; label: string }>;
+  /** `path` opens the prototype somewhere other than its landing screen, e.g. `#/register`. */
+  links: Array<{ to: SurfaceId; label: string; path?: string }>;
 }> = [
   {
     emoji: '🖥️',
@@ -271,6 +272,13 @@ const GROUPS: Array<{
       { to: 'weston-edits', label: 'Tablet' },
       { to: 'weston-edits-mobile', label: 'Mobile' },
     ],
+  },
+  {
+    emoji: '🔁',
+    title: 'V1 → V2',
+    spec: '18-hole club · tablet',
+    body: 'Weston Edits plus every other destination from v1: courts and bays, the restaurant, order lookup and refunds, gift cards, events, inventory, shift and PIN sign-in.',
+    links: [{ to: 'v1-v2', label: 'Tablet', path: '#/register' }],
   },
   {
     emoji: '📄',
@@ -318,7 +326,14 @@ export function PrototypeLaunchpad() {
           <div style={{ fontSize: 13, lineHeight: 1.5, color: md3.onSurfaceVariant, flex: 1 }}>{g.body}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
             {g.links.map((l, i) => (
-              <SiteLink key={l.to} to={l.to} size="md" tone={i === 0 && g.links.length > 1 ? 'filled' : g.links.length === 1 ? 'outlined' : 'tonal'}>
+              <SiteLink
+                key={l.to}
+                to={l.to}
+                path={l.path}
+                size="md"
+                // A prototype's first link is the filled one; only the read-only original is outlined.
+                tone={l.to === 'reference' ? 'outlined' : i === 0 ? 'filled' : 'tonal'}
+              >
                 <span style={{ flex: 1 }}>{l.label}</span>
               </SiteLink>
             ))}
