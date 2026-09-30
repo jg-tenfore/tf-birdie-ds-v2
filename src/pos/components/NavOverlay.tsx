@@ -20,16 +20,16 @@ import { Stack } from './Stack';
  * the rail is expanded by tapping the strip. Neither gesture can be mistaken for the other.
  *
  * The layout follows the reference Justin supplied — sectioned tiles on a light canvas,
- * facility top left, account actions top right — rather than v1's vertical list. Nineteen
+ * facility top left, account actions top right — rather than v1's vertical list. Eighteen
  * destinations in a list is a scroll; in a four-column grid it is one screen, and a counter
  * hunting for "Table Chart" reads it at a glance.
  *
  * ## Why most of it is dimmed
  *
- * Four destinations exist in this prototype. The other fourteen are dimmed and unclickable,
- * which Weston chose over placeholder screens: a nav that opens fourteen "not built yet" pages
- * teaches people to distrust it. `live` in `data/nav.ts` is the only thing that decides this,
- * so a destination becomes real by being wired, not by being remembered.
+ * Weston Edits has four of the eighteen destinations; V1 → V2 has more as each wave lands. The
+ * rest are dimmed and unclickable, which Weston chose over placeholder screens: a nav that opens
+ * a dozen "not built yet" pages teaches people to distrust it. `isLive` in `data/nav.ts` decides
+ * it per edition, so a destination becomes real by being wired, not by being remembered.
  *
  * Built like `TeeSheetSidebar`: a sibling positioned against `PosShell`, not an MUI `Modal`.
  * A portal would escape the terminal frame and put the app inside an `aria-hidden` subtree.
