@@ -10,6 +10,7 @@ import type { PanelWidth, ReservationTab, WestonOptions } from './pos-store';
 import { roster } from '../data/roster';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
 import { isRegisterExtrasModal } from './register-extras';
+import { isRestaurantModal } from './restaurant';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
@@ -165,6 +166,9 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
   // card are session state that a fresh page load does not have, and a payout is an action
   // taken once — a link that reopened one would be inviting a second.
   if (isRegisterExtrasModal(m)) return false;
+  // The restaurant's dialogs likewise: a half-chosen set of modifiers or a tip being typed is not
+  // a place. What they open over — the tab, the room, the day — is linkable instead.
+  if (isRestaurantModal(m)) return false;
   if (m.kind === 'golferSearch' && typeof m.target === 'object' && 'giftCard' in m.target) return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);
@@ -339,6 +343,20 @@ function decodeModal(q: URLSearchParams): Modal | null {
  * Only non-default values are emitted, so the common case stays short and two states that
  * look the same produce the same link.
  */
+/** The restaurant's views and their paths (V1 → V2, Wave 2). */
+const RESTAURANT_PATHS = {
+  quickorder: 'quick-order',
+  tabs: 'tabs',
+  tables: 'tables',
+  reservations: 'reservations',
+  orderstips: 'orders-tips',
+  tablechart: 'table-chart',
+} as const satisfies Partial<Record<MainView, string>>;
+
+const RESTAURANT_SCREENS: Record<string, MainView> = Object.fromEntries(
+  Object.entries(RESTAURANT_PATHS).map(([view, path]) => [path, view as MainView]),
+);
+
 export function stateToHash(state: PosState): string {
   const q = new URLSearchParams();
 
@@ -349,6 +367,14 @@ export function stateToHash(state: PosState): string {
         return '/courts';
       case 'bays':
         return '/bays';
+      // V1 → V2, Wave 2: the restaurant.
+      case 'quickorder':
+      case 'tabs':
+      case 'tables':
+      case 'reservations':
+      case 'orderstips':
+      case 'tablechart':
+        return `/${RESTAURANT_PATHS[state.view]}`;
       case 'tee':
         return state.teeSheetMode === 'list' ? '/tee-sheet/list' : '/tee-sheet';
       default:
@@ -382,6 +408,9 @@ export function stateToHash(state: PosState): string {
   if (state.returnToBooking) q.set('from-res', state.returnToBooking);
   // A court or bay booking's panel (V1 → V2).
   if (state.resourcePanel) q.set('rb', state.resourcePanel.bookingId);
+  // The restaurant (V1 → V2, Wave 2): the tab open in the editor, and which room of the floor.
+  if (state.activeTabId) q.set('tab', state.activeTabId);
+  if (state.floorRoomId !== state.floor[0]?.id) q.set('room', state.floorRoomId);
   if (state.multiSelectActive) q.set('select', state.multiSelectIds.join(',') || 'on');
   if (state.settings.compactMode) q.set('compact', '1');
   if (state.settings.hideEmpty) q.set('hide-empty', '1');
@@ -488,6 +517,11 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
     teeSheetMode = segments[1] === 'list' ? 'list' : 'cal';
     // The tee sheet defaults to full width; a link can override with ?panel=open.
     patch.leftPanelCollapsed = q.get('panel') !== 'open';
+  } else if (screen && RESTAURANT_SCREENS[screen]) {
+    // V1 → V2, Wave 2: the restaurant. The rail is out, as on the tee sheet, except on Quick
+    // Order — the counter sells onto the register's own order, so the order has to be visible.
+    view = RESTAURANT_SCREENS[screen];
+    patch.leftPanelCollapsed = view === 'quickorder' ? q.get('panel') === 'collapsed' : q.get('panel') !== 'open';
   } else if (screen === 'courts' || screen === 'bays') {
     // V1 → V2's resource sheets. Full width, like the tee sheet.
     view = screen;
@@ -576,6 +610,11 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   // should have.
   const rb = q.get('rb');
   if (rb) patch.resourcePanel = { bookingId: rb };
+  // Taken on trust like `rb`: a tab or room that does not exist renders nothing selected.
+  const tab = q.get('tab');
+  if (tab) patch.activeTabId = tab;
+  const room = q.get('room');
+  if (room) patch.floorRoomId = room;
 
   const select = q.get('select');
   if (select) {

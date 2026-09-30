@@ -251,9 +251,18 @@ export const reservationSettled = (b: Booking): boolean =>
  */
 export function orderNumber(b: Booking): string | null {
   if (!b.playerStates.some((p) => p.paid)) return null;
+  return orderNumberFromId(b.id);
+}
+
+/**
+ * The number itself, from an id. Split out so the payment ledger (V1 → V2) can stamp a tee-time
+ * order with the same number its reservation shows, at the moment of payment — before the seats
+ * are marked paid, when `orderNumber` would still say there is no order.
+ */
+export function orderNumberFromId(id: string): string {
   let h = 0x811c9dc5;
-  for (let i = 0; i < b.id.length; i++) {
-    h ^= b.id.charCodeAt(i);
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
   const n = (h >>> 0) % 90000;

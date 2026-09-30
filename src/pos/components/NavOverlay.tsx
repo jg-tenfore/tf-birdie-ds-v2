@@ -77,6 +77,17 @@ export function NavOverlay() {
       case 'baysheet':
         dispatch({ type: 'setView', view: 'bays' });
         return close();
+      // V1 → V2, Wave 2: the restaurant. The rail stays out except at the counter, where the
+      // order being rung up is the thing to watch.
+      case 'quickorder':
+      case 'tabs':
+      case 'tables':
+      case 'reservations':
+      case 'orderstips':
+      case 'tablechart':
+        dispatch({ type: 'setView', view: key });
+        dispatch({ type: 'toggleLeftPanel', collapsed: key !== 'quickorder' });
+        return close();
       default:
         return;
     }

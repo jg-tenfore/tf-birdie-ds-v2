@@ -1,4 +1,5 @@
 import type { MemberTypeKey, NoteColorKey } from '../theme/tokens';
+import type { AppliedModifier } from './data/menu';
 
 /**
  * Domain types for the Birdie POS.
@@ -372,6 +373,12 @@ export interface CartItem {
   resourceBookingId?: string;
   /** A combo rung as one line (V1 → V2). See `CartCombo`. */
   combo?: CartCombo;
+  /**
+   * A dish off a restaurant menu (V1 → V2, Wave 2). See `CartDish`. A tab's lines and the
+   * register's are the same type, so paying a tab loads its lines as they are — nothing is
+   * translated, and nothing can be lost in a translation.
+   */
+  dish?: CartDish;
   /** A gift card to be issued when this order is paid (V1 → V2). See `CartGiftCard`. */
   giftCard?: CartGiftCard;
 }
@@ -451,6 +458,47 @@ export interface TimeRowPrice {
  * Which screen fills the terminal. `courts` and `bays` are V1 → V2's resource sheets — the same
  * scheduler configured twice, see `data/resources.ts`.
  */
-export type MainView = 'pos' | 'tee' | 'courts' | 'bays';
+export type MainView =
+  | 'pos'
+  | 'tee'
+  | 'courts'
+  | 'bays'
+  // The restaurant (V1 → V2, Wave 2).
+  | 'quickorder'
+  | 'tabs'
+  | 'tables'
+  | 'reservations'
+  | 'orderstips'
+  | 'tablechart';
 export type TeeSheetViewMode = 'cal' | 'list';
 export type FlowMode = '' | 'walkin' | 'reserve';
+
+// ─── Restaurant lines (V1 → V2, Wave 2) ─────────────────────────────────────
+
+/**
+ * What makes a cart line a dish: the menu item it came from, what was done to it, whose it is,
+ * and whether the kitchen has it.
+ *
+ * `price` on the line is the unit price *with* modifiers, so the register's totals — `price × qty`
+ * for any plain line — need no special case for food.
+ */
+export interface CartDish {
+  /** Stable per line, so the kitchen, a void and a seat move all mean the same plate. */
+  lineId: string;
+  menuItemId: string;
+  /** Before modifiers. */
+  basePrice: number;
+  modifiers: AppliedModifier[];
+  /** 1-based seat on a tab. Absent means shared, or a counter order with no seats. */
+  seat?: number;
+  note?: string;
+  /**
+   * When it went to the kitchen (`h:mm AM`), or absent while still unsent. A sent line is locked:
+   * the cook is already making it, so it changes only by being voided and rung again.
+   */
+  sentAt?: string;
+  ticketId?: string;
+  /** Voided after sending. It stays on the ticket — the kitchen must see it cancelled — at $0. */
+  voided?: boolean;
+}
+

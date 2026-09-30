@@ -126,6 +126,36 @@ import PauseCircle from '@mui/icons-material/PauseCircle';
 import PlayCircle from '@mui/icons-material/PlayCircle';
 import Redeem from '@mui/icons-material/Redeem';
 import Savings from '@mui/icons-material/Savings';
+// ── The restaurant (V1 → V2, Wave 2) — registered up front so its screens never share this file ──
+import RestaurantMenu from '@mui/icons-material/RestaurantMenu';
+import TableBar from '@mui/icons-material/TableBar';
+import TableRestaurant from '@mui/icons-material/TableRestaurant';
+import EventSeat from '@mui/icons-material/EventSeat';
+import RoomService from '@mui/icons-material/RoomService';
+import Send from '@mui/icons-material/Send';
+import LocalDining from '@mui/icons-material/LocalDining';
+import Liquor from '@mui/icons-material/Liquor';
+import Undo from '@mui/icons-material/Undo';
+import Redo from '@mui/icons-material/Redo';
+import RotateRight from '@mui/icons-material/RotateRight';
+import RotateLeft from '@mui/icons-material/RotateLeft';
+import CropSquare from '@mui/icons-material/CropSquare';
+import Rectangle from '@mui/icons-material/Rectangle';
+import TextFields from '@mui/icons-material/TextFields';
+import HorizontalRule from '@mui/icons-material/HorizontalRule';
+import GridOn from '@mui/icons-material/GridOn';
+import People from '@mui/icons-material/People';
+import DragIndicator from '@mui/icons-material/DragIndicator';
+import OpenWith from '@mui/icons-material/OpenWith';
+import ZoomIn from '@mui/icons-material/ZoomIn';
+import ZoomOut from '@mui/icons-material/ZoomOut';
+import Save from '@mui/icons-material/Save';
+import Layers from '@mui/icons-material/Layers';
+import PanTool from '@mui/icons-material/PanTool';
+import WarningAmber from '@mui/icons-material/WarningAmber';
+import NotificationsActive from '@mui/icons-material/NotificationsActive';
+import Event from '@mui/icons-material/Event';
+import NoMeals from '@mui/icons-material/NoMeals';
 
 /**
  * Material Symbols name → MUI icon component.
@@ -273,6 +303,36 @@ export const ICONS: Record<string, SvgIconComponent> = {
   play_circle: PlayCircle,
   redeem: Redeem,
   savings: Savings,
+  // The restaurant (V1 → V2, Wave 2).
+  restaurant_menu: RestaurantMenu,
+  table_bar: TableBar,
+  table_restaurant: TableRestaurant,
+  event_seat: EventSeat,
+  room_service: RoomService,
+  send: Send,
+  local_dining: LocalDining,
+  liquor: Liquor,
+  undo: Undo,
+  redo: Redo,
+  rotate_right: RotateRight,
+  rotate_left: RotateLeft,
+  crop_square: CropSquare,
+  rectangle: Rectangle,
+  text_fields: TextFields,
+  horizontal_rule: HorizontalRule,
+  grid_on: GridOn,
+  people: People,
+  drag_indicator: DragIndicator,
+  open_with: OpenWith,
+  zoom_in: ZoomIn,
+  zoom_out: ZoomOut,
+  save: Save,
+  layers: Layers,
+  pan_tool: PanTool,
+  warning_amber: WarningAmber,
+  notifications_active: NotificationsActive,
+  event: Event,
+  no_meals: NoMeals,
 };
 
 /**

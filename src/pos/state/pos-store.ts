@@ -6,6 +6,7 @@ import { DEMO_TODAY, demoNow } from '../data/bookings';
 import { ALL_GOLFERS } from '../data/golfers';
 import { seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
 import { resourceCartLine } from '../logic/resource-booking';
+import { orderNumberFromId } from '../logic/reservation';
 import type { OrderScenario } from './scenarios';
 import {
   issueGiftCardsOnPayment,
@@ -17,6 +18,15 @@ import {
   type RegisterExtrasModal,
   type RegisterExtrasState,
 } from './register-extras';
+import {
+  isRestaurantAction,
+  recordRestaurantPayment,
+  restaurantDefaults,
+  restaurantReducer,
+  type RestaurantAction,
+  type RestaurantModal,
+  type RestaurantState,
+} from './restaurant';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
 import * as cartLogic from '../logic/cart';
@@ -109,7 +119,9 @@ export type Modal =
   /** Handing a cart key to one player (Weston Edits, round 3). */
   | { kind: 'cartSignout'; bookingId: string; seat: number }
   /** Hold, held orders, cash payout, gift card (V1 → V2) — `state/register-extras.ts`. */
-  | RegisterExtrasModal;
+  | RegisterExtrasModal
+  /** The restaurant's dialogs (V1 → V2, Wave 2) — `state/restaurant.ts`. */
+  | RestaurantModal;
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -250,7 +262,7 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState {
+export interface PosState extends RegisterExtrasState, RestaurantState {
   view: MainView;
 
   /**
@@ -471,6 +483,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     toast: null,
     lastPayment: null,
     ...registerExtrasDefaults(),
+    ...restaurantDefaults(),
     ...overrides,
   };
 }
@@ -518,7 +531,8 @@ export type Action =
   | { type: 'removeAdditionalGolfer'; index: number }
   | { type: 'setBookingGolfer'; golfer: Golfer | null }
   | { type: 'addGolfer'; golfer: Golfer }
-  | { type: 'recordPayment'; method: string; amount: number }
+  /** `amount` includes `tip`; the tip is kept apart so Orders & Tips can adjust it afterwards. */
+  | { type: 'recordPayment'; method: string; amount: number; tip?: number }
   // Tee sheet
   | { type: 'setDate'; date: Date }
   | { type: 'shiftDate'; days: number }
@@ -584,10 +598,22 @@ export type Action =
   // Deep linking: merge a state patch parsed from the URL (initial load, or back/forward).
   | { type: 'applyUrl'; patch: Partial<PosState> }
   // Register extras (V1 → V2): combos, hold, cash payout, gift cards — `state/register-extras.ts`.
-  | RegisterExtrasAction;
+  | RegisterExtrasAction
+  // The restaurant (V1 → V2, Wave 2): tabs, dishes, the kitchen, the floor, reservations, tips.
+  | RestaurantAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
+
+/**
+ * The number a payment is recorded under (V1 → V2). A tee time's order keeps the number its
+ * reservation shows (Weston Edits round 5); anything else — a tab, a counter order, a sleeve of
+ * balls — takes the next in the ledger's own sequence.
+ */
+function paidOrderNumber(state: PosState): string {
+  if (state.selectedBookingId) return orderNumberFromId(state.selectedBookingId);
+  return `#A-${30000 + state.restaurantSeq.payment + 1}`;
+}
 
 export function reducer(state: PosState, action: Action): PosState {
   switch (action.type) {
@@ -741,6 +767,10 @@ export function reducer(state: PosState, action: Action): PosState {
         // The panel, not the bookings: courts and bays are session data like the tee sheet's,
         // and must survive Back / Forward. Only what a link describes is reset.
         resourcePanel: null,
+        // Likewise the restaurant: the open tab is navigation, the tabs themselves are the day.
+        activeTabId: null,
+        // A link that names no room means the first one, as the encoder omits it only then.
+        floorRoomId: state.floor[0]?.id ?? state.floorRoomId,
         multiSelectActive: false,
         multiSelectIds: [],
         ...rest,
@@ -816,6 +846,8 @@ export function reducer(state: PosState, action: Action): PosState {
       // Seats go with the order they were on.
       return {
         ...state,
+        // A tab loaded to be paid and then cleared is not paid: it stays open, untouched.
+        payingTabId: null,
         cart: [],
         orderSeats: null,
         selectedGolfer: null,
@@ -940,6 +972,13 @@ export function reducer(state: PosState, action: Action): PosState {
         },
         // Gift cards on the order exist from this moment, not before (V1 → V2).
         ...issueGiftCardsOnPayment(state),
+        // The payment ledger, and a tab being paid is closed — its table is free (V1 → V2).
+        ...recordRestaurantPayment(state, {
+          method: action.method,
+          amount: action.amount,
+          tip: action.tip,
+          orderNumber: paidOrderNumber(state),
+        }),
       };
 
     // ─── Tee sheet ────────────────────────────────────────────────────────
@@ -1150,6 +1189,7 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, listFilters: { ...emptyListFilters } };
 
     default:
+      if (isRestaurantAction(action)) return restaurantReducer(state, action);
       return isRegisterExtrasAction(action)
         ? registerExtrasReducer(state, action, (s) => reducer(s, { type: 'clearOrder' }))
         : state;

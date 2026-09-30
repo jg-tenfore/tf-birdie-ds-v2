@@ -328,7 +328,8 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
       return;
     }
     if (stage === 3) {
-      dispatch({ type: 'recordPayment', method, amount });
+      // The tip travels apart from the amount, so Orders & Tips can adjust it later (V1 → V2).
+      dispatch({ type: 'recordPayment', method, amount, tip });
       dispatch({ type: 'closeModal' });
       toast(`Payment approved · ${cart.money(amount)}`);
     }

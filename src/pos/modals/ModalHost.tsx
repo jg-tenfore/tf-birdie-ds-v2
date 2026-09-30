@@ -5,6 +5,8 @@ import { Checkout, PaymentReader } from './Checkout';
 import { ConfirmDialog, OpenItem, TeeSheetSearch } from './Misc';
 import { RegisterDialog } from './RegisterDialogs';
 import { isRegisterExtrasModal } from '../state/register-extras';
+import { isRestaurantModal } from '../state/restaurant';
+import { RestaurantDialogs } from './RestaurantDialogs';
 import {
   ActionPanel,
   GolferSearch,
@@ -100,6 +102,8 @@ export function ModalHost() {
         />
       );
     default:
+      // The restaurant (V1 → V2, Wave 2).
+      if (isRestaurantModal(m)) return <RestaurantDialogs m={m} />;
       // Hold, held orders, cash payout, gift card (V1 → V2).
       return isRegisterExtrasModal(m) ? <RegisterDialog modal={m} /> : null;
   }
