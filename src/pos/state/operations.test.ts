@@ -7,7 +7,7 @@ import { refundAmount, refundableQty } from '../logic/orders';
 import { drawerWorkings } from '../logic/shift';
 import { giftCardCovers } from '../logic/tenders';
 import type { CartItem } from '../types';
-import { amountDue, eventById, orderByNumber } from './operations';
+import { allGiftCards, amountDue, eventById, orderByNumber } from './operations';
 import { createInitialState, reducer, type PosState } from './pos-store';
 
 const s0 = () => createInitialState();
@@ -361,5 +361,56 @@ describe('a paid order on the register does not block the next job', () => {
     const billed = reducer(s, { type: 'billEvent', eventId: 'EV-301' });
     expect(billed.lastPayment).toBeNull();
     expect(billed.cart.some((l) => l.eventBill)).toBe(true);
+  });
+});
+
+describe('a tip on the new tenders', () => {
+  it('comes off the gift card with the order', () => {
+    const s1 = withCart(s0(), [balls(1)]);
+    const due = amountDue(s1);
+    const before = allGiftCards(s1).find((x) => x.card.id === '261900')!.card.balance;
+    const s = pay(s1, 'giftcard', { amount: due + 2, tip: 2, ref: { giftCardId: '261900' } });
+    expect(allGiftCards(s).find((x) => x.card.id === '261900')!.card.balance).toBeCloseTo(before - due - 2, 2);
+    // A refund gives back the goods, not the tip.
+    expect(s.orders.at(-1)!.tenders[0].amount).toBeCloseTo(due, 2);
+  });
+
+  it('goes on the member’s house account', () => {
+    const s1 = withCart(s0(), [balls(1)]);
+    const due = amountDue(s1);
+    const before = liveCustomer('M005', s1.customerEdits)!.balance;
+    const s = pay(s1, 'house', { amount: due + 3, tip: 3, ref: { customerId: 'M005' } });
+    expect(liveCustomer('M005', s.customerEdits)!.balance).toBeCloseTo(before + due + 3, 2);
+    expect(s.accountEntries.at(-1)!.amount).toBeCloseTo(due + 3, 2);
+  });
+
+  it('is a line of its own on the event’s ledger', () => {
+    const s = pay(withCart(s0(), [beer(2)]), 'event', { amount: amountDue(withCart(s0(), [beer(2)])) + 4, tip: 4, ref: { eventId: 'EV-302' } });
+    const ledger = eventById(s, 'EV-302')!.ledger;
+    expect(ledger.at(-1)).toMatchObject({ description: 'Tip', amount: 4 });
+  });
+});
+
+describe('checks', () => {
+  it('a check taken this shift is what the check count at close should come to', () => {
+    const s = pay(withCart(s0(), [balls(2)]), 'check', { ref: { checkNumber: '1042' } });
+    const w = drawerWorkings(s.drawerShift!, s.payments, s.drawerEvents);
+    expect(w.checks).toBeCloseTo(orderTotals([balls(2)]).total, 2);
+    // …and it is not cash.
+    expect(w.expected).toBeCloseTo(drawerWorkings(s0().drawerShift!, s0().payments, s0().drawerEvents).expected, 2);
+    const closed = reducer(s, { type: 'closeShift', countedCash: w.expected, countedChecks: w.checks });
+    expect(closed.drawerHistory[0].expectedChecks).toBeCloseTo(w.checks, 2);
+  });
+});
+
+describe('house accounts are for members', () => {
+  it('a current membership has one; none, or a lapsed one, does not', async () => {
+    const { hasHouseAccount, houseAccountRefusal } = await import('../logic/customer-search');
+    const today = new Date(2026, 4, 21);
+    const who = { firstName: 'Nora', lastName: 'Quinn' };
+    expect(hasHouseAccount({ memberships: [{ name: 'Full Golf', expires: '12/31/2026' }] }, today)).toBe(true);
+    expect(hasHouseAccount({ memberships: [] }, today)).toBe(false);
+    expect(houseAccountRefusal({ ...who, memberships: [] }, today)).toMatch(/isn’t a member/);
+    expect(houseAccountRefusal({ ...who, memberships: [{ name: 'Full Golf', expires: '01/31/2026' }] }, today)).toMatch(/lapsed/);
   });
 });

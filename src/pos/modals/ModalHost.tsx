@@ -59,7 +59,7 @@ export function ModalHost() {
         />
       );
     case 'checkout':
-      return <Checkout />;
+      return <Checkout tip={m.tip} />;
     case 'paymentReader':
       return <PaymentReader method={m.method} tip={m.tip} />;
     case 'memberLookup':

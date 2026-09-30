@@ -163,6 +163,21 @@ export const TheRegisterFlagsLowStock: Story = {
   },
 };
 
+/** **Searching says it too.** A low item found by search carries the same badge its tile does. */
+export const SearchFlagsLowStock: Story = {
+  render: () => <Screen edition="v1v2" initialState={register()} />,
+  play: async ({ canvasElement }) => {
+    const low = STOCK_ITEMS.find((i) => stockLevel(seed[i.name]) === 'low')!;
+    await userEvent.type(within(canvasElement).getByPlaceholderText('Search items…'), low.name);
+    const row = await waitFor(() => {
+      const hit = [...document.querySelectorAll<HTMLElement>('[data-stock-badge]')].find((b) => b.closest('.MuiPopper-root'));
+      if (!hit) throw new Error('no badge in the results');
+      return hit;
+    });
+    await expect(row.textContent).toBe(`${seed[low.name]} left`);
+  },
+};
+
 /**
  * **Selling the last one says Out — and still sells.** The Pro V1 sleeves are at 2; selling both
  * turns the tile's badge to Out. The tile stays enabled: v1 never blocked a sale, and a shelf can be

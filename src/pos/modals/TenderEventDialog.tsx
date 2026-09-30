@@ -21,19 +21,21 @@ import { FilledButton, ModalFrame, OutlineButton } from './ModalFrame';
  * would let you add to an event at any point, because nothing in it knew it had been paid.
  */
 export function TenderEventDialog({ m }: { m: Extract<OperationsModal, { kind: 'tenderEvent' }> }) {
-  void m;
   const { state, dispatch, toast } = usePos();
   const events = chargeableEvents(state.events, state.payingEventId);
   // Today's open event is nearly always the one — preselect it when there is exactly one.
   const todays = events.filter((e) => e.status === 'open');
   const [picked, setPicked] = useState<string | null>(todays.length === 1 ? todays[0].id : events.length === 1 ? events[0].id : null);
-  const due = amountDue(state);
+  // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
+  const tip = m.tip ?? 0;
+  const orderDue = amountDue(state);
+  const due = Math.round((orderDue + tip) * 100) / 100;
   const event = events.find((e) => e.id === picked);
   const close = () => dispatch({ type: 'closeModal' });
 
   const charge = () => {
     if (!event || due <= 0) return;
-    dispatch({ type: 'recordPayment', method: 'event', amount: due, ref: { eventId: event.id } });
+    dispatch({ type: 'recordPayment', method: 'event', amount: due, ...(tip > 0 && { tip }), ref: { eventId: event.id } });
     close();
     toast(`Charged ${money(due)} to ${event.name}`);
   };

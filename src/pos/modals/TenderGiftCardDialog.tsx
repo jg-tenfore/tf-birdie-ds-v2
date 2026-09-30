@@ -28,12 +28,14 @@ import { Callout, Field, FilledButton, ModalFrame, OutlineButton, ResultList } f
  * A spent card is badged and cannot be chosen.
  */
 export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind: 'tenderGiftCard' }> }) {
-  void m;
   const { state, dispatch, toast } = usePos();
   const [query, setQuery] = useState('');
   const [pick, setPick] = useState<{ cardId: string; customerId?: string } | null>(null);
-  const due = amountDue(state);
-  const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout' } });
+  // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
+  const tip = m.tip ?? 0;
+  const orderDue = amountDue(state);
+  const due = Math.round((orderDue + tip) * 100) / 100;
+  const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout', ...(tip > 0 && { tip }) } });
 
   const { customerEdits, issuedGiftCards } = state;
   const all = useMemo(() => withPlainHolders(allGiftCards({ customerEdits, issuedGiftCards }), customerEdits), [customerEdits, issuedGiftCards]);
@@ -45,18 +47,25 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
 
   const found = pick ? findGiftCard(state, pick.cardId, pick.customerId) : undefined;
   const card = found?.card;
-  const canPay = card ? giftCardCanPay(card, state.cart, due, state.splitTender) : 0;
+  const canPay = card ? giftCardCanPay(card, state.cart, orderDue, state.splitTender) : 0;
   const cannot = card ? linesACardCannotPay(card, state.cart) : [];
-  const covers = card ? canPay >= due - 0.005 : false;
-  const left = Math.max(0, Math.round((due - canPay) * 100) / 100);
+  const covers = card ? canPay >= orderDue - 0.005 : false;
+  // A card that covers the order pays the tip too, when its balance runs to it.
+  const takesTip = Boolean(card && covers && tip > 0 && card.balance >= due - 0.005);
+  const paysNow = covers ? (takesTip || tip === 0 ? due : orderDue) : canPay;
+  const left = Math.max(0, Math.round((orderDue - canPay) * 100) / 100);
 
   const pay = () => {
     if (!card || canPay <= 0) return;
     const ref = { giftCardId: card.id, ...(found?.customerId && { customerId: found.customerId }) };
     if (covers) {
-      dispatch({ type: 'recordPayment', method: 'giftcard', amount: due, ref });
+      dispatch({ type: 'recordPayment', method: 'giftcard', amount: paysNow, ...(takesTip && { tip }), ref });
       dispatch({ type: 'closeModal' });
-      toast(`Paid ${money(due)} with gift card #${card.id}`);
+      toast(
+        tip > 0 && !takesTip
+          ? `Paid ${money(paysNow)} with gift card #${card.id} · the ${money(tip)} tip was not taken — not enough on the card`
+          : `Paid ${money(paysNow)} with gift card #${card.id}`,
+      );
     } else {
       dispatch({ type: 'payPart', method: 'giftcard', amount: canPay, ref });
       // Back to checkout, which now reads the split: paid so far, and the balance due.
@@ -82,7 +91,7 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
                 : canPay <= 0
                   ? 'Nothing this card can pay'
                   : covers
-                    ? `Pay ${money(due)}`
+                    ? `Pay ${money(paysNow)}`
                     : `Pay ${money(canPay)} · ${money(left)} left due`}
             </FilledButton>
           </Box>
@@ -116,7 +125,8 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
 
           {/* What it pays, and what it leaves — the numbers the button acts on. */}
           <Box data-card-pays={canPay.toFixed(2)} sx={{ border: `1px solid ${md3.outlineVariant}`, borderRadius: `${radius.md}px`, p: '10px 14px', mb: 1.5 }}>
-            <Row label="Due now" value={money(due)} />
+            <Row label="Due now" value={money(orderDue)} />
+            {tip > 0 && <Row label={takesTip ? 'Tip, on this card' : covers ? 'Tip — more than the card holds' : 'Tip, on the last tender'} value={money(tip)} />}
             <Row label="This card pays" value={money(canPay)} strong />
             <Row label="Still due after" value={money(left)} tone={left > 0 ? 'warn' : undefined} />
           </Box>

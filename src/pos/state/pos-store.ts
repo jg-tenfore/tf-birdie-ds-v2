@@ -120,7 +120,8 @@ export type Modal =
   | { kind: 'movePlayers'; timeMin: number }
   | { kind: 'courseTimeSettings'; courseId: string }
   | { kind: 'courseRates'; courseId: string }
-  | { kind: 'checkout' }
+  /** `tip`: one already recalculated in, carried back from a tender that paid part (V1 → V2). */
+  | { kind: 'checkout'; tip?: number }
   /** `tip` is what checkout recalculated in, so the reader charges the checkout total. */
   | { kind: 'paymentReader'; method: string; tip?: number }
   | { kind: 'confirm'; title: string; body: string; confirmLabel: string; onConfirm: string }

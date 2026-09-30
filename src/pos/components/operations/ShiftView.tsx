@@ -113,6 +113,16 @@ function OpenDrawer({ shift }: { shift: Shift }) {
             {money(w.expected)}
           </Typography>
         </Stack>
+        {/* Checks are counted apart from cash, against the checks taken this shift. */}
+        <Stack direction="row" alignItems="center" data-working="checks" sx={{ px: 1.5, py: 1.125, borderTop: `1px solid ${md3.surfaceHigh}` }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Expected checks</Typography>
+            <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>Checks taken, counted apart from the cash</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }} data-expected-checks>
+            {money(w.checks)}
+          </Typography>
+        </Stack>
       </Box>
       <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mt: 1, lineHeight: 1.5 }}>
         Worked out from this shift's payments and drawer events — nothing to key in until you count at close.
@@ -231,7 +241,19 @@ function HistoryRow({ s, v }: { s: Shift; v: number }) {
         {cell(money(s.expectedCash ?? 0), 'right', num)}
         {cell(money(s.countedCash ?? 0), 'right', { ...num, fontWeight: 700 })}
         {cell(<VarianceText value={v} pill />, 'right')}
-        {cell(money(s.countedChecks ?? 0), 'right', num)}
+        {cell(
+          <>
+            <Box>{money(s.countedChecks ?? 0)}</Box>
+            {/* Shifts before checks were a tender have nothing to hold the count against. */}
+            {s.expectedChecks != null && s.countedChecks !== s.expectedChecks && (
+              <Box sx={{ fontSize: 11.5 }} data-check-variance>
+                <VarianceText value={variance(s.countedChecks ?? 0, s.expectedChecks)} />
+              </Box>
+            )}
+          </>,
+          'right',
+          num,
+        )}
       </Box>
       {s.note && (
         <Box component="tr" data-shift-note={s.id}>

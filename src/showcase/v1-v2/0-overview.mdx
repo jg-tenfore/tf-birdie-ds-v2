@@ -231,15 +231,18 @@ And the calls made without a question, each in one place to change:
 - A spent gift card shown **only by a dimmed row**. It has a Spent badge.
 - Events with **no action bar**, only an overflow menu.
 
-### Not yet
+### Closed after the wave
 
-- **Tips on the new tenders.** Gift card, house account, card on file and charge-to-event do not
-  take a tip. Checkout keeps the tip on its own screen, and the tender dialogs cannot see it.
-- **Printing** shift and stock-count reports.
-- **An expected figure for checks.** No tender records checks, so a shift close records the count
-  alone.
-- **Who may have a house account.** Any customer can be charged; nothing on a customer says they have an account.
-- **Low-stock badges in search results.** The register's tiles have them.
+Wave 3 shipped with five gaps. Four are now closed, and one was left as it is by choice:
+
+| | Chosen | Instead of |
+|---|---|---|
+| **Tips on the new tenders** | **Checkout's tip carries over.** A tip recalculated into checkout goes with whichever tender takes the order: a gift card pays it if it covers the order and has the balance, a house account puts it on the member's bill, an event puts it on the organiser's as a line of its own. When a card pays only part, the tip stays for the tender that finishes | A tip field in every tender dialog |
+| **House accounts** | **Members only.** A current membership comes with an account, and a lapsed one closes it. Someone who already owes can still pay it off, but can't run it up | An account flag, or a credit limit for everyone |
+| **Checks** | **Check is a tender.** The check number is optional. Shift shows **expected checks** beside expected cash, and the close holds the check count against it | Dropping checks from the close |
+| **Printing** | **Toasts, as before.** Shift and stock-count reports are not laid out | A receipt-width report preview |
+
+Low-stock badges now show in the register's search results too, the same badge the tiles carry.
 
 ### Deep links
 

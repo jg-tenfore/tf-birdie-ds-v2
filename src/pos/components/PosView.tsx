@@ -74,7 +74,7 @@ export function PosView() {
   return (
     <Stack sx={{ flex: 1, minWidth: 0, height: '100%' }}>
       <PosTopBar />
-      <SearchRow onPick={handleAdd} />
+      <SearchRow onPick={handleAdd} stock={v1v2 ? state.stock : undefined} />
 
       {/* ── Category buttons ── */}
       <Box
@@ -221,7 +221,7 @@ export function SwitchButton({
 // ─── Search ─────────────────────────────────────────────────────────────────
 
 /** Type-ahead across the whole catalog; the top eight matches are offered. */
-function SearchRow({ onPick }: { onPick: (item: CatalogItem) => void }) {
+function SearchRow({ onPick, stock }: { onPick: (item: CatalogItem) => void; stock?: Record<string, number> }) {
   const [query, setQuery] = useState('');
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
@@ -296,6 +296,8 @@ function SearchRow({ onPick }: { onPick: (item: CatalogItem) => void }) {
                 }}
               >
                 <Box sx={{ flex: 1 }}>{item.n}</Box>
+                {/* V1 → V2: the same low-stock badge the tile carries. */}
+                {stock && isStocked(item.n) && <StockBadge qty={stock[item.n] ?? 0} />}
                 <Typography sx={{ fontSize: 10, color: md3.outline }}>{item.cat}</Typography>
                 <Typography sx={{ fontSize: 12, fontWeight: 700, color: md3.primary }}>
                   {cart.money(item.p)}
@@ -306,6 +308,39 @@ function SearchRow({ onPick }: { onPick: (item: CatalogItem) => void }) {
         </Popper>
       </Box>
     </Stack>
+  );
+}
+
+// ─── Stock badge ────────────────────────────────────────────────────────────
+
+/**
+ * "3 left" or "Out" for a stocked item that is running low (V1 → V2, Wave 3) — nothing while there
+ * is plenty. One badge for the tiles and the search results, so both say the same thing.
+ */
+function StockBadge({ qty, sx }: { qty: number; sx?: object }) {
+  const badge = stockBadge(qty);
+  if (!badge) return null;
+  return (
+    <Box
+      component="span"
+      data-stock-badge={stockLevel(qty)}
+      sx={{
+        px: 0.75,
+        py: '2px',
+        borderRadius: `${radius.xl}px`,
+        fontSize: 9.5,
+        fontWeight: 800,
+        letterSpacing: '.3px',
+        textTransform: 'none',
+        whiteSpace: 'nowrap',
+        bgcolor: qty <= 0 ? md3.error : '#fef3c7',
+        color: qty <= 0 ? '#fff' : '#92400e',
+        border: qty <= 0 ? 'none' : '1px solid #fcd34d',
+        ...sx,
+      }}
+    >
+      {badge}
+    </Box>
   );
 }
 
@@ -503,30 +538,7 @@ function ItemTile({
           />
         </Box>
       )}
-      {badge && (
-        <Box
-          component="span"
-          data-stock-badge={stockLevel(stockQty!)}
-          sx={{
-            position: 'absolute',
-            top: 5,
-            right: 5,
-            zIndex: 1,
-            px: 0.75,
-            py: '2px',
-            borderRadius: `${radius.xl}px`,
-            fontSize: 9.5,
-            fontWeight: 800,
-            letterSpacing: '.3px',
-            textTransform: 'none',
-            bgcolor: stockQty! <= 0 ? md3.error : '#fef3c7',
-            color: stockQty! <= 0 ? '#fff' : '#92400e',
-            border: stockQty! <= 0 ? 'none' : '1px solid #fcd34d',
-          }}
-        >
-          {badge}
-        </Box>
-      )}
+      {badge && <StockBadge qty={stockQty!} sx={{ position: 'absolute', top: 5, right: 5, zIndex: 1 }} />}
       {isModifier && item.tag && (
         <Box
           component="span"

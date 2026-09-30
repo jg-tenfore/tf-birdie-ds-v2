@@ -27,6 +27,8 @@ export function tenderLabel(method: string, ref?: PaymentRef, eventName?: string
       return ref?.cardLast4 ? `Card on file •••• ${ref.cardLast4}` : 'Card on file';
     case 'event':
       return eventName ? `Event · ${eventName}` : ref?.eventId ? `Event ${ref.eventId}` : 'Event';
+    case 'check':
+      return ref?.checkNumber ? `Check #${ref.checkNumber}` : 'Check';
     default:
       return method ? method[0].toUpperCase() + method.slice(1) : '—';
   }

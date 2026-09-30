@@ -23,19 +23,21 @@ import { TenderCustomerPicker } from './TenderCustomerPicker';
  * saves the round trip.
  */
 export function TenderCardOnFileDialog({ m }: { m: Extract<OperationsModal, { kind: 'tenderCardOnFile' }> }) {
-  void m;
   const { state, dispatch, toast } = usePos();
   const [customerId, setCustomerId] = useState<string | null>(() => orderCustomerId(state));
   const customer = liveCustomer(customerId ?? undefined, state.customerEdits);
-  const due = amountDue(state);
+  // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
+  const tip = m.tip ?? 0;
+  const orderDue = amountDue(state);
+  const due = Math.round((orderDue + tip) * 100) / 100;
   const card = customer?.cardOnFile;
   const expired = Boolean(card) && cardExpired(customer?.cardExpires, DEMO_TODAY());
-  const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout' } });
+  const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout', ...(tip > 0 && { tip }) } });
   const ready = Boolean(customer && card && !expired && due > 0);
 
   const charge = () => {
     if (!ready || !customer || !card) return;
-    dispatch({ type: 'recordPayment', method: 'cardonfile', amount: due, ref: { customerId: customer.id, cardLast4: card } });
+    dispatch({ type: 'recordPayment', method: 'cardonfile', amount: due, ...(tip > 0 && { tip }), ref: { customerId: customer.id, cardLast4: card } });
     dispatch({ type: 'closeModal' });
     toast(`Charged ${money(due)} to ${plainName(customer)}’s card •••• ${card}`);
   };

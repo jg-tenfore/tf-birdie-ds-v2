@@ -180,6 +180,51 @@ export const ACardThatCoversItAll: Story = {
   },
 };
 
+/**
+ * **The tip comes with it.** A $3.00 tip recalculated into checkout travels to the gift card, and a
+ * card that covers the order and has the balance pays the tip too — it comes off the card.
+ */
+export const TheTipComesWithIt: Story = {
+  render: () => (
+    <Screen
+      edition="v1v2"
+      initialState={atCheckout([{ name: 'Hamburger', price: 8, qty: 2 }], { kind: 'tenderGiftCard', tip: 3 })}
+    />
+  ),
+  play: async () => {
+    const d = within(await screen.findByRole('dialog'));
+    await userEvent.type(d.getByRole('textbox'), 'Rufus');
+    await userEvent.click(await option('261902'));
+    await expect(d.getByText('Tip, on this card')).toBeTruthy();
+    const withTip = (orderTotals([{ name: 'Hamburger', price: 8, qty: 2 }]).total + 3).toFixed(2);
+    await userEvent.click(d.getByRole('button', { name: `Pay $${withTip}` }));
+    await screen.findByText(`Paid $${withTip} with gift card #261902`);
+  },
+};
+
+/**
+ * **A part payment keeps the tip for the last tender.** The card pays the burgers; checkout comes
+ * back with the $3.00 tip still recalculated in, so the card reader charges the beers and the tip.
+ */
+export const APartPaymentKeepsTheTip: Story = {
+  render: () => <Screen edition="v1v2" initialState={atCheckout(burgersAndBeers, { kind: 'tenderGiftCard', tip: 3 })} />,
+  play: async () => {
+    const d = within(await screen.findByRole('dialog'));
+    await userEvent.type(d.getByRole('textbox'), 'Rufus');
+    await userEvent.click(await option('261902'));
+    await expect(d.getByText('Tip, on the last tender')).toBeTruthy();
+    await userEvent.click(d.getByRole('button', { name: /^Pay \$[\d.]+ · / }));
+    await waitFor(() => expect(document.querySelector('[data-split-tender]')).not.toBeNull());
+    // The reader charges what the card left, plus the tip.
+    const total = orderTotals(burgersAndBeers).total;
+    const cardPaid = giftCardCanPay({ balance: 200 }, burgersAndBeers, total, null);
+    const checkout = within(await screen.findByRole('dialog'));
+    await userEvent.click(checkout.getByRole('button', { name: /^card$/i }));
+    const reader = within(await screen.findByRole('dialog'));
+    await expect(reader.getByText(`$${(total - cardPaid + 3).toFixed(2)}`)).toBeTruthy();
+  },
+};
+
 /** **A spent card can't be chosen.** It is listed — so nobody wonders whether it was found — badged, and disabled. */
 export const ASpentCardCannotPay: Story = {
   render: () => <Screen edition="v1v2" initialState={atCheckout(burgersAndBeers, { kind: 'tenderGiftCard' }, { customerEdits: spentMoreno })} />,

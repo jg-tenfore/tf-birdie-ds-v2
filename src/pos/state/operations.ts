@@ -112,10 +112,12 @@ export const operationsDefaults = (): OperationsState => ({
 
 /** Wave 3's dialogs, merged into `Modal` by `pos-store.ts`. Each has its own file; see `modals/OperationsDialogs.tsx`. */
 export type OperationsModal =
-  | { kind: 'tenderGiftCard' }
-  | { kind: 'tenderHouseAccount' }
-  | { kind: 'tenderCardOnFile' }
-  | { kind: 'tenderEvent' }
+  // `tip`: what checkout recalculated in, charged on the tender with the order.
+  | { kind: 'tenderGiftCard'; tip?: number }
+  | { kind: 'tenderHouseAccount'; tip?: number }
+  | { kind: 'tenderCardOnFile'; tip?: number }
+  | { kind: 'tenderEvent'; tip?: number }
+  | { kind: 'tenderCheck'; tip?: number }
   | { kind: 'refundOrder'; orderNumber: string }
   | { kind: 'eventForm'; id?: string }
   /** `name`: what a search found nobody for, to start the new record from. */
@@ -130,6 +132,7 @@ const MODAL_KINDS = new Set<string>([
   'tenderHouseAccount',
   'tenderCardOnFile',
   'tenderEvent',
+  'tenderCheck',
   'refundOrder',
   'eventForm',
   'customerForm',
@@ -327,6 +330,8 @@ function moveGiftCard(state: PosState, cardId: string, customerId: string | unde
   const apply = (g: CustomerGiftCard): CustomerGiftCard =>
     g.id === cardId ? { ...g, balance: cents(g.balance + delta), spent: cents(g.spent - delta) } : g;
   let customerEdits = state.customerEdits;
+  // Whoever holds it, when the tender did not say: a card number is enough to find the card.
+  customerId ??= findGiftCard(state, cardId)?.customerId;
   if (customerId) {
     const c = liveCustomer(customerId, state.customerEdits);
     if (c?.giftCards.some((g) => g.id === cardId)) {
@@ -344,12 +349,27 @@ function moveBalance(state: PosState, customerId: string, delta: number): Pick<P
   return { customerEdits: { ...state.customerEdits, [customerId]: { ...state.customerEdits[customerId], balance: cents(c.balance + delta) } } };
 }
 
-/** What a tender draws on, applied: a card spent, an account charged, an event billed. */
-function applyTender(state: PosState, method: string, amount: number, ref: PaymentRef | undefined, orderNumber: string, sign: 1 | -1): PosState {
+/**
+ * What a tender draws on, applied: a card spent, an account charged, an event billed.
+ *
+ * `tip` is drawn on the same tender as the order it came with — a tip left on a gift card comes
+ * off the card, a tip on a house account goes on the member's bill, a tip charged to an event is a
+ * line on the organiser's. A card reader's tip needs nothing here: the card is charged elsewhere.
+ * `amount` stays the order's share, which is what a refund may give back.
+ */
+function applyTender(
+  state: PosState,
+  method: string,
+  amount: number,
+  ref: PaymentRef | undefined,
+  orderNumber: string,
+  sign: 1 | -1,
+  tip = 0,
+): PosState {
   const now = demoNow();
   const staffId = state.operatorId;
   if (method === 'giftcard' && ref?.giftCardId) {
-    return { ...state, ...moveGiftCard(state, ref.giftCardId, ref.customerId, -sign * amount) };
+    return { ...state, ...moveGiftCard(state, ref.giftCardId, ref.customerId, -sign * cents(amount + tip)) };
   }
   if (method === 'house' && ref?.customerId) {
     const entry: AccountEntry = {
@@ -358,13 +378,13 @@ function applyTender(state: PosState, method: string, amount: number, ref: Payme
       date: toDateStr(now),
       time: clock(now),
       kind: sign === 1 ? 'charge' : 'refund',
-      amount: cents(amount),
+      amount: cents(amount + tip),
       orderNumber,
       staffId,
     };
     return {
       ...state,
-      ...moveBalance(state, ref.customerId, sign * amount),
+      ...moveBalance(state, ref.customerId, sign * cents(amount + tip)),
       accountEntries: [...state.accountEntries, entry],
       opsSeq: { ...state.opsSeq, entry: state.opsSeq.entry + 1 },
     };
@@ -389,6 +409,9 @@ function applyTender(state: PosState, method: string, amount: number, ref: Payme
             staffId,
           }))
         : [{ id: `EC-${(seq += 1)}`, date: toDateStr(now), time: clock(now), description: `Refund · ${orderNumber}`, qty: 1, amount: -cents(amount), orderNumber, staffId }];
+    if (sign === 1 && tip > 0) {
+      charges.push({ id: `EC-${(seq += 1)}`, date: toDateStr(now), time: clock(now), description: 'Tip', qty: 1, amount: cents(tip), orderNumber, staffId });
+    }
     return {
       ...state,
       events: state.events.map((e) => (e.id === ref.eventId ? { ...e, ledger: [...e.ledger, ...charges] } : e)),
@@ -449,10 +472,11 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
     case 'closeShift': {
       if (!state.drawerShift) return state;
       const closing = { ...state.drawerShift, closedAt: clock(now) };
-      const expected = drawerWorkings(closing, state.payments, state.drawerEvents).expected;
+      const w = drawerWorkings(closing, state.payments, state.drawerEvents);
       const closed: Shift = {
         ...closing,
-        expectedCash: expected,
+        expectedCash: w.expected,
+        expectedChecks: w.checks,
         countedCash: cents(action.countedCash),
         countedChecks: cents(action.countedChecks),
         note: action.note?.trim() || undefined,
@@ -732,7 +756,7 @@ export function recordOperationsPayment(
     eventId: payment.ref?.eventId ?? state.payingEventId ?? undefined,
   };
 
-  let next = applyTender(state, payment.method, tender.amount, payment.ref, payment.orderNumber, 1);
+  let next = applyTender(state, payment.method, tender.amount, payment.ref, payment.orderNumber, 1, payment.tip ?? 0);
 
   // An account payment pays the balance down; an event bill marks the event settled.
   if (state.payingAccountId) {
