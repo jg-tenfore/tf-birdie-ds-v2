@@ -21,6 +21,8 @@ import { useV1V2 } from '../edition';
 import { COMBOS_CATEGORY } from '../data/combos';
 import { ComboGrid, RegisterCategoryRow } from './RegisterExtras';
 import { CategoryButton } from './CategoryButton';
+import { isStocked } from '../data/stock';
+import { stockBadge, stockLevel } from '../logic/stock-levels';
 
 /**
  * The POS catalog: search, colored category buttons, and the item grid.
@@ -130,6 +132,8 @@ export function PosView() {
             holesLock={holesLock}
             hasCheckIn={hasCheckIn}
             onAdd={handleAdd}
+            // V1 → V2, Wave 3: live stock, so a tile can say it is running out.
+            stock={v1v2 ? state.stock : undefined}
           />
         )}
       </Box>
@@ -326,11 +330,14 @@ function ItemGrid({
   holesLock,
   hasCheckIn,
   onAdd,
+  stock,
 }: {
   categoryName: string;
   holesLock: '9H' | '18H' | null;
   hasCheckIn: boolean;
   onAdd: (item: CatalogItem) => void;
+  /** V1 → V2 only: the shelf, for the low-stock badge. Absent in the other editions. */
+  stock?: Record<string, number>;
 }) {
   const d = CATALOG[categoryName];
   if (!d) return null;
@@ -374,6 +381,7 @@ function ItemGrid({
               isModifier={Boolean(d.isModifier)}
               disabled={dimmed}
               onClick={() => onAdd(item)}
+              stockQty={stock && isStocked(item.n) ? (stock[item.n] ?? 0) : undefined}
             />
           );
         })}
@@ -404,6 +412,7 @@ function ItemTile({
   isModifier,
   disabled,
   onClick,
+  stockQty,
 }: {
   item: CatalogItem;
   image?: string;
@@ -412,7 +421,14 @@ function ItemTile({
   isModifier: boolean;
   disabled: boolean;
   onClick: () => void;
+  /**
+   * V1 → V2, Wave 3: how many are on the shelf, for a stocked item. The tile badges "3 left" or
+   * "Out" at `LOW_STOCK` and below and says nothing otherwise. An item that is out still sells —
+   * v1 had no stock at all and never blocked a sale, and the count may simply be behind the shelf.
+   */
+  stockQty?: number;
 }) {
+  const badge = stockQty == null ? null : stockBadge(stockQty);
   const priceLabel = item.isDiscount
     ? cart.creditMoney(item.p)
     : item.isOverride || item.p === 0
@@ -485,6 +501,30 @@ function ItemTile({
               boxSizing: 'border-box',
             }}
           />
+        </Box>
+      )}
+      {badge && (
+        <Box
+          component="span"
+          data-stock-badge={stockLevel(stockQty!)}
+          sx={{
+            position: 'absolute',
+            top: 5,
+            right: 5,
+            zIndex: 1,
+            px: 0.75,
+            py: '2px',
+            borderRadius: `${radius.xl}px`,
+            fontSize: 9.5,
+            fontWeight: 800,
+            letterSpacing: '.3px',
+            textTransform: 'none',
+            bgcolor: stockQty! <= 0 ? md3.error : '#fef3c7',
+            color: stockQty! <= 0 ? '#fff' : '#92400e',
+            border: stockQty! <= 0 ? 'none' : '1px solid #fcd34d',
+          }}
+        >
+          {badge}
         </Box>
       )}
       {isModifier && item.tag && (
