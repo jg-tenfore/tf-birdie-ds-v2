@@ -1,3 +1,4 @@
+import { taxRateOf } from '../state/operations';
 import { useEffect } from 'react';
 import { Box, ButtonBase, Dialog, Tab, Tabs, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
@@ -287,7 +288,7 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   // checkout and the reader use — green fees, transport and tax, with settled seats at $0.
   const rates = rateContext(state);
   const order = buildTeeTimeCart(b, state.courses, rates);
-  const { total: due, tax } = orderTotals(order);
+  const { total: due, tax } = orderTotals(order, taxRateOf(state));
   const fees = reservationDue(b, rates);
   const extras = +(due - fees - tax).toFixed(2);
   const settled = reservationSettled(b);

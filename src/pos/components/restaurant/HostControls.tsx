@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
+import { usePos } from '../../state/PosProvider';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
-import { SERVERS } from '../../data/staff';
+import { serversOf } from '../../data/staff';
 import { SelectField } from '../../modals/ModalFrame';
 import { Icon } from '../primitives';
 import { Stack } from '../Stack';
@@ -61,11 +62,12 @@ export function CountStepper({
 }
 
 export function ServerSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const { state } = usePos();
   return (
     <SelectField
       label="Server"
       value={value}
-      options={SERVERS.map((s) => ({ label: s.name, value: s.id }))}
+      options={serversOf(state.staffRoster).map((s) => ({ label: s.name, value: s.id }))}
       onChange={onChange}
     />
   );

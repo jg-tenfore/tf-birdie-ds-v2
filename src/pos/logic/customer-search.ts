@@ -236,9 +236,10 @@ export function giftCardCanPay(
   cart: CartItem[],
   due: number,
   split: Pick<SplitTender, 'tenders'> | null,
+  taxRate?: number,
 ): number {
   const paidByCards = (split?.tenders ?? []).filter((t) => t.method === 'giftcard').reduce((s, t) => s + t.amount, 0);
-  return giftCardCovers(card, cart, due, paidByCards);
+  return giftCardCovers(card, cart, due, paidByCards, taxRate);
 }
 
 /**

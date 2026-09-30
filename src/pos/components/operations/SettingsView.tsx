@@ -45,8 +45,11 @@ import { OpsScreen, OpsToolbar } from './OpsToolbar';
  * Each editable section saves as a whole — Save and Discard under it, and who saved it last — rather
  * than on every keystroke, because a half-typed tax rate is not a setting anyone meant.
  *
- * **Recorded, not wired** (Justin's call): the first three sections save and show what was saved, but
- * checkout, receipts and sign-in keep the prototype's fixed behaviour, and each section says so.
+ * **Wired** (Justin's call, after a first cut that only recorded them): once saved, checkout charges
+ * the tax rate, offers the tenders switched on and the tip presets, prints the receipt text on the
+ * reader's done step as "Receipts after a sale" says, and starts new gift cards from the default;
+ * the register header shows the register's name; and the PIN pad, Time Clock and server pickers read
+ * the staff list. The hardware stays simulated — a test is a toast.
  */
 const SECTIONS: { key: SettingsSection; label: string; icon: string; blurb: string }[] = [
   { key: 'hardware', label: 'Terminal & hardware', icon: 'point_of_sale', blurb: 'Printers, card reader, cash drawer' },
@@ -195,7 +198,7 @@ function CheckoutSection() {
       section="checkout"
       dirty={dirty}
       problem={problem}
-      notWired="Saved here for review. This prototype's checkout still charges 8% tax, offers every tender and prints its own receipt."
+      note="Checkout reads these as soon as they are saved. Tax here is sales tax on retail and food; a round's tax comes from its course's rates. An order already paid keeps the tax it was rung with."
       onSave={() => dispatch({ type: 'saveCheckoutSettings', checkout: draft })}
       onDiscard={() => {
         setDraft(saved);
@@ -296,7 +299,7 @@ function StaffSection() {
       )}
       <Box sx={{ mb: 1.5 }}>
         <Callout tone="info" icon="info">
-          Saved here for review. Sign-in still uses the demo PINs on the PIN pad.
+          The PIN pad, Time Clock and the server pickers read this list: someone added here can sign in, and someone deactivated cannot.
         </Callout>
       </Box>
       <DataTable
@@ -370,7 +373,7 @@ function SectionFrame({
   section,
   dirty,
   problem,
-  notWired,
+  note,
   onSave,
   onDiscard,
   children,
@@ -379,7 +382,7 @@ function SectionFrame({
   section: SettingsSection;
   dirty: boolean;
   problem: string | null;
-  notWired?: string;
+  note?: string;
   onSave: () => void;
   onDiscard: () => void;
   children: ReactNode;
@@ -391,10 +394,10 @@ function SectionFrame({
       <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800, mb: 1.5 }}>
         {title}
       </Typography>
-      {notWired && (
+      {note && (
         <Box sx={{ mb: 1.5 }}>
           <Callout tone="info" icon="info">
-            {notWired}
+            {note}
           </Callout>
         </Box>
       )}
@@ -429,9 +432,10 @@ function SectionFrame({
 }
 
 function SavedStamp({ at, by }: { at: string; by: string }) {
+  const { state } = usePos();
   return (
     <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant, mt: 1 }} data-settings-saved>
-      Saved {at} by {staffById(by)?.short ?? by}
+      Saved {at} by {staffById(by, state.staffRoster)?.short ?? by}
     </Typography>
   );
 }

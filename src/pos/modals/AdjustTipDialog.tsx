@@ -16,7 +16,6 @@ import { Stack } from '../components/Stack';
  * signed slip and wants to check it is sane. A tip bigger than half the sale is accepted — it
  * happens — but only after a second confirm, because it is far more often an $80 typed for $8.00.
  */
-const PRESETS = [15, 18, 20, 22];
 
 export function AdjustTipDialog({ m }: { m: Extract<RestaurantModal, { kind: 'adjustTip' }> }) {
   const { state, dispatch, toast } = usePos();
@@ -38,7 +37,7 @@ export function AdjustTipDialog({ m }: { m: Extract<RestaurantModal, { kind: 'ad
   return (
     <ModalFrame
       title={`Adjust tip · ${p.orderNumber}`}
-      subtitle={`${p.time} · ${p.cardLast4 ? `Card •••• ${p.cardLast4}` : 'Card'} · ${staffById(p.staffId)?.short ?? ''}`}
+      subtitle={`${p.time} · ${p.cardLast4 ? `Card •••• ${p.cardLast4}` : 'Card'} · ${staffById(p.staffId, state.staffRoster)?.short ?? ''}`}
       icon="attach_money"
       width={460}
       onClose={close}
@@ -56,7 +55,7 @@ export function AdjustTipDialog({ m }: { m: Extract<RestaurantModal, { kind: 'ad
       </Stack>
 
       <Stack direction="row" gap={0.75} sx={{ mb: 1.5 }}>
-        {PRESETS.map((pct) => {
+        {state.terminalSettings.checkout.tipPresets.map((pct) => {
           const v = tipAt(p.amount, pct);
           const on = Math.abs(v - tip) < 0.005;
           return (

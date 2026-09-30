@@ -236,7 +236,7 @@ export function sendToKitchen(
 }
 
 /** What a tab owes — the register's own arithmetic, so the tab and the checkout agree. */
-export const tabTotal = (tab: Pick<Tab, 'lines'>): number => orderTotals(tab.lines).total;
+export const tabTotal = (tab: Pick<Tab, 'lines'>, taxRate?: number): number => orderTotals(tab.lines, taxRate).total;
 
 /** Dishes grouped by seat, shared plates last. Seats with nothing on them are kept, so an empty seat shows. */
 export function bySeat(tab: Pick<Tab, 'lines' | 'guests'>): { seat: number | null; lines: CartItem[] }[] {

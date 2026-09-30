@@ -263,7 +263,7 @@ function ResultRow({ entry, selected, onClick }: { entry: Entry; selected: boole
       <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 0.5 }}>
         <Typography noWrap sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
           {tender}
-          {staffById(o.staffId) ? ` · ${staffById(o.staffId)!.short}` : ''}
+          {staffById(o.staffId, state.staffRoster) ? ` · ${staffById(o.staffId, state.staffRoster)!.short}` : ''}
         </Typography>
         <Box sx={{ flex: 1 }} />
         {entry.booking && <Badge tone="event">Tee sheet</Badge>}
@@ -294,7 +294,7 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
   const { state, dispatch, toast } = usePos();
   // A tee time paid before the session refunds like any order — `refundOrder` builds its record.
   const refundable = allRefundable(o).length > 0;
-  const staff = staffById(o.staffId);
+  const staff = staffById(o.staffId, state.staffRoster);
   const eventName = (id?: string) => eventById(state, id)?.name;
   const back = refundTender(o);
 
@@ -419,7 +419,7 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
                     <Typography sx={{ fontSize: 13, fontWeight: 800, color: payBadges.refund.text }}>{money(-r.amount)}</Typography>
                   </Stack>
                   <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, ml: 2.75 }}>
-                    {r.time} · {staffById(r.staffId)?.short ?? r.staffId} · back to{' '}
+                    {r.time} · {staffById(r.staffId, state.staffRoster)?.short ?? r.staffId} · back to{' '}
                     {r.parts
                       ? r.parts.map((p) => `${tenderLabel(p.method, p.ref, eventName(p.ref?.eventId))} ${money(p.amount)}`).join(' and ')
                       : tenderLabel(r.method, r.ref, eventName(r.ref?.eventId))}{' '}

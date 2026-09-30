@@ -199,7 +199,7 @@ function CountList({ onNew }: { onNew: () => void }) {
               </Td>
               <Td>{title(c.category)}</Td>
               <Td sx={{ color: md3.onSurfaceVariant, whiteSpace: 'nowrap' }}>
-                {shortDate(c.date)} · {staffById(c.staffId)?.short}
+                {shortDate(c.date)} · {staffById(c.staffId, state.staffRoster)?.short}
               </Td>
               <Td align="right">
                 {s.counted} of {s.lines}
@@ -265,7 +265,7 @@ function CountSheet({ count }: { count: InventoryCount }) {
         <Box sx={{ minWidth: 0, ml: 0.5 }}>
           <Typography sx={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{count.title}</Typography>
           <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, whiteSpace: 'nowrap' }}>
-            {title(count.category)} · started {shortDate(count.date)} by {staffById(count.staffId)?.short}
+            {title(count.category)} · started {shortDate(count.date)} by {staffById(count.staffId, state.staffRoster)?.short}
             {count.savedAt ? ` · saved ${count.savedAt}` : ''}
           </Typography>
         </Box>

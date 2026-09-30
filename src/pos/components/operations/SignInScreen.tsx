@@ -4,7 +4,7 @@ import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
 import { demoNow } from '../../data/bookings';
 import { APP_IDENTITY } from '../../data/nav';
-import { STAFF, staffById } from '../../data/staff';
+import { staffById } from '../../data/staff';
 import { money } from '../../logic/cart';
 import { usePos } from '../../state/PosProvider';
 import { Icon } from '../primitives';
@@ -101,7 +101,7 @@ export function SignInScreen() {
 
   if (state.signedIn) return null;
 
-  const last = staffById(state.operatorId);
+  const last = staffById(state.operatorId, state.staffRoster);
   const lines = state.cart.filter((l) => !l.isTax).length;
   const now = demoNow();
   const stillOpen = [
@@ -157,7 +157,7 @@ export function SignInScreen() {
         <Box data-demo-pins sx={{ p: '12px 14px', borderRadius: `${radius.md}px`, border: '1px dashed rgba(255,255,255,.28)' }}>
           <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.08em', color: '#fcd34d', mb: 0.75 }}>DEMO PINS · PROTOTYPE ONLY</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', rowGap: '3px', columnGap: 2 }}>
-            {STAFF.map((s) => (
+            {state.staffRoster.filter((s) => s.active).map((s) => (
               <Box key={s.id} sx={{ display: 'contents' }}>
                 <Typography sx={{ fontSize: 12.5, color: 'rgba(255,255,255,.8)' }}>
                   {s.name} <Box component="span" sx={{ color: 'rgba(255,255,255,.5)' }}>· {ROLE_LABEL[s.role]}</Box>

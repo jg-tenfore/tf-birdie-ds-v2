@@ -2,7 +2,7 @@ import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
 import { demoNow } from '../../data/bookings';
 import { toDateStr } from '../../data/courses';
-import { STAFF, staffById, type StaffMember } from '../../data/staff';
+import { staffById, type StaffMember } from '../../data/staff';
 import type { Punch } from '../../data/staff-seed';
 import { fmtHours, punchDays, punchHours, shortDate, weeklyTotals } from '../../logic/staff-hours';
 import { onTheClock } from '../../state/operations';
@@ -44,8 +44,10 @@ export function TimeClockView() {
   const now = demoNow();
   const nowTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const today = toDateStr(now);
-  const me = staffById(state.operatorId);
-  const onNow = STAFF.filter((s) => onTheClock(state, s.id));
+  const me = staffById(state.operatorId, state.staffRoster);
+  // Settings' roster (V1 → V2): someone added there can clock in; someone deactivated is off the list.
+  const people = state.staffRoster.filter((s) => s.active);
+  const onNow = people.filter((s) => onTheClock(state, s.id));
   const days = punchDays(state.punches, nowTime, today);
   const todayLog = days.find((d) => d.date === today);
   const earlier = days.filter((d) => d.date !== today);
@@ -87,7 +89,7 @@ export function TimeClockView() {
         {/* ── Everyone ── */}
         <Box sx={{ overflowY: 'auto', p: '14px 16px', bgcolor: '#fff', borderRight: `1px solid ${md3.outlineVariant}` }}>
           <PanelHeading aside="Tap to punch anyone in or out">Staff</PanelHeading>
-          {STAFF.map((s) => (
+          {people.map((s) => (
             <StaffRow key={s.id} s={s} you={s.id === me?.id} open={onTheClock(state, s.id)} punches={state.punches} today={today} nowTime={nowTime} onPunch={() => punch(s)} />
           ))}
         </Box>
@@ -115,7 +117,7 @@ export function TimeClockView() {
                   </PanelHeading>
                   {w.rows.map((r) => (
                     <Stack key={r.staffId} direction="row" alignItems="baseline" data-week-row={r.staffId} sx={{ py: 0.75, borderTop: `1px solid ${md3.surfaceHigh}` }}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{staffById(r.staffId)?.name ?? r.staffId}</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{staffById(r.staffId, state.staffRoster)?.name ?? r.staffId}</Typography>
                       <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mr: 1.5 }}>
                         {r.days} day{r.days === 1 ? '' : 's'}
                       </Typography>
@@ -234,13 +236,14 @@ function StaffRow({
 }
 
 function PunchTable({ punches, today, nowTime }: { punches: Punch[]; today: string; nowTime: string }) {
+  const { state } = usePos();
   return (
     <DataTable columns={[{ label: 'Person' }, { label: 'In', width: 100 }, { label: 'Out', width: 120 }, { label: 'Hours', align: 'right', width: 80 }]}>
       {punches.map((p) => {
         const stale = !p.out && p.date !== today;
         return (
           <Box component="tr" key={p.id} data-punch={p.id}>
-            <Td sx={{ fontWeight: 600 }}>{staffById(p.staffId)?.name ?? p.staffId}</Td>
+            <Td sx={{ fontWeight: 600 }}>{staffById(p.staffId, state.staffRoster)?.name ?? p.staffId}</Td>
             <Td>{p.in}</Td>
             <Td>
               {p.out ? (

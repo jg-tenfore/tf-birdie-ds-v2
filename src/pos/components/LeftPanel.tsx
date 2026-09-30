@@ -13,7 +13,7 @@ import { useStartWalkIn } from './use-start-walk-in';
 import { RegisterGolfSummary } from './RegisterGolfSummary';
 import * as cart from '../logic/cart';
 import { dominantTransport, selectedBooking } from '../state/pos-store';
-import { amountDue } from '../state/operations';
+import { amountDue, registerTotals } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import type { CartItem } from '../types';
 import {
@@ -42,7 +42,7 @@ export function LeftPanel() {
   const booking = selectedBooking(state);
   const checkIn = cart.findCheckInItem(state.cart);
   // One calculation for the whole order — the same one checkout and the reader charge.
-  const totals = cart.orderTotals(state.cart);
+  const totals = registerTotals(state);
 
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();

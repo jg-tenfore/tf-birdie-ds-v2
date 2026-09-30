@@ -146,6 +146,7 @@ export function PosView() {
 /** Registers label on the left, view switch and open-item on the right. */
 function PosTopBar() {
   const { state, dispatch } = usePos();
+  const v1v2 = useV1V2();
   return (
     <Stack
       direction="row"
@@ -161,7 +162,8 @@ function PosTopBar() {
       {/* Names the club, which is the only visible difference between the three
           published prototypes when the register is empty. */}
       <Typography sx={{ fontSize: 14, fontWeight: 700, flex: 1 }}>
-        {venue(state.venueId).name}
+        {/* V1 → V2: the club, then this register as Settings names it. */}
+        {v1v2 ? `${venue(state.venueId).name.split(' · ')[0]} · ${state.terminalSettings.hardware.name}` : venue(state.venueId).name}
       </Typography>
       <Stack direction="row" alignItems="center" gap={0.75}>
         <SwitchButton

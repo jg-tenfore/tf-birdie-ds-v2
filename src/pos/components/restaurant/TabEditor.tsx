@@ -1,7 +1,8 @@
+import { taxRateOf } from '../../state/operations';
 import { useState } from 'react';
 import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { grid as gridTokens, md3, playerAccents, radius } from '../../../theme/tokens';
-import { SERVERS } from '../../data/staff';
+import { serversOf } from '../../data/staff';
 import { money, orderTotals } from '../../logic/cart';
 import { bySeat, tabTotal, tableLabel, unsent, type Tab } from '../../logic/restaurant';
 import { minGuests } from '../../logic/tab-list';
@@ -55,7 +56,7 @@ export function TabEditor({ tab }: { tab: Tab }) {
 
   const target = { tabId: tab.id };
   const toSend = unsent(tab.lines).length;
-  const totals = orderTotals(tab.lines);
+  const totals = orderTotals(tab.lines, taxRateOf(state));
   const payable = canPayTab(state, tab.id);
   const seatWord = seat ? `Seat ${seat}` : 'Shared';
 
@@ -91,7 +92,7 @@ export function TabEditor({ tab }: { tab: Tab }) {
                 Total
               </Box>
               <Box data-tab-total sx={{ textAlign: 'right', fontWeight: 800, color: md3.onSurface, fontSize: 14 }}>
-                {money(tabTotal(tab))}
+                {money(tabTotal(tab, taxRateOf(state)))}
               </Box>
             </Box>
 
@@ -130,7 +131,7 @@ export function TabEditor({ tab }: { tab: Tab }) {
                   '&.Mui-disabled': { bgcolor: md3.surfaceHighest, color: md3.onSurfaceVariant, opacity: 0.7 },
                 }}
               >
-                Pay {money(tabTotal(tab))}
+                Pay {money(tabTotal(tab, taxRateOf(state)))}
               </ButtonBase>
             </Stack>
 
@@ -241,6 +242,8 @@ function SeatBand({
 /** Name, table, guests, server, check requested — everything that is the tab rather than its food. */
 function TabHeader({ tab }: { tab: Tab }) {
   const { state, dispatch } = usePos();
+  // Settings' roster (V1 → V2): someone added as a server can carry a tab.
+  const servers = serversOf(state.staffRoster);
   const [draft, setDraft] = useState<string | null>(null);
   const at = tableOf(state, tab.tableId);
   const floor = Math.max(1, minGuests(tab));
@@ -328,8 +331,8 @@ function TabHeader({ tab }: { tab: Tab }) {
         }}
       >
         {/* A tab carried by someone no longer on the server list still shows who. */}
-        {!SERVERS.some((s) => s.id === tab.serverId) && <option value={tab.serverId}>{tab.serverId}</option>}
-        {SERVERS.map((s) => (
+        {!servers.some((s) => s.id === tab.serverId) && <option value={tab.serverId}>{tab.serverId}</option>}
+        {servers.map((s) => (
           <option key={s.id} value={s.id}>
             {s.name}
           </option>
