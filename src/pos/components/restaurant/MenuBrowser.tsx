@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
-import { MENUS, menuItemsIn, type MenuId, type MenuItem } from '../../data/menu';
+import { MENUS, menuItemsIn, modifierGroup, type MenuId, type MenuItem } from '../../data/menu';
 import { money } from '../../logic/cart';
 import { groupsOf } from '../../logic/dish-choice';
 import type { DishTarget } from '../../state/restaurant';
@@ -27,9 +27,13 @@ import { Stack } from '../Stack';
  * bottom row, so where you are is always visible and one tap from anywhere else. Tiles are text —
  * name, price, a line of description — and say when an item has options to choose.
  *
- * Tapping an item sells it to `target` (a tab, or the register's own order) at `seat`:
- * an item with modifiers opens the dish dialog, one without is added at once. Doing that here,
- * rather than in each screen, is what makes the two screens behave the same.
+ * Tapping an item sells it to `target` (a tab, or the register's own order) at `seat`. An item
+ * with a **required** choice — a burger's temperature, a sandwich's side — opens the dish dialog,
+ * because it cannot be cooked without the answer. Everything else is added at once, and stays
+ * editable: tapping the line opens the same dialog for allergies or add-ons. The first cut opened
+ * the dialog for any item with options, which, because allergies apply to nearly everything, put
+ * an extra tap in front of most of the dining-room menu. Doing this here, rather than in each
+ * screen, is what makes the two screens behave the same.
  */
 export function MenuBrowser({
   target,
@@ -57,7 +61,7 @@ export function MenuBrowser({
   };
 
   const sell = (item: MenuItem) => {
-    if (item.modifiers?.length) {
+    if ((item.modifiers ?? []).some((g) => modifierGroup(g)?.required)) {
       dispatch({ type: 'openModal', modal: { kind: 'dish', target, menuItemId: item.id, seat } });
       return;
     }

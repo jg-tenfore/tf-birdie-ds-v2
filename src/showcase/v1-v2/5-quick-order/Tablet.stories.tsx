@@ -4,6 +4,7 @@ import { menuItem } from '../../../pos/data/menu';
 import { dishLine } from '../../../pos/logic/restaurant';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
+import { createInitialState, reducer } from '../../../pos/state/pos-store';
 
 /**
  * V1 → V2 Migration / 5 · Quick Order / Tablet
@@ -151,7 +152,8 @@ export const RemovingBeforeSending: Story = {
 
 /**
  * **The dining-room menu at the counter.** Any order can sell from either menu: creamed spinach to
- * go, off the 19th Hole menu, onto the counter order.
+ * go, off the 19th Hole menu, onto the counter order. Its only options are optional (allergies), so
+ * it goes straight on — the dialog opens only for a choice the kitchen cannot cook without.
  */
 export const TheOtherMenu: Story = {
   render: () => <Screen edition="v1v2" initialState={at()} />,
@@ -161,10 +163,28 @@ export const TheOtherMenu: Story = {
     await expect(q(canvasElement, '[data-menu-category="Starters"]')).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(q(canvasElement, '[data-menu-category="Sides"]')!);
     await userEvent.click(q(canvasElement, '[data-menu-item="nineteenth-creamed-spinach"]')!);
-    const dialog = within(await screen.findByRole('dialog'));
-    // Allergies only, nothing required: ready as it stands.
-    await expect(dialog.getByText('Ready for the kitchen')).toBeTruthy();
-    await userEvent.click(dialog.getByRole('button', { name: 'Add to order' }));
+    // Nothing required, so no dialog: it is on the order straight away.
     await waitFor(() => expect(within(q(canvasElement, '[data-rail-dish-line]')!).getByText('Creamed Spinach')).toBeTruthy());
+    await expect(screen.queryByRole('dialog')).toBeNull();
+  },
+};
+
+/**
+ * **The counter waits while a tab is being paid.** Table 1's tab is on the register. Its lines there
+ * are copies of the tab's, so a counter dish added now would be charged to the tab without ever being
+ * written onto it, and would reach the kitchen labelled "Counter". The store refuses it; the screen
+ * says so, instead of letting a tap on a burger do nothing.
+ */
+export const WaitsWhileATabIsBeingPaid: Story = {
+  render: () => {
+    const paying = reducer(createInitialState(atVenue('eighteen', { view: 'quickorder', leftPanelCollapsed: false })), {
+      type: 'payTab',
+      tabId: 'T-1001',
+    });
+    return <Screen edition="v1v2" initialState={{ ...paying, view: 'quickorder' }} />;
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-quick-order-busy]')).not.toBeNull();
+    await expect(canvasElement.querySelector('[data-quick-order-busy]')!.textContent).toContain('Table 1');
   },
 };

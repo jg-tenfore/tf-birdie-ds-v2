@@ -151,6 +151,17 @@ describe('the chain: reservation → table → tab → pay → free', () => {
     expect(reducer(busy, { type: 'payTab', tabId: 'T-1001' })).toBe(busy);
   });
 
+  it('refuses counter dishes while a tab is on the register being paid', () => {
+    // The rail's lines are copies of the tab's. Adding to them would be paid with the tab but never
+    // written back to it, and fired to the kitchen labelled "Counter" — so it is refused outright.
+    const loaded = reducer(s0, { type: 'payTab', tabId: 'T-1001' });
+    const added = reducer(loaded, { type: 'addDish', target: 'cart', menuItemId: burger.id, modifiers: [temp('Medium')] });
+    expect(added).toBe(loaded);
+    expect(reducer(loaded, { type: 'sendToKitchen', target: 'cart' })).toBe(loaded);
+    const lineId = loaded.cart.find((l) => l.dish)!.dish!.lineId;
+    expect(reducer(loaded, { type: 'removeDish', target: 'cart', lineId })).toBe(loaded);
+  });
+
   it('clearing a tab off the register without paying leaves it open, untouched', () => {
     const loaded = reducer(s0, { type: 'payTab', tabId: 'T-1001' });
     const cleared = reducer(loaded, { type: 'clearOrder' });

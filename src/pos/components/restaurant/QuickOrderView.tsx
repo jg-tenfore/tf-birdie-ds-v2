@@ -1,6 +1,7 @@
-import { ButtonBase, Typography } from '@mui/material';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import { grid as gridTokens, md3 } from '../../../theme/tokens';
 import { unsent } from '../../logic/restaurant';
+import { tabById } from '../../state/restaurant';
 import { usePos } from '../../state/PosProvider';
 import { Icon } from '../primitives';
 import { Stack } from '../Stack';
@@ -31,6 +32,9 @@ import { MenuBrowser } from './MenuBrowser';
 export function QuickOrderView() {
   const { state, dispatch } = usePos();
   const toSend = unsent(state.cart).length;
+  // A tab being paid owns the register's order until it is paid or cleared; the reducer refuses
+  // counter dishes onto it, so the screen says so rather than letting a tap do nothing.
+  const paying = tabById(state, state.payingTabId);
 
   return (
     <Stack data-restaurant-view="QuickOrderView" sx={{ flex: 1, minWidth: 0, minHeight: 0, bgcolor: md3.surface }}>
@@ -45,7 +49,7 @@ export function QuickOrderView() {
         <Stack sx={{ flex: 1 }} />
         <ButtonBase
           data-send-to-kitchen={toSend}
-          disabled={toSend === 0}
+          disabled={toSend === 0 || Boolean(paying)}
           onClick={() => dispatch({ type: 'sendToKitchen', target: 'cart' })}
           sx={{
             minHeight: 44,
@@ -63,7 +67,26 @@ export function QuickOrderView() {
           {toSend ? `Send ${toSend} to kitchen` : 'Nothing to send'}
         </ButtonBase>
       </Stack>
-      <MenuBrowser target="cart" defaultMenu="counter" />
+      {paying ? (
+        <Stack alignItems="center" justifyContent="center" gap={1.25} sx={{ flex: 1, p: 4, textAlign: 'center' }} data-quick-order-busy>
+          <Icon name="receipt_long" size={36} color={md3.onSurfaceVariant} />
+          <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{paying.name} is on the register, being paid</Typography>
+          <Typography sx={{ fontSize: 13.5, color: md3.onSurfaceVariant, maxWidth: 440 }}>
+            Finish taking the payment, or clear it from the order on the left, before ringing up the counter. Anything added
+            now would be charged to their tab without ever being written onto it.
+          </Typography>
+          <Box sx={{ mt: 0.5 }}>
+            <ButtonBase
+              onClick={() => dispatch({ type: 'setView', view: 'pos' })}
+              sx={{ minHeight: 44, px: 2.25, borderRadius: '14px', border: `1.5px solid ${md3.outlineVariant}`, fontWeight: 700, fontSize: 13.5 }}
+            >
+              Go to the register
+            </ButtonBase>
+          </Box>
+        </Stack>
+      ) : (
+        <MenuBrowser target="cart" defaultMenu="counter" />
+      )}
     </Stack>
   );
 }

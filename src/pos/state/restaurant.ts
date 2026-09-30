@@ -214,6 +214,21 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
 
   const lineAt = (target: DishTarget, lineId: string) => linesOf(state, target).find((l) => l.dish?.lineId === lineId);
 
+  // While a tab is on the register being paid, the register's lines are *copies* of the tab's.
+  // A dish added, changed or fired there would be paid with the tab but never written back to
+  // it, and would reach the kitchen labelled "Counter". Paying is a checkout step, not an order
+  // being built: finish it, or clear it, first. Found by the engineer building Quick Order.
+  const dishOnPayingRail =
+    state.payingTabId !== null &&
+    'target' in action &&
+    action.target === 'cart' &&
+    (action.type === 'addDish' ||
+      action.type === 'editDish' ||
+      action.type === 'removeDish' ||
+      action.type === 'voidDish' ||
+      action.type === 'sendToKitchen');
+  if (dishOnPayingRail) return state;
+
   switch (action.type) {
     case 'openTab': {
       // One tab per table. Opening on an occupied table opens that table's tab instead.

@@ -121,7 +121,7 @@ source of truth: a table can say "seated" with no tab behind it.
 | | Chosen | Instead of |
 |---|---|---|
 | **Structure** | One chain: reservation → table → tab → pay → free | v1's three unconnected lists |
-| **Kitchen** | **Send and track.** A dish is unsent or sent; a sent dish is locked and changes only by being voided, which the kitchen sees | v1 had no kitchen step at all |
+| **Kitchen** | **Send and track.** A dish is unsent or sent, and Send fires everything unsent as one ticket. A sent dish's *food* is locked — it changes only by being voided, which the kitchen sees | v1's counter had no kitchen step; its tabs had a per-plate "Fire" buried in a ⋮ menu beside Move, Split and Discount |
 | **Menus** | **Counter and 19th Hole**, two menus in one catalog. Any tab sells from either | One combined menu, or the counter alone |
 | **Table Chart** | **Full editor**: every shape, barriers, regions, labels, resize and **rotate** handles, undo and redo | A simpler placement editor |
 
