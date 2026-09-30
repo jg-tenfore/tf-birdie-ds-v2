@@ -115,6 +115,13 @@ export function dishLine(
 
 export const isDish = (l: CartItem): l is CartItem & { dish: NonNullable<CartItem['dish']> } => Boolean(l.dish);
 
+/** A dish's unit price: base, plus modifiers, less any discount, to the cent. */
+export function dishUnitPrice(d: Pick<NonNullable<CartItem['dish']>, 'basePrice' | 'modifiers' | 'discountPct'>): number {
+  const full = priceWithModifiers(d.basePrice, d.modifiers);
+  const pct = Math.max(0, Math.min(100, d.discountPct ?? 0));
+  return Math.round(full * (100 - pct)) / 100;
+}
+
 export const isSent = (l: CartItem): boolean => Boolean(l.dish?.sentAt);
 
 /** Unsent, un-voided dishes — what Send would fire. */
@@ -130,7 +137,8 @@ export function editDish(
 ): CartItem {
   if (!line.dish || isSent(line)) return line;
   const modifiers = patch.modifiers ?? line.dish.modifiers;
-  const unit = priceWithModifiers(line.dish.basePrice, modifiers);
+  // Through `dishUnitPrice`, so changing a comped plate's modifiers keeps its discount.
+  const unit = dishUnitPrice({ ...line.dish, modifiers });
   return {
     ...line,
     price: unit,
@@ -143,6 +151,41 @@ export function editDish(
       note: patch.note !== undefined ? patch.note.trim() || undefined : line.dish.note,
     },
   };
+}
+
+/**
+ * The three jobs v1 kept in each line's ⋮ menu beside Fire — Move, Split and Discount — which the
+ * first cut of Wave 2 missed. None of them touches the food, so none is stopped by the kitchen
+ * lock: moving a fired plate from seat 2 to seat 3 changes who pays for it, not what the cook
+ * makes. A voided plate is left alone by all three.
+ */
+
+/** Put a dish on another seat, sent or not. `null` makes it a shared plate. */
+export function moveDish(line: CartItem, seat: number | null): CartItem {
+  if (!line.dish || line.dish.voided) return line;
+  return { ...line, dish: { ...line.dish, seat: seat ?? undefined } };
+}
+
+/** Take a percentage off a dish, sent or not. 0 removes the discount. */
+export function discountDish(line: CartItem, pct: number): CartItem {
+  if (!line.dish || line.dish.voided) return line;
+  const discountPct = Math.max(0, Math.min(100, Math.round(pct))) || undefined;
+  const unit = dishUnitPrice({ ...line.dish, discountPct });
+  return { ...line, price: unit, unitPrice: unit, dish: { ...line.dish, discountPct } };
+}
+
+/**
+ * Split one unit off a line of two or more onto another seat — "two Miller Lites" becomes one for
+ * seat 1 and one for seat 3. The new line keeps its sent state and ticket: the kitchen made both.
+ * Returns the lines unchanged for a single unit, which is a move, not a split.
+ */
+export function splitDish(lines: CartItem[], lineId: string, seat: number | null, newLineId: string): CartItem[] {
+  const i = lines.findIndex((l) => l.dish?.lineId === lineId);
+  const line = lines[i];
+  if (i < 0 || !line.dish || line.dish.voided || line.qty < 2) return lines;
+  const rest = { ...line, qty: line.qty - 1 };
+  const one: CartItem = { ...line, qty: 1, dish: { ...line.dish, lineId: newLineId, seat: seat ?? undefined } };
+  return [...lines.slice(0, i), rest, one, ...lines.slice(i + 1)];
 }
 
 /** Void a sent dish: it stays on the ticket so the kitchen sees it cancelled, and costs nothing. */

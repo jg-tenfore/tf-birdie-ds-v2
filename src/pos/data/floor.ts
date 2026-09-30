@@ -149,7 +149,9 @@ export const SEED_ROOMS: Room[] = [
     name: 'Bar',
     elements: [
       { id: 'bar-top', kind: 'barrier', x: 120, y: 80, w: 640, h: 30 },
-      ...Array.from({ length: 8 }, (_, i) => table(`b-${i + 1}`, `B${i + 1}`, 'circle', 130 + i * 80, 130, 44, 44, 1)),
+      // 60 units, not 44: the chair inset leaves a 44-unit stool almost no body, and its number sat on
+      // its own chair. Reported by the engineer building Table Chart.
+      ...Array.from({ length: 8 }, (_, i) => table(`b-${i + 1}`, `B${i + 1}`, 'circle', 125 + i * 78, 124, 60, 60, 1)),
       table('h-1', 'H1', 'square', 160, 320, 90, 90, 4),
       table('h-2', 'H2', 'square', 320, 320, 90, 90, 4),
       table('h-3', 'H3', 'square', 480, 320, 90, 90, 4),

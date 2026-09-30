@@ -201,6 +201,45 @@ describe('dishes on a tab, through the store', () => {
     expect(unsent(tabById(voided, 'T-1004')!.lines)).toHaveLength(0);
   });
 
+  it('moves, splits and discounts a plate even after it is sent — money and seats, not food', () => {
+    // v1 kept Move, Split and Discount in each line's ⋮ menu beside Fire; none of them touches what
+    // the kitchen is cooking, so the kitchen lock must not stop them.
+    const tab = { tabId: 'T-1001' } as const; // everything on it is already sent
+    const beers = tabById(s0, 'T-1001')!.lines.find((l) => l.qty === 2)!;
+    const id = beers.dish!.lineId;
+    expect(isSent(beers)).toBe(true);
+
+    const moved = reducer(s0, { type: 'moveDish', target: tab, lineId: id, seat: 2 });
+    expect(tabById(moved, 'T-1001')!.lines.find((l) => l.dish!.lineId === id)!.dish!.seat).toBe(2);
+
+    const split = reducer(s0, { type: 'splitDish', target: tab, lineId: id, seat: 3 });
+    const pair = tabById(split, 'T-1001')!.lines.filter((l) => l.name === beers.name);
+    expect(pair.map((l) => l.qty).sort()).toEqual([1, 1]);
+    expect(pair.map((l) => l.dish!.seat).sort()).toEqual([3, 4]);
+    // The kitchen made both: the split-off one keeps its sent state and ticket.
+    expect(pair.every((l) => isSent(l) && l.dish!.ticketId === beers.dish!.ticketId)).toBe(true);
+    expect(orderTotals(tabById(split, 'T-1001')!.lines).total).toBe(orderTotals(tabById(s0, 'T-1001')!.lines).total);
+
+    const comped = reducer(s0, { type: 'discountDish', target: tab, lineId: id, pct: 50 });
+    const half = tabById(comped, 'T-1001')!.lines.find((l) => l.dish!.lineId === id)!;
+    expect(half.price).toBe(Math.round(beers.price * 50) / 100);
+    expect(half.dish!.discountPct).toBe(50);
+  });
+
+  it('will not split a single plate — that is a move', () => {
+    const tab = { tabId: 'T-1001' } as const;
+    const one = tabById(s0, 'T-1001')!.lines.find((l) => l.qty === 1)!;
+    expect(reducer(s0, { type: 'splitDish', target: tab, lineId: one.dish!.lineId, seat: 2 })).toBe(s0);
+  });
+
+  it('keeps a comp when an unsent plate’s modifiers change', () => {
+    let s = reducer(s0, { type: 'addDish', target, menuItemId: burger.id, modifiers: [temp('Medium')], seat: 1 });
+    const id = tabById(s, 'T-1004')!.lines[0].dish!.lineId;
+    s = reducer(s, { type: 'discountDish', target, lineId: id, pct: 100 });
+    s = reducer(s, { type: 'editDish', target, lineId: id, patch: { modifiers: [temp('Rare')] } });
+    expect(tabById(s, 'T-1004')!.lines[0].price).toBe(0);
+  });
+
   it('keeps the seeded reservations and tabs consistent with each other', () => {
     for (const r of SEED_RESERVATIONS.filter((x) => x.status === 'seated')) {
       const t = SEED_TABS.find((x) => x.id === r.tabId)!;

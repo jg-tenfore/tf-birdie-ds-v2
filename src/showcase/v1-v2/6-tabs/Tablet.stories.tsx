@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import { SEED_TABS } from '../../../pos/data/restaurant-seed';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
@@ -407,5 +408,69 @@ export const ANewBarTab: Story = {
     });
     await expect(within(row).getByText('Bar · Scott')).toBeTruthy();
     await expect(within(row).getAllByText('No table').length).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * **Moving, splitting and discounting a plate — even after it is sent.** Table 1's food is all in the
+ * kitchen. v1 kept Move, Split and Discount in each line's ⋮ menu beside Fire; the first cut of this
+ * wave dropped them along with v1's everything-behind-⋮ convention. They are back as one **Adjust**
+ * control, open on sent plates too, because none of them touches the food: moving a fired plate from
+ * seat 4 to seat 2 changes who pays, not what the cook makes.
+ *
+ * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other.
+ */
+export const AdjustingASentPlate: Story = {
+  render: () => <Screen edition="v1v2" initialState={onTab('T-1001')} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const beers = await waitFor(() => {
+      const el = qa(canvasElement, '[data-dish-line]').find((x) => x.textContent?.includes('Miller Lite'));
+      if (!el) throw new Error('Table 1 not drawn yet');
+      return el;
+    });
+    await expect(beers.getAttribute('data-dish-state')).toBe('sent');
+    await userEvent.click(within(beers).getByRole('button', { name: 'Adjust Miller Lite' }));
+    const panel = within(
+      await waitFor(() => {
+        const el = q(beers, '[data-dish-adjust]');
+        if (!el) throw new Error('adjust panel not open yet');
+        return el;
+      }),
+    );
+
+    // Split one to seat 2 — two lines of one, both still sent.
+    await userEvent.click(panel.getAllByRole('button', { name: 'Seat 2' }).at(-1)!);
+    await waitFor(() => expect(qa(canvasElement, '[data-dish-line]').filter((el) => el.textContent?.includes('Miller Lite'))).toHaveLength(2));
+    const both = qa(canvasElement, '[data-dish-line]').filter((el) => el.textContent?.includes('Miller Lite'));
+    for (const el of both) await expect(el.getAttribute('data-dish-state')).toBe('sent');
+    await expect(within(band(canvasElement, 2)).getByText('Miller Lite')).toBeTruthy();
+
+    // Comp the one left on seat 4 — its Adjust panel is still open from the split.
+    const left = both.find((el) => band(canvasElement, 4).contains(el))!;
+    const leftPanel = q(left, '[data-dish-adjust]');
+    if (!leftPanel) throw new Error('the seat-4 line should still have its Adjust panel open after the split');
+    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Comp' }));
+    await waitFor(() => expect(left.textContent).toContain('$0.00'));
+    await expect(canvas.queryByText(/Voided/)).toBeNull();
+  },
+};
+
+/** **A voided plate has nothing to adjust.** No Adjust on it — it is already off the bill. */
+export const AVoidedPlateHasNothingToAdjust: Story = {
+  render: () => {
+    // From the seed itself: `atVenue` returns a partial state, which carries no tabs.
+    const tabs = SEED_TABS.map((t) =>
+      t.id !== 'T-1001' ? t : { ...t, lines: t.lines.map((l, i) => (i === 0 ? { ...l, price: 0, dish: { ...l.dish!, voided: true } } : l)) },
+    );
+    return <Screen edition="v1v2" initialState={{ ...onTab('T-1001'), tabs }} />;
+  },
+  play: async ({ canvasElement }) => {
+    const voided = await waitFor(() => {
+      const el = q(canvasElement, '[data-dish-state="voided"]');
+      if (!el) throw new Error('no voided line yet');
+      return el;
+    });
+    await expect(within(voided).queryByRole('button', { name: /^Adjust/ })).toBeNull();
   },
 };

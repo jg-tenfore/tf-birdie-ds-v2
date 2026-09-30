@@ -500,5 +500,10 @@ export interface CartDish {
   ticketId?: string;
   /** Voided after sending. It stays on the ticket — the kitchen must see it cancelled — at $0. */
   voided?: boolean;
+  /**
+   * Percent off this plate — a comp, a manager's discount. Money, not food, so it can be applied
+   * to a dish the kitchen already has. v1 offered it per line; the first cut of Wave 2 missed it.
+   */
+  discountPct?: number;
 }
 

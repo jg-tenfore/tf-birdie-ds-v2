@@ -9,6 +9,7 @@ import type { DishTarget } from '../../state/restaurant';
 import { usePos } from '../../state/PosProvider';
 import type { CartItem } from '../../types';
 import { Icon } from '../primitives';
+import { DishAdjust } from './DishAdjust';
 import { Stack } from '../Stack';
 
 /**
@@ -29,6 +30,8 @@ import { Stack } from '../Stack';
  * - **Sent or not, always.** A sent line says when, with a lock; an unsent one says so in amber.
  * - **Only what applies is offered.** Unsent: **Edit** and **Remove**, one tap each, no confirm —
  *   nothing has happened yet. Sent: **Void**, behind a confirm, because the kitchen already has it.
+ *   Either: **Adjust** — move, split, discount — which is money and seats rather than food, so the
+ *   kitchen lock does not stop it (see `DishAdjust`).
  *   A voided line stays, struck through at $0, so the check shows what was cancelled.
  *
  * `readOnly` draws the line with no actions — the rail uses it while a tab is being paid, because
@@ -50,6 +53,7 @@ export function DishLine({
 }) {
   const { dispatch, toast } = usePos();
   const [confirmVoid, setConfirmVoid] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
   const dish = line.dish!;
   const sent = isSent(line);
   const voided = Boolean(dish.voided);
@@ -155,6 +159,10 @@ export function DishLine({
           )}
         </Stack>
 
+        {/* Seat and price — Move, Split, Discount. Not food, so not locked by the kitchen. */}
+        {!readOnly && !voided && (
+          <LineButton label={`Adjust ${line.name}`} icon="tune" onClick={() => setAdjusting(!adjusting)} />
+        )}
         {!readOnly && state === 'unsent' && (
           <>
             <LineButton
@@ -198,6 +206,8 @@ export function DishLine({
           </ButtonBase>
         )}
       </Stack>
+
+      {adjusting && !readOnly && !voided && <DishAdjust line={line} target={target} />}
 
       {confirmVoid && (
         <ModalFrame

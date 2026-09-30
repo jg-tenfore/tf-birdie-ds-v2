@@ -4,8 +4,11 @@ import { SEED_ROOMS, allTables, type Room } from '../data/floor';
 import { menuItem, type AppliedModifier } from '../data/menu';
 import { SEED_KITCHEN_TICKETS, SEED_PAYMENTS, SEED_RESERVATIONS, SEED_TABS } from '../data/restaurant-seed';
 import {
+  discountDish as discountDishLine,
   dishLine,
   editDish,
+  moveDish as moveDishLine,
+  splitDish as splitDishLines,
   isSent,
   openTabOn,
   sendToKitchen,
@@ -142,6 +145,12 @@ export type RestaurantAction =
   /** Unsent only. A sent dish is voided instead, so the kitchen sees it cancelled. */
   | { type: 'removeDish'; target: DishTarget; lineId: string }
   | { type: 'voidDish'; target: DishTarget; lineId: string }
+  /** Move a dish to another seat, sent or not — the seat decides who pays, not what is cooked. */
+  | { type: 'moveDish'; target: DishTarget; lineId: string; seat: number | null }
+  /** Split one unit off a line of two or more onto another seat. */
+  | { type: 'splitDish'; target: DishTarget; lineId: string; seat: number | null }
+  /** Percent off a dish, sent or not. 0 removes it. */
+  | { type: 'discountDish'; target: DishTarget; lineId: string; pct: number }
   | { type: 'sendToKitchen'; target: DishTarget }
   /** Load a tab onto the register to be paid. Refused while a different order is on the rail. */
   | { type: 'payTab'; tabId: string }
@@ -163,6 +172,9 @@ const ACTION_TYPES = new Set<string>([
   'editDish',
   'removeDish',
   'voidDish',
+  'moveDish',
+  'splitDish',
+  'discountDish',
   'sendToKitchen',
   'payTab',
   'saveFloor',
@@ -226,6 +238,9 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
       action.type === 'editDish' ||
       action.type === 'removeDish' ||
       action.type === 'voidDish' ||
+      action.type === 'moveDish' ||
+      action.type === 'splitDish' ||
+      action.type === 'discountDish' ||
       action.type === 'sendToKitchen');
   if (dishOnPayingRail) return state;
 
@@ -300,6 +315,20 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
       if (!line || !isSent(line)) return state;
       return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? voidDish(l) : l)));
     }
+
+    case 'moveDish':
+      return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? moveDishLine(l, action.seat) : l)));
+
+    case 'splitDish': {
+      const lineId = `L-${seq.line + 1}`;
+      const before = linesOf(state, action.target);
+      const after = splitDishLines(before, action.lineId, action.seat, lineId);
+      if (after === before) return state;
+      return { ...withLines(action.target, () => after), restaurantSeq: { ...seq, line: seq.line + 1 } };
+    }
+
+    case 'discountDish':
+      return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? discountDishLine(l, action.pct) : l)));
 
     case 'sendToKitchen': {
       const tab = action.target === 'cart' ? undefined : tabById(state, action.target.tabId);

@@ -25,9 +25,13 @@ export function useFitScale(ref: RefObject<HTMLElement | null>, w = FLOOR_W, h =
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // `clientWidth`, not `getBoundingClientRect()`: the rect already includes any CSS scale on an
+    // ancestor — Storybook's Tablet and iPad presets shrink the whole terminal — so measuring it
+    // scaled the floor twice and drew it too small. Found by the engineer building Table Chart.
     const measure = () => {
-      const r = el.getBoundingClientRect();
-      if (r.width && r.height) setScale(Math.min(r.width / w, r.height / h));
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      if (cw && ch) setScale(Math.min(cw / w, ch / h));
     };
     measure();
     const ro = new ResizeObserver(measure);
