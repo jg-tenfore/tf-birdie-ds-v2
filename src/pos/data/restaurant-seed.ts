@@ -1,7 +1,7 @@
 import { DEMO_TODAY } from './bookings';
 import { toDateStr } from './courses';
 import { menuItem, modifierGroup, type AppliedModifier } from './menu';
-import { dishLine, sendToKitchen, type DiningReservation, type KitchenTicket, type PaymentRecord, type Tab } from '../logic/restaurant';
+import { dishLine, sendToKitchen, type DiningReservation, type KitchenTicket, type Tab } from '../logic/restaurant';
 import type { CartItem } from '../types';
 
 /**
@@ -147,35 +147,7 @@ export const SEED_RESERVATIONS: DiningReservation[] = [
 // ─── The morning's payments ─────────────────────────────────────────────────
 
 /**
- * Breakfast and early lunch, plus a few pro-shop sales, so Orders & Tips opens on a real day.
- * Tips follow what people actually leave — mostly 18–22% on food, nothing on a sleeve of balls.
+ * Now derived from the morning's orders (Wave 3), so Order Lookup can show what each paid for and a
+ * refund can find its lines. See `orders-seed.ts`.
  */
-export const SEED_PAYMENTS: PaymentRecord[] = (
-  [
-    ['7:08 AM', 'card', 18.4, 3.5, '4421', 's-3'],
-    ['7:22 AM', 'card', 31.75, 6.0, '0187', 's-3'],
-    ['7:40 AM', 'cash', 12.5, 0, undefined, 's-3'],
-    ['7:55 AM', 'card', 54.2, 10.0, '7730', 's-2'],
-    ['8:10 AM', 'card', 47.99, 0, '2215', 's-6'],
-    ['8:31 AM', 'card', 22.6, 4.0, '9054', 's-3'],
-    ['8:52 AM', 'card', 68.3, 13.0, '3368', 's-2'],
-    ['9:15 AM', 'cash', 9.0, 2.0, undefined, 's-4'],
-    ['9:40 AM', 'card', 129.95, 0, '6612', 's-6'],
-    ['10:02 AM', 'card', 38.5, 7.0, '1149', 's-3'],
-    ['10:26 AM', 'card', 26.0, 0, '8820', 's-2'],
-    ['10:48 AM', 'card', 91.4, 18.0, '5503', 's-2'],
-    ['11:05 AM', 'card', 44.75, 8.5, '2276', 's-4'],
-    ['11:20 AM', 'card', 15.0, 3.0, '4410', 's-4'],
-    ['11:37 AM', 'card', 73.2, 14.0, '9981', 's-3'],
-  ] as const
-).map(([time, method, amount, tip, last4, staffId], i) => ({
-  id: `P-${2001 + i}`,
-  date: DAY,
-  time,
-  method,
-  amount,
-  tip,
-  cardLast4: last4,
-  orderNumber: `#A-${String(20400 + i * 37).padStart(5, '0')}`,
-  staffId,
-}));
+export { SEED_PAYMENTS } from './orders-seed';

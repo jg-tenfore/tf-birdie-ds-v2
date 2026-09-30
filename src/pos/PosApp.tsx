@@ -13,6 +13,15 @@ import { ReservationsView } from './components/restaurant/ReservationsView';
 import { TableChartView } from './components/restaurant/TableChartView';
 import { TablesView } from './components/restaurant/TablesView';
 import { TabsView } from './components/restaurant/TabsView';
+import { CustomersView } from './components/operations/CustomersView';
+import { EventsView } from './components/operations/EventsView';
+import { GiftCardsView } from './components/operations/GiftCardsView';
+import { InventoryView } from './components/operations/InventoryView';
+import { OrderLookupView } from './components/operations/OrderLookupView';
+import { ShiftView } from './components/operations/ShiftView';
+import { SignInScreen } from './components/operations/SignInScreen';
+import { TimeClockView } from './components/operations/TimeClockView';
+import { useEventBookings } from './state/use-event-bookings';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
@@ -65,7 +74,7 @@ import type { Edition } from './edition';
  * a modal is open, so a dialog portalled *into* the app ends up inside an `aria-hidden`
  * subtree — invisible to a screen reader, and to any query that respects it.
  */
-/** The restaurant's screens, by view (V1 → V2, Wave 2). */
+/** V1 → V2's screens that fill the stage, by view: the restaurant (Wave 2) and operations (Wave 3). */
 const RESTAURANT_VIEWS: Partial<Record<MainView, () => React.ReactNode>> = {
   quickorder: () => <QuickOrderView />,
   tabs: () => <TabsView />,
@@ -73,6 +82,14 @@ const RESTAURANT_VIEWS: Partial<Record<MainView, () => React.ReactNode>> = {
   reservations: () => <ReservationsView />,
   orderstips: () => <OrdersTipsView />,
   tablechart: () => <TableChartView />,
+  // Operations (V1 → V2, Wave 3).
+  customers: () => <CustomersView />,
+  orderlookup: () => <OrderLookupView />,
+  timeclock: () => <TimeClockView />,
+  giftcards: () => <GiftCardsView />,
+  events: () => <EventsView />,
+  inventory: () => <InventoryView />,
+  shift: () => <ShiftView />,
 };
 
 export function PosShell({ children }: { children: React.ReactNode }) {
@@ -115,11 +132,15 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // Weston Edits: any date within a year of today gets a generated tee sheet. Here rather
   // than in the tee sheet so everything that reads the viewed day — grid, list, the day
   // summary, the register's tee-time picker — sees the same filled day.
+  // V1 → V2, Wave 3: an event's outing on the tee sheet — only in the edition that has events.
+  // Before the day fill: both are layout effects in one commit, and the outing has to claim its
+  // day first, or a link straight to May 30 generates an ordinary Saturday over it.
+  const v1v2 = useV1V2();
+  useEventBookings(v1v2);
   useDemoDayFill(useWestonEdits());
   // V1 → V2's screens exist only in V1 → V2. The nav already dims their tiles elsewhere, but a
   // route resolves in any edition — so `#/courts` used to draw the court sheet inside Weston
   // Edits and the base prototypes. A view this edition does not have falls back to the tee sheet.
-  const v1v2 = useV1V2();
   const v1v2View = state.view === 'courts' || state.view === 'bays' || Boolean(RESTAURANT_VIEWS[state.view]);
   const view = v1v2View && !v1v2 ? 'tee' : state.view;
 
@@ -166,6 +187,8 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       <CartSignoutModal />
       <ModalHost />
       <ContextMenus />
+      {/* V1 → V2, Wave 3: nobody signed in covers everything, dialogs included. */}
+      {v1v2 && <SignInScreen />}
 
       <Snackbar
         open={Boolean(state.toast)}

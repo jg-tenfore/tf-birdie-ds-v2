@@ -107,11 +107,16 @@ export interface HeldOrder {
 export interface DrawerEvent {
   /** `DE-0001`, … — sequential for the session. */
   id: string;
-  kind: 'payout';
+  /**
+   * `payout` — cash handed out (Wave 1). `drop` — cash moved from the drawer to the safe (Wave 3,
+   * moved here from Orders & Tips, where v1 kept it beside the tip jobs).
+   */
+  kind: 'payout' | 'drop';
   amount: number;
-  /** Signed effect on cash in the drawer: `−amount` for a payout. */
+  /** Signed effect on cash in the drawer: `−amount` for a payout or a drop. */
   cashDelta: number;
-  reason: PayoutReason;
+  /** Payouts only — a drop has no reason beyond itself. */
+  reason?: PayoutReason;
   /** Who received the cash, if anyone was named. */
   recipient?: string;
   note?: string;
@@ -290,7 +295,8 @@ export function registerExtrasReducer(
         reason: d.reason!,
         ...(d.recipient?.trim() && { recipient: d.recipient.trim() }),
         ...(d.note?.trim() && { note: d.note.trim() }),
-        operator: null,
+        // Wave 2 added an operator; a payout is theirs, so the shift can say who handed cash out.
+        operator: state.operatorId,
         date: toDateStr(now),
         time: clockTime(now),
       };

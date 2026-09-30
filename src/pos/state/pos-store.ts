@@ -27,6 +27,17 @@ import {
   type RestaurantModal,
   type RestaurantState,
 } from './restaurant';
+import {
+  isOperationsAction,
+  operationsDefaults,
+  operationsReducer,
+  recordOperationsPayment,
+  unwindSplitTender,
+  type OperationsAction,
+  type OperationsModal,
+  type OperationsState,
+} from './operations';
+import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
 import * as cartLogic from '../logic/cart';
@@ -121,7 +132,9 @@ export type Modal =
   /** Hold, held orders, cash payout, gift card (V1 → V2) — `state/register-extras.ts`. */
   | RegisterExtrasModal
   /** The restaurant's dialogs (V1 → V2, Wave 2) — `state/restaurant.ts`. */
-  | RestaurantModal;
+  | RestaurantModal
+  /** The back office's dialogs (V1 → V2, Wave 3) — `state/operations.ts`. */
+  | OperationsModal;
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -262,7 +275,7 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState {
+export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState {
   view: MainView;
 
   /**
@@ -484,6 +497,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     lastPayment: null,
     ...registerExtrasDefaults(),
     ...restaurantDefaults(),
+    ...operationsDefaults(),
     ...overrides,
   };
 }
@@ -532,7 +546,14 @@ export type Action =
   | { type: 'setBookingGolfer'; golfer: Golfer | null }
   | { type: 'addGolfer'; golfer: Golfer }
   /** `amount` includes `tip`; the tip is kept apart so Orders & Tips can adjust it afterwards. */
-  | { type: 'recordPayment'; method: string; amount: number; tip?: number }
+  | {
+      type: 'recordPayment';
+      method: string;
+      amount: number;
+      tip?: number;
+      /** What the tender drew on — a customer's account or card, a gift card, an event (Wave 3). */
+      ref?: PaymentRef;
+    }
   // Tee sheet
   | { type: 'setDate'; date: Date }
   | { type: 'shiftDate'; days: number }
@@ -600,7 +621,9 @@ export type Action =
   // Register extras (V1 → V2): combos, hold, cash payout, gift cards — `state/register-extras.ts`.
   | RegisterExtrasAction
   // The restaurant (V1 → V2, Wave 2): tabs, dishes, the kitchen, the floor, reservations, tips.
-  | RestaurantAction;
+  | RestaurantAction
+  // The back office (V1 → V2, Wave 3): accounts, orders and refunds, events, stock, the drawer, the clock.
+  | OperationsAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -611,6 +634,8 @@ const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
  * balls — takes the next in the ledger's own sequence.
  */
 function paidOrderNumber(state: PosState): string {
+  // A split tender already fixed the number when its first part was paid (Wave 3).
+  if (state.splitTender) return state.splitTender.orderNumber;
   if (state.selectedBookingId) return orderNumberFromId(state.selectedBookingId);
   return `#A-${30000 + state.restaurantSeq.payment + 1}`;
 }
@@ -771,6 +796,11 @@ export function reducer(state: PosState, action: Action): PosState {
         activeTabId: null,
         // A link that names no room means the first one, as the encoder omits it only then.
         floorRoomId: state.floor[0]?.id ?? state.floorRoomId,
+        // Wave 3: what each back-office screen has open is navigation; the records are the day.
+        selectedOrderNumber: null,
+        selectedEventId: null,
+        selectedCustomerId: null,
+        activeCountId: null,
         multiSelectActive: false,
         multiSelectIds: [],
         ...rest,
@@ -842,10 +872,15 @@ export function reducer(state: PosState, action: Action): PosState {
       }
       return { ...state, cart };
     }
-    case 'clearOrder':
+    case 'clearOrder': {
+      // A split tender that will not be finished is unwound first: the gift card gets its money back
+      // and the ledger shows it refunded, rather than money taken for an order that never completed.
+      const base = unwindSplitTender(state);
       // Seats go with the order they were on.
       return {
-        ...state,
+        ...base,
+        payingAccountId: null,
+        payingEventId: null,
         // A tab loaded to be paid and then cleared is not paid: it stays open, untouched.
         payingTabId: null,
         cart: [],
@@ -859,6 +894,7 @@ export function reducer(state: PosState, action: Action): PosState {
         lastPayment: null,
         modal: null,
       };
+    }
     case 'setFlowMode':
       return { ...state, flowMode: action.mode };
     case 'stepReservation': {
@@ -950,8 +986,11 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, bookingGolfer: action.golfer };
     case 'addGolfer':
       return { ...state, addedGolfers: [...state.addedGolfers, action.golfer] };
-    case 'recordPayment':
-      return {
+    case 'recordPayment': {
+      // Three slices react to a payment, and two of them touch customer records. Each runs on the
+      // one before's result — never beside it — so none can silently undo another (V1 → V2, Wave 3).
+      const orderNumber = paidOrderNumber(state);
+      const core: PosState = {
         ...state,
         // The booking behind the order is now paid: every seat that was charged is marked,
         // so reopening it doesn't ask for the same money twice.
@@ -970,16 +1009,24 @@ export function reducer(state: PosState, action: Action): PosState {
           amount: action.amount,
           time: demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
         },
-        // Gift cards on the order exist from this moment, not before (V1 → V2).
-        ...issueGiftCardsOnPayment(state),
-        // The payment ledger, and a tab being paid is closed — its table is free (V1 → V2).
-        ...recordRestaurantPayment(state, {
-          method: action.method,
-          amount: action.amount,
-          tip: action.tip,
-          orderNumber: paidOrderNumber(state),
-        }),
       };
+      // Gift cards on the order exist from this moment, not before (Wave 1).
+      const gifted: PosState = { ...core, ...issueGiftCardsOnPayment(core) };
+      // The payment ledger, and a tab being paid is closed — its table is free (Wave 2).
+      const ledgered: PosState = {
+        ...gifted,
+        ...recordRestaurantPayment(gifted, { method: action.method, amount: action.amount, tip: action.tip, orderNumber, ref: action.ref }),
+      };
+      // The order kept whole, stock taken off the shelf, and what the tender drew on (Wave 3).
+      return recordOperationsPayment(ledgered, {
+        method: action.method,
+        amount: action.amount,
+        tip: action.tip,
+        ref: action.ref,
+        paymentId: ledgered.payments.at(-1)!.id,
+        orderNumber,
+      });
+    }
 
     // ─── Tee sheet ────────────────────────────────────────────────────────
     case 'setDate':
@@ -1190,6 +1237,7 @@ export function reducer(state: PosState, action: Action): PosState {
 
     default:
       if (isRestaurantAction(action)) return restaurantReducer(state, action);
+      if (isOperationsAction(action)) return operationsReducer(state, action);
       return isRegisterExtrasAction(action)
         ? registerExtrasReducer(state, action, (s) => reducer(s, { type: 'clearOrder' }))
         : state;

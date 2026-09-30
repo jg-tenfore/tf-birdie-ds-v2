@@ -379,6 +379,13 @@ export interface CartItem {
    * translated, and nothing can be lost in a translation.
    */
   dish?: CartDish;
+  /**
+   * A payment onto a member's house account (V1 → V2, Wave 3) — paying a debt, not buying
+   * anything: untaxed, never stock, and not something a gift card may pay for.
+   */
+  accountPayment?: { customerId: string };
+  /** An event's bill, settled by its organiser (V1 → V2, Wave 3). Already priced and taxed. */
+  eventBill?: { eventId: string };
   /** A gift card to be issued when this order is paid (V1 → V2). See `CartGiftCard`. */
   giftCard?: CartGiftCard;
 }
@@ -469,7 +476,15 @@ export type MainView =
   | 'tables'
   | 'reservations'
   | 'orderstips'
-  | 'tablechart';
+  | 'tablechart'
+  // Operations (V1 → V2, Wave 3).
+  | 'customers'
+  | 'orderlookup'
+  | 'timeclock'
+  | 'giftcards'
+  | 'events'
+  | 'inventory'
+  | 'shift';
 export type TeeSheetViewMode = 'cal' | 'list';
 export type FlowMode = '' | 'walkin' | 'reserve';
 

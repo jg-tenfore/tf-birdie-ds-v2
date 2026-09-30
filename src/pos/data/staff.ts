@@ -17,18 +17,27 @@ export interface StaffMember {
   /** How a ticket or a tip line prints them. */
   short: string;
   role: StaffRole;
+  /**
+   * The four digits they sign in with (V1 → V2, Wave 3). A prototype's PINs, printed on the sign-in
+   * screen so anyone reviewing can get in — not a security model. v1 accepted any four digits and
+   * picked the operator from them; here each person has their own.
+   */
+  pin: string;
 }
 
 export const STAFF: StaffMember[] = [
-  { id: 's-1', name: 'Avery Robertson', short: 'Avery R.', role: 'manager' },
-  { id: 's-2', name: 'Jordan Ellis', short: 'Jordan E.', role: 'server' },
-  { id: 's-3', name: 'Priya Nair', short: 'Priya N.', role: 'server' },
-  { id: 's-4', name: 'Marcus Webb', short: 'Marcus W.', role: 'bartender' },
-  { id: 's-5', name: 'Hannah Cole', short: 'Hannah C.', role: 'host' },
-  { id: 's-6', name: 'Diego Ramos', short: 'Diego R.', role: 'pro-shop' },
+  { id: 's-1', name: 'Avery Robertson', short: 'Avery R.', role: 'manager', pin: '1111' },
+  { id: 's-2', name: 'Jordan Ellis', short: 'Jordan E.', role: 'server', pin: '2222' },
+  { id: 's-3', name: 'Priya Nair', short: 'Priya N.', role: 'server', pin: '3333' },
+  { id: 's-4', name: 'Marcus Webb', short: 'Marcus W.', role: 'bartender', pin: '4444' },
+  { id: 's-5', name: 'Hannah Cole', short: 'Hannah C.', role: 'host', pin: '5555' },
+  { id: 's-6', name: 'Diego Ramos', short: 'Diego R.', role: 'pro-shop', pin: '6666' },
 ];
 
 export const staffById = (id: string | null | undefined): StaffMember | undefined => STAFF.find((s) => s.id === id);
 
 /** Who can carry a tab — the tab's server picker offers these. */
 export const SERVERS = STAFF.filter((s) => s.role === 'server' || s.role === 'bartender' || s.role === 'manager');
+
+export const staffByPin = (pin: string): StaffMember | undefined => STAFF.find((s) => s.pin === pin);
+

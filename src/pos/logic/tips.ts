@@ -6,7 +6,7 @@ import type { PaymentRecord } from './restaurant';
  */
 
 /** Only a card tip can be changed after the fact — a cash tip is already in someone's pocket. */
-export const tipAdjustable = (p: PaymentRecord): boolean => p.method === 'card';
+export const tipAdjustable = (p: PaymentRecord): boolean => p.method === 'card' && p.kind !== 'refund';
 
 /** Tip as a share of what the tip was on, to one decimal. Zero on a zero sale rather than NaN. */
 export const tipPercent = (p: Pick<PaymentRecord, 'amount' | 'tip'>): number =>
@@ -45,7 +45,8 @@ export function dayTotals(ps: PaymentRecord[]): DayTotals {
   const sum = (f: (p: PaymentRecord) => number) => Math.round(ps.reduce((s, p) => s + f(p), 0) * 100) / 100;
   const tipped = ps.filter((p) => p.amount > 0 && p.tip > 0);
   return {
-    payments: ps.length,
+    // A refund is money going back, not a payment — it nets out of sales but is not counted.
+    payments: ps.filter((p) => p.kind !== 'refund').length,
     sales: sum((p) => p.amount),
     tips: sum((p) => p.tip),
     card: sum((p) => (p.method === 'card' ? p.amount + p.tip : 0)),

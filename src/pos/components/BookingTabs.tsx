@@ -7,6 +7,7 @@ import { money } from '../logic/cart';
 import { orderNumber, playerFee, playerName, reservationDue } from '../logic/reservation';
 import { seatNetGreenFee } from '../logic/seat-pricing';
 import { rateContext } from '../state/pos-store';
+import { useV1V2 } from '../edition';
 import { usePos } from '../state/PosProvider';
 import type { Booking, PlayerState } from '../types';
 import { Field, FilledButton, ModalSection, OutlineButton, PillGroup } from '../modals/ModalFrame';
@@ -475,14 +476,23 @@ export function BookingActivity({ booking: b }: { booking: Booking }) {
  */
 export function OrderNumberLink({ booking: b }: { booking: Booking }) {
   const { dispatch } = usePos();
+  // V1 → V2, Wave 3: Order Lookup exists, and it is where a refund is done — so the number goes
+  // there. Elsewhere it still loads the order into the register.
+  const v1v2 = useV1V2();
   const number = orderNumber(b);
   if (!number) return null;
 
   return (
     <ButtonBase
       data-order-number
-      aria-label={`Open order ${number} in the register`}
-      onClick={() => dispatch({ type: 'openPaidOrder', bookingId: b.id })}
+      aria-label={v1v2 ? `Open order ${number} in Order Lookup` : `Open order ${number} in the register`}
+      onClick={() =>
+        dispatch(
+          v1v2
+            ? { type: 'openOrderLookup', orderNumber: number, fromBookingId: b.id }
+            : { type: 'openPaidOrder', bookingId: b.id },
+        )
+      }
       sx={{
         gap: 0.375,
         px: 0.75,

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { keyframes } from '@emotion/react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius, reservationPanel } from '../../theme/tokens';
+import { staffById } from '../data/staff';
 import { APP_IDENTITY, NAV_GROUPS, isLive, type NavItem, type NavKey } from '../data/nav';
 import { useEdition, useWestonEdits } from '../edition';
 import { usePos } from '../state/PosProvider';
@@ -41,6 +42,11 @@ export function NavOverlay() {
   const weston = useWestonEdits();
   const edition = useEdition();
   const close = () => dispatch({ type: 'setNavOpen', open: false });
+  const operator = staffById(state.operatorId);
+  const signOut = () => {
+    close();
+    dispatch({ type: 'signOut' });
+  };
 
   useEffect(() => {
     if (!state.navOpen) return;
@@ -64,7 +70,11 @@ export function NavOverlay() {
         dispatch({ type: 'setView', view: 'pos' });
         return close();
       case 'customersearch':
-        dispatch({ type: 'openModal', modal: { kind: 'golferSearch', target: 'primary' } });
+        // V1 → V2, Wave 3: a screen. Elsewhere, the search modal it has always been.
+        if (edition === 'v1v2') {
+          dispatch({ type: 'setView', view: 'customers' });
+          dispatch({ type: 'toggleLeftPanel', collapsed: true });
+        } else dispatch({ type: 'openModal', modal: { kind: 'golferSearch', target: 'primary' } });
         return close();
       case 'settings':
         // The tee sheet owns the settings panel, so arrive there first.
@@ -87,6 +97,16 @@ export function NavOverlay() {
       case 'tablechart':
         dispatch({ type: 'setView', view: key });
         dispatch({ type: 'toggleLeftPanel', collapsed: key !== 'quickorder' });
+        return close();
+      // V1 → V2, Wave 3: operations. Full width — none of them is about the order on the rail.
+      case 'orderlookup':
+      case 'timeclock':
+      case 'giftcards':
+      case 'events':
+      case 'inventory':
+      case 'shift':
+        dispatch({ type: 'setView', view: key });
+        dispatch({ type: 'toggleLeftPanel', collapsed: true });
         return close();
       default:
         return;
@@ -126,8 +146,15 @@ export function NavOverlay() {
           </Typography>
         </Box>
         <Stack direction="row" gap={1} alignItems="center">
-          <HeaderAction icon="switch_account" label="Switch user" onClick={() => toast('Switch user')} />
-          <HeaderAction icon="logout" label="Log Out" onClick={() => toast('Logged out')} />
+          {/* V1 → V2, Wave 3: both end the session and bring up the PIN pad — on a shared
+              terminal, switching user *is* signing out and letting the next person in. */}
+          {edition === 'v1v2' && operator && (
+            <Typography data-signed-in-as sx={{ fontSize: 12.5, color: md3.onSurfaceVariant, mr: 0.5 }}>
+              Signed in as <b>{operator.name}</b>
+            </Typography>
+          )}
+          <HeaderAction icon="switch_account" label="Switch user" onClick={edition === 'v1v2' ? signOut : () => toast('Switch user')} />
+          <HeaderAction icon="logout" label="Log Out" onClick={edition === 'v1v2' ? signOut : () => toast('Logged out')} />
           <ButtonBase
             aria-label="Close navigation"
             onClick={close}

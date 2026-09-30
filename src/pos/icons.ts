@@ -1,4 +1,32 @@
 import type { SvgIconComponent } from '@mui/icons-material';
+// V1 → V2, Wave 3: operations.
+import AccountBalance from '@mui/icons-material/AccountBalance';
+import CreditScore from '@mui/icons-material/CreditScore';
+import LoginIcon from '@mui/icons-material/Login';
+import LockOpen from '@mui/icons-material/LockOpen';
+import Dialpad from '@mui/icons-material/Dialpad';
+import Replay from '@mui/icons-material/Replay';
+import CurrencyExchange from '@mui/icons-material/CurrencyExchange';
+import LocalAtm from '@mui/icons-material/LocalAtm';
+import Cake from '@mui/icons-material/Cake';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import TrendingDown from '@mui/icons-material/TrendingDown';
+import FactCheck from '@mui/icons-material/FactCheck';
+import PunchClock from '@mui/icons-material/PunchClock';
+import MoreTime from '@mui/icons-material/MoreTime';
+import EventBusy from '@mui/icons-material/EventBusy';
+import AccountBalanceWallet from '@mui/icons-material/AccountBalanceWallet';
+import DoneAll from '@mui/icons-material/DoneAll';
+import FilterList from '@mui/icons-material/FilterList';
+import OpenInNew from '@mui/icons-material/OpenInNew';
+import KeyboardReturn from '@mui/icons-material/KeyboardReturn';
+import AssignmentReturn from '@mui/icons-material/AssignmentReturn';
+import MoneyOff from '@mui/icons-material/MoneyOff';
+import CategoryIcon from '@mui/icons-material/Category';
+import AddCard from '@mui/icons-material/AddCard';
+import CreditCardOff from '@mui/icons-material/CreditCardOff';
+import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
+import TaskAlt from '@mui/icons-material/TaskAlt';
 import Checkroom from '@mui/icons-material/Checkroom';
 import LunchDining from '@mui/icons-material/LunchDining';
 import LocalCafe from '@mui/icons-material/LocalCafe';
@@ -177,6 +205,34 @@ import NoMeals from '@mui/icons-material/NoMeals';
 export const ICONS: Record<string, SvgIconComponent> = {
   add: Add,
   assignment_turned_in: AssignmentTurnedIn,
+  // V1 → V2, Wave 3: operations.
+  account_balance: AccountBalance,
+  credit_score: CreditScore,
+  login: LoginIcon,
+  lock_open: LockOpen,
+  dialpad: Dialpad,
+  replay: Replay,
+  currency_exchange: CurrencyExchange,
+  local_atm: LocalAtm,
+  cake: Cake,
+  inventory: InventoryIcon,
+  trending_down: TrendingDown,
+  fact_check: FactCheck,
+  punch_clock: PunchClock,
+  more_time: MoreTime,
+  event_busy: EventBusy,
+  account_balance_wallet: AccountBalanceWallet,
+  done_all: DoneAll,
+  filter_list: FilterList,
+  open_in_new: OpenInNew,
+  keyboard_return: KeyboardReturn,
+  assignment_return: AssignmentReturn,
+  money_off: MoneyOff,
+  category: CategoryIcon,
+  add_card: AddCard,
+  credit_card_off: CreditCardOff,
+  hourglass_empty: HourglassEmpty,
+  task_alt: TaskAlt,
   bolt: Bolt,
   calendar_month: CalendarMonth,
   grid_view: GridView,

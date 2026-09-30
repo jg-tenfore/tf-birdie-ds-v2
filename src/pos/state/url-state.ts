@@ -11,6 +11,7 @@ import { roster } from '../data/roster';
 import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
 import { isRegisterExtrasModal } from './register-extras';
 import { isRestaurantModal } from './restaurant';
+import { isOperationsModal } from './operations';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
@@ -169,6 +170,8 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
   // The restaurant's dialogs likewise: a half-chosen set of modifiers or a tip being typed is not
   // a place. What they open over — the tab, the room, the day — is linkable instead.
   if (isRestaurantModal(m)) return false;
+  // And Wave 3's — a tender half-chosen or a refund being picked is not a place either.
+  if (isOperationsModal(m)) return false;
   if (m.kind === 'golferSearch' && typeof m.target === 'object' && 'giftCard' in m.target) return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);
@@ -357,6 +360,21 @@ const RESTAURANT_SCREENS: Record<string, MainView> = Object.fromEntries(
   Object.entries(RESTAURANT_PATHS).map(([view, path]) => [path, view as MainView]),
 );
 
+/** Operations' views and their paths (V1 → V2, Wave 3). */
+export const OPERATIONS_PATHS = {
+  customers: 'customers',
+  orderlookup: 'order-lookup',
+  timeclock: 'time-clock',
+  giftcards: 'gift-cards',
+  events: 'events',
+  inventory: 'inventory',
+  shift: 'shift',
+} as const satisfies Partial<Record<MainView, string>>;
+
+const OPERATIONS_SCREENS: Record<string, MainView> = Object.fromEntries(
+  Object.entries(OPERATIONS_PATHS).map(([view, path]) => [path, view as MainView]),
+);
+
 export function stateToHash(state: PosState): string {
   const q = new URLSearchParams();
 
@@ -375,6 +393,15 @@ export function stateToHash(state: PosState): string {
       case 'orderstips':
       case 'tablechart':
         return `/${RESTAURANT_PATHS[state.view]}`;
+      // V1 → V2, Wave 3: operations.
+      case 'customers':
+      case 'orderlookup':
+      case 'timeclock':
+      case 'giftcards':
+      case 'events':
+      case 'inventory':
+      case 'shift':
+        return `/${OPERATIONS_PATHS[state.view]}`;
       case 'tee':
         return state.teeSheetMode === 'list' ? '/tee-sheet/list' : '/tee-sheet';
       default:
@@ -411,6 +438,12 @@ export function stateToHash(state: PosState): string {
   // The restaurant (V1 → V2, Wave 2): the tab open in the editor, and which room of the floor.
   if (state.activeTabId) q.set('tab', state.activeTabId);
   if (state.floorRoomId !== state.floor[0]?.id) q.set('room', state.floorRoomId);
+  // Operations (V1 → V2, Wave 3): what each screen has open. Not `order=` or `cust=` — those
+  // already mean the register's scenario and the customer record.
+  if (state.selectedOrderNumber) q.set('ord', state.selectedOrderNumber);
+  if (state.selectedEventId) q.set('ev', state.selectedEventId);
+  if (state.selectedCustomerId) q.set('cid', state.selectedCustomerId);
+  if (state.activeCountId) q.set('count', state.activeCountId);
   if (state.multiSelectActive) q.set('select', state.multiSelectIds.join(',') || 'on');
   if (state.settings.compactMode) q.set('compact', '1');
   if (state.settings.hideEmpty) q.set('hide-empty', '1');
@@ -522,6 +555,11 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
     // Order — the counter sells onto the register's own order, so the order has to be visible.
     view = RESTAURANT_SCREENS[screen];
     patch.leftPanelCollapsed = view === 'quickorder' ? q.get('panel') === 'collapsed' : q.get('panel') !== 'open';
+  } else if (screen && OPERATIONS_SCREENS[screen]) {
+    // V1 → V2, Wave 3: operations. Screens you read, full width — the order is not what they
+    // are about, and a refund or a bill loads it when it is needed.
+    view = OPERATIONS_SCREENS[screen];
+    patch.leftPanelCollapsed = q.get('panel') !== 'open';
   } else if (screen === 'courts' || screen === 'bays') {
     // V1 → V2's resource sheets. Full width, like the tee sheet.
     view = screen;
@@ -615,6 +653,15 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   if (tab) patch.activeTabId = tab;
   const room = q.get('room');
   if (room) patch.floorRoomId = room;
+  // Operations' selections, on trust like `tab`: a stale id selects nothing.
+  const ord = q.get('ord');
+  if (ord) patch.selectedOrderNumber = ord;
+  const ev = q.get('ev');
+  if (ev) patch.selectedEventId = ev;
+  const cid = q.get('cid');
+  if (cid) patch.selectedCustomerId = cid;
+  const count = q.get('count');
+  if (count) patch.activeCountId = count;
 
   const select = q.get('select');
   if (select) {

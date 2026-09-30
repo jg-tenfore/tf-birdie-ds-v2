@@ -7,6 +7,8 @@ import { RegisterDialog } from './RegisterDialogs';
 import { isRegisterExtrasModal } from '../state/register-extras';
 import { isRestaurantModal } from '../state/restaurant';
 import { RestaurantDialogs } from './RestaurantDialogs';
+import { isOperationsModal } from '../state/operations';
+import { OperationsDialogs } from './OperationsDialogs';
 import {
   ActionPanel,
   GolferSearch,
@@ -104,6 +106,8 @@ export function ModalHost() {
     default:
       // The restaurant (V1 → V2, Wave 2).
       if (isRestaurantModal(m)) return <RestaurantDialogs m={m} />;
+      // Operations (V1 → V2, Wave 3).
+      if (isOperationsModal(m)) return <OperationsDialogs m={m} />;
       // Hold, held orders, cash payout, gift card (V1 → V2).
       return isRegisterExtrasModal(m) ? <RegisterDialog modal={m} /> : null;
   }
