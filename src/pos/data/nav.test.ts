@@ -33,8 +33,8 @@ describe('nav data', () => {
         .map((i) => i.key)
         .sort();
     expect(liveIn('weston')).toEqual(['customersearch', 'proshop', 'settings', 'teesheet']);
-    // V1 → V2 is Weston's four plus whatever has been migrated so far.
-    expect(liveIn('v1v2')).toEqual(['baysheet', 'courtsheet', 'customersearch', 'proshop', 'settings', 'teesheet']);
+    // V1 → V2 is Weston's four plus whatever has been migrated so far: waves 1 and 2.
+    expect(liveIn('v1v2')).toEqual(['baysheet', 'courtsheet', 'customersearch', 'orderstips', 'proshop', 'quickorder', 'reservations', 'settings', 'tablechart', 'tables', 'tabs', 'teesheet']);
   });
 
   it('never makes a V1 → V2 destination live in Weston Edits', () => {

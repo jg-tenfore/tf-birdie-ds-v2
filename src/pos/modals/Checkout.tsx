@@ -9,6 +9,7 @@ import { Icon, SectionLabel } from '../components/primitives';
 import { Callout, FilledButton, ModalFrame, OutlineButton } from './ModalFrame';
 import { Stack } from '../components/Stack';
 import { demoNow } from '../data/bookings';
+import { tabById } from '../state/restaurant';
 
 /**
  * Checkout — the receipt on the left, the numeric keypad on the right.
@@ -65,7 +66,12 @@ export function Checkout() {
       width={760}
       tall
       title="Checkout"
-      subtitle={booking ? `${booking.name} · ${booking.conf}` : 'Walk-in order'}
+      subtitle={
+        booking
+          ? `${booking.name} · ${booking.conf}`
+          : // A restaurant tab being paid is not a walk-in (V1 → V2): say whose it is.
+            (tabById(state, state.payingTabId)?.name ?? 'Walk-in order')
+      }
       icon="point_of_sale"
       actions={
         <>
@@ -328,7 +334,8 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
       return;
     }
     if (stage === 3) {
-      dispatch({ type: 'recordPayment', method, amount });
+      // The tip travels apart from the amount, so Orders & Tips can adjust it later (V1 → V2).
+      dispatch({ type: 'recordPayment', method, amount, tip });
       dispatch({ type: 'closeModal' });
       toast(`Payment approved · ${cart.money(amount)}`);
     }

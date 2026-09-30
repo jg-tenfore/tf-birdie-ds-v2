@@ -283,3 +283,18 @@ export const LiveInV1V2: Story = {
     await expect(SHEETS[KIND].stepMin).toBe(30);
   },
 };
+
+/**
+ * **…and a link cannot open it anywhere else.** Dimming the tile was not enough: a route resolves
+ * in any edition, so `#/courts` drew the court sheet inside Weston Edits and the base prototypes
+ * from Wave 1 until this was caught in Wave 2. The shell now falls back to the tee sheet for a
+ * view the edition does not have — here, a Weston Edits terminal handed the court sheet's view
+ * directly, as a link would.
+ */
+export const NotReachableByLinkElsewhere: Story = {
+  name: 'Not reachable by link outside V1 → V2',
+  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { view: 'courts', leftPanelCollapsed: true })} />,
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-resource-sheet]')).toBeNull();
+  },
+};

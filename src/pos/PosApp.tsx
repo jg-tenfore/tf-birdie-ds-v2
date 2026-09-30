@@ -3,9 +3,16 @@ import { Box, Snackbar } from '@mui/material';
 import { elevation, md3, radius, shell } from '../theme/tokens';
 import { ContextMenus } from './components/ContextMenus';
 import { LeftPanel } from './components/LeftPanel';
+import type { MainView } from './types';
 import { NavOverlay } from './components/NavOverlay';
 import { ResourcePanel } from './components/ResourcePanel';
 import { ResourceSheetView } from './components/ResourceSheetView';
+import { OrdersTipsView } from './components/restaurant/OrdersTipsView';
+import { QuickOrderView } from './components/restaurant/QuickOrderView';
+import { ReservationsView } from './components/restaurant/ReservationsView';
+import { TableChartView } from './components/restaurant/TableChartView';
+import { TablesView } from './components/restaurant/TablesView';
+import { TabsView } from './components/restaurant/TabsView';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
@@ -27,7 +34,7 @@ import type { PosState } from './state/pos-store';
 import { PosProvider, usePos } from './state/PosProvider';
 import { useUrlSync } from './state/useUrlSync';
 import { useDemoDayFill } from './state/use-demo-day-fill';
-import { EditionProvider, useWestonEdits } from './edition';
+import { EditionProvider, useV1V2, useWestonEdits } from './edition';
 import type { Edition } from './edition';
 
 /**
@@ -58,6 +65,16 @@ import type { Edition } from './edition';
  * a modal is open, so a dialog portalled *into* the app ends up inside an `aria-hidden`
  * subtree — invisible to a screen reader, and to any query that respects it.
  */
+/** The restaurant's screens, by view (V1 → V2, Wave 2). */
+const RESTAURANT_VIEWS: Partial<Record<MainView, () => React.ReactNode>> = {
+  quickorder: () => <QuickOrderView />,
+  tabs: () => <TabsView />,
+  tables: () => <TablesView />,
+  reservations: () => <ReservationsView />,
+  orderstips: () => <OrdersTipsView />,
+  tablechart: () => <TableChartView />,
+};
+
 export function PosShell({ children }: { children: React.ReactNode }) {
   return (
     <Box
@@ -99,6 +116,12 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // than in the tee sheet so everything that reads the viewed day — grid, list, the day
   // summary, the register's tee-time picker — sees the same filled day.
   useDemoDayFill(useWestonEdits());
+  // V1 → V2's screens exist only in V1 → V2. The nav already dims their tiles elsewhere, but a
+  // route resolves in any edition — so `#/courts` used to draw the court sheet inside Weston
+  // Edits and the base prototypes. A view this edition does not have falls back to the tee sheet.
+  const v1v2 = useV1V2();
+  const v1v2View = state.view === 'courts' || state.view === 'bays' || Boolean(RESTAURANT_VIEWS[state.view]);
+  const view = v1v2View && !v1v2 ? 'tee' : state.view;
 
   // A scrimmed reservation panel is modal: nothing behind it is usable until an action on the
   // panel itself dismisses it. The scrim alone only stops the mouse — Tab still walks straight
@@ -116,15 +139,18 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
       {/* `display: contents` so marking the background inert costs it no layout. */}
       <Box component="div" inert={panelIsModal || undefined} sx={{ display: 'contents' }}>
         <LeftPanel />
-        {state.view === 'pos' ? (
+        {view === 'pos' ? (
           // The fallback is a plain surface, not a spinner: the register's chunk resolves in a
           // frame or two off a warm cache, and a spinner that flashes reads worse than nothing.
           <Suspense fallback={<Box sx={{ flex: 1, bgcolor: md3.surface }} />}>
             <PosView />
           </Suspense>
-        ) : state.view === 'courts' || state.view === 'bays' ? (
+        ) : view === 'courts' || view === 'bays' ? (
           // V1 → V2: one scheduler, configured per sheet — see `data/resources.ts`.
-          <ResourceSheetView kind={state.view === 'courts' ? 'court' : 'bay'} />
+          <ResourceSheetView kind={view === 'courts' ? 'court' : 'bay'} />
+        ) : RESTAURANT_VIEWS[view] ? (
+          // V1 → V2, Wave 2: the restaurant.
+          RESTAURANT_VIEWS[view]!()
         ) : (
           <TeeSheetView />
         )}

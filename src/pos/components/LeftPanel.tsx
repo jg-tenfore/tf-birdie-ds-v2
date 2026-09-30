@@ -6,6 +6,7 @@ import { COURSES, TIMES } from '../data/courses';
 import { useV1V2, useWestonEdits } from '../edition';
 import { CASH_PAYOUT_MENU_ITEM } from '../data/register-extras';
 import { ComboLine, GiftCardLine, HeldOrdersBar, HoldButton } from './RegisterExtras';
+import { RailDishLine } from './restaurant/DishLine';
 import { roundLabel } from '../logic/reservation';
 import { seatRecord } from '../logic/seat-pricing';
 import { useStartWalkIn } from './use-start-walk-in';
@@ -373,6 +374,8 @@ export function LeftPanel() {
             {state.cart.map((item, i) =>
               item.isSubItem || (weston && booking && item.isCheckIn) ? null : item.isCheckIn ? (
                 <CheckInLines key={`${item.name}-${i}`} item={item} index={i} />
+              ) : item.dish ? (
+                <RailDishLine key={item.dish.lineId} item={item} />
               ) : item.combo ? (
                 <ComboLine key={`${item.name}-${i}`} item={item} index={i} />
               ) : item.giftCard ? (

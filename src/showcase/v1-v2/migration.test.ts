@@ -24,9 +24,7 @@ describe('the V1 → V2 audit', () => {
 
   it('marks as live only what the nav will actually open in V1 → V2', () => {
     const live = NAV_GROUPS.flatMap((g) => g.items).filter((i) => isLive(i, 'v1v2'));
-    // Wave 1's two new sheets, plus the four Weston Edits already had.
-    expect(live.map((i) => i.key).sort()).toEqual(
-      ['baysheet', 'courtsheet', 'customersearch', 'proshop', 'settings', 'teesheet'],
-    );
+    // Waves 1 and 2, plus the four Weston Edits already had.
+    expect(live.map((i) => i.key).sort()).toEqual(['baysheet', 'courtsheet', 'customersearch', 'orderstips', 'proshop', 'quickorder', 'reservations', 'settings', 'tablechart', 'tables', 'tabs', 'teesheet']);
   });
 });

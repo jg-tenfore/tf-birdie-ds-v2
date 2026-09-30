@@ -65,12 +65,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     heading: 'Restaurant',
     items: [
-      { key: 'quickorder', label: 'Quick Order', icon: 'bolt' },
-      { key: 'tabs', label: 'Tabs', icon: 'credit_card' },
-      { key: 'tables', label: 'Tables', icon: 'restaurant' },
-      { key: 'reservations', label: 'Reservations', icon: 'assignment_turned_in' },
-      { key: 'orderstips', label: 'Orders & Tips', icon: 'attach_money' },
-      { key: 'tablechart', label: 'Table Chart', icon: 'grid_view' },
+      { key: 'quickorder', label: 'Quick Order', icon: 'bolt' , live: 'v1v2' },
+      { key: 'tabs', label: 'Tabs', icon: 'credit_card' , live: 'v1v2' },
+      { key: 'tables', label: 'Tables', icon: 'restaurant' , live: 'v1v2' },
+      { key: 'reservations', label: 'Reservations', icon: 'assignment_turned_in' , live: 'v1v2' },
+      { key: 'orderstips', label: 'Orders & Tips', icon: 'attach_money' , live: 'v1v2' },
+      { key: 'tablechart', label: 'Table Chart', icon: 'grid_view' , live: 'v1v2' },
     ],
   },
   {
