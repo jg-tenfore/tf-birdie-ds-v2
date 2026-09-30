@@ -100,6 +100,64 @@ Everything hangs off the same dev server with `?edition=v1v2`, and every Weston 
 | `#/courts?rb=<booking id>` | A court or bay booking, in its panel. An id that no longer exists shows the sheet with no panel, rather than an empty frame |
 | `#/courts?date=2026-05-23` | Another day — seeded the first time either sheet visits it |
 
+## Wave 2 · the Restaurant
+
+Six destinations — Quick Order, Tabs, Tables, Reservations, Orders & Tips and Table Chart — and
+the largest wave, because v1 had all of them and joined none of them together.
+
+### The chain
+
+The decision everything else follows from: **one connected chain.** A reservation is given a
+table; seating it opens a tab on that table, with a seat per guest; the tab's dishes go to the
+kitchen; paying the tab closes it, and the table is free. v1's own note on Restaurant Reservations
+says "there is nothing here about tables… seating is entirely a matter of the host remembering".
+
+A table's status — free, reserved, seated, waiting on its check, out of service — is **derived**
+from the tabs and reservations, never stored. v1 kept a status on each table, which is a second
+source of truth: a table can say "seated" with no tab behind it.
+
+### Decisions made for this wave
+
+| | Chosen | Instead of |
+|---|---|---|
+| **Structure** | One chain: reservation → table → tab → pay → free | v1's three unconnected lists |
+| **Kitchen** | **Send and track.** A dish is unsent or sent; a sent dish is locked and changes only by being voided, which the kitchen sees | v1 had no kitchen step at all |
+| **Menus** | **Counter and 19th Hole**, two menus in one catalog. Any tab sells from either | One combined menu, or the counter alone |
+| **Table Chart** | **Full editor**: every shape, barriers, regions, labels, resize and **rotate** handles, undo and redo | A simpler placement editor |
+
+v1's floor model had no rotation; it was asked for with the full editor, so it is an addition
+rather than parity.
+
+And three calls made without a question, each one place to change:
+
+- **Modifiers say what they are.** v1's options looked like radio buttons and behaved like
+  checkboxes, so staff tapped an option twice expecting the first to clear. Every group here is
+  either *one* (a steak's temperature) or *many* (add-ons), and a required group — a burger with no
+  temperature — has to be answered before the dish can go to the kitchen.
+- **A tab is paid through the register**, the way a tee time is. A dish is a register line with a
+  `dish` attached, so the tab's lines arrive on the register exactly as they are.
+- **Every payment is recorded.** The store used to remember only the last one, so there was
+  nothing for Orders & Tips to show. Checkout now reports the tip apart from the sale, which is what
+  makes a tip adjustable at all.
+
+### Not carried over
+
+- **v1's menu photography.** By v1's own note the dining-room images are Del Frisco's, taken from
+  Uber Eats; the counter images have no provenance. Menu tiles are text until there is photography
+  that is ours to publish.
+- **The cash drop** on Orders & Tips. It is a drawer job, and moves to Shift in wave 3.
+
+### Deep links
+
+| Link | Opens |
+|---|---|
+| `#/quick-order` | The counter, selling onto the register's order |
+| `#/tabs` · `#/tabs?tab=T-1003` | Every open tab · one tab's editor (the eight-top waiting on its check) |
+| `#/tables` · `#/tables?room=patio` | The live floor · another room |
+| `#/reservations` | The day's reservations, by service |
+| `#/orders-tips` | The day's payments and tips |
+| `#/table-chart?room=bar` | The floor-plan editor, on a room |
+
 ### Worth knowing
 
 **Order Lookup comes in wave 3**, under nav order. Until then, the order number on a paid
