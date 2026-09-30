@@ -36,6 +36,14 @@ import {
   type OperationsModal,
   type OperationsState,
 } from './operations';
+import {
+  isSettingsAction,
+  settingsDefaults,
+  settingsReducer,
+  type SettingsAction,
+  type SettingsModal,
+  type SettingsState,
+} from './settings';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -133,7 +141,9 @@ export type Modal =
   /** The restaurant's dialogs (V1 → V2, Wave 2) — `state/restaurant.ts`. */
   | RestaurantModal
   /** The back office's dialogs (V1 → V2, Wave 3) — `state/operations.ts`. */
-  | OperationsModal;
+  | OperationsModal
+  /** Settings' dialogs (V1 → V2) — `state/settings.ts`. */
+  | SettingsModal;
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -274,7 +284,7 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState {
+export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState {
   view: MainView;
 
   /**
@@ -497,6 +507,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     ...registerExtrasDefaults(),
     ...restaurantDefaults(),
     ...operationsDefaults(),
+    ...settingsDefaults(),
     ...overrides,
   };
 }
@@ -622,7 +633,9 @@ export type Action =
   // The restaurant (V1 → V2, Wave 2): tabs, dishes, the kitchen, the floor, reservations, tips.
   | RestaurantAction
   // The back office (V1 → V2, Wave 3): accounts, orders and refunds, events, stock, the drawer, the clock.
-  | OperationsAction;
+  | OperationsAction
+  // Settings (V1 → V2): the terminal, checkout and receipts, staff and PINs.
+  | SettingsAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -1252,6 +1265,8 @@ export function reducer(state: PosState, action: Action): PosState {
     default:
       if (isRestaurantAction(action)) return restaurantReducer(state, action);
       if (isOperationsAction(action)) return operationsReducer(state, action);
+      if (isSettingsAction(action))
+        return settingsReducer(state, action, demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
       return isRegisterExtrasAction(action)
         ? registerExtrasReducer(state, action, (s) => reducer(s, { type: 'clearOrder' }))
         : state;

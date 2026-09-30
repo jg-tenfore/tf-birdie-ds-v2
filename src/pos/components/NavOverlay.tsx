@@ -77,6 +77,12 @@ export function NavOverlay() {
         } else dispatch({ type: 'openModal', modal: { kind: 'golferSearch', target: 'primary' } });
         return close();
       case 'settings':
+        // V1 → V2: a Settings screen of its own, with the tee sheet's settings as one section.
+        if (edition === 'v1v2') {
+          dispatch({ type: 'setView', view: 'settings' });
+          dispatch({ type: 'toggleLeftPanel', collapsed: true });
+          return close();
+        }
         // The tee sheet owns the settings panel, so arrive there first.
         dispatch({ type: 'setView', view: 'tee' });
         return dispatch({ type: 'setTeeSheetSettings', open: true });

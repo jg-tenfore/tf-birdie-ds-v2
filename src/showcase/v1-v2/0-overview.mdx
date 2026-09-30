@@ -175,8 +175,8 @@ the register.
 ## Wave 3 · everything else
 
 Customer Search, Order Lookup, Time Clock, Gift Cards, Events, Inventory and Shift, plus PIN
-sign-in. With this wave every tile in the nav opens a screen. Settings is still the tee sheet's
-settings panel, which Weston Edits already had.
+sign-in. With this wave every tile in the nav opens a screen. Settings followed, in its own section
+below.
 
 The wave is mostly about **money after the sale**: finding an order, giving money back, paying by
 something other than a card, and closing the drawer at the end of the day. v1 had screens for all of
@@ -259,3 +259,34 @@ Low-stock badges now show in the register's search results too, the same badge t
 
 Log Out or Switch user in the nav brings up the PIN pad. The demo PINs are listed on it: 1111 for
 Avery Robertson, the manager, through 6666.
+
+## Settings
+
+v1 had no Settings screen. Its tile opened a stub ("Terminal and hardware configuration."), and
+Weston Edits pointed the tile at the tee sheet's display settings. V1 → V2's Settings has four
+sections:
+
+- **Terminal & hardware**: the register's name, its receipt printer, card reader, cash drawer and
+  kitchen printer, and whether a receipt prints after a sale. Each device has a **Test** button;
+  the devices are simulated, so a test shows what the device would answer.
+- **Checkout & receipts**: sales tax, the three tip presets, which tenders checkout offers, the
+  receipt header and footer, and what a newly sold gift card is good for.
+- **Staff & PINs**: who can sign in, their role and PIN. You can add someone, edit them, or
+  deactivate them. No two active people can share a PIN, and nobody can deactivate themselves.
+- **Tee sheet**: the tee sheet's own display settings, the same controls as its tune button.
+
+### Decisions
+
+| | Chosen | Instead of |
+|---|---|---|
+| **Scope** | All four sections | Terminal only |
+| **Who may change it** | **Anyone** changes the terminal and checkout settings; **only a manager** changes staff and PINs. Anyone else can read the staff list, with the PINs hidden. The reducer refuses a staff change from anyone but a manager | Managers for everything, or anyone for everything |
+| **Wiring** | **Recorded, not wired.** Changes are saved and shown in Settings, but checkout, receipts and sign-in keep the prototype's fixed behaviour — the 8% tax, every tender, the demo PINs — and each section says so. The tee sheet section is live, as it always was | Checkout and sign-in reading the settings |
+
+Each section saves as a whole: **Save** and **Discard changes** under it, then who saved it last.
+Nothing saves as you type, because a half-typed tax rate is not a setting anyone meant.
+
+| Link | Opens |
+|---|---|
+| `#/settings` | Settings, on Terminal & hardware |
+| `#/settings?section=staff` | Staff & PINs (also `checkout`, `teesheet`) |

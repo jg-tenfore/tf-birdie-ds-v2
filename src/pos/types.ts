@@ -488,7 +488,9 @@ export type MainView =
   | 'giftcards'
   | 'events'
   | 'inventory'
-  | 'shift';
+  | 'shift'
+  // Settings (V1 → V2).
+  | 'settings';
 export type TeeSheetViewMode = 'cal' | 'list';
 export type FlowMode = '' | 'walkin' | 'reserve';
 
