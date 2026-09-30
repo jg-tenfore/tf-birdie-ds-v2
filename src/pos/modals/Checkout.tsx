@@ -22,6 +22,7 @@ const OPS_TENDERS: { kind: OperationsModal['kind']; label: string; icon: string 
   { kind: 'tenderHouseAccount', label: 'House account', icon: 'account_balance' },
   { kind: 'tenderCardOnFile', label: 'Card on file', icon: 'credit_score' },
   { kind: 'tenderEvent', label: 'Charge to event', icon: 'calendar_month' },
+  { kind: 'tenderCheck', label: 'Check', icon: 'receipt' },
 ];
 
 const TENDER_LABEL: Record<string, string> = {
@@ -29,6 +30,7 @@ const TENDER_LABEL: Record<string, string> = {
   house: 'House account',
   cardonfile: 'Card on file',
   event: 'Event',
+  check: 'Check',
 };
 
 /**
@@ -42,7 +44,7 @@ const TENDER_LABEL: Record<string, string> = {
  * has to Recalculate before the balance moves. That's what stops a mistyped tip from
  * silently becoming the amount charged.
  */
-export function Checkout() {
+export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
   const { state, dispatch, toast } = usePos();
   const booking = selectedBooking(state);
   const v1v2 = useV1V2();
@@ -60,8 +62,9 @@ export function Checkout() {
 
   const [mode, setMode] = useState<'tendered' | 'tip'>('tendered');
   const [tenderedDigits, setTenderedDigits] = useState('');
-  const [tipDigits, setTipDigits] = useState('');
-  const [bakedTip, setBakedTip] = useState(0);
+  // A tip already recalculated in comes back with checkout when a gift card paid part (V1 → V2).
+  const [tipDigits, setTipDigits] = useState(carried > 0 ? String(Math.round(carried * 100)) : '');
+  const [bakedTip, setBakedTip] = useState(carried);
 
   const stagedTip = tipDigits ? parseInt(tipDigits, 10) / 100 : 0;
   const chargeTotal = +(due + bakedTip).toFixed(2);
@@ -270,7 +273,7 @@ export function Checkout() {
                 key={k}
                 onClick={() => press(k)}
                 sx={{
-                  py: 1.5,
+                  py: v1v2 ? 1.125 : 1.5,
                   borderRadius: `${radius.md}px`,
                   border: `1.5px solid ${md3.outlineVariant}`,
                   bgcolor: '#fff',
@@ -292,8 +295,13 @@ export function Checkout() {
           <SectionLabel color={md3.outline} sx={{ mt: 2.25, mb: 1 }}>
             Take payment
           </SectionLabel>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 0.75 }}>
-            {Object.entries(PR_CONFIG).map(([method, cfg]) => (
+          {/* V1 → V2 has nine tenders; three across keeps them all above the fold, not behind a scroll. */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: v1v2 ? 'repeat(3,1fr)' : 'repeat(2,1fr)', gap: 0.75 }}>
+            {Object.entries(PR_CONFIG)
+              // V1 → V2 spends real gift cards (Gift card, below); the prototype's "Gift cert" stand-in
+              // only ran the reader animation, and beside the real one it is a wrong tap waiting to happen.
+              .filter(([method]) => !(v1v2 && method === 'giftcert'))
+              .map(([method, cfg]) => (
               <ButtonBase
                 key={method}
                 onClick={() =>
@@ -303,7 +311,7 @@ export function Checkout() {
                 sx={{
                   flexDirection: 'column',
                   gap: 0.5,
-                  py: 1.5,
+                  py: v1v2 ? 0.875 : 1.5,
                   borderRadius: `${radius.md}px`,
                   border: `1.5px solid ${md3.outlineVariant}`,
                   bgcolor: '#fff',
@@ -322,11 +330,14 @@ export function Checkout() {
                 <ButtonBase
                   key={t.kind}
                   data-tender={t.kind}
-                  onClick={() => dispatch({ type: 'openModal', modal: { kind: t.kind } as OperationsModal })}
+                  // The tip goes with the tender, as it does to the card reader.
+                  onClick={() => dispatch({ type: 'openModal', modal: { kind: t.kind, ...(bakedTip > 0 && { tip: bakedTip }) } as OperationsModal })}
                   sx={{
                     flexDirection: 'column',
                     gap: 0.5,
-                    py: 1.5,
+                    py: 0.875,
+                    textAlign: 'center',
+                    lineHeight: 1.2,
                     borderRadius: `${radius.md}px`,
                     border: `1.5px solid ${md3.outlineVariant}`,
                     bgcolor: '#fff',

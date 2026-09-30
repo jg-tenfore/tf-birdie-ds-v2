@@ -17,6 +17,8 @@ export interface PaymentRef {
   giftCardId?: string;
   eventId?: string;
   cardLast4?: string;
+  /** A check's number, when the operator keyed it. */
+  checkNumber?: string;
 }
 
 export interface OrderTender {

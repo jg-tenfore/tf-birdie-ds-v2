@@ -173,20 +173,38 @@ export const PayingWaitsForAnEmptyRegister: Story = {
 };
 
 /**
- * **A house-account charge raises the balance.** At checkout, House account: find Weston, see his
- * balance now, the order, and the balance after — then charge it. He owes the course the lunch.
+ * **A house-account charge raises the balance.** At checkout, House account: find Ivar — a Full Golf
+ * member, so he has an account — see his balance now, the order, and the balance after, then charge
+ * it. He owes the course the lunch on top of the $861.00 already on his account.
  */
 export const ChargingAHouseAccount: Story = {
   render: () => <Screen edition="v1v2" initialState={atCheckout({ kind: 'tenderHouseAccount' })} />,
   play: async () => {
     const d = within(await dialog());
     await expect(d.getByRole('button', { name: 'Charge' })).toBeDisabled();
+    await userEvent.type(d.getByPlaceholderText('Find the customer — name, email, phone'), 'Ivar');
+    await pickResult('458337');
+    const total = orderTotals(lunch).total;
+    const after = (861 + total).toFixed(2);
+    await waitFor(() => expect(document.querySelector('[data-balance-after]')!.getAttribute('data-balance-after')).toBe(after));
+    await userEvent.click(d.getByRole('button', { name: `Charge $${total.toFixed(2)}` }));
+    await screen.findByText(`Charged $${total.toFixed(2)} to Ivar Brennevin’s account · balance $${after}`);
+  },
+};
+
+/**
+ * **House accounts are for members.** Weston's membership has lapsed, and his account with it — so
+ * there is nothing to charge: the dialog says so and offers nothing to press.
+ */
+export const OnlyMembersHaveAnAccount: Story = {
+  render: () => <Screen edition="v1v2" initialState={atCheckout({ kind: 'tenderHouseAccount' })} />,
+  play: async () => {
+    const d = within(await dialog());
     await userEvent.type(d.getByPlaceholderText('Find the customer — name, email, phone'), 'Farnsworth');
     await pickResult('458342');
-    const total = orderTotals(lunch).total;
-    await waitFor(() => expect(document.querySelector('[data-balance-after]')!.getAttribute('data-balance-after')).toBe(total.toFixed(2)));
-    await userEvent.click(d.getByRole('button', { name: `Charge $${total.toFixed(2)}` }));
-    await screen.findByText(`Charged $${total.toFixed(2)} to Weston Farnsworth’s account · balance $${total.toFixed(2)}`);
+    await waitFor(() => expect(document.querySelector('[data-no-house-account]')!.textContent).toMatch(/membership has lapsed/));
+    await expect(document.querySelector('[data-house-charge]')).toBeNull();
+    await expect(d.getByRole('button', { name: 'No house account' })).toBeDisabled();
   },
 };
 

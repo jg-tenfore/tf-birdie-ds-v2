@@ -118,6 +118,32 @@ export function cardExpired(expires: string | undefined, today: Date): boolean {
   return year < today.getFullYear() || (year === today.getFullYear() && month < today.getMonth() + 1);
 }
 
+/** A membership still in force on `today`. `MM/DD/YYYY`; an unreadable date counts as current. */
+function membershipCurrent(expires: string, today: Date): boolean {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(expires.trim());
+  if (!m) return true;
+  return new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) >= new Date(today.getFullYear(), today.getMonth(), today.getDate());
+}
+
+/**
+ * Whether this customer can be charged to a house account — **members only** (Justin's call). No
+ * separate flag: a house account comes with a membership, so it follows the membership chips already
+ * on the record, and lapses with them. Someone who already owes can still pay it off; they just
+ * cannot run it up.
+ */
+export function hasHouseAccount(c: Pick<Customer, 'memberships'>, today: Date): boolean {
+  return c.memberships.some((m) => membershipCurrent(m.expires, today));
+}
+
+/** Why this customer cannot be charged to a house account, or `null`. */
+export function houseAccountRefusal(c: Pick<Customer, 'memberships' | 'firstName' | 'lastName'>, today: Date): string | null {
+  if (hasHouseAccount(c, today)) return null;
+  const name = `${c.firstName} ${c.lastName}`.trim();
+  return c.memberships.length
+    ? `${name}’s membership has lapsed, and the house account with it. Take another tender.`
+    : `${name} isn’t a member. House accounts come with a membership — take another tender.`;
+}
+
 /** Why an order cannot go on a house account, or `null`. */
 export function houseAccountProblem(cart: CartItem[]): string | null {
   if (cart.some((l) => l.accountPayment)) return 'This order is paying an account off — it can’t go back on one.';

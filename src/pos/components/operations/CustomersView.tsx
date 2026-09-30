@@ -7,7 +7,7 @@ import { rainCheckBalance } from '../../data/rain-checks';
 import { liveCustomer, liveRoster } from '../../data/roster';
 import { staffById } from '../../data/staff';
 import { money } from '../../logic/cart';
-import { accountHistory, cardExpired, customersOwing, findCustomers, isSpent, plainName } from '../../logic/customer-search';
+import { accountHistory, cardExpired, customersOwing, findCustomers, isSpent, plainName, hasHouseAccount } from '../../logic/customer-search';
 import { registerBusy } from '../../state/operations';
 import { usePos } from '../../state/PosProvider';
 import { Field, FilledButton, OutlineButton } from '../../modals/ModalFrame';
@@ -305,6 +305,8 @@ function HouseAccount({
   onPay: (amount: number) => void;
 }) {
   const [amount, setAmount] = useState(c.balance > 0 ? c.balance.toFixed(2) : '');
+  // Members only (Justin's call): the account follows the membership.
+  const member = hasHouseAccount(c, DEMO_TODAY());
   const value = Math.round((Number(amount) || 0) * 100) / 100;
   const problem =
     c.balance <= 0
@@ -325,8 +327,12 @@ function HouseAccount({
           {money(c.balance)}
         </Typography>
       </Stack>
-      <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mb: 1.25 }}>
-        Charges come from checkout, where House account is a tender. A positive balance is money owed to the course.
+      <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mb: 1.25 }} data-house-account-status={member ? 'open' : 'none'}>
+        {member
+          ? 'Charges come from checkout, where House account is a tender. A positive balance is money owed to the course.'
+          : c.balance > 0
+            ? 'No current membership, so nothing new can be charged — the balance can still be paid off.'
+            : 'House accounts come with a membership. Without one there is nothing to charge to.'}
       </Typography>
 
       {c.balance > 0 && (

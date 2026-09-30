@@ -3,7 +3,8 @@ import { Box, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { liveCustomer } from '../data/roster';
 import { money } from '../logic/cart';
-import { houseAccountProblem, orderCustomerId, plainName } from '../logic/customer-search';
+import { houseAccountProblem, houseAccountRefusal, orderCustomerId, plainName } from '../logic/customer-search';
+import { DEMO_TODAY } from '../data/bookings';
 import { amountDue, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Stack } from '../components/Stack';
@@ -22,7 +23,6 @@ import { TenderCustomerPicker } from './TenderCustomerPicker';
  * take an account payment: paying one account off onto an account is moving a debt, not paying it.
  */
 export function TenderHouseAccountDialog({ m }: { m: Extract<OperationsModal, { kind: 'tenderHouseAccount' }> }) {
-  void m;
   const { state, dispatch, toast } = usePos();
   const [customerId, setCustomerId] = useState<string | null>(() => {
     const id = orderCustomerId(state);
@@ -30,14 +30,19 @@ export function TenderHouseAccountDialog({ m }: { m: Extract<OperationsModal, { 
     return id && id !== state.payingAccountId ? id : null;
   });
   const customer = liveCustomer(customerId ?? undefined, state.customerEdits);
-  const due = amountDue(state);
+  // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
+  const tip = m.tip ?? 0;
+  const orderDue = amountDue(state);
+  const due = Math.round((orderDue + tip) * 100) / 100;
   const blocked = houseAccountProblem(state.cart);
+  // Members only: someone without a current membership has no account to charge.
+  const refused = customer ? houseAccountRefusal(customer, DEMO_TODAY()) : null;
   const after = customer ? Math.round((customer.balance + due) * 100) / 100 : 0;
-  const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout' } });
+  const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout', ...(tip > 0 && { tip }) } });
 
   const charge = () => {
-    if (!customer || blocked || due <= 0) return;
-    dispatch({ type: 'recordPayment', method: 'house', amount: due, ref: { customerId: customer.id } });
+    if (!customer || blocked || refused || due <= 0) return;
+    dispatch({ type: 'recordPayment', method: 'house', amount: due, ...(tip > 0 && { tip }), ref: { customerId: customer.id } });
     dispatch({ type: 'closeModal' });
     toast(`Charged ${money(due)} to ${plainName(customer)}’s account · balance ${money(after)}`);
   };
@@ -52,8 +57,8 @@ export function TenderHouseAccountDialog({ m }: { m: Extract<OperationsModal, { 
       actions={
         <>
           <OutlineButton onClick={back}>Back to checkout</OutlineButton>
-          <FilledButton disabled={!customer || Boolean(blocked) || due <= 0} onClick={charge}>
-            {customer ? `Charge ${money(due)}` : 'Charge'}
+          <FilledButton disabled={!customer || Boolean(blocked) || Boolean(refused) || due <= 0} onClick={charge}>
+            {!customer ? 'Charge' : refused ? 'No house account' : `Charge ${money(due)}`}
           </FilledButton>
         </>
       }
@@ -66,13 +71,20 @@ export function TenderHouseAccountDialog({ m }: { m: Extract<OperationsModal, { 
             <TenderCustomerPicker
               customerId={customerId}
               onChange={setCustomerId}
-              note={(c) => (c.balance > 0 ? `Owes ${money(c.balance)}` : 'Nothing owed')}
+              note={(c) => (houseAccountRefusal(c, DEMO_TODAY()) ? 'No house account' : c.balance > 0 ? `Owes ${money(c.balance)}` : 'Nothing owed')}
             />
           </ModalSection>
-          {customer && (
+          {customer && refused && (
+            <Box data-no-house-account>
+              <Callout tone="warning" icon="account_balance">
+                {refused}
+              </Callout>
+            </Box>
+          )}
+          {customer && !refused && (
             <Box data-house-charge sx={{ border: `1px solid ${md3.outlineVariant}`, borderRadius: `${radius.md}px`, p: '10px 14px' }}>
               <Row label="Balance now" value={money(customer.balance)} />
-              <Row label="This order" value={`+${money(due)}`} />
+              <Row label={tip > 0 ? `This order, ${money(tip)} tip included` : 'This order'} value={`+${money(due)}`} />
               <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, mt: 0.75, pt: 0.75 }} data-balance-after={after.toFixed(2)}>
                 <Row label="Balance after" value={money(after)} bold />
               </Box>

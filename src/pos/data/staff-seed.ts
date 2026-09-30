@@ -41,6 +41,8 @@ export interface Shift {
   closedAt?: string;
   countedCash?: number;
   countedChecks?: number;
+  /** What the checks should have come to, from the shift's check payments. Absent before checks were a tender. */
+  expectedChecks?: number;
   /** Fixed at close, so history shows what the drawer was expected to hold then. */
   expectedCash?: number;
   note?: string;

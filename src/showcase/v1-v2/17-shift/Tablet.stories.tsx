@@ -164,6 +164,58 @@ export const ClosingRecordsTheVariance: Story = {
 };
 
 /**
+ * **A check paid at the counter is a check expected at close.** v1 asked for a check total with
+ * nothing to hold it against. Here a $54.00 check taken this shift shows as expected checks, and the
+ * close holds the check count against it.
+ */
+export const ChecksAreExpectedToo: Story = {
+  render: () => (
+    <Screen
+      edition="v1v2"
+      initialState={at({
+        payments: [
+          ...SEED_PAYMENTS,
+          { id: 'P-2090', date: TODAY_STR, time: '11:50 AM', method: 'check', amount: 54, tip: 0, orderNumber: '#A-30090', staffId: 's-1', kind: 'sale', ref: { checkNumber: '1042' } },
+        ],
+      })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-expected-checks]')!.textContent).toBe('$54.00');
+    // Checks are not cash: the expected cash is the seed's, unchanged.
+    await expect(expected(canvasElement)).toBe(money(seedWorkings().expected));
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Close shift' }));
+    const d = await dialog(canvasElement);
+    await expect(d.getByText('$54.00 expected, from the checks taken this shift')).toBeTruthy();
+  },
+};
+
+/**
+ * **Taking a check.** Check is a tender at checkout: the amount is what is due, the number is
+ * optional. Once taken, the drawer expects it.
+ */
+export const TakingACheck: Story = {
+  render: () => (
+    <Screen
+      edition="v1v2"
+      initialState={atVenue('eighteen', {
+        view: 'pos',
+        leftPanelCollapsed: false,
+        cart: [{ name: 'Titleist Pro V1 Box', price: 54, qty: 1 }],
+        modal: { kind: 'tenderCheck' },
+      })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const d = await dialog(canvasElement);
+    await userEvent.type(d.getByPlaceholderText('Optional — as printed on the check'), '1042');
+    const due = page(canvasElement).getByText(/^Check received · /).textContent!.replace('Check received · ', '');
+    await userEvent.click(d.getByRole('button', { name: /^Check received/ }));
+    await page(canvasElement).findByText(`Check #1042 taken · ${due}`);
+  },
+};
+
+/**
  * **A large variance asks twice.** $100 counted against $224: the first Close only arms it, with a
  * warning; the history is unchanged until the second tap.
  */

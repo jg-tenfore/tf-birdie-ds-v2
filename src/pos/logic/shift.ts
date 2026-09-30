@@ -29,6 +29,8 @@ export interface DrawerWorkings {
   payouts: number;
   drops: number;
   expected: number;
+  /** Checks taken, less checks refunded — what the check count at close should come to. */
+  checks: number;
 }
 
 const cents = (n: number) => Math.round(n * 100) / 100;
@@ -45,6 +47,9 @@ export function drawerWorkings(shift: Shift, payments: PaymentRecord[], drawerEv
   const ev = drawerEvents.filter((e) => within(e.date, e.time));
   const payouts = cents(ev.filter((e) => e.kind === 'payout').reduce((s, e) => s + e.amount, 0));
   const drops = cents(ev.filter((e) => e.kind === 'drop').reduce((s, e) => s + e.amount, 0));
+  // Checks go in the drawer too, counted apart from cash (V1 → V2): v1 asked for a check total at
+  // close with nothing to hold it against.
+  const checks = cents(payments.filter((p) => p.method === 'check' && within(p.date, p.time)).reduce((s, p) => s + p.amount + p.tip, 0));
   return {
     startCash: shift.startCash,
     cashIn,
@@ -52,6 +57,7 @@ export function drawerWorkings(shift: Shift, payments: PaymentRecord[], drawerEv
     payouts,
     drops,
     expected: cents(shift.startCash + cashIn - cashRefunds - payouts - drops),
+    checks,
   };
 }
 

@@ -7,6 +7,7 @@ import { RefundOrderDialog } from './RefundOrderDialog';
 import { ShiftCloseDialog } from './ShiftCloseDialog';
 import { ShiftOpenDialog } from './ShiftOpenDialog';
 import { TenderCardOnFileDialog } from './TenderCardOnFileDialog';
+import { TenderCheckDialog } from './TenderCheckDialog';
 import { TenderEventDialog } from './TenderEventDialog';
 import { TenderGiftCardDialog } from './TenderGiftCardDialog';
 import { TenderHouseAccountDialog } from './TenderHouseAccountDialog';
@@ -31,6 +32,8 @@ export function OperationsDialogs({ m }: { m: OperationsModal }) {
       return <EventFormDialog m={m} />;
     case 'tenderEvent':
       return <TenderEventDialog m={m} />;
+    case 'tenderCheck':
+      return <TenderCheckDialog m={m} />;
     case 'shiftOpen':
       return <ShiftOpenDialog m={m} />;
     case 'shiftClose':

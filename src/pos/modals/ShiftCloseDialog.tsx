@@ -36,6 +36,10 @@ export function ShiftCloseDialog({ m }: { m: Extract<OperationsModal, { kind: 's
   const v = variance(counted, w.expected);
   const large = isLargeVariance(v);
   const ready = cash !== '';
+  // Checks, held against the checks taken (V1 → V2): a check the drawer should have and does not is
+  // as much a variance as missing cash.
+  const countedChecks = centsToDollars(checks);
+  const vChecks = variance(countedChecks, w.checks);
 
   const key = (digits: string) => {
     setArmed(false);
@@ -46,7 +50,7 @@ export function ShiftCloseDialog({ m }: { m: Extract<OperationsModal, { kind: 's
   const confirm = () => {
     if (!ready) return;
     if (large && !armed) return setArmed(true);
-    dispatch({ type: 'closeShift', countedCash: counted, countedChecks: centsToDollars(checks), note: note.trim() || undefined });
+    dispatch({ type: 'closeShift', countedCash: counted, countedChecks, note: note.trim() || undefined });
     dispatch({ type: 'closeModal' });
     toast(`${shift.id} closed · ${varianceLabel(v)}`);
   };
@@ -92,6 +96,21 @@ export function ShiftCloseDialog({ m }: { m: Extract<OperationsModal, { kind: 's
           >
             <Typography sx={{ fontSize: 13, fontWeight: 700, flex: 1 }}>Variance</Typography>
             {ready ? <VarianceText value={v} pill /> : <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant }}>Key the cash count</Typography>}
+          </Box>
+
+          <Box
+            data-close-checks
+            sx={{ p: '10px 12px', mb: 2, mt: -1, borderRadius: `${radius.md}px`, border: `1px solid ${md3.outlineVariant}`, display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Checks</Typography>
+              <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }} data-close-expected-checks>
+                {money(w.checks)} expected, from the checks taken this shift
+              </Typography>
+            </Box>
+            {checks !== '' || w.checks === 0 ? <VarianceText value={vChecks} pill /> : (
+              <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant }}>Key the check count</Typography>
+            )}
           </Box>
 
           {ready && large && (
