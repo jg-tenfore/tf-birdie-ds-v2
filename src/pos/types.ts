@@ -1,3 +1,4 @@
+import type { SpendCategory } from './data/spend';
 import type { MemberTypeKey, NoteColorKey } from '../theme/tokens';
 import type { AppliedModifier } from './data/menu';
 
@@ -437,6 +438,9 @@ export interface CartGiftCard {
   recipient: GiftCardRecipient;
   from?: string;
   message?: string;
+  /** V1 → V2, Wave 3: what kind of card, and what it may pay for. Absent → Purchased, the default categories. */
+  cardType?: 'Purchased' | 'Winnings' | 'Promotional' | 'Replacement';
+  categories?: SpendCategory[];
 }
 
 // ─── Operator annotations ───────────────────────────────────────────────────

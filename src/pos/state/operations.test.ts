@@ -269,3 +269,16 @@ describe('seeded outings sit on the sheet', () => {
     for (const b of SEED_EVENT_BOOKINGS) expect((b.timeMin - 360) % 8).toBe(0);
   });
 });
+
+describe('a gift card sold with a type and categories', () => {
+  it('is issued as that type, good for exactly those categories', () => {
+    const s1 = reducer(s0(), {
+      type: 'addGiftCardLine',
+      draft: { amount: 40, recipient: { name: 'Park, Susan', customerId: 'M004' }, cardType: 'Promotional', categories: ['fnb'] },
+    } as never);
+    const paid = pay(s1, 'card');
+    const card = liveCustomer('M004', paid.customerEdits)!.giftCards.at(-1)!;
+    expect(card.type).toBe('Promotional');
+    expect(card.categories).toEqual(['fnb']);
+  });
+});

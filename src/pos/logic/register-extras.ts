@@ -1,3 +1,4 @@
+import type { SpendCategory } from '../data/spend';
 import { catalogPrice, type Combo } from '../data/combos';
 import type { CustomerGiftCard } from '../data/customers';
 import type { CartCombo, CartComboComponent, CartGiftCard, CartItem, GiftCardRecipient } from '../types';
@@ -134,6 +135,10 @@ export interface GiftCardDraft {
   recipient: GiftCardRecipient | null;
   from?: string;
   message?: string;
+  /** V1 → V2, Wave 3. Absent → Purchased. */
+  cardType?: CartGiftCard['cardType'];
+  /** V1 → V2, Wave 3. Absent → `DEFAULT_GIFT_CATEGORIES` (everything but alcohol). */
+  categories?: SpendCategory[];
 }
 
 /** What is stopping this card going on the order, or `null`. */
@@ -157,6 +162,8 @@ export function giftCardLine(id: string, d: GiftCardDraft): CartItem {
     recipient,
     ...(d.from?.trim() && { from: d.from.trim() }),
     ...(d.message?.trim() && { message: d.message.trim() }),
+    ...(d.cardType && { cardType: d.cardType }),
+    ...(d.categories && { categories: [...d.categories] }),
   };
   return { name: giftCardLineName(card.amount, recipient), price: card.amount, qty: 1, giftCard: card };
 }
@@ -188,7 +195,8 @@ export function customerGiftCard(card: CartGiftCard, soldOn: Date): CustomerGift
   const digits = card.id.replace(/\D/g, '').padStart(5, '0');
   return {
     id: card.id,
-    type: 'Purchased',
+    type: card.cardType ?? 'Purchased',
+    ...(card.categories && { categories: [...card.categories] }),
     expires: mdy(expires),
     awarded: card.amount,
     spent: 0,
