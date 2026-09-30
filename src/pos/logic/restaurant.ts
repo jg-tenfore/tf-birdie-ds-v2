@@ -75,6 +75,13 @@ export interface PaymentRecord {
   staffId: string;
   /** Set when the tip was changed after the fact. */
   tipAdjustedAt?: string;
+  /**
+   * A refund is a payment going back (V1 → V2, Wave 3): its `amount` is negative, so the day's
+   * totals net out without a special case. Absent means a sale, as every Wave 2 payment was.
+   */
+  kind?: 'sale' | 'refund';
+  /** The customer, gift card or event a tender drew on (Wave 3's tenders). */
+  ref?: import('./orders').PaymentRef;
 }
 
 /** A ticket the kitchen received. Kept for the KDS that will one day read it. */

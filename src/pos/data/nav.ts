@@ -76,15 +76,16 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       // Both of these have screens already — the golfer search modal and the tee sheet's
-      // settings panel — so they are live rather than dimmed.
+      // settings panel — so they are live rather than dimmed. In V1 → V2 Customer Search is a
+      // screen of its own (Wave 3); elsewhere it is still the search modal.
       { key: 'customersearch', label: 'Customer Search', icon: 'search', live: true },
       { key: 'settings', label: 'Settings', icon: 'settings', live: true },
-      { key: 'orderlookup', label: 'Order Lookup', icon: 'receipt_long' },
-      { key: 'timeclock', label: 'Time Clock', icon: 'schedule' },
-      { key: 'giftcards', label: 'Gift Cards', icon: 'card_giftcard' },
-      { key: 'events', label: 'Events', icon: 'calendar_month' },
-      { key: 'inventory', label: 'Inventory', icon: 'inventory_2' },
-      { key: 'shift', label: 'Shift', icon: 'badge' },
+      { key: 'orderlookup', label: 'Order Lookup', icon: 'receipt_long', live: 'v1v2' },
+      { key: 'timeclock', label: 'Time Clock', icon: 'schedule', live: 'v1v2' },
+      { key: 'giftcards', label: 'Gift Cards', icon: 'card_giftcard', live: 'v1v2' },
+      { key: 'events', label: 'Events', icon: 'calendar_month', live: 'v1v2' },
+      { key: 'inventory', label: 'Inventory', icon: 'inventory_2', live: 'v1v2' },
+      { key: 'shift', label: 'Shift', icon: 'badge', live: 'v1v2' },
     ],
   },
 ];

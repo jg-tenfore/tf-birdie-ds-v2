@@ -15,11 +15,14 @@ import {
   type PayoutReason,
 } from '../logic/register-extras';
 import { canHold, type HeldOrder, type RegisterExtrasModal } from '../state/register-extras';
+import { DEFAULT_GIFT_CATEGORIES, SPEND_CATEGORIES, type SpendCategory } from '../data/spend';
+import { useV1V2 } from '../edition';
 import { usePos } from '../state/PosProvider';
 import type { CartItem, GiftCardRecipient } from '../types';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Stack } from '../components/Stack';
 import { Callout, Field, FilledButton, ModalFrame, ModalSection, OutlineButton } from './ModalFrame';
+import { CashAmountPad } from './CashAmountPad';
 
 /**
  * The register's V1 → V2 dialogs: Hold, Held orders, Cash payout and Gift card.
@@ -233,11 +236,7 @@ function HeldOrdersDialog() {
  * tendered keypad, so a payout is keyed the way cash is everywhere else on the terminal.
  */
 function AmountPad({ cents, onChange }: { cents: string; onChange: (digits: string) => void }) {
-  const press = (k: string) => {
-    if (k === 'back') return onChange(cents.slice(0, -1));
-    if (cents.length >= 7) return;
-    onChange((cents + k).replace(/^0+(?=\d)/, ''));
-  };
+  // The keys are the terminal's one cash pad, shared with the drawer dialogs (Wave 3).
   return (
     <Box>
       <Box sx={{ p: '12px 16px', bgcolor: md3.surfaceContainer, borderRadius: `${radius.md}px`, mb: 1, textAlign: 'right' }}>
@@ -246,32 +245,7 @@ function AmountPad({ cents, onChange }: { cents: string; onChange: (digits: stri
           {money(cents ? parseInt(cents, 10) / 100 : 0)}
         </Typography>
       </Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0.75 }}>
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'].map((k) => (
-          <ButtonBase
-            key={k}
-            data-key={k}
-            aria-label={k === 'back' ? 'Delete' : k}
-            onClick={() => press(k)}
-            sx={{
-              height: 52,
-              borderRadius: `${radius.md}px`,
-              border: `1.5px solid ${md3.outlineVariant}`,
-              bgcolor: '#fff',
-              fontSize: 18,
-              fontWeight: 700,
-            }}
-          >
-            {k === 'back' ? <Icon name="backspace" size={20} /> : k}
-          </ButtonBase>
-        ))}
-      </Box>
-      <ButtonBase
-        onClick={() => onChange('')}
-        sx={{ mt: 0.75, width: '100%', height: 44, borderRadius: `${radius.md}px`, border: `1.5px solid ${md3.outlineVariant}`, fontSize: 13, fontWeight: 600, color: md3.onSurfaceVariant }}
-      >
-        Clear
-      </ButtonBase>
+      <CashAmountPad cents={cents} onChange={onChange} />
     </Box>
   );
 }
@@ -359,6 +333,9 @@ function CashPayoutDialog() {
 
 // ─── Gift card ──────────────────────────────────────────────────────────────
 
+/** v1's four card types (`create-gift-card.tsx`), in its order. */
+const GIFT_CARD_TYPES: NonNullable<GiftCardDraft['cardType']>[] = ['Purchased', 'Winnings', 'Promotional', 'Replacement'];
+
 /**
  * Sell a gift card.
  *
@@ -370,9 +347,19 @@ function CashPayoutDialog() {
  * for someone who is not in the system. "From" is a name on the card, not a lookup.
  *
  * Confirming adds one line to the order. The card itself is created when the order is paid.
+ *
+ * V1 → V2, Wave 3 adds v1's **type** (Purchased, Winnings, Promotional, Replacement) and the
+ * **categories** a card may pay for. v1 ticked all four categories on every new card, alcohol
+ * included, and its own note called that "worth a decision rather than a default". Justin's
+ * decision: everything but alcohol, unless it is turned on for this card — and checkout enforces it.
  */
 function GiftCardDialog({ draft }: { draft?: GiftCardDraft }) {
   const { dispatch, toast } = usePos();
+  const v1v2 = useV1V2();
+  const [cardType, setCardType] = useState<NonNullable<GiftCardDraft['cardType']>>(draft?.cardType ?? 'Purchased');
+  const [categories, setCategories] = useState<SpendCategory[]>(draft?.categories ?? DEFAULT_GIFT_CATEGORIES);
+  const toggleCategory = (c: SpendCategory) =>
+    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : SPEND_CATEGORIES.map((s) => s.id).filter((id) => id === c || prev.includes(id))));
   const initialAmount = draft?.amount ?? 50;
   const [preset, setPreset] = useState<number | 'custom'>(
     (GIFT_CARD_PRESETS as readonly number[]).includes(initialAmount) ? initialAmount : 'custom',
@@ -387,8 +374,9 @@ function GiftCardDialog({ draft }: { draft?: GiftCardDraft }) {
   const amount = preset === 'custom' ? Number(custom) || 0 : preset;
   const recipient: GiftCardRecipient | null =
     picked ?? (typedName.trim() ? { name: typedName, ...(typedEmail.trim() && { email: typedEmail.trim() }) } : null);
-  const current: GiftCardDraft = { amount, recipient, from, message };
-  const problem = giftCardProblem(current);
+  // Carried on the draft in V1 → V2 only, so a round trip through the roster picker keeps them.
+  const current: GiftCardDraft = { amount, recipient, from, message, ...(v1v2 && { cardType, categories }) };
+  const problem = giftCardProblem(current) ?? (v1v2 && categories.length === 0 ? 'Pick at least one thing the card can pay for' : null);
 
   const findOnRoster = () =>
     dispatch({ type: 'openModal', modal: { kind: 'golferSearch', target: { giftCard: current } } });
@@ -492,6 +480,30 @@ function GiftCardDialog({ draft }: { draft?: GiftCardDraft }) {
           <Field value={message} onChange={setMessage} placeholder="Happy birthday — see you on the first tee" />
         </ModalSection>
       </Stack>
+
+      {v1v2 && (
+        <Stack direction="row" gap={1.25} sx={{ mt: 2.25 }}>
+          <ModalSection title="Type" sx={{ flex: 0.85, mb: 0 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 0.75 }}>
+              {GIFT_CARD_TYPES.map((t) => (
+                <Choice key={t} data-card-type={t} selected={cardType === t} onClick={() => setCardType(t)}>
+                  {t}
+                </Choice>
+              ))}
+            </Box>
+          </ModalSection>
+          <ModalSection title="Good for" hint="Alcohol is off unless you turn it on" sx={{ flex: 1.35, mb: 0 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 0.75 }}>
+              {SPEND_CATEGORIES.map((c) => (
+                <Choice key={c.id} data-card-category={c.id} selected={categories.includes(c.id)} onClick={() => toggleCategory(c.id)}>
+                  {categories.includes(c.id) && <Icon name="check" size={15} sx={{ mr: 0.5 }} />}
+                  {c.label}
+                </Choice>
+              ))}
+            </Box>
+          </ModalSection>
+        </Stack>
+      )}
 
       {problem && amount > 0 && recipient && (
         <Typography data-gift-problem sx={{ mt: 1.5, fontSize: 12, color: md3.error, fontWeight: 600 }}>

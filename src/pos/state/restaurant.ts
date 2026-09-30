@@ -425,7 +425,7 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
  */
 export function recordRestaurantPayment(
   state: PosState,
-  payment: { method: string; amount: number; tip?: number; orderNumber: string },
+  payment: { method: string; amount: number; tip?: number; orderNumber: string; ref?: import('../logic/orders').PaymentRef },
 ): Pick<PosState, 'payments' | 'tabs' | 'diningReservations' | 'payingTabId' | 'restaurantSeq'> {
   const now = demoNow();
   const tip = Math.max(0, payment.tip ?? 0);
@@ -440,6 +440,10 @@ export function recordRestaurantPayment(
     orderNumber: payment.orderNumber,
     tabId: tab?.id,
     staffId: tab?.serverId ?? state.operatorId,
+    kind: 'sale',
+    // Wave 3's tenders say what they drew on; a card on file carries its last four.
+    ref: payment.ref,
+    cardLast4: payment.ref?.cardLast4,
   };
   return {
     payments: [...state.payments, record],

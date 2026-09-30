@@ -21,6 +21,9 @@ import { rainCheckBalance, rainChecksFor } from '../data/rain-checks';
 import { money } from '../logic/cart';
 import { ModalFrame, FilledButton, OutlineButton } from '../modals/ModalFrame';
 import { usePos } from '../state/PosProvider';
+import { useV1V2 } from '../edition';
+import { categoryLabels, isSpent } from '../logic/customer-search';
+import { SpentBadge } from './operations/CustomerChips';
 import { Icon } from './primitives';
 import { Stack } from './Stack';
 
@@ -56,6 +59,8 @@ export function CustomerModal() {
 
 function CustomerRecord({ customer }: { customer: Customer }) {
   const { state, dispatch } = usePos();
+  // V1 → V2, Wave 3: the house account named as one, the card's expiry, and a spent gift card badged.
+  const v1v2 = useV1V2();
   const [draft, setDraft] = useState<Partial<Customer>>({});
   const [types, setTypes] = useState<string[]>(customer.customerTypes);
   const [showAllTypes, setShowAllTypes] = useState(false);
@@ -114,7 +119,8 @@ function CustomerRecord({ customer }: { customer: Customer }) {
          identifier, so it belongs with the other two rather than in a row of counts. */
       subtitle={
         `Customer ID ${customer.id} · Course ID ${customer.courseId}` +
-        (customer.cardOnFile ? ` · Card •••• ${customer.cardOnFile}` : '')
+        (customer.cardOnFile ? ` · Card •••• ${customer.cardOnFile}` : '') +
+        (v1v2 && customer.cardOnFile && customer.cardExpires ? ` (exp ${customer.cardExpires})` : '')
       }
       icon="person"
       width={780}
@@ -174,7 +180,7 @@ function CustomerRecord({ customer }: { customer: Customer }) {
         */}
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
           <Stat label="Rewards" value={`+${customer.rewardsBalance}`} />
-          <Stat label="Balance" value={money(customer.balance)} alert={customer.balance > 0} />
+          <Stat label={v1v2 ? 'House account' : 'Balance'} value={money(customer.balance)} alert={customer.balance > 0} />
           <Stat label="Rain checks" value={money(owed)} />
           <Stat label="Rounds" value={String(customer.teeTimes.length)} />
           <Stat label="Referrals" value={String(referrals)} />
@@ -256,6 +262,7 @@ function CustomerRecord({ customer }: { customer: Customer }) {
                   key: g.id,
                   cells: [g.upc, g.type, g.expires, money(g.awarded), money(g.spent), money(g.balance)],
                   strongLast: true,
+                  ...(v1v2 && { sub: `Good for ${categoryLabels(g).join(', ').toLowerCase()}`, badge: isSpent(g) ? <SpentBadge /> : undefined }),
                 }))}
               />
             )}
@@ -400,7 +407,7 @@ function DataTable({
 }: {
   columns: string[];
   widths: string;
-  rows: { key: string; cells: string[]; sub?: string; alert?: boolean; strongLast?: boolean }[];
+  rows: { key: string; cells: string[]; sub?: string; alert?: boolean; strongLast?: boolean; badge?: React.ReactNode }[];
 }) {
   const grid = { display: 'grid', gridTemplateColumns: widths, gap: '8px', alignItems: 'baseline' } as const;
   return (
@@ -433,7 +440,12 @@ function DataTable({
               </Typography>
             ))}
           </Box>
-          {r.sub && <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{r.sub}</Typography>}
+          {(r.sub || r.badge) && (
+            <Stack direction="row" alignItems="center" gap={0.75}>
+              {r.badge}
+              {r.sub && <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{r.sub}</Typography>}
+            </Stack>
+          )}
         </Box>
       ))}
     </Box>

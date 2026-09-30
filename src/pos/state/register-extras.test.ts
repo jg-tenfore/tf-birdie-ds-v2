@@ -171,7 +171,7 @@ describe('cash payout', () => {
         reason: 'winnings',
         recipient: 'Harrington, Cole',
         note: 'Saturday skins',
-        operator: null,
+        operator: 's-1', // the signed-in operator (Wave 3); Wave 1 had none to record
         date: '2026-05-21',
         time: '12:00 PM',
       },

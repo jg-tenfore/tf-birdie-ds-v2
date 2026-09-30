@@ -32,7 +32,13 @@ export interface Membership {
 
 export interface CustomerGiftCard {
   id: string;
-  type: 'Purchased' | 'Winnings';
+  /** v1's four types. Promotional and Replacement arrive with Gift Cards (V1 → V2, Wave 3). */
+  type: 'Purchased' | 'Winnings' | 'Promotional' | 'Replacement';
+  /**
+   * What the card may buy (Wave 3). Absent on cards issued before categories existed, which read as
+   * the default — everything but alcohol — so no older card suddenly becomes good for beer.
+   */
+  categories?: import('./spend').SpendCategory[];
   expires: string;
   awarded: number;
   spent: number;

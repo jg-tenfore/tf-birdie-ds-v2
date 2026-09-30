@@ -10,6 +10,26 @@ import { Callout, FilledButton, ModalFrame, OutlineButton } from './ModalFrame';
 import { Stack } from '../components/Stack';
 import { demoNow } from '../data/bookings';
 import { tabById } from '../state/restaurant';
+import { amountDue, type OperationsModal } from '../state/operations';
+import { useV1V2 } from '../edition';
+
+/**
+ * V1 → V2, Wave 3: the tenders that are not a card reader. Each opens its own dialog, which pays
+ * the order — or, for a gift card that does not cover it, part of it.
+ */
+const OPS_TENDERS: { kind: OperationsModal['kind']; label: string; icon: string }[] = [
+  { kind: 'tenderGiftCard', label: 'Gift card', icon: 'card_giftcard' },
+  { kind: 'tenderHouseAccount', label: 'House account', icon: 'account_balance' },
+  { kind: 'tenderCardOnFile', label: 'Card on file', icon: 'credit_score' },
+  { kind: 'tenderEvent', label: 'Charge to event', icon: 'calendar_month' },
+];
+
+const TENDER_LABEL: Record<string, string> = {
+  giftcard: 'Gift card',
+  house: 'House account',
+  cardonfile: 'Card on file',
+  event: 'Event',
+};
 
 /**
  * Checkout — the receipt on the left, the numeric keypad on the right.
@@ -25,6 +45,10 @@ import { tabById } from '../state/restaurant';
 export function Checkout() {
   const { state, dispatch, toast } = usePos();
   const booking = selectedBooking(state);
+  const v1v2 = useV1V2();
+  // What is left to pay: the total, less any part already paid (V1 → V2, Wave 3).
+  const due = amountDue(state);
+  const split = state.splitTender;
 
   // The one order total (`orderTotals`): golf taxed by its booking's tax line, everything
   // else at the sales-tax rate. The register's Pay button, this receipt and the reader all
@@ -40,7 +64,7 @@ export function Checkout() {
   const [bakedTip, setBakedTip] = useState(0);
 
   const stagedTip = tipDigits ? parseInt(tipDigits, 10) / 100 : 0;
-  const chargeTotal = +(base.total + bakedTip).toFixed(2);
+  const chargeTotal = +(due + bakedTip).toFixed(2);
   const tendered = tenderedDigits ? parseInt(tenderedDigits, 10) / 100 : 0;
   const change = Math.max(0, +(tendered - chargeTotal).toFixed(2));
   const tipPending = stagedTip !== bakedTip;
@@ -145,7 +169,23 @@ export function Checkout() {
             <Row label="Tax" value={cart.money(base.tax)} />
             {bakedTip > 0 && <Row label="Tip" value={cart.money(bakedTip)} />}
             <Divider sx={{ my: 0.75 }} />
-            <Row label="Total" value={cart.money(chargeTotal)} bold />
+            {split ? (
+              // Part paid: the order's total, what each tender has paid, and what is left.
+              <Box data-split-tender sx={{ display: 'contents' }}>
+                <Row label="Order total" value={cart.money(base.total)} />
+                {split.tenders.map((t) => (
+                  <Row
+                    key={t.paymentId}
+                    label={`Paid · ${TENDER_LABEL[t.method] ?? t.method}`}
+                    value={cart.creditMoney(t.amount)}
+                    color="#16a34a"
+                  />
+                ))}
+                <Row label="Balance due" value={cart.money(chargeTotal)} bold />
+              </Box>
+            ) : (
+              <Row label="Total" value={cart.money(chargeTotal)} bold />
+            )}
             {tendered > 0 && (
               <>
                 <Row label="Tendered" value={cart.money(tendered)} />
@@ -277,6 +317,29 @@ export function Checkout() {
                 {method === 'giftcert' ? 'Gift cert' : method === 'cashpay' ? 'Other' : method}
               </ButtonBase>
             ))}
+            {v1v2 &&
+              OPS_TENDERS.map((t) => (
+                <ButtonBase
+                  key={t.kind}
+                  data-tender={t.kind}
+                  onClick={() => dispatch({ type: 'openModal', modal: { kind: t.kind } as OperationsModal })}
+                  sx={{
+                    flexDirection: 'column',
+                    gap: 0.5,
+                    py: 1.5,
+                    borderRadius: `${radius.md}px`,
+                    border: `1.5px solid ${md3.outlineVariant}`,
+                    bgcolor: '#fff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: md3.onSurfaceVariant,
+                    '&:hover': { borderColor: md3.primary, color: md3.primary, bgcolor: md3.primaryContainer },
+                  }}
+                >
+                  <Icon name={t.icon} size={20} />
+                  {t.label}
+                </ButtonBase>
+              ))}
           </Box>
         </Box>
       </Stack>
@@ -323,7 +386,8 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
 
   // Exactly the checkout total — `orderTotals` plus the tip checkout recalculated in. No
   // second tax: the reader used to add a flat 8% on top of an amount that already had it.
-  const amount = +(cart.orderTotals(state.cart).total + tip).toFixed(2);
+  // Less any part already paid by another tender (V1 → V2, Wave 3).
+  const amount = +(amountDue(state) + tip).toFixed(2);
 
   const advance = () => {
     if (stage === 1) {

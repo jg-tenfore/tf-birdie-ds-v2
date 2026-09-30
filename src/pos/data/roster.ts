@@ -360,11 +360,26 @@ export type CustomerEdits = Record<string, Partial<Customer>>;
  */
 export function liveCustomer(id: string | undefined, edits: CustomerEdits = {}): Customer | null {
   const base = customerForId(id);
-  if (!base) return null;
+  if (!base) return createdCustomer(id, edits);
   const patch = edits[base.id];
   return patch ? { ...base, ...patch } : base;
 }
 
+/**
+ * A customer created at the counter this session (V1 → V2, Wave 3). The roster is fixed, so a new
+ * record lives whole in `customerEdits`, marked `created`; every lookup already reads through
+ * `liveCustomer`, so it is found everywhere a committed record is, with nothing else to change.
+ */
+function createdCustomer(id: string | undefined, edits: CustomerEdits): Customer | null {
+  const e = id ? edits[id] : undefined;
+  return e && (e as Customer & { created?: boolean }).created ? (e as Customer) : null;
+}
+
 /** The whole roster with session edits folded in — what search and pricing read. */
-export const liveRoster = (edits: CustomerEdits = {}): Customer[] =>
-  Object.keys(edits).length === 0 ? roster : roster.map((c) => (edits[c.id] ? { ...c, ...edits[c.id] } : c));
+export const liveRoster = (edits: CustomerEdits = {}): Customer[] => {
+  if (Object.keys(edits).length === 0) return roster;
+  const created = Object.keys(edits)
+    .map((id) => createdCustomer(id, edits))
+    .filter((c): c is Customer => c !== null);
+  return [...roster.map((c) => (edits[c.id] ? { ...c, ...edits[c.id] } : c)), ...created];
+};

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Box, ButtonBase, Divider, Typography } from '@mui/material';
-import { grid as gridTokens, md3, radius } from '../../../theme/tokens';
+import { grid as gridTokens, md3, payBadges, radius } from '../../../theme/tokens';
 import { DEMO_TODAY } from '../../data/bookings';
 import { toDateStr } from '../../data/courses';
 import { staffById } from '../../data/staff';
 import { money } from '../../logic/cart';
+import { tenderLabel } from '../../logic/order-lookup';
 import type { PaymentRecord } from '../../logic/restaurant';
 import { dayTotals, tipAdjustable, tipPercent, tipsByStaff } from '../../logic/tips';
 import { usePos } from '../../state/PosProvider';
@@ -43,6 +44,9 @@ import { Stack } from '../Stack';
  * - **Tips by person**, which is what v1's "Tip out" button was for.
  * - **No cash drop here.** It is a drawer job, not a tips one, and belongs with closing the till —
  *   Shift, in wave 3.
+ * - **Refunds** (Wave 3) are negative payments against the order they came from, shown as refund
+ *   rows: they net out of the day's sales and have no tip to adjust. Every order number opens the
+ *   order in Order Lookup, which is where a refund is done.
  */
 export function OrdersTipsView() {
   const { state, dispatch } = usePos();
@@ -137,7 +141,12 @@ export function OrdersTipsView() {
                 </Box>
                 <Box component="tbody">
                   {shown.map((p) => (
-                    <PaymentRow key={p.id} p={p} onAdjust={() => dispatch({ type: 'openModal', modal: { kind: 'adjustTip', paymentId: p.id } })} />
+                    <PaymentRow
+                      key={p.id}
+                      p={p}
+                      onAdjust={() => dispatch({ type: 'openModal', modal: { kind: 'adjustTip', paymentId: p.id } })}
+                      onOpenOrder={() => dispatch({ type: 'openOrderLookup', orderNumber: p.orderNumber })}
+                    />
                   ))}
                 </Box>
               </Box>
@@ -191,40 +200,62 @@ export function OrdersTipsView() {
   );
 }
 
-function PaymentRow({ p, onAdjust }: { p: PaymentRecord; onAdjust: () => void }) {
+function PaymentRow({ p, onAdjust, onOpenOrder }: { p: PaymentRecord; onAdjust: () => void; onOpenOrder: () => void }) {
   const adjustable = tipAdjustable(p);
+  // Wave 3: a refund is money going back — a negative payment against the order it came from.
+  // It reads as one, and nothing on it can be adjusted.
+  const refund = p.kind === 'refund';
   const td = { p: '10px 8px', fontSize: 13, borderBottom: `1px solid ${md3.outlineVariant}` } as const;
   return (
-    <Box component="tr" data-payment={p.id}>
+    <Box component="tr" data-payment={p.id} data-payment-kind={refund ? 'refund' : 'sale'} sx={refund ? { bgcolor: payBadges.refund.bg } : undefined}>
       <Box component="td" sx={{ ...td, whiteSpace: 'nowrap', color: md3.onSurfaceVariant }}>
         {p.time}
       </Box>
       <Box component="td" sx={{ ...td, fontWeight: 700 }}>
-        {p.orderNumber}
+        {/* Wave 3: the number opens the order in Order Lookup — what was bought, and a refund. */}
+        <ButtonBase
+          data-open-order={p.orderNumber}
+          aria-label={`Open order ${p.orderNumber} in Order Lookup`}
+          onClick={onOpenOrder}
+          sx={{ gap: 0.375, px: 0.5, py: 0.25, ml: -0.5, borderRadius: `${radius.sm}px`, fontSize: 13, fontWeight: 700, color: md3.primary }}
+        >
+          {p.orderNumber}
+        </ButtonBase>
       </Box>
       <Box component="td" sx={td}>
         {staffById(p.staffId)?.short ?? '—'}
       </Box>
       <Box component="td" sx={td}>
-        {/* A live payment in the prototype has no card number to show; placeholder dashes read as a fault. */}
-        {p.method === 'card' ? (p.cardLast4 ? `Card •••• ${p.cardLast4}` : 'Card') : p.method[0].toUpperCase() + p.method.slice(1)}
+        {tenderLabel(p.method, p.ref ?? (p.cardLast4 ? { cardLast4: p.cardLast4 } : undefined))}
       </Box>
-      <Box component="td" sx={{ ...td, textAlign: 'right' }}>
+      <Box component="td" sx={{ ...td, textAlign: 'right', fontWeight: refund ? 700 : undefined, color: refund ? payBadges.refund.text : undefined }}>
         {money(p.amount)}
       </Box>
       <Box component="td" sx={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }} data-tip>
-        <Box component="span" sx={{ fontWeight: 700 }}>
-          {money(p.tip)}
-        </Box>
-        <Box component="span" sx={{ color: md3.onSurfaceVariant, ml: 0.75, fontSize: 11.5 }}>
-          {tipPercent(p)}%
-        </Box>
+        {refund ? (
+          <Box component="span" sx={{ color: md3.outline }}>
+            —
+          </Box>
+        ) : (
+          <>
+            <Box component="span" sx={{ fontWeight: 700 }}>
+              {money(p.tip)}
+            </Box>
+            <Box component="span" sx={{ color: md3.onSurfaceVariant, ml: 0.75, fontSize: 11.5 }}>
+              {tipPercent(p)}%
+            </Box>
+          </>
+        )}
         {p.tipAdjustedAt && (
           <Typography sx={{ fontSize: 10, fontWeight: 800, color: md3.primary, letterSpacing: '.04em' }}>ADJUSTED {p.tipAdjustedAt}</Typography>
         )}
       </Box>
       <Box component="td" sx={{ ...td, textAlign: 'right', width: 96 }}>
-        {adjustable ? (
+        {refund ? (
+          <Typography data-refund-label sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', color: payBadges.refund.text }}>
+            REFUND
+          </Typography>
+        ) : adjustable ? (
           <ButtonBase
             onClick={onAdjust}
             aria-label={`Adjust the tip on ${p.orderNumber}`}
@@ -233,7 +264,7 @@ function PaymentRow({ p, onAdjust }: { p: PaymentRecord; onAdjust: () => void })
             Adjust
           </ButtonBase>
         ) : (
-          <Typography sx={{ fontSize: 11.5, color: md3.outline }}>Cash</Typography>
+          <Typography sx={{ fontSize: 11.5, color: md3.outline }}>{p.method === 'cash' ? 'Cash' : '—'}</Typography>
         )}
       </Box>
     </Box>
