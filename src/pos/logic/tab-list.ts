@@ -1,5 +1,5 @@
 import { allTables, type Room } from '../data/floor';
-import { staffById } from '../data/staff';
+import { staffById, type StaffMember } from '../data/staff';
 import { tabTotal, tableLabel, unsent, type Tab } from './restaurant';
 
 /**
@@ -55,7 +55,7 @@ export function formatOpenFor(min: number): string {
 }
 
 /** One row per open tab, measured against the demo's clock. */
-export function tabRows(tabs: Tab[], floor: Room[], nowMin: number): TabRow[] {
+export function tabRows(tabs: Tab[], floor: Room[], nowMin: number, roster?: readonly StaffMember[], taxRate?: number): TabRow[] {
   const tables = allTables(floor);
   return tabs
     .filter((t) => t.status === 'open')
@@ -66,9 +66,9 @@ export function tabRows(tabs: Tab[], floor: Room[], nowMin: number): TabRow[] {
         tab,
         table: at ? tableLabel(at.table) : NO_TABLE,
         room: at?.room.name ?? NO_TABLE,
-        server: staffById(tab.serverId)?.name ?? 'Unassigned',
+        server: staffById(tab.serverId, roster)?.name ?? 'Unassigned',
         minutesOpen: opened == null ? 0 : Math.max(0, nowMin - opened),
-        total: tabTotal(tab),
+        total: tabTotal(tab, taxRate),
         unsentCount: unsent(tab.lines).length,
         lineCount: tab.lines.filter((l) => l.dish).length,
       };

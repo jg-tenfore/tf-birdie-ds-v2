@@ -1,18 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { TAX_RATE } from '../data/config';
 import { createInitialState, reducer, type PosState } from './pos-store';
+import { amountDue } from './operations';
 import { checkoutProblem, staffProblem } from './settings';
 
 const s0 = () => createInitialState();
 const as = (s: PosState, operatorId: string): PosState => ({ ...s, operatorId });
 
-describe('Settings are recorded, not wired', () => {
-  it('saving a new tax rate records it and leaves checkout at the prototype’s 8%', () => {
-    const s = s0();
-    const next = reducer(s, { type: 'saveCheckoutSettings', checkout: { ...s.terminalSettings.checkout, taxRate: 0.065 } });
-    expect(next.terminalSettings.checkout.taxRate).toBe(0.065);
-    expect(next.settingsSaved.checkout?.by).toBe('s-1');
-    expect(TAX_RATE).toBe(0.08);
+describe('Settings drive the register', () => {
+  it('a saved tax rate prices the order being rung, and an order already paid keeps its tax', () => {
+    const paid = reducer({ ...s0(), cart: [{ name: 'Titleist Pro V1 Box', price: 54, qty: 1 }] }, { type: 'recordPayment', method: 'card', amount: 58.32 });
+    const before = paid.orders.at(-1)!;
+    expect(before.tax).toBe(4.32);
+    const s = reducer({ ...paid, cart: [], lastPayment: null }, { type: 'saveCheckoutSettings', checkout: { ...paid.terminalSettings.checkout, taxRate: 0.065 } });
+    expect(s.terminalSettings.checkout.taxRate).toBe(0.065);
+    expect(s.settingsSaved.checkout?.by).toBe('s-1');
+    const ringing = { ...s, cart: [{ name: 'Titleist Pro V1 Box', price: 54, qty: 1 }] };
+    expect(amountDue(ringing)).toBe(57.51);
+    expect(s.orders.find((o) => o.orderNumber === before.orderNumber)!.tax).toBe(4.32);
+    // Every edition without Settings is still at the prototype's 8%.
+    expect(s0().terminalSettings.checkout.taxRate).toBe(TAX_RATE);
+  });
+
+  it('someone added in Settings signs in with their PIN; someone deactivated cannot', () => {
+    let s = reducer(s0(), { type: 'saveStaff', member: { name: 'Sam Ortiz', role: 'server', pin: '7777' } });
+    s = reducer(s, { type: 'setStaffActive', id: 's-6', active: false });
+    const out = reducer(s, { type: 'signOut' });
+    const sam = reducer(out, { type: 'signIn', pin: '7777' });
+    expect(sam.signedIn).toBe(true);
+    expect(sam.operatorId).toBe(s.staffRoster.at(-1)!.id);
+    expect(reducer(out, { type: 'signIn', pin: '6666' })).toBe(out);
   });
 
   it('refuses a checkout draft that would leave nothing to take money with', () => {

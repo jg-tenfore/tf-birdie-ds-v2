@@ -280,8 +280,18 @@ export const onTheClock = (s: Pick<OperationsState, 'punches'>, staffId: string)
   s.punches.find((p) => p.staffId === staffId && !p.out);
 
 /** What is still due on the register: the order's total, less any part already paid. */
-export function amountDue(s: Pick<PosState, 'cart' | 'splitTender'>): number {
-  return cents(Math.max(0, orderTotals(s.cart).total - (s.splitTender?.paid ?? 0)));
+/**
+ * The sales tax the register charges — Settings' (V1 → V2), which every edition without Settings
+ * leaves at 8%. An order already paid keeps the tax it was rung with; only the order being rung
+ * reads this.
+ */
+export const taxRateOf = (s: Pick<PosState, 'terminalSettings'>): number => s.terminalSettings.checkout.taxRate;
+
+/** The register's order, totalled at the terminal's tax rate. */
+export const registerTotals = (s: Pick<PosState, 'cart' | 'terminalSettings'>) => orderTotals(s.cart, taxRateOf(s));
+
+export function amountDue(s: Pick<PosState, 'cart' | 'splitTender' | 'terminalSettings'>): number {
+  return cents(Math.max(0, registerTotals(s).total - (s.splitTender?.paid ?? 0)));
 }
 
 /** An event's whole bill: its golf (taxed at checkout) plus everything charged to it (already taxed). */
@@ -393,7 +403,7 @@ function applyTender(
     // Charged to an event: the order's lines join its ledger, tax included, so the organiser's bill
     // reads as what was served rather than one lump. A refund goes on as a negative charge.
     const lines = state.cart.filter((l) => !l.isTax && l.name !== 'Taxes');
-    const t = orderTotals(state.cart);
+    const t = registerTotals(state);
     const taxShare = (l: CartItem) => (t.subtotal > 0 ? ((l.price * l.qty) / t.subtotal) * t.tax : 0);
     let seq = state.opsSeq.charge;
     const charges: EventCharge[] =
@@ -430,7 +440,8 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
 
   switch (action.type) {
     case 'signIn': {
-      const who = staffByPin(action.pin);
+      // Settings' roster (V1 → V2): someone added there can sign in, someone deactivated cannot.
+      const who = staffByPin(action.pin, state.staffRoster);
       return who ? { ...state, signedIn: true, operatorId: who.id } : state;
     }
     case 'signOut':
@@ -732,7 +743,7 @@ export function recordOperationsPayment(
   state: PosState,
   payment: { method: string; amount: number; tip?: number; ref?: PaymentRef; paymentId: string; orderNumber: string },
 ): PosState {
-  const t = orderTotals(state.cart);
+  const t = registerTotals(state);
   const tender: OrderTender = { paymentId: payment.paymentId, method: payment.method, amount: cents(payment.amount - (payment.tip ?? 0)), ref: payment.ref };
   const tenders = [...(state.splitTender?.tenders ?? []), tender];
   const booking = state.selectedBookingId ? state.bookings.find((b) => b.id === state.selectedBookingId) : undefined;

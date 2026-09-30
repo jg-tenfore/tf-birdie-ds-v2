@@ -62,7 +62,7 @@ export function OrdersTipsView() {
     .slice()
     .reverse();
   const totals = dayTotals(day);
-  const byStaff = tipsByStaff(day);
+  const byStaff = tipsByStaff(day, state.staffRoster);
 
   return (
     <Stack sx={{ flex: 1, minWidth: 0, height: '100%', bgcolor: md3.surface }} data-orders-tips>
@@ -101,7 +101,7 @@ export function OrdersTipsView() {
               <Chip key={m} active={methodFilter === m} onClick={() => setMethodFilter(m)} label={m === 'all' ? 'All tenders' : m === 'card' ? 'Card' : 'Cash'} />
             ))}
             {staffFilter && (
-              <Chip active onClick={() => setStaffFilter(null)} label={`${staffById(staffFilter)?.short ?? staffFilter} ✕`} />
+              <Chip active onClick={() => setStaffFilter(null)} label={`${staffById(staffFilter, state.staffRoster)?.short ?? staffFilter} ✕`} />
             )}
             <Box sx={{ flex: 1 }} />
             <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
@@ -201,6 +201,7 @@ export function OrdersTipsView() {
 }
 
 function PaymentRow({ p, onAdjust, onOpenOrder }: { p: PaymentRecord; onAdjust: () => void; onOpenOrder: () => void }) {
+  const { state } = usePos();
   const adjustable = tipAdjustable(p);
   // Wave 3: a refund is money going back — a negative payment against the order it came from.
   // It reads as one, and nothing on it can be adjusted.
@@ -223,7 +224,7 @@ function PaymentRow({ p, onAdjust, onOpenOrder }: { p: PaymentRecord; onAdjust: 
         </ButtonBase>
       </Box>
       <Box component="td" sx={td}>
-        {staffById(p.staffId)?.short ?? '—'}
+        {staffById(p.staffId, state.staffRoster)?.short ?? '—'}
       </Box>
       <Box component="td" sx={td}>
         {tenderLabel(p.method, p.ref ?? (p.cardLast4 ? { cardLast4: p.cardLast4 } : undefined))}

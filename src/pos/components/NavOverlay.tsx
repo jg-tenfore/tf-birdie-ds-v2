@@ -42,7 +42,7 @@ export function NavOverlay() {
   const weston = useWestonEdits();
   const edition = useEdition();
   const close = () => dispatch({ type: 'setNavOpen', open: false });
-  const operator = staffById(state.operatorId);
+  const operator = staffById(state.operatorId, state.staffRoster);
   const signOut = () => {
     close();
     dispatch({ type: 'signOut' });

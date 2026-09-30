@@ -69,7 +69,7 @@ export function ShiftView() {
         <Typography sx={{ fontSize: 13, color: md3.onSurfaceVariant, whiteSpace: 'nowrap' }} data-drawer-status={shift ? 'open' : 'closed'}>
           {shift ? (
             <>
-              Drawer <b>{shift.id}</b> open since {shift.openedAt} · {staffById(shift.staffId)?.name}
+              Drawer <b>{shift.id}</b> open since {shift.openedAt} · {staffById(shift.staffId, state.staffRoster)?.name}
             </>
           ) : (
             'No drawer open'
@@ -147,7 +147,7 @@ function OpenDrawer({ shift }: { shift: Shift }) {
                   {e.kind === 'drop' ? 'Cash drop' : `Payout · ${e.reason ? payoutReasonLabel(e.reason) : 'Other'}`}
                 </Typography>
                 <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
-                  {e.time} · {staffById(e.operator)?.short ?? 'Unknown'}
+                  {e.time} · {staffById(e.operator, state.staffRoster)?.short ?? 'Unknown'}
                   {e.recipient ? ` · to ${e.recipient}` : ''}
                   {e.note ? ` · ${e.note}` : ''}
                 </Typography>
@@ -215,6 +215,7 @@ function History({ shifts }: { shifts: Shift[] }) {
 }
 
 function HistoryRow({ s, v }: { s: Shift; v: number }) {
+  const { state } = usePos();
   const num = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' } as const;
   const noteless = { borderBottom: s.note ? 'none' : undefined };
   const cell = (children: ReactNode, align?: 'right', extra?: object) => (
@@ -236,7 +237,7 @@ function HistoryRow({ s, v }: { s: Shift; v: number }) {
             {s.openedAt} – {s.closedAt}
           </Box>,
         )}
-        {cell(staffById(s.staffId)?.short ?? s.staffId, undefined, { whiteSpace: 'nowrap' })}
+        {cell(staffById(s.staffId, state.staffRoster)?.short ?? s.staffId, undefined, { whiteSpace: 'nowrap' })}
         {cell(money(s.startCash), 'right', num)}
         {cell(money(s.expectedCash ?? 0), 'right', num)}
         {cell(money(s.countedCash ?? 0), 'right', { ...num, fontWeight: 700 })}

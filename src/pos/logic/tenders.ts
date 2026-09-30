@@ -29,6 +29,7 @@ export function giftCardCovers(
   cart: CartItem[],
   due: number,
   paidByCards = 0,
+  taxRate?: number,
 ): number {
   const allowed = new Set(cardCategories(card));
   const lines = cart.filter((l) => !l.isTax && l.name !== 'Taxes');
@@ -37,9 +38,9 @@ export function giftCardCovers(
     return c !== null && allowed.has(c);
   });
   if (eligible.length === 0) return 0;
-  const all = orderTotals(cart);
+  const all = orderTotals(cart, taxRate);
   const goodsAll = all.subtotal;
-  const goodsOk = orderTotals(eligible).subtotal;
+  const goodsOk = orderTotals(eligible, taxRate).subtotal;
   // The eligible lines' share of the tax, proportionally — the same rule a refund uses.
   const share = goodsAll > 0 ? goodsOk + (goodsOk / goodsAll) * all.tax : 0;
   return Math.max(0, Math.round(Math.min(card.balance, Math.max(0, share - paidByCards), due) * 100) / 100);

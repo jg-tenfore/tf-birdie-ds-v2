@@ -1,3 +1,4 @@
+import { registerTotals, taxRateOf } from '../state/operations';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
@@ -15,7 +16,7 @@ import {
   type PayoutReason,
 } from '../logic/register-extras';
 import { canHold, type HeldOrder, type RegisterExtrasModal } from '../state/register-extras';
-import { DEFAULT_GIFT_CATEGORIES, SPEND_CATEGORIES, type SpendCategory } from '../data/spend';
+import { SPEND_CATEGORIES, type SpendCategory } from '../data/spend';
 import { useV1V2 } from '../edition';
 import { usePos } from '../state/PosProvider';
 import type { CartItem, GiftCardRecipient } from '../types';
@@ -117,7 +118,7 @@ function HoldOrderDialog() {
     <ModalFrame
       width={460}
       title="Hold this order"
-      subtitle={`${plural(count, 'item')} · ${money(orderTotals(state.cart).total)}`}
+      subtitle={`${plural(count, 'item')} · ${money(registerTotals(state).total)}`}
       icon="pause_circle"
       actions={
         <>
@@ -171,7 +172,7 @@ function HeldOrdersDialog() {
         <Box data-resume-confirm>
           <Callout tone="warning">
             The rail already has an order — {plural(currentCount, 'item')},{' '}
-            {money(orderTotals(state.cart).total)}. Hold it first, then resume <b>{pending.name}</b>?
+            {money(registerTotals(state).total)}. Hold it first, then resume <b>{pending.name}</b>?
           </Callout>
           <Stack direction="row" gap={1} sx={{ mt: 1.75, justifyContent: 'flex-end' }}>
             <OutlineButton onClick={() => setPending(null)}>Back</OutlineButton>
@@ -185,7 +186,7 @@ function HeldOrdersDialog() {
       ) : (
         <Stack gap={1}>
           {state.heldOrders.map((h) => {
-            const total = orderTotals(h.order.cart).total;
+            const total = orderTotals(h.order.cart, taxRateOf(state)).total;
             const booked = Boolean(h.order.selectedBookingId);
             return (
               <Stack
@@ -354,10 +355,11 @@ const GIFT_CARD_TYPES: NonNullable<GiftCardDraft['cardType']>[] = ['Purchased', 
  * decision: everything but alcohol, unless it is turned on for this card — and checkout enforces it.
  */
 function GiftCardDialog({ draft }: { draft?: GiftCardDraft }) {
-  const { dispatch, toast } = usePos();
+  const { state, dispatch, toast } = usePos();
   const v1v2 = useV1V2();
   const [cardType, setCardType] = useState<NonNullable<GiftCardDraft['cardType']>>(draft?.cardType ?? 'Purchased');
-  const [categories, setCategories] = useState<SpendCategory[]>(draft?.categories ?? DEFAULT_GIFT_CATEGORIES);
+  // Settings' default (V1 → V2) is where a new card starts; a sale can still change it.
+  const [categories, setCategories] = useState<SpendCategory[]>(draft?.categories ?? state.terminalSettings.checkout.giftCategories);
   const toggleCategory = (c: SpendCategory) =>
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : SPEND_CATEGORIES.map((s) => s.id).filter((id) => id === c || prev.includes(id))));
   const initialAmount = draft?.amount ?? 50;

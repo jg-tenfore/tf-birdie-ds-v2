@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { settingsDefaults, type CheckoutSettings, type TerminalHardware } from '../../../pos/state/settings';
+import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
@@ -20,9 +22,10 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   half-typed tax rate is not a setting anyone meant.
  * - **Staff & PINs is managers only.** Anyone else reads the list, with PINs hidden. The reducer
  *   refuses a staff change from anyone but a manager, so the rule does not rest on a hidden button.
- * - **Recorded, not wired.** Terminal, checkout and staff changes are saved and shown here; checkout,
- *   receipts and sign-in keep the prototype's fixed behaviour, and each section says so. The tee
- *   sheet's section is the exception: it was always live, and still is.
+ * - **Wired.** Once saved, checkout charges the tax rate, offers the tenders switched on and the tip
+ *   presets, and shows the receipt text on the reader's done step as "Receipts after a sale" says;
+ *   new gift cards start from the default; the register header shows the register's name; and the
+ *   PIN pad, Time Clock and server pickers read the staff list. The hardware stays simulated.
  */
 const meta = {
   title: 'V1 → V2 Migration/18 · Settings/Tablet',
@@ -74,7 +77,7 @@ export const CheckoutAndReceipts: Story = {
   render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'checkout' })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
-    await expect(c.getByText(/still charges 8% tax/)).toBeTruthy();
+    await expect(c.getByText(/Checkout reads these as soon as they are saved/)).toBeTruthy();
     await userEvent.click(c.getByRole('switch', { name: 'Card' }));
     await userEvent.click(c.getByRole('switch', { name: 'Cash' }));
     await expect(canvasElement.querySelector('[data-settings-problem]')!.textContent).toMatch(/Card or Cash/);
@@ -151,5 +154,96 @@ export const WestonKeepsThePanel: Story = {
     await userEvent.click(within(canvasElement.querySelector<HTMLElement>('[data-nav-overlay]')!).getByText('Settings', { exact: true }));
     await waitFor(() => expect(canvasElement.querySelector('[data-settings]')).toBeNull());
     await expect(page(canvasElement).getByText('Tee sheet settings')).toBeTruthy();
+  },
+};
+
+// ─── Wired: what the rest of the terminal does with it ─────────────────────
+
+const box: CartItem[] = [{ name: 'Titleist Pro V1 Box', price: 54, qty: 1 }];
+const withSettings = (checkout: Partial<CheckoutSettings> = {}, hardware: Partial<TerminalHardware> = {}) => {
+  const d = settingsDefaults().terminalSettings;
+  return { terminalSettings: { checkout: { ...d.checkout, ...checkout }, hardware: { ...d.hardware, ...hardware } } };
+};
+const register = (extra = {}) => atVenue('eighteen', { view: 'pos', leftPanelCollapsed: false, cart: box, ...extra });
+
+/** **The tax rate prices the register.** At 6.5%, a $54.00 box is $57.51, on the Pay button and in checkout. */
+export const TheTaxRatePricesTheRegister: Story = {
+  render: () => <Screen edition="v1v2" initialState={register(withSettings({ taxRate: 0.065 }))} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('button', { name: 'Pay $57.51' })).toBeTruthy();
+  },
+};
+
+/** **A tender switched off leaves checkout.** Check is off in Settings, so checkout does not offer it. */
+export const ATenderSwitchedOff: Story = {
+  render: () => {
+    const d = settingsDefaults().terminalSettings.checkout;
+    return <Screen edition="v1v2" initialState={register({ ...withSettings({ tenders: { ...d.tenders, check: false } }), modal: { kind: 'checkout' } })} />;
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.ownerDocument.querySelector('[data-tender="tenderHouseAccount"]')).not.toBeNull());
+    await expect(canvasElement.ownerDocument.querySelector('[data-tender="tenderCheck"]')).toBeNull();
+  },
+};
+
+/** **The tip presets are Settings'.** 20, 22 and 25 here; one tap stages the tip. */
+export const TheTipPresets: Story = {
+  render: () => <Screen edition="v1v2" initialState={register({ ...withSettings({ tipPresets: [20, 22, 25] }), modal: { kind: 'checkout' } })} />,
+  play: async ({ canvasElement }) => {
+    const d = within(await page(canvasElement).findByRole('dialog'));
+    await userEvent.click(d.getByRole('button', { name: 'Tip' }));
+    await expect(canvasElement.ownerDocument.querySelectorAll('[data-checkout-tip-preset]').length).toBe(3);
+    await userEvent.click(canvasElement.ownerDocument.querySelector<HTMLElement>('[data-checkout-tip-preset="25"]')!);
+    await expect(d.getByText(/tip is staged/)).toBeTruthy();
+  },
+};
+
+/**
+ * **The receipt shows on the done step**, with Settings' header and footer. "Never print" takes the
+ * Print receipt button away.
+ */
+export const TheReceiptOnTheDoneStep: Story = {
+  render: () => (
+    <Screen
+      edition="v1v2"
+      initialState={register({
+        ...withSettings({ receiptHeader: 'The Dunes of Delgado\n19th Hole Grill', receiptFooter: 'See you on the first tee.' }, { printReceipts: 'never', name: 'Grill Register' }),
+        modal: { kind: 'paymentReader', method: 'cash' },
+      })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const d = within(await page(canvasElement).findByRole('dialog'));
+    await userEvent.click(d.getByRole('button', { name: 'Cash received' }));
+    const receipt = await waitFor(() => {
+      const r = canvasElement.ownerDocument.querySelector<HTMLElement>('[data-receipt]');
+      if (!r) throw new Error('no receipt yet');
+      return r;
+    });
+    await expect(receipt.querySelector('[data-receipt-header]')!.textContent).toContain('19th Hole Grill');
+    await expect(receipt.querySelector('[data-receipt-footer]')!.textContent).toBe('See you on the first tee.');
+    await expect(receipt.textContent).toContain('Grill Register');
+    await expect(d.queryByRole('button', { name: 'Print receipt' })).toBeNull();
+  },
+};
+
+/** **The register header shows its name.** */
+export const TheRegisterIsNamed: Story = {
+  render: () => <Screen edition="v1v2" initialState={register(withSettings({}, { name: 'Pro Shop Register' }))} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('Championship · Pro Shop Register')).toBeTruthy();
+  },
+};
+
+/** **Someone added in Settings signs in.** Sam's PIN is 7777; the PIN pad lists them, and it lets them in. */
+export const ANewStaffMemberSignsIn: Story = {
+  render: () => {
+    const roster = [...settingsDefaults().staffRoster, { id: 's-7', name: 'Sam Ortiz', short: 'Sam O.', role: 'server' as const, pin: '7777', active: true }];
+    return <Screen edition="v1v2" initialState={atVenue('eighteen', { view: 'tee', signedIn: false, staffRoster: roster })} />;
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-sign-in]')!.textContent).toContain('Sam Ortiz');
+    for (const k of '7777') await userEvent.click(canvasElement.querySelector<HTMLElement>(`[data-pin-key="${k}"]`)!);
+    await waitFor(() => expect(canvasElement.querySelector('[data-sign-in]')).toBeNull());
   },
 };

@@ -304,6 +304,7 @@ function HouseAccount({
   cartBusy: boolean;
   onPay: (amount: number) => void;
 }) {
+  const { state } = usePos();
   const [amount, setAmount] = useState(c.balance > 0 ? c.balance.toFixed(2) : '');
   // Members only (Justin's call): the account follows the membership.
   const member = hasHouseAccount(c, DEMO_TODAY());
@@ -365,7 +366,7 @@ function HouseAccount({
             <Typography sx={{ fontSize: 12.5, flex: 1, minWidth: 0 }} noWrap>
               {e.kind === 'charge' ? 'Charged' : e.kind === 'payment' ? 'Paid' : 'Refunded'}
               {e.orderNumber ? ` · ${e.orderNumber}` : ''}
-              {` · ${staffById(e.staffId)?.short ?? e.staffId}`}
+              {` · ${staffById(e.staffId, state.staffRoster)?.short ?? e.staffId}`}
             </Typography>
             <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: e.kind === 'charge' ? md3.error : '#16a34a' }}>
               {e.kind === 'charge' ? '+' : '−'}

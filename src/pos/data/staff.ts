@@ -34,10 +34,24 @@ export const STAFF: StaffMember[] = [
   { id: 's-6', name: 'Diego Ramos', short: 'Diego R.', role: 'pro-shop', pin: '6666' },
 ];
 
-export const staffById = (id: string | null | undefined): StaffMember | undefined => STAFF.find((s) => s.id === id);
+/**
+ * `roster` is Settings' staff list (V1 → V2), where someone can be added, renamed or deactivated; it
+ * defaults to the seed list, which is what every edition without Settings has.
+ */
+export const staffById = (id: string | null | undefined, roster: readonly StaffMember[] = STAFF): StaffMember | undefined =>
+  roster.find((s) => s.id === id);
+
+/** Whether someone may sign in — a Settings roster marks the deactivated `active: false`. */
+const canSignIn = (s: StaffMember & { active?: boolean }) => s.active !== false;
+
+/** Who can carry a tab, from a roster. */
+export const serversOf = (roster: readonly (StaffMember & { active?: boolean })[] = STAFF): StaffMember[] =>
+  roster.filter((s) => canSignIn(s) && (s.role === 'server' || s.role === 'bartender' || s.role === 'manager'));
 
 /** Who can carry a tab — the tab's server picker offers these. */
 export const SERVERS = STAFF.filter((s) => s.role === 'server' || s.role === 'bartender' || s.role === 'manager');
 
-export const staffByPin = (pin: string): StaffMember | undefined => STAFF.find((s) => s.pin === pin);
+/** Who signs in with `pin` — only someone active, when the roster says who is. */
+export const staffByPin = (pin: string, roster: readonly (StaffMember & { active?: boolean })[] = STAFF): StaffMember | undefined =>
+  roster.find((s) => canSignIn(s) && s.pin === pin);
 

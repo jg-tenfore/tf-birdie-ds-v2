@@ -7,11 +7,12 @@ import type { PosState } from './pos-store';
  * Settings (V1 → V2) — the terminal, checkout and receipts, staff and PINs.
  *
  * v1 never had a Settings screen: its nav tile opened a stub reading "Terminal and hardware
- * configuration." So this is new, and deliberately **recorded, not wired** (Justin's call): a change
- * is saved here and shown here, and the rest of the prototype keeps its fixed behaviour — the 8% tax,
- * the demo PINs, every tender at checkout. That keeps seeded orders and totals where reviewers expect
- * them while the screen itself is reviewed. The one live section is the tee sheet's, which was always
- * live and is only given a second home here.
+ * configuration." So this is new. The first cut only recorded changes; they are now **wired**
+ * (Justin's call): the register reads the tax rate (`taxRateOf`), the tip presets, the tenders, the
+ * receipt text and "Receipts after a sale", the gift-card default and the register's name, and
+ * sign-in reads `staffRoster`. Every edition without Settings keeps these defaults, which are exactly
+ * the prototype's old fixed behaviour — so nothing outside V1 → V2 moves. An order already paid keeps
+ * the tax it was rung with; only the order being rung reads the rate.
  *
  * Who may change what: **anyone signed in** may change the terminal and checkout settings; **only a
  * manager** may change staff and PINs (Justin's call). The reducer refuses a staff change from anyone

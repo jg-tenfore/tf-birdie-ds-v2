@@ -209,8 +209,8 @@ export function payableTotal(cart: CartItem[]): number {
   }, 0);
 }
 
-/** Sales tax on a taxable amount. */
-export const salesTax = (amount: number): number => +(amount * TAX_RATE).toFixed(2);
+/** Sales tax on a taxable amount — at `rate`, which Settings can change (V1 → V2); 8% by default. */
+export const salesTax = (amount: number, rate: number = TAX_RATE): number => +(amount * rate).toFixed(2);
 
 /** A tax row — the `Taxes` line a tee-sheet round arrives with. */
 const isTaxRow = (i: CartItem): boolean => Boolean(i.isTax) || i.name === 'Taxes';
@@ -254,7 +254,7 @@ export interface OrderTotals {
  * With nothing left to charge (every seat settled, or the round removed), a stray tax row
  * charges nothing.
  */
-export function orderTotals(cart: CartItem[]): OrderTotals {
+export function orderTotals(cart: CartItem[], taxRate: number = TAX_RATE): OrderTotals {
   const lines = cart.filter((i) => !isTaxRow(i));
   const exempt = cart.some((i) => i.name === 'Tax Exempt');
   const goods = cents(payableTotal(lines));
@@ -269,7 +269,7 @@ export function orderTotals(cart: CartItem[]): OrderTotals {
   // Likewise (Wave 3) a payment onto a house account — paying a debt is not a sale — and an event's
   // charges, which were taxed when they were charged to it.
   const giftGoods = payableTotal(lines.filter((i) => i.giftCard || i.accountPayment || i.eventBill));
-  const sales = salesTax(Math.max(0, goods - golfGoods - giftGoods));
+  const sales = salesTax(Math.max(0, goods - golfGoods - giftGoods), taxRate);
   const tax = exempt ? 0 : cents(golfTax + sales);
 
   return {

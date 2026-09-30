@@ -281,7 +281,7 @@ function ChargeRow({ charge: c, event: e }: { charge: EventCharge; event: GolfEv
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: 13.5, fontWeight: 600 }}>{c.description}</Typography>
         <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
-          {fromDateStr(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {c.time} · {staffById(c.staffId)?.short ?? c.staffId}
+          {fromDateStr(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {c.time} · {staffById(c.staffId, state.staffRoster)?.short ?? c.staffId}
           {c.orderNumber && !order ? ` · ${c.orderNumber}` : ''}
         </Typography>
       </Box>

@@ -6,7 +6,7 @@ import { SPEND_CATEGORIES, spendCategoryOf } from '../data/spend';
 import { money } from '../logic/cart';
 import { giftCardCanPay, isSpent, orderCustomerId, plainName, searchGiftCards, withPlainHolders } from '../logic/customer-search';
 import { linesACardCannotPay } from '../logic/tenders';
-import { allGiftCards, amountDue, findGiftCard, type OperationsModal } from '../state/operations';
+import { allGiftCards, amountDue, findGiftCard, type OperationsModal, taxRateOf } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { GoodForChips, SpentBadge } from '../components/operations/CustomerChips';
 import { Icon, SectionLabel } from '../components/primitives';
@@ -47,7 +47,7 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
 
   const found = pick ? findGiftCard(state, pick.cardId, pick.customerId) : undefined;
   const card = found?.card;
-  const canPay = card ? giftCardCanPay(card, state.cart, orderDue, state.splitTender) : 0;
+  const canPay = card ? giftCardCanPay(card, state.cart, orderDue, state.splitTender, taxRateOf(state)) : 0;
   const cannot = card ? linesACardCannotPay(card, state.cart) : [];
   const covers = card ? canPay >= orderDue - 0.005 : false;
   // A card that covers the order pays the tip too, when its balance runs to it.

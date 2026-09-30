@@ -10,8 +10,10 @@ import { Callout, FilledButton, ModalFrame, OutlineButton } from './ModalFrame';
 import { Stack } from '../components/Stack';
 import { demoNow } from '../data/bookings';
 import { tabById } from '../state/restaurant';
-import { amountDue, type OperationsModal } from '../state/operations';
+import { amountDue, registerTotals, taxRateOf, type OperationsModal } from '../state/operations';
 import { useV1V2 } from '../edition';
+import { ReceiptSlip } from '../components/ReceiptSlip';
+import type { TenderKey } from '../state/settings';
 
 /**
  * V1 → V2, Wave 3: the tenders that are not a card reader. Each opens its own dialog, which pays
@@ -24,6 +26,15 @@ const OPS_TENDERS: { kind: OperationsModal['kind']; label: string; icon: string 
   { kind: 'tenderEvent', label: 'Charge to event', icon: 'calendar_month' },
   { kind: 'tenderCheck', label: 'Check', icon: 'receipt' },
 ];
+
+/** Which Settings switch each of the tenders above answers to. */
+const TENDER_SETTING: Record<string, TenderKey> = {
+  tenderGiftCard: 'giftcard',
+  tenderHouseAccount: 'house',
+  tenderCardOnFile: 'cardonfile',
+  tenderEvent: 'event',
+  tenderCheck: 'check',
+};
 
 const TENDER_LABEL: Record<string, string> = {
   giftcard: 'Gift card',
@@ -51,14 +62,19 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
   // What is left to pay: the total, less any part already paid (V1 → V2, Wave 3).
   const due = amountDue(state);
   const split = state.splitTender;
+  // Settings (V1 → V2): which tenders checkout offers, and the tip presets.
+  const { tenders: tenderSwitches, tipPresets } = state.terminalSettings.checkout;
+  const offered = (key: string) => tenderSwitches[key as TenderKey] !== false;
 
   // The one order total (`orderTotals`): golf taxed by its booking's tax line, everything
   // else at the sales-tax rate. The register's Pay button, this receipt and the reader all
   // read it, so they can't disagree — before, this added the golf tax twice.
+  const taxRate = taxRateOf(state);
   const base = useMemo(() => {
-    const t = cart.orderTotals(state.cart);
+    // At the terminal's tax rate (Settings, V1 → V2).
+    const t = cart.orderTotals(state.cart, taxRate);
     return { discounts: Math.abs(t.discount), subtotal: t.subtotal, tax: t.tax, total: t.total };
-  }, [state.cart]);
+  }, [state.cart, taxRate]);
 
   const [mode, setMode] = useState<'tendered' | 'tip'>('tendered');
   const [tenderedDigits, setTenderedDigits] = useState('');
@@ -254,6 +270,7 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
               borderRadius: `${radius.md}px`,
               mb: 1.25,
               textAlign: 'right',
+              position: 'relative',
             }}
           >
             <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant, fontWeight: 700 }}>
@@ -265,6 +282,30 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
             <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: 0.25 }}>
               Balance due {cart.money(chargeTotal)}
             </Typography>
+            {/* Settings' tip presets (V1 → V2), one tap each, in the space the readout leaves. */}
+            {v1v2 && mode === 'tip' && (
+              <Stack gap={0.5} sx={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
+                {tipPresets.map((pct) => (
+                  <ButtonBase
+                    key={pct}
+                    data-checkout-tip-preset={pct}
+                    onClick={() => setTipDigits(String(Math.round(base.total * pct)))}
+                    sx={{
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: `${radius.xl}px`,
+                      border: `1.5px solid ${md3.outlineVariant}`,
+                      bgcolor: '#fff',
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      '&:hover': { borderColor: md3.primary, color: md3.primary },
+                    }}
+                  >
+                    {pct}%
+                  </ButtonBase>
+                ))}
+              </Stack>
+            )}
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0.75 }}>
@@ -301,6 +342,8 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
               // V1 → V2 spends real gift cards (Gift card, below); the prototype's "Gift cert" stand-in
               // only ran the reader animation, and beside the real one it is a wrong tap waiting to happen.
               .filter(([method]) => !(v1v2 && method === 'giftcert'))
+              // Settings (V1 → V2) can turn a tender off.
+              .filter(([method]) => !v1v2 || offered(method))
               .map(([method, cfg]) => (
               <ButtonBase
                 key={method}
@@ -326,7 +369,7 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
               </ButtonBase>
             ))}
             {v1v2 &&
-              OPS_TENDERS.map((t) => (
+              OPS_TENDERS.filter((t) => offered(TENDER_SETTING[t.kind])).map((t) => (
                 <ButtonBase
                   key={t.kind}
                   data-tender={t.kind}
@@ -394,6 +437,10 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
   const { state, dispatch, toast } = usePos();
   const cfg = PR_CONFIG[method] ?? PR_CONFIG.card;
   const [stage, setStage] = useState<1 | 2 | 3>(1);
+  // Settings (V1 → V2): the receipt shows on the done step, and prints by "Receipts after a sale".
+  const v1v2 = useV1V2();
+  const { hardware, checkout: checkoutSettings } = state.terminalSettings;
+  const printing = v1v2 ? hardware.printReceipts : 'ask';
 
   // Exactly the checkout total — `orderTotals` plus the tip checkout recalculated in. No
   // second tax: the reader used to add a flat 8% on top of an amount that already had it.
@@ -405,7 +452,10 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
       setStage(2);
       // A short delay stands in for the reader round-trip so the processing state
       // is actually observable rather than flashing past.
-      window.setTimeout(() => setStage(3), 900);
+      window.setTimeout(() => {
+        setStage(3);
+        if (printing === 'always') toast(`Receipt printed · ${hardware.receiptPrinter}`);
+      }, 900);
       return;
     }
     if (stage === 3) {
@@ -434,7 +484,11 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
           </>
         ) : stage === 3 ? (
           <>
-            <OutlineButton onClick={() => toast('Receipt printed ✓')}>Print receipt</OutlineButton>
+            {printing !== 'never' && (
+              <OutlineButton onClick={() => toast(v1v2 ? `Receipt printed · ${hardware.receiptPrinter}` : 'Receipt printed ✓')}>
+                {printing === 'always' ? 'Reprint' : 'Print receipt'}
+              </OutlineButton>
+            )}
             <Box sx={{ flex: 1 }} />
             <FilledButton onClick={advance}>Done</FilledButton>
           </>
@@ -481,6 +535,20 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
               Approved · {method} · {demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </Callout>
           </Box>
+        )}
+        {stage === 3 && v1v2 && (
+          <ReceiptSlip
+            header={checkoutSettings.receiptHeader}
+            footer={checkoutSettings.receiptFooter}
+            register={hardware.name}
+            when={demoNow().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            lines={state.cart}
+            totals={registerTotals(state)}
+            tip={tip}
+            tender={method === 'cashpay' ? 'Other' : method[0].toUpperCase() + method.slice(1)}
+            amount={amount}
+            earlier={(state.splitTender?.tenders ?? []).map((t) => ({ label: TENDER_LABEL[t.method] ?? t.method, amount: t.amount }))}
+          />
         )}
       </Stack>
     </ModalFrame>

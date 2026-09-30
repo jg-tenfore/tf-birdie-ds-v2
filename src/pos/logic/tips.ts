@@ -1,4 +1,4 @@
-import { staffById } from '../data/staff';
+import { staffById, type StaffMember } from '../data/staff';
 import type { PaymentRecord } from './restaurant';
 
 /**
@@ -71,12 +71,12 @@ export interface StaffTips {
  * Tips by the person who took them — what v1's "Tip out" button was for. Highest first, and a
  * staff member with no tipped payments is left out rather than shown at $0.00.
  */
-export function tipsByStaff(ps: PaymentRecord[]): StaffTips[] {
+export function tipsByStaff(ps: PaymentRecord[], roster?: readonly StaffMember[]): StaffTips[] {
   const by = new Map<string, StaffTips>();
   for (const p of ps) {
     const s = by.get(p.staffId) ?? {
       staffId: p.staffId,
-      name: staffById(p.staffId)?.short ?? p.staffId,
+      name: staffById(p.staffId, roster)?.short ?? p.staffId,
       payments: 0,
       tips: 0,
       cardTips: 0,

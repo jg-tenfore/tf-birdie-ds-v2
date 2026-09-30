@@ -1,3 +1,4 @@
+import { taxRateOf } from '../../state/operations';
 import { useState, type ReactNode } from 'react';
 import { Box, ButtonBase, Divider, Typography } from '@mui/material';
 import { grid as gridTokens, md3, radius } from '../../../theme/tokens';
@@ -197,6 +198,7 @@ function RoomButton({ room, ctx, active, onClick }: { room: Room; ctx: FloorCtx;
 
 /** What a table carries on the floor: server, guests and minutes once sat; the time it is held for. */
 function TableBadge({ table, status, ctx }: { table: FloorElement; status: TableStatus; ctx: FloorCtx }) {
+  const { state } = usePos();
   if (table.w < BADGE_MIN || table.h < BADGE_MIN) return null;
   const color = TABLE_STATUS_STYLE[status].text;
   const line = (children: ReactNode, strong = false) => (
@@ -210,7 +212,7 @@ function TableBadge({ table, status, ctx }: { table: FloorElement; status: Table
     const min = minutesSeated(tab, ctx.date, ctx.nowMin);
     return (
       <Box sx={{ mt: 0.25, textAlign: 'center' }} data-table-badge={table.id}>
-        {line(`${initials(staffById(tab.serverId)?.name)} · ${tab.guests}`)}
+        {line(`${initials(staffById(tab.serverId, state.staffRoster)?.name)} · ${tab.guests}`)}
         {line(status === 'check' ? `CHECK${min != null ? ` · ${min}m` : ''}` : min != null ? `${min}m` : '', status === 'check')}
       </Box>
     );
@@ -377,7 +379,7 @@ function SeatedDetail({ tabId, ctx, onOpen }: { tabId: string; ctx: FloorCtx; on
   const dishes = tab.lines.filter((l) => !l.dish?.voided);
   const waiting = unsent(tab.lines).length;
   const payable = canPayTab(state, tab.id);
-  const total = tabTotal(tab);
+  const total = tabTotal(tab, taxRateOf(state));
 
   const row = (label: string, value: ReactNode) => (
     <Stack direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
@@ -392,7 +394,7 @@ function SeatedDetail({ tabId, ctx, onOpen }: { tabId: string; ctx: FloorCtx; on
     <>
       <Box data-tab-summary={tab.id}>
         <Typography sx={{ fontSize: 16, fontWeight: 800, mb: 0.75 }}>{tab.name}</Typography>
-        {row('Server', staffById(tab.serverId)?.name ?? '—')}
+        {row('Server', staffById(tab.serverId, state.staffRoster)?.name ?? '—')}
         {row('Guests', tab.guests)}
         {row('Seated', min != null ? `${formatSeated(min)} · since ${tab.openedAt}` : tab.openedAt)}
         {row('Dishes', waiting ? `${dishes.length} · ${waiting} not sent` : dishes.length)}
@@ -548,7 +550,7 @@ function Overview({ ctx, onPick }: { ctx: FloorCtx; onPick: (roomId: string, tab
             return item(
               t.id,
               t.name,
-              `${w?.room.name ?? ''} · ${money(tabTotal(t))}${min != null ? ` · sat ${formatSeated(min)}` : ''}`,
+              `${w?.room.name ?? ''} · ${money(tabTotal(t, taxRateOf(state)))}${min != null ? ` · sat ${formatSeated(min)}` : ''}`,
               w ? () => onPick(w.room.id, w.table.id) : undefined,
             );
           })}

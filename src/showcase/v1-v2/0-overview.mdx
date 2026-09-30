@@ -281,7 +281,24 @@ sections:
 |---|---|---|
 | **Scope** | All four sections | Terminal only |
 | **Who may change it** | **Anyone** changes the terminal and checkout settings; **only a manager** changes staff and PINs. Anyone else can read the staff list, with the PINs hidden. The reducer refuses a staff change from anyone but a manager | Managers for everything, or anyone for everything |
-| **Wiring** | **Recorded, not wired.** Changes are saved and shown in Settings, but checkout, receipts and sign-in keep the prototype's fixed behaviour — the 8% tax, every tender, the demo PINs — and each section says so. The tee sheet section is live, as it always was | Checkout and sign-in reading the settings |
+| **Wiring** | **Wired**, after a first cut that only recorded changes. The effects are listed below the table | Settings recorded but not read |
+
+Once a section is saved, the rest of the terminal reads it:
+
+- **Tax rate.** Checkout charges it on the order being rung up. An order already paid keeps the tax
+  it was rung with. A round's golf tax still comes from its course's rates.
+- **Tip presets.** They show in Checkout and in Adjust tip.
+- **Tenders.** A tender switched off disappears from Checkout.
+- **Receipts.** The receipt shows on the card reader's done step with the header and footer text.
+  *Always* prints it when the payment is approved, *Ask* keeps the Print receipt button, and
+  *Never* removes it.
+- **Gift cards.** A new card starts from the default categories.
+- **Register name.** It shows in the register's header and on the receipt.
+- **Staff.** The PIN pad, Time Clock and the server pickers read the staff list. Someone added can
+  sign in, and someone deactivated cannot.
+
+Hardware stays simulated: a test shows a toast. Every edition without Settings keeps the defaults,
+which are the prototype's old fixed behaviour.
 
 Each section saves as a whole: **Save** and **Discard changes** under it, then who saved it last.
 Nothing saves as you type, because a half-typed tax rate is not a setting anyone meant.
