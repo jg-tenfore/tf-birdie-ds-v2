@@ -3,7 +3,6 @@ import type { Customer } from '../data/customers';
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY, demoNow } from '../data/bookings';
-import { ALL_GOLFERS } from '../data/golfers';
 import { seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
 import { resourceCartLine } from '../logic/resource-booking';
 import { orderNumberFromId } from '../logic/reservation';
@@ -42,7 +41,6 @@ import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
 import * as cartLogic from '../logic/cart';
 import { timeRowKey } from '../logic/rates';
-import type { RateContext } from '../logic/rates';
 import type {
   Booking,
   CartItem,
@@ -1268,21 +1266,10 @@ function markChargedPaid(b: Booking, cart: CartItem[]): Booking {
 
 // ─── Selectors ──────────────────────────────────────────────────────────────
 
-const rosters = new WeakMap<Golfer[], Golfer[]>();
-
-/**
- * Every customer: the demo roster plus anyone created this session, surname-sorted.
- * Sorted once per `addedGolfers` array — pricing reads it for every seat on every render.
- */
-export const golferRoster = (s: Pick<PosState, 'addedGolfers'>): Golfer[] => {
-  if (!s.addedGolfers?.length) return ALL_GOLFERS;
-  let roster = rosters.get(s.addedGolfers);
-  if (!roster) {
-    roster = [...ALL_GOLFERS, ...s.addedGolfers].sort((a, b) => a.name.localeCompare(b.name));
-    rosters.set(s.addedGolfers, roster);
-  }
-  return roster;
-};
+// `golferRoster` and `rateContext` live in `./rate-context`, so the slices can price a booking
+// without importing the store. Re-exported: every caller still finds them here.
+export { golferRoster, rateContext } from './rate-context';
+import { rateContext } from './rate-context';
 
 /** The booking backing the current order, if it came from the tee sheet. */
 export const selectedBooking = (s: PosState): Booking | null =>
@@ -1306,16 +1293,6 @@ export const dayGolferCount = (s: PosState): number =>
 
 /** Key for the time-note and time-price maps. Lives in `logic/rates`, which prices by it. */
 export { timeRowKey };
-
-/**
- * What pricing a reservation needs from state beyond the booking — the operator's per-row
- * price overrides, and the customer roster that says which players are members. Pass it to
- * `playerFee`, `holesFee`, `buildTeeTimeCart` and friends.
- */
-export const rateContext = (s: Pick<PosState, 'timePrices' | 'addedGolfers'>): RateContext => ({
-  timePrices: s.timePrices,
-  roster: golferRoster(s),
-});
 
 /** How many players a booking has that are not marked no-show. */
 export const activePlayers = (b: Booking): number =>

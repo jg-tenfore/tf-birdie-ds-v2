@@ -12,6 +12,8 @@ import { allRefundable, refundAmount, refundTender, type OrderRecord, type Order
 import type { PaymentRecord } from '../logic/restaurant';
 import { drawerWorkings } from '../logic/shift';
 import type { Booking, CartItem } from '../types';
+import { bookingOrder } from '../logic/booking-orders';
+import { rateContext } from './rate-context';
 import type { PosState } from './pos-store';
 import type { DrawerEvent } from './register-extras';
 
@@ -228,6 +230,16 @@ const cents = (n: number) => Math.round(n * 100) / 100;
 
 export const orderByNumber = (s: Pick<OperationsState, 'orders'>, n: string | null | undefined): OrderRecord | undefined =>
   n ? s.orders.find((o) => o.orderNumber === n) : undefined;
+
+/**
+ * An order by number, wherever it is: a record this session holds, or a tee time paid before the
+ * session, built from its booking (`logic/booking-orders.ts`). What Order Lookup, the refund dialog
+ * and `refundOrder` all read, so the three cannot disagree about what an order is.
+ */
+export function lookupOrder(s: PosState, orderNumber: string | null | undefined): OrderRecord | undefined {
+  if (!orderNumber) return undefined;
+  return orderByNumber(s, orderNumber) ?? bookingOrder(s.bookings, orderNumber, s.courses, rateContext(s))?.order;
+}
 
 export const eventById = (s: Pick<OperationsState, 'events'>, id: string | null | undefined): GolfEvent | undefined =>
   id ? s.events.find((e) => e.id === id) : undefined;
@@ -565,7 +577,11 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
     }
 
     case 'refundOrder': {
-      const order = orderByNumber(state, action.orderNumber);
+      // A tee time paid before the session has no record yet: it is built from its booking (the
+      // same record Order Lookup shows) and kept from its first refund on, so a second refund sees
+      // the first and cannot give the same seat back twice.
+      const held = orderByNumber(state, action.orderNumber);
+      const order = held ?? lookupOrder(state, action.orderNumber);
       if (!order) return state;
       const picks = (action.picks ?? allRefundable(order)).filter((p) => p.qty > 0);
       const amount = refundAmount(order, picks);
@@ -604,7 +620,9 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
         ...after,
         cart: state.cart,
         stock: applyStock(state.stock, returned, 1),
-        orders: state.orders.map((o) => (o.orderNumber === order.orderNumber ? { ...o, refunds: [...o.refunds, refund] } : o)),
+        orders: held
+          ? state.orders.map((o) => (o.orderNumber === order.orderNumber ? { ...o, refunds: [...o.refunds, refund] } : o))
+          : [...state.orders, { ...order, refunds: [refund] }],
         payments: [...after.payments, payment],
         restaurantSeq: { ...after.restaurantSeq, payment: after.restaurantSeq.payment + 1 },
         opsSeq: { ...after.opsSeq, refund: after.opsSeq.refund + 1 },

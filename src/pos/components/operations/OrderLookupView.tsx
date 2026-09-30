@@ -292,7 +292,8 @@ function NoResults({ query, anyDate, onAnyDate }: { query: string; anyDate: bool
 
 function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBooking?: BookingOrder }) {
   const { state, dispatch, toast } = usePos();
-  const refundable = !fromBooking && allRefundable(o).length > 0;
+  // A tee time paid before the session refunds like any order — `refundOrder` builds its record.
+  const refundable = allRefundable(o).length > 0;
   const staff = staffById(o.staffId);
   const eventName = (id?: string) => eventById(state, id)?.name;
   const back = refundTender(o);
@@ -321,8 +322,8 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
         {fromBooking && (
           <Box sx={{ mb: 2 }}>
             <Callout tone="info" icon="info">
-              This tee time was paid before today’s session, so there is no rung-up order to refund against. Open it in the register to
-              refund or rain-check it there.
+              Paid on the tee sheet before today’s session. The lines are what those seats were sold for, and a refund goes back
+              to the card — the seed does not say how it was paid.
             </Callout>
           </Box>
         )}
@@ -434,17 +435,16 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
           Print receipt
         </ActionButton>
         <Box sx={{ flex: 1 }} />
-        {fromBooking ? (
+        {fromBooking && (
           <ActionButton
             icon="open_in_new"
-            filled
             data-open-in-register
             onClick={() => dispatch({ type: 'openPaidOrder', bookingId: fromBooking.booking.id })}
           >
             Open in register
           </ActionButton>
-        ) : (
-          <>
+        )}
+        <>
             {refundable && back && (
               <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>Back to {tenderLabel(back.method, back.ref, eventName(back.ref?.eventId))}</Typography>
             )}
@@ -457,8 +457,7 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
             >
               {refundable ? 'Refund' : 'Fully refunded'}
             </ActionButton>
-          </>
-        )}
+        </>
       </Stack>
     </Stack>
   );

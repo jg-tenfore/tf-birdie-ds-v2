@@ -15,9 +15,8 @@ import { orderNumberFromId } from './reservation';
  * screen contradicting itself.
  *
  * So the number resolves to a record built from the booking — what those paid seats would have
- * rung up as, by the same cart builder `loadBooking` uses. It is **read-only**: `refundOrder`
- * refunds only orders it holds, so this one goes to the register (`openPaidOrder`) instead, the
- * way it did before Order Lookup existed.
+ * rung up as, by the same cart builder `loadBooking` uses. It refunds like any order: `refundOrder`
+ * builds the same record and keeps it from the first refund on, so the refunds accumulate.
  *
  * Nothing here is stored. Built at render from the booking, so moving a tee time, marking a no-show
  * or paying the rest of the party changes the record the next time it is looked at.

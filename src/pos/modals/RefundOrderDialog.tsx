@@ -4,7 +4,7 @@ import { md3, payBadges, radius } from '../../theme/tokens';
 import { money } from '../logic/cart';
 import { allRefundable, refundAmount, refundableQty, refundTender } from '../logic/orders';
 import { orderItems, tenderLabel } from '../logic/order-lookup';
-import { eventById, orderByNumber, type OperationsModal } from '../state/operations';
+import { eventById, lookupOrder, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon } from '../components/primitives';
 import { Stack } from '../components/Stack';
@@ -26,7 +26,8 @@ const REASONS = ['Returned', 'Damaged', 'Wrong item', 'Charged twice', 'Unhappy 
 
 export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: 'refundOrder' }> }) {
   const { state, dispatch, toast } = usePos();
-  const order = orderByNumber(state, m.orderNumber);
+  // Includes a tee time paid before the session, which has no record until its first refund.
+  const order = lookupOrder(state, m.orderNumber);
   const [mode, setMode] = useState<'whole' | 'lines'>('whole');
   const [qty, setQty] = useState<Record<number, number>>({});
   const [reason, setReason] = useState('');

@@ -282,3 +282,26 @@ describe('a gift card sold with a type and categories', () => {
     expect(card.categories).toEqual(['fnb']);
   });
 });
+
+describe('a tee time paid before the session', () => {
+  it('refunds like any order: the record is kept from the first refund, and a seat cannot go back twice', async () => {
+    const { lookupOrder } = await import('./operations');
+    const { bookingOrdersOn } = await import('../logic/booking-orders');
+    const { rateContext } = await import('./rate-context');
+    const s = s0();
+    const [first] = bookingOrdersOn(s.bookings, null, new Set(s.orders.map((o) => o.orderNumber)), s.courses, rateContext(s));
+    expect(first).toBeTruthy();
+    const n = first.order.orderNumber;
+    expect(lookupOrder(s, n)?.total).toBe(first.order.total);
+
+    const once = reducer(s, { type: 'refundOrder', orderNumber: n, picks: [{ index: 0, qty: 1 }] });
+    expect(once.orders.at(-1)!.orderNumber).toBe(n);
+    expect(once.orders.at(-1)!.refunds).toHaveLength(1);
+    expect(once.payments.at(-1)).toMatchObject({ kind: 'refund', method: 'card', orderNumber: n });
+
+    const all = reducer(once, { type: 'refundOrder', orderNumber: n });
+    const again = reducer(all, { type: 'refundOrder', orderNumber: n });
+    expect(again).toBe(all);
+    expect(all.orders.filter((o) => o.orderNumber === n)).toHaveLength(1);
+  });
+});
