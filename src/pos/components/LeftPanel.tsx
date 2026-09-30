@@ -138,15 +138,16 @@ export function LeftPanel() {
 
             With something in the order it is the back arrow, and it clears — behind a confirm,
             because clearing an order is destructive and there is no undo. Once the order is
-            empty there is nothing to clear, so it becomes the hamburger, which opens the
-            navigation — the same thing it does on the collapsed strip. A hamburger that means
+            empty there is nothing to clear, so it becomes the hamburger. In Weston's editions
+            that opens the navigation — the same thing it does on the collapsed strip. The base
+            edition has no navigation, so there it still collapses the rail. A hamburger that means
             "menu" in one state and "collapse" in another is the ambiguity Weston ran into
             ("it can't expand the nav and do the cart"), so it means one thing everywhere.
 
             Collapsing is the empty state's job instead: see the cart block below.
           */}
           <ButtonBase
-            aria-label={hasOrder ? 'Clear order' : 'Open navigation'}
+            aria-label={hasOrder ? 'Clear order' : weston ? 'Open navigation' : 'Collapse the order rail'}
             onClick={() =>
               hasOrder
                 ? dispatch({
@@ -159,9 +160,14 @@ export function LeftPanel() {
                       onConfirm: 'clearOrder',
                     },
                   })
-                : dispatch({ type: 'setNavOpen', open: true })
+                : weston
+                  ? dispatch({ type: 'setNavOpen', open: true })
+                  // The base edition has no main nav, so its hamburger still collapses the
+                  // rail. Round 5 changed this for every edition and left the base prototypes
+                  // with no way to put the rail away at all — see 8 · Bug Fixes.
+                  : dispatch({ type: 'toggleLeftPanel', collapsed: true })
             }
-            title={hasOrder ? 'Clear order' : 'Menu'}
+            title={hasOrder ? 'Clear order' : weston ? 'Menu' : 'Collapse the order rail'}
             sx={{
               width: 38,
               height: 38,
