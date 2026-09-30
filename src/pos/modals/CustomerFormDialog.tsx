@@ -3,7 +3,7 @@ import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { CUSTOMER_TYPES, EMAIL_DOMAINS, normalizePhone } from '../data/customers';
 import { liveCustomer } from '../data/roster';
-import { customerDraftProblem, customerDraftStatus, plainName, withEmailDomain } from '../logic/customer-search';
+import { customerDraftProblem, customerDraftStatus, draftFromQuery, plainName, withEmailDomain } from '../logic/customer-search';
 import type { OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon } from '../components/primitives';
@@ -41,10 +41,12 @@ import { Field, FilledButton, ModalFrame, ModalSection, OutlineButton } from './
 export function CustomerFormDialog({ m }: { m: Extract<OperationsModal, { kind: 'customerForm' }> }) {
   const { state, dispatch, toast } = usePos();
   const existing = m.id ? liveCustomer(m.id, state.customerEdits) : null;
-  const [firstName, setFirstName] = useState(existing?.firstName ?? '');
-  const [lastName, setLastName] = useState(existing?.lastName ?? '');
-  const [email, setEmail] = useState(existing?.email ?? '');
-  const [phone, setPhone] = useState(existing?.phone ?? '');
+  // Started from a search that found nobody: the query, put where it belongs.
+  const from = existing ? null : draftFromQuery(m.name ?? '');
+  const [firstName, setFirstName] = useState(existing?.firstName ?? from?.firstName ?? '');
+  const [lastName, setLastName] = useState(existing?.lastName ?? from?.lastName ?? '');
+  const [email, setEmail] = useState(existing?.email ?? from?.email ?? '');
+  const [phone, setPhone] = useState(existing?.phone ?? from?.phone ?? '');
   const [birthday, setBirthday] = useState(existing?.birthday ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [types, setTypes] = useState<string[]>(existing?.customerTypes ?? []);

@@ -6,10 +6,9 @@ import { Icon } from '../components/primitives';
  * The drawer dialogs' cents keypad (V1 → V2, Wave 3): `2`, `0`, `0`, `0`, `0` reads $200.00 — the
  * entry model of Checkout's tendered pad and Wave 1's cash payout, so money is keyed one way
  * everywhere on the terminal.
+
  *
- * A copy of `RegisterDialogs`' private `AmountPad` rather than an import of it: that file belongs
- * to the register's dialogs, and exporting from it would couple three drawer dialogs to one of its
- * internals. The report proposes lifting both into one shared pad.
+ * The terminal's one cash pad: the drawer dialogs and Wave 1's cash payout all key money here.
  */
 export function CashAmountPad({ cents, onChange }: { cents: string; onChange: (digits: string) => void }) {
   const press = (k: string) => {

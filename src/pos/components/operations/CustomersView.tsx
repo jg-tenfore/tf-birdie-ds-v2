@@ -112,7 +112,9 @@ export function CustomersView() {
                       Nobody on the roster matches. Check the spelling, try a phone number — or add them.
                     </Typography>
                     <Box>
-                      <OutlineButton onClick={() => dispatch({ type: 'openModal', modal: { kind: 'customerForm' } })}>New customer</OutlineButton>
+                      <OutlineButton onClick={() => dispatch({ type: 'openModal', modal: { kind: 'customerForm', name: query.trim() } })}>
+                        Add “{query.trim()}”
+                      </OutlineButton>
                     </Box>
                   </Stack>
                 ) : (

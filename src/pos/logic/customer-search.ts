@@ -202,11 +202,8 @@ export function giftCardTotals(list: GiftCardListing[]) {
 /**
  * What this card may pay **now**, on this order.
  *
- * `giftCardCovers` answers for a fresh order. On a split tender it does not know that an earlier
- * gift card already paid the eligible lines, so a second card would be offered the beer that the
- * first one refused. This takes what gift cards have already paid off the eligible share first.
- * It assumes the earlier cards shared this one's categories — true of every card on the default,
- * and conservative otherwise (it may offer a little less, never the lines it is not good for).
+ * `giftCardCovers`, told what earlier gift cards on a split tender have already paid — so a second
+ * card is not offered the lines the first one covered.
  */
 export function giftCardCanPay(
   card: Pick<CustomerGiftCard, 'balance' | 'categories'>,
@@ -215,7 +212,23 @@ export function giftCardCanPay(
   split: Pick<SplitTender, 'tenders'> | null,
 ): number {
   const paidByCards = (split?.tenders ?? []).filter((t) => t.method === 'giftcard').reduce((s, t) => s + t.amount, 0);
-  const eligible = giftCardCovers({ balance: Number.POSITIVE_INFINITY, categories: card.categories }, cart, Number.POSITIVE_INFINITY);
-  const left = Math.max(0, eligible - paidByCards);
-  return cents(Math.max(0, Math.min(giftCardCovers(card, cart, due), left)));
+  return giftCardCovers(card, cart, due, paidByCards);
+}
+
+/**
+ * A new record started from a search that found nobody, as v1's "Add customer" did: a phone number
+ * or an email goes where it belongs, and a name is split — `Last, First` or `First Last`.
+ */
+export function draftFromQuery(query: string): { firstName: string; lastName: string; email: string; phone: string } {
+  const q = query.trim();
+  const empty = { firstName: '', lastName: '', email: '', phone: '' };
+  if (!q) return empty;
+  if (q.includes('@')) return { ...empty, email: q };
+  if (q.replace(/\D/g, '').length >= 7 && !/[a-z]/i.test(q)) return { ...empty, phone: q };
+  if (q.includes(',')) {
+    const [last, first = ''] = q.split(',').map((x) => x.trim());
+    return { ...empty, firstName: first, lastName: last };
+  }
+  const words = q.split(/\s+/);
+  return words.length === 1 ? { ...empty, lastName: words[0] } : { ...empty, firstName: words.slice(0, -1).join(' '), lastName: words.at(-1)! };
 }

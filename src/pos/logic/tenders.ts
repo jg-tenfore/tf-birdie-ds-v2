@@ -18,8 +18,18 @@ export const cardCategories = (card: Pick<CustomerGiftCard, 'categories'>): Spen
  * This is what makes a category mean anything. Without it, "not good for alcohol" is a label on a
  * card that pays for the beer anyway. With it, a $50 card against a burger and two beers pays for the
  * burger, and checkout says so — the beers go on another tender.
+ *
+ * `paidByCards` is what earlier gift cards on a split tender have already paid. Without it a second
+ * card is offered the burger's share again — and, the burger being paid, ends up paying the beer.
+ * It assumes the earlier cards were good for the same lines, which every card on the default is;
+ * otherwise it errs toward offering less, never toward lines the card is not good for.
  */
-export function giftCardCovers(card: Pick<CustomerGiftCard, 'balance' | 'categories'>, cart: CartItem[], due: number): number {
+export function giftCardCovers(
+  card: Pick<CustomerGiftCard, 'balance' | 'categories'>,
+  cart: CartItem[],
+  due: number,
+  paidByCards = 0,
+): number {
   const allowed = new Set(cardCategories(card));
   const lines = cart.filter((l) => !l.isTax && l.name !== 'Taxes');
   const eligible = lines.filter((l) => {
@@ -32,7 +42,7 @@ export function giftCardCovers(card: Pick<CustomerGiftCard, 'balance' | 'categor
   const goodsOk = orderTotals(eligible).subtotal;
   // The eligible lines' share of the tax, proportionally — the same rule a refund uses.
   const share = goodsAll > 0 ? goodsOk + (goodsOk / goodsAll) * all.tax : 0;
-  return Math.max(0, Math.round(Math.min(card.balance, share, due) * 100) / 100);
+  return Math.max(0, Math.round(Math.min(card.balance, Math.max(0, share - paidByCards), due) * 100) / 100);
 }
 
 /** The lines a card may not pay for, for checkout to name. */

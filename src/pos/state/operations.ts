@@ -116,7 +116,8 @@ export type OperationsModal =
   | { kind: 'tenderEvent' }
   | { kind: 'refundOrder'; orderNumber: string }
   | { kind: 'eventForm'; id?: string }
-  | { kind: 'customerForm'; id?: string }
+  /** `name`: what a search found nobody for, to start the new record from. */
+  | { kind: 'customerForm'; id?: string; name?: string }
   | { kind: 'shiftOpen' }
   | { kind: 'shiftClose' }
   | { kind: 'cashDrop' }
@@ -495,7 +496,7 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
       const c = liveCustomer(action.customerId, state.customerEdits);
       if (!c || c.balance <= 0 || state.cart.length) return state;
       const amount = cents(Math.min(action.amount ?? c.balance, c.balance));
-      const line: CartItem = { name: `Account payment · ${c.displayName}`, price: amount, unitPrice: amount, qty: 1, accountPayment: { customerId: c.id } };
+      const line: CartItem = { name: `Account payment · ${c.firstName} ${c.lastName}`.trim(), price: amount, unitPrice: amount, qty: 1, accountPayment: { customerId: c.id } };
       return { ...state, cart: [line], payingAccountId: c.id, selectedBookingId: null, view: 'pos', leftPanelCollapsed: false };
     }
 

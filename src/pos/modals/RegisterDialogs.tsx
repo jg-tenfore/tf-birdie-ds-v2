@@ -22,6 +22,7 @@ import type { CartItem, GiftCardRecipient } from '../types';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Stack } from '../components/Stack';
 import { Callout, Field, FilledButton, ModalFrame, ModalSection, OutlineButton } from './ModalFrame';
+import { CashAmountPad } from './CashAmountPad';
 
 /**
  * The register's V1 → V2 dialogs: Hold, Held orders, Cash payout and Gift card.
@@ -235,11 +236,7 @@ function HeldOrdersDialog() {
  * tendered keypad, so a payout is keyed the way cash is everywhere else on the terminal.
  */
 function AmountPad({ cents, onChange }: { cents: string; onChange: (digits: string) => void }) {
-  const press = (k: string) => {
-    if (k === 'back') return onChange(cents.slice(0, -1));
-    if (cents.length >= 7) return;
-    onChange((cents + k).replace(/^0+(?=\d)/, ''));
-  };
+  // The keys are the terminal's one cash pad, shared with the drawer dialogs (Wave 3).
   return (
     <Box>
       <Box sx={{ p: '12px 16px', bgcolor: md3.surfaceContainer, borderRadius: `${radius.md}px`, mb: 1, textAlign: 'right' }}>
@@ -248,32 +245,7 @@ function AmountPad({ cents, onChange }: { cents: string; onChange: (digits: stri
           {money(cents ? parseInt(cents, 10) / 100 : 0)}
         </Typography>
       </Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0.75 }}>
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'].map((k) => (
-          <ButtonBase
-            key={k}
-            data-key={k}
-            aria-label={k === 'back' ? 'Delete' : k}
-            onClick={() => press(k)}
-            sx={{
-              height: 52,
-              borderRadius: `${radius.md}px`,
-              border: `1.5px solid ${md3.outlineVariant}`,
-              bgcolor: '#fff',
-              fontSize: 18,
-              fontWeight: 700,
-            }}
-          >
-            {k === 'back' ? <Icon name="backspace" size={20} /> : k}
-          </ButtonBase>
-        ))}
-      </Box>
-      <ButtonBase
-        onClick={() => onChange('')}
-        sx={{ mt: 0.75, width: '100%', height: 44, borderRadius: `${radius.md}px`, border: `1.5px solid ${md3.outlineVariant}`, fontSize: 13, fontWeight: 600, color: md3.onSurfaceVariant }}
-      >
-        Clear
-      </ButtonBase>
+      <CashAmountPad cents={cents} onChange={onChange} />
     </Box>
   );
 }

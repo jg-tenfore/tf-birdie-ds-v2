@@ -13,6 +13,7 @@ import { useStartWalkIn } from './use-start-walk-in';
 import { RegisterGolfSummary } from './RegisterGolfSummary';
 import * as cart from '../logic/cart';
 import { dominantTransport, selectedBooking } from '../state/pos-store';
+import { amountDue } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import type { CartItem } from '../types';
 import {
@@ -467,7 +468,8 @@ export function LeftPanel() {
           </Box>
         </Box>
 
-        <PayButton payable={totals.total} />
+        {/* What is left to pay: a part already paid by gift card comes off (V1 → V2, Wave 3). */}
+        <PayButton payable={amountDue(state)} />
       </Box>
     </Box>
   );

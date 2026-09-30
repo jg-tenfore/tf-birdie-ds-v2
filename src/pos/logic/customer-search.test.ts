@@ -157,3 +157,14 @@ describe('gift cards', () => {
     expect(withPlainHolders(list, {}).map((x) => x.holder)).toEqual(['Ivar Brennevin', 'Pat Walk-in']);
   });
 });
+
+describe('a new record from a search that found nobody', () => {
+  it('puts the query where it belongs', async () => {
+    const { draftFromQuery } = await import('./customer-search');
+    expect(draftFromQuery('Quinn, Nora')).toMatchObject({ firstName: 'Nora', lastName: 'Quinn' });
+    expect(draftFromQuery('Nora Quinn')).toMatchObject({ firstName: 'Nora', lastName: 'Quinn' });
+    expect(draftFromQuery('Quinn')).toMatchObject({ firstName: '', lastName: 'Quinn' });
+    expect(draftFromQuery('(555) 123-4567')).toMatchObject({ phone: '(555) 123-4567', lastName: '' });
+    expect(draftFromQuery('nora@example.com')).toMatchObject({ email: 'nora@example.com' });
+  });
+});
