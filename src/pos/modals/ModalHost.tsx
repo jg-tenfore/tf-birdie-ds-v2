@@ -9,6 +9,8 @@ import { isRestaurantModal } from '../state/restaurant';
 import { RestaurantDialogs } from './RestaurantDialogs';
 import { isOperationsModal } from '../state/operations';
 import { OperationsDialogs } from './OperationsDialogs';
+import { isSettingsModal } from '../state/settings';
+import { StaffFormDialog } from './StaffFormDialog';
 import {
   ActionPanel,
   GolferSearch,
@@ -108,6 +110,8 @@ export function ModalHost() {
       if (isRestaurantModal(m)) return <RestaurantDialogs m={m} />;
       // Operations (V1 → V2, Wave 3).
       if (isOperationsModal(m)) return <OperationsDialogs m={m} />;
+      // Settings (V1 → V2).
+      if (isSettingsModal(m)) return <StaffFormDialog m={m} />;
       // Hold, held orders, cash payout, gift card (V1 → V2).
       return isRegisterExtrasModal(m) ? <RegisterDialog modal={m} /> : null;
   }

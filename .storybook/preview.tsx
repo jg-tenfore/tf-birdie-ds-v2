@@ -273,6 +273,7 @@ const preview: Preview = {
             '15 · Events', ['Tablet'],
             '16 · Inventory', ['Tablet'],
             '17 · Shift', ['Tablet'],
+            '18 · Settings', ['Tablet'],
             'Sign-in', ['Tablet'],
           ],
           '*',

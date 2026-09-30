@@ -18,6 +18,7 @@ import { EventsView } from './components/operations/EventsView';
 import { GiftCardsView } from './components/operations/GiftCardsView';
 import { InventoryView } from './components/operations/InventoryView';
 import { OrderLookupView } from './components/operations/OrderLookupView';
+import { SettingsView } from './components/operations/SettingsView';
 import { ShiftView } from './components/operations/ShiftView';
 import { SignInScreen } from './components/operations/SignInScreen';
 import { TimeClockView } from './components/operations/TimeClockView';
@@ -90,6 +91,8 @@ const RESTAURANT_VIEWS: Partial<Record<MainView, () => React.ReactNode>> = {
   events: () => <EventsView />,
   inventory: () => <InventoryView />,
   shift: () => <ShiftView />,
+  // Settings (V1 → V2).
+  settings: () => <SettingsView />,
 };
 
 export function PosShell({ children }: { children: React.ReactNode }) {

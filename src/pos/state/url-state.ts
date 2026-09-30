@@ -12,6 +12,7 @@ import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
 import { isRegisterExtrasModal } from './register-extras';
 import { isRestaurantModal } from './restaurant';
 import { isOperationsModal } from './operations';
+import { SETTINGS_SECTIONS, isSettingsModal, type SettingsSection } from './settings';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
@@ -172,6 +173,7 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
   if (isRestaurantModal(m)) return false;
   // And Wave 3's — a tender half-chosen or a refund being picked is not a place either.
   if (isOperationsModal(m)) return false;
+  if (isSettingsModal(m)) return false;
   if (m.kind === 'golferSearch' && typeof m.target === 'object' && 'giftCard' in m.target) return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);
@@ -369,6 +371,7 @@ export const OPERATIONS_PATHS = {
   events: 'events',
   inventory: 'inventory',
   shift: 'shift',
+  settings: 'settings',
 } as const satisfies Partial<Record<MainView, string>>;
 
 const OPERATIONS_SCREENS: Record<string, MainView> = Object.fromEntries(
@@ -401,6 +404,7 @@ export function stateToHash(state: PosState): string {
       case 'events':
       case 'inventory':
       case 'shift':
+      case 'settings':
         return `/${OPERATIONS_PATHS[state.view]}`;
       case 'tee':
         return state.teeSheetMode === 'list' ? '/tee-sheet/list' : '/tee-sheet';
@@ -444,6 +448,7 @@ export function stateToHash(state: PosState): string {
   if (state.selectedEventId) q.set('ev', state.selectedEventId);
   if (state.selectedCustomerId) q.set('cid', state.selectedCustomerId);
   if (state.activeCountId) q.set('count', state.activeCountId);
+  if (state.view === 'settings' && state.settingsSection !== 'hardware') q.set('section', state.settingsSection);
   if (state.multiSelectActive) q.set('select', state.multiSelectIds.join(',') || 'on');
   if (state.settings.compactMode) q.set('compact', '1');
   if (state.settings.hideEmpty) q.set('hide-empty', '1');
@@ -662,6 +667,8 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   if (cid) patch.selectedCustomerId = cid;
   const count = q.get('count');
   if (count) patch.activeCountId = count;
+  const section = q.get('section');
+  if (section && (SETTINGS_SECTIONS as string[]).includes(section)) patch.settingsSection = section as SettingsSection;
 
   const select = q.get('select');
   if (select) {
