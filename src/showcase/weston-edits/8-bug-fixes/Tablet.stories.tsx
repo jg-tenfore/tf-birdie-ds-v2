@@ -3,7 +3,7 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { venue } from '../../../pos/data/venues';
 import { buildTeeTimeCart, money, orderTotals } from '../../../pos/logic/cart';
 import type { CartItem } from '../../../pos/types';
-import { Screen } from '../../pos/screen-helpers';
+import { Screen, atVenue } from '../../pos/screen-helpers';
 import { openParty, paidTwilight, registerWith, twilightNine } from '../tablet-scenarios';
 
 /**
@@ -279,5 +279,36 @@ export const TrueWalkInReadsWalkIn: Story = {
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('Walk-in · 9 holes')).toBeTruthy();
+  },
+};
+
+/**
+ * **The base edition's hamburger collapses the rail — again.** Round 5 made the empty rail's
+ * hamburger open Weston's main navigation, and did it for **every** edition. The base
+ * prototypes (`/prototype/`, `/prototype-18/`, `/prototype-9/`) have no main nav, so they lost
+ * their only way to put the rail away and gained an overlay they were never meant to have.
+ *
+ * It shipped because nothing exercised that button in the base edition; every nav story runs in
+ * Weston's. Caught while standing up V1 → V2, when a probe of all three editions showed base
+ * answering to "Open navigation".
+ *
+ * The play test checks both halves: the base hamburger collapses, and a stray `navOpen` — which
+ * is what a `nav=1` link sets — still renders no overlay there.
+ */
+export const BaseHamburgerStillCollapses: Story = {
+  render: () => <Screen edition="base" initialState={atVenue('eighteen', { view: 'tee', leftPanelCollapsed: false })} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByRole('button', { name: 'Open navigation' })).toBeNull();
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse the order rail' }));
+    await waitFor(() => expect(canvasElement.querySelector('[data-nav-overlay]')).toBeNull());
+  },
+};
+
+/** …and the flag alone cannot conjure the overlay in the base edition. */
+export const BaseHasNoMainNav: Story = {
+  render: () => <Screen edition="base" initialState={atVenue('eighteen', { navOpen: true })} />,
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-nav-overlay]')).toBeNull();
   },
 };
