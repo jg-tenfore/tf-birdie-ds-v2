@@ -5,7 +5,7 @@ import { toDateStr } from './courses';
  * The working day (V1 → V2, Wave 3): who is on the clock, the drawer, and the week behind it.
  *
  * Authored, like every fixture here, around the demo's noon. Everyone who worked the morning is still
- * clocked in; the drawer was opened at 6:45 with a $200 float and has had one cash drop; and the week
+ * clocked in; the drawer was opened at 6:45 with a $200 float; and the week
  * before has closed shifts with small, believable variances — one over, one short, most exact — so
  * the shift screen's history has something to reconcile against.
  */
