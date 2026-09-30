@@ -215,7 +215,7 @@ export const FromAReservationAndBack: Story = {
 /**
  * **A tee time paid before the session.** Its number has no rung-up order behind it, so the screen
  * builds one from the booking — the same seats, fees and tax the register would charge — and says
- * so. There is nothing here to refund against; **Open in register** is where it is refunded.
+ * so. It refunds like any order; **Open in register** is still there for a rain check.
  */
 export const ATeeTimePaidBeforeTheSession: Story = {
   render: () => <Screen edition="v1v2" initialState={at({ selectedOrderNumber: orderNumber(paidTwilight()) })} />,
@@ -226,11 +226,28 @@ export const ATeeTimePaidBeforeTheSession: Story = {
     await expect(detail.textContent).toContain('Paid on the tee sheet');
     await expect(detail.textContent).toContain(built.lines[0].name);
     await expect(detail.querySelector('[data-total="Total"]')!.textContent).toContain(money(built.total));
-    await expect(canvasElement.querySelector('[data-refund]')).toBeNull();
+    await expect(canvasElement.querySelector<HTMLButtonElement>('[data-refund]')!.disabled).toBe(false);
     await userEvent.click(canvasElement.querySelector<HTMLElement>('[data-open-in-register]')!);
     // The register, with the booking loaded and its breadcrumb back to the reservation.
     await waitFor(() => expect(canvasElement.querySelector('[data-return-to-reservation]')).not.toBeNull());
     await expect(canvasElement.querySelector('[data-order-lookup]')).toBeNull();
+  },
+};
+
+/**
+ * **Refunding it.** The whole tee time goes back to the card, and from then on the order is a real
+ * record: it reads Refunded, and cannot be refunded again.
+ */
+export const RefundATeeTimePaidBeforeTheSession: Story = {
+  render: () => <Screen edition="v1v2" initialState={at({ selectedOrderNumber: orderNumber(paidTwilight()) })} />,
+  play: async ({ canvasElement }) => {
+    const built = orderFromBooking(paidTwilight(), venue('eighteen').courses)!;
+    await waitFor(() => expect(canvasElement.querySelector(`[data-order-detail="${built.orderNumber}"]`)).not.toBeNull());
+    await userEvent.click(canvasElement.querySelector<HTMLElement>('[data-refund]')!);
+    const dialog = within(await screen.findByRole('dialog'));
+    await userEvent.click(dialog.getByRole('button', { name: `Refund ${money(built.total)}` }));
+    await waitFor(() => expect(canvasElement.querySelector<HTMLButtonElement>('[data-refund]')!.disabled).toBe(true));
+    await expect(canvasElement.querySelector('[data-refund]')!.textContent).toContain('Fully refunded');
   },
 };
 
