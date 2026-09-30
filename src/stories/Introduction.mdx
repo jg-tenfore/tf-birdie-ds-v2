@@ -6,8 +6,9 @@ import { SiteLink, PrototypeLinks, PrototypeLaunchpad } from './SiteLink';
 # ⛳ Birdie POS — Design System
 
 A **React + MUI (Material UI) + Emotion** component library for the TenFore golf-course
-point of sale, plus working prototypes built from it — three counter-terminal clubs, and the
-same three clubs on a phone.
+point of sale, plus working prototypes built from it — three counter-terminal clubs, the same
+three clubs on a phone, and two editions that carry the design forward: **Weston Edits** and
+**V1 → V2**.
 
 <PrototypeLaunchpad />
 
@@ -26,6 +27,7 @@ This Storybook is the front door. Every other surface is a directory beside it:
 | `/mobile-9/` | <SiteLink to="mobile-9">Mobile · Single nine</SiteLink> the same phone screens at the single nine |
 | `/weston-edits/` | <SiteLink to="weston-edits">Weston Edits · Tablet</SiteLink> the 18-hole terminal with Weston's golf-first reservation edits (see **Weston Edits** in the sidebar) |
 | `/weston-edits-mobile/` | <SiteLink to="weston-edits-mobile">Weston Edits · Mobile</SiteLink> the same edits on the phone |
+| `/v1-v2/` | <SiteLink to="v1-v2" path="#/register">V1 → V2 · Tablet</SiteLink> Weston Edits plus the rest of the application, migrated from v1 — every destination in the nav opens a working screen (see **V1 → V2 Migration** in the sidebar) |
 | `/reference/` | <SiteLink to="reference">The original</SiteLink> the single-file HTML prototype this port came from. Read-only |
 
 ## The three prototypes are one app
@@ -87,6 +89,12 @@ over the same tokens, so a pay badge or member dot reads identically on both.
   the sheet before with the action's dialog over it, the sheet after, and the difference
   between them derived from the reducer rather than described. Start at
   **0 · Action Map** for the full inventory of all 59 actions and which ones write.
+- **Weston Edits** — Weston's feedback rounds on the 18-hole terminal and phone, one numbered
+  change each, with Tablet and Mobile stories. Runs as the
+  <SiteLink to="weston-edits">Weston Edits prototype</SiteLink>.
+- **V1 → V2 Migration** — every destination in v1's nav, rebuilt on top of Weston Edits: what v1
+  did, what was wrong with it, and what this does instead. Numbered by nav order, with an
+  **Overview** coverage table. Runs as the <SiteLink to="v1-v2" path="#/register">V1 → V2 prototype</SiteLink>.
 
 ## How a screen story works
 
