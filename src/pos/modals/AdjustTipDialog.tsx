@@ -38,7 +38,7 @@ export function AdjustTipDialog({ m }: { m: Extract<RestaurantModal, { kind: 'ad
   return (
     <ModalFrame
       title={`Adjust tip · ${p.orderNumber}`}
-      subtitle={`${p.time} · Card •••• ${p.cardLast4 ?? '----'} · ${staffById(p.staffId)?.short ?? ''}`}
+      subtitle={`${p.time} · ${p.cardLast4 ? `Card •••• ${p.cardLast4}` : 'Card'} · ${staffById(p.staffId)?.short ?? ''}`}
       icon="attach_money"
       width={460}
       onClose={close}

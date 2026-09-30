@@ -206,7 +206,8 @@ function PaymentRow({ p, onAdjust }: { p: PaymentRecord; onAdjust: () => void })
         {staffById(p.staffId)?.short ?? '—'}
       </Box>
       <Box component="td" sx={td}>
-        {p.method === 'card' ? `Card •••• ${p.cardLast4 ?? '----'}` : p.method[0].toUpperCase() + p.method.slice(1)}
+        {/* A live payment in the prototype has no card number to show; placeholder dashes read as a fault. */}
+        {p.method === 'card' ? (p.cardLast4 ? `Card •••• ${p.cardLast4}` : 'Card') : p.method[0].toUpperCase() + p.method.slice(1)}
       </Box>
       <Box component="td" sx={{ ...td, textAlign: 'right' }}>
         {money(p.amount)}
