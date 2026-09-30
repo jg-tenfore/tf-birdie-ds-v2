@@ -54,7 +54,7 @@ which is which: **what v1 did, what was wrong with it, and what this does instea
 <CoverageTable />
 
 Two destinations are not tiles. **Log Out** sits in the nav's header, beside Switch user, and
-**PIN sign-in** — the front door it leads to — arrives in wave 3 with the other shift functions.
+both lead to **PIN sign-in**, the front door — see **Sign-in**.
 
 ## Wave 1 · the Pro Shop group
 
@@ -168,6 +168,91 @@ touches the food: moving a fired plate from seat 2 to seat 3 changes who pays, n
 
 ### Worth knowing
 
-**Order Lookup comes in wave 3**, under nav order. Until then, the order number on a paid
-reservation (Weston Edits round 5) opens the paid order in the register rather than in a lookup
-screen, because the lookup screen does not exist yet.
+The order number on a paid reservation (Weston Edits round 5) opened the paid order in the register
+until Order Lookup existed. In V1 → V2 it now opens Order Lookup — see wave 3. Weston Edits keeps
+the register.
+
+## Wave 3 · everything else
+
+Customer Search, Order Lookup, Time Clock, Gift Cards, Events, Inventory and Shift, plus PIN
+sign-in. With this wave every tile in the nav opens a screen. Settings is still the tee sheet's
+settings panel, which Weston Edits already had.
+
+The wave is mostly about **money after the sale**: finding an order, giving money back, paying by
+something other than a card, and closing the drawer at the end of the day. v1 had screens for all of
+it, but none of them shared anything. Order Lookup could find a payment but not what was bought, a
+gift card could be sold but not spent, and Shift asked for an ending cash total without saying what
+it should be.
+
+### Decisions made for this wave
+
+| | Chosen | Instead of |
+|---|---|---|
+| **Order Lookup** | **Find, view and refund.** Refund the whole order or chosen lines, back to the tenders that paid | A lookup that only finds orders |
+| **Sign-in** | **PIN only.** The prototype opens signed in; Log Out and Switch user bring up the pad | PIN plus manager approval for refunds and voids |
+| **House account and card on file** | **Tenders at checkout**, next to the card reader | Settled only from the customer record |
+| **Events** | **One event holds golf and spend.** Its golf comes from its tee times; anything charged to it joins a ledger; the organiser is billed once | Separate event and outing records |
+| **Inventory** | **Live stock that sales deduct** and refunds return, with counts to correct it | Counts only |
+| **Gift cards** | Good for **everything but alcohol** by default, per card | Good for anything |
+
+And the calls made without a question, each in one place to change:
+
+- **A gift card's categories are enforced at checkout.** A card pays for the lines it is good for,
+  with their share of the tax, and names the ones it will not pay for. When it cannot cover the order
+  it pays part and checkout shows the balance still due. Without this, "not good for alcohol" is
+  only a label on a card that pays for the beer anyway.
+- **A refund goes back to each tender that paid.** A gift card gets back only what it was good for,
+  and the rest goes to the other tenders, most recent first. Refunding a whole order returns exactly
+  what each tender paid. The first version sent every refund to the tender that paid the most, which
+  put the beers back on a gift card that was never allowed to buy them.
+- **Tee times paid before the session refund like any order.** The seeded tee sheet was paid before
+  the session opened, so it has order numbers but no orders. Order Lookup builds each one from its
+  booking — the same seats, fees and tax — and the refund goes back to a card, because the seed does
+  not say how they were paid.
+- **Expected cash is worked out, not keyed.** Shift shows the drawer's starting cash, plus cash
+  taken, less cash refunds, payouts and drops, all from the day's own payments. v1 asked for an
+  ending total and printed a history table so wide its last column was cut off mid-word
+  ("End Checl"). Wave 1's payouts and this wave's drops are both drawer events, so they are
+  accounted for here.
+- **The cash drop is on Shift**, moved from Orders & Tips.
+- **After a payment, the next item starts the next order.** The rail keeps showing the paid order
+  until **New order**, and a tile tapped in that state used to join the paid order, where nothing
+  could pay for it. This fix applies to every edition.
+
+### Left behind from v1
+
+- Membership **baked into the printed name** ("Nadia Marchetti - Full Golf"). It is a chip beside
+  the name now, everywhere a name is printed.
+- A new-customer rule you **only found by failing to save**. The form now opens by saying it needs
+  a last name and a phone number or an email, and ticks each off as it is met.
+- Email domain chips that **appended** to what was typed. They replace the domain.
+- Order Lookup's **three stacked fields** that read as AND, behaved as OR, and did nothing until
+  SEARCH. It is one box, searched as you type.
+- A spent gift card shown **only by a dimmed row**. It has a Spent badge.
+- Events with **no action bar**, only an overflow menu.
+
+### Not yet
+
+- **Tips on the new tenders.** Gift card, house account, card on file and charge-to-event do not
+  take a tip. Checkout keeps the tip on its own screen, and the tender dialogs cannot see it.
+- **Printing** shift and stock-count reports.
+- **An expected figure for checks.** No tender records checks, so a shift close records the count
+  alone.
+- **Who may have a house account.** Any customer can be charged; nothing on a customer says they have an account.
+- **Low-stock badges in search results.** The register's tiles have them.
+
+### Deep links
+
+| Link | Opens |
+|---|---|
+| `#/customers` · `#/customers?cid=M005` | Customer Search · one customer, with their house account and cards |
+| `#/order-lookup` · `#/order-lookup?ord=%23A-20400` | Today's orders · one order, ready to refund |
+| `#/gift-cards` | Every gift card, and what each is good for |
+| `#/events?ev=EV-301` | The Member-Guest: 72 players on 18 tee times, and its ledger |
+| `#/tee-sheet?date=2026-05-30` | The Member-Guest on the tee sheet |
+| `#/time-clock` | Who is on the clock, and the week's hours |
+| `#/inventory` | Live stock, low and out, and the counts |
+| `#/shift` | The open drawer, what it should hold, and the shift history |
+
+Log Out or Switch user in the nav brings up the PIN pad. The demo PINs are listed on it: 1111 for
+Avery Robertson, the manager, through 6666.
