@@ -5,6 +5,7 @@ import { md3, radius } from '../../../theme/tokens';
 import { demoNow } from '../../data/bookings';
 import { APP_IDENTITY } from '../../data/nav';
 import { STAFF, staffById } from '../../data/staff';
+import { money } from '../../logic/cart';
 import { usePos } from '../../state/PosProvider';
 import { Icon } from '../primitives';
 import { Stack } from '../Stack';
@@ -104,7 +105,10 @@ export function SignInScreen() {
   const lines = state.cart.filter((l) => !l.isTax).length;
   const now = demoNow();
   const stillOpen = [
-    lines > 0 && `1 order open on the register · ${lines} line${lines === 1 ? '' : 's'}`,
+    lines > 0 &&
+      (state.lastPayment
+        ? `A paid order on the register · ${money(state.lastPayment.amount)}`
+        : `1 order open on the register · ${lines} line${lines === 1 ? '' : 's'}`),
     state.heldOrders.length > 0 && `${state.heldOrders.length} held order${state.heldOrders.length === 1 ? '' : 's'}`,
     state.drawerShift && `Drawer ${state.drawerShift.id} open since ${state.drawerShift.openedAt}`,
   ].filter(Boolean) as string[];

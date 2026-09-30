@@ -8,6 +8,7 @@ import { liveCustomer, liveRoster } from '../../data/roster';
 import { staffById } from '../../data/staff';
 import { money } from '../../logic/cart';
 import { accountHistory, cardExpired, customersOwing, findCustomers, isSpent, plainName } from '../../logic/customer-search';
+import { registerBusy } from '../../state/operations';
 import { usePos } from '../../state/PosProvider';
 import { Field, FilledButton, OutlineButton } from '../../modals/ModalFrame';
 import { ToolbarButton } from '../TeeSheetView';
@@ -239,7 +240,7 @@ function CustomerDetail({ c }: { c: Customer }) {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, alignItems: 'start' }}>
         <Stack gap={2}>
-          <HouseAccount c={c} history={history} cartBusy={state.cart.length > 0} onPay={(amount) => {
+          <HouseAccount c={c} history={history} cartBusy={registerBusy(state)} onPay={(amount) => {
             dispatch({ type: 'payAccount', customerId: c.id, amount });
             // `payAccount` loads the line and opens the register with its rail out; checkout is one tap.
             dispatch({ type: 'setView', view: 'pos' });

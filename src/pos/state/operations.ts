@@ -8,7 +8,9 @@ import { SEED_OPEN_SHIFT, SEED_PUNCHES, SEED_SHIFT_HISTORY, type Punch, type Shi
 import { staffByPin } from '../data/staff';
 import { STOCK_ITEMS, applyStock, seedStock, type InventoryCount, type StockedCategory } from '../data/stock';
 import { orderTotals } from '../logic/cart';
-import { allRefundable, refundAmount, refundTender, type OrderRecord, type OrderTender, type PaymentRef, type RefundRecord } from '../logic/orders';
+import { allRefundable, refundAmount, refundSplit, type OrderRecord, type OrderTender, type PaymentRef, type RefundPart, type RefundRecord } from '../logic/orders';
+import { giftCardCovers } from '../logic/tenders';
+import { DEFAULT_GIFT_CATEGORIES } from '../data/spend';
 import type { PaymentRecord } from '../logic/restaurant';
 import { drawerWorkings } from '../logic/shift';
 import type { Booking, CartItem } from '../types';
@@ -231,6 +233,31 @@ const cents = (n: number) => Math.round(n * 100) / 100;
 
 export const orderByNumber = (s: Pick<OperationsState, 'orders'>, n: string | null | undefined): OrderRecord | undefined =>
   n ? s.orders.find((o) => o.orderNumber === n) : undefined;
+
+/**
+ * Whether the register has an order still being rung up. A paid order waiting on **New order** is
+ * finished — loading a bill or a balance starts the next order rather than refusing.
+ */
+export const registerBusy = (s: Pick<PosState, 'cart' | 'lastPayment'>): boolean => s.cart.length > 0 && !s.lastPayment;
+
+/**
+ * Where a refund of `picks` would go, tender by tender — what the refund dialog shows and what
+ * `refundOrder` does, so the two cannot disagree. A gift card takes back only the part of the
+ * refund it was good for (its categories, from the card itself); see `refundSplit`.
+ */
+export function refundPlan(
+  s: PosState,
+  order: OrderRecord,
+  picks: { index: number; qty: number }[],
+): { tender: OrderTender; index: number; amount: number }[] {
+  const amount = refundAmount(order, picks);
+  if (amount <= 0) return [];
+  const returned = picks.map((p) => ({ ...order.lines[p.index], qty: p.qty }));
+  const cards = order.tenders.filter((t) => t.method === 'giftcard' && t.ref?.giftCardId);
+  const categories = [...new Set(cards.flatMap((t) => findGiftCard(s, t.ref!.giftCardId!, t.ref?.customerId)?.card.categories ?? DEFAULT_GIFT_CATEGORIES))];
+  const cardShare = cards.length ? giftCardCovers({ balance: Number.POSITIVE_INFINITY, categories }, returned, Number.POSITIVE_INFINITY) : 0;
+  return refundSplit(order, amount, cardShare).map((p) => ({ tender: order.tenders[p.tender], index: p.tender, amount: p.amount }));
+}
 
 /**
  * An order by number, wherever it is: a record this session holds, or a tee time paid before the
@@ -494,7 +521,7 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
     }
     case 'payAccount': {
       const c = liveCustomer(action.customerId, state.customerEdits);
-      if (!c || c.balance <= 0 || state.cart.length) return state;
+      if (!c || c.balance <= 0 || registerBusy(state)) return state;
       const amount = cents(Math.min(action.amount ?? c.balance, c.balance));
       const line: CartItem = { name: `Account payment · ${c.firstName} ${c.lastName}`.trim(), price: amount, unitPrice: amount, qty: 1, accountPayment: { customerId: c.id } };
       return { ...state, cart: [line], payingAccountId: c.id, selectedBookingId: null, view: 'pos', leftPanelCollapsed: false };
@@ -535,7 +562,7 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
       };
     case 'billEvent': {
       const e = eventById(state, action.eventId);
-      if (!e || e.status === 'billed' || state.cart.length) return state;
+      if (!e || e.status === 'billed' || registerBusy(state)) return state;
       const { golf, spend } = eventBill(e, state.bookings);
       const lines: CartItem[] = [];
       // Golf is a sale, taxed at checkout; the spend was taxed when it was charged, so it rides untaxed.
@@ -586,9 +613,34 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
       if (!order) return state;
       const picks = (action.picks ?? allRefundable(order)).filter((p) => p.qty > 0);
       const amount = refundAmount(order, picks);
-      const tender = refundTender(order);
-      if (amount <= 0 || !tender) return state;
-      const paymentId = `P-${state.restaurantSeq.payment + 1}`;
+      const plan = refundPlan(state, order, picks);
+      if (amount <= 0 || plan.length === 0) return state;
+      // One negative payment per tender the money goes back to, each reversed on its own tender.
+      const returned = picks.map((p) => ({ ...order.lines[p.index], qty: p.qty }));
+      let after: PosState = { ...state, cart: returned };
+      let paymentSeq = state.restaurantSeq.payment;
+      const parts: RefundPart[] = [];
+      const payments: PaymentRecord[] = [];
+      for (const { tender, index, amount: partAmount } of plan) {
+        paymentSeq += 1;
+        const paymentId = `P-${paymentSeq}`;
+        parts.push({ tender: index, method: tender.method, ref: tender.ref, amount: partAmount, paymentId });
+        payments.push({
+          id: paymentId,
+          date: today,
+          time: clock(now),
+          method: tender.method,
+          amount: -partAmount,
+          tip: 0,
+          orderNumber: order.orderNumber,
+          staffId: state.operatorId,
+          kind: 'refund',
+          ref: tender.ref,
+          cardLast4: tender.ref?.cardLast4,
+        });
+        after = applyTender(after, tender.method, partAmount, tender.ref, order.orderNumber, -1);
+      }
+      const largest = parts.reduce((a, b) => (b.amount > a.amount ? b : a));
       const refund: RefundRecord = {
         id: `RF-${seq.refund + 1}`,
         date: today,
@@ -596,27 +648,13 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
         staffId: state.operatorId,
         lines: picks,
         amount,
-        method: tender.method,
-        ref: tender.ref,
-        paymentId,
+        method: largest.method,
+        ref: largest.ref,
+        paymentId: largest.paymentId,
         reason: action.reason?.trim() || undefined,
+        ...(parts.length > 1 && { parts }),
       };
-      const payment: PaymentRecord = {
-        id: paymentId,
-        date: today,
-        time: clock(now),
-        method: tender.method,
-        amount: -amount,
-        tip: 0,
-        orderNumber: order.orderNumber,
-        staffId: state.operatorId,
-        kind: 'refund',
-        ref: tender.ref,
-        cardLast4: tender.ref?.cardLast4,
-      };
-      // Back to the tender, and back onto the shelf.
-      const returned = picks.map((p) => ({ ...order.lines[p.index], qty: p.qty }));
-      const after = applyTender({ ...state, cart: returned }, tender.method, amount, tender.ref, order.orderNumber, -1);
+      // Back onto the shelf.
       return {
         ...after,
         cart: state.cart,
@@ -624,8 +662,8 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
         orders: held
           ? state.orders.map((o) => (o.orderNumber === order.orderNumber ? { ...o, refunds: [...o.refunds, refund] } : o))
           : [...state.orders, { ...order, refunds: [refund] }],
-        payments: [...after.payments, payment],
-        restaurantSeq: { ...after.restaurantSeq, payment: after.restaurantSeq.payment + 1 },
+        payments: [...after.payments, ...payments],
+        restaurantSeq: { ...after.restaurantSeq, payment: paymentSeq },
         opsSeq: { ...after.opsSeq, refund: after.opsSeq.refund + 1 },
       };
     }

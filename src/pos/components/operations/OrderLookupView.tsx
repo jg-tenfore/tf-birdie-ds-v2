@@ -419,7 +419,11 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
                     <Typography sx={{ fontSize: 13, fontWeight: 800, color: payBadges.refund.text }}>{money(-r.amount)}</Typography>
                   </Stack>
                   <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, ml: 2.75 }}>
-                    {r.time} · {staffById(r.staffId)?.short ?? r.staffId} · back to {tenderLabel(r.method, r.ref, eventName(r.ref?.eventId))} · {r.paymentId}
+                    {r.time} · {staffById(r.staffId)?.short ?? r.staffId} · back to{' '}
+                    {r.parts
+                      ? r.parts.map((p) => `${tenderLabel(p.method, p.ref, eventName(p.ref?.eventId))} ${money(p.amount)}`).join(' and ')
+                      : tenderLabel(r.method, r.ref, eventName(r.ref?.eventId))}{' '}
+                    · {(r.parts ?? [r]).map((p) => p.paymentId).join(', ')}
                     {r.reason ? ` · “${r.reason}”` : ''}
                   </Typography>
                 </Box>
@@ -446,7 +450,9 @@ function OrderDetail({ order: o, fromBooking }: { order: OrderRecord; fromBookin
         )}
         <>
             {refundable && back && (
-              <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>Back to {tenderLabel(back.method, back.ref, eventName(back.ref?.eventId))}</Typography>
+              <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
+                {o.tenders.length > 1 ? 'Back to the tenders that paid it' : `Back to ${tenderLabel(back.method, back.ref, eventName(back.ref?.eventId))}`}
+              </Typography>
             )}
             <ActionButton
               icon="assignment_return"

@@ -35,11 +35,25 @@ export interface RefundRecord {
   lines: { index: number; qty: number }[];
   /** Goods plus their share of the tax. Positive — it is recorded as money going back. */
   amount: number;
-  /** The tender it went back to. */
+  /** The tender it went back to — the largest part, when it was split. */
   method: string;
   ref?: PaymentRef;
   paymentId: string;
   reason?: string;
+  /**
+   * Where each dollar went, when the order was paid by more than one tender. `tender` indexes
+   * `OrderRecord.tenders`; `paymentId` is the refund's own (negative) payment. Absent on a refund
+   * to a single tender, which `method` / `ref` / `paymentId` describe whole.
+   */
+  parts?: RefundPart[];
+}
+
+export interface RefundPart {
+  tender: number;
+  method: string;
+  ref?: PaymentRef;
+  amount: number;
+  paymentId: string;
 }
 
 export interface OrderRecord {
@@ -107,10 +121,64 @@ export const refundedTotal = (order: OrderRecord): number => cents(order.refunds
 
 /**
  * Where a refund goes: back to the tender that paid the most, so a $5 gift card and a $95 card
- * refunds to the card. Ties go to the last tender — the one the customer finished with.
+ * refunds to the card. Ties go to the last tender — the one the customer finished with. What a
+ * one-line summary names; `refundSplit` decides where the money actually goes.
  */
 export function refundTender(order: OrderRecord): OrderTender | undefined {
   return order.tenders.reduce<OrderTender | undefined>((best, t) => (!best || t.amount >= best.amount ? t : best), undefined);
+}
+
+/** What each tender has had back already, by index. */
+function refundedByTender(order: OrderRecord): number[] {
+  const back = order.tenders.map(() => 0);
+  for (const r of order.refunds) {
+    if (r.parts) for (const p of r.parts) back[p.tender] += p.amount;
+    else {
+      const i = order.tenders.findIndex((t) => t.method === r.method && t.ref?.giftCardId === r.ref?.giftCardId);
+      back[i >= 0 ? i : order.tenders.length - 1] += r.amount;
+    }
+  }
+  return back;
+}
+
+/**
+ * Where a refund's money goes, when an order was paid by more than one tender.
+ *
+ * "Back to the original tender" has to mean *each* original tender. Sending it all to the one that
+ * paid most — the first cut — put a $28 refund on a gift card that had paid $17 of it, including the
+ * two beers the card was not allowed to buy. So:
+ *
+ * - **Gift cards first, but only up to `cardShare`** — the part of the refund a card was good for
+ *   (the reducer works it out from the cards' categories). The beers never go on a card.
+ * - **The rest to the other tenders, last first.** On a split, the last tender is the one that paid
+ *   what the earlier ones could not.
+ * - **No tender gets back more than it paid**, less what it has had back already.
+ *
+ * Refunding a whole order therefore returns exactly what each tender paid.
+ */
+export function refundSplit(order: OrderRecord, amount: number, cardShare = 0): { tender: number; amount: number }[] {
+  const back = refundedByTender(order);
+  const room = order.tenders.map((t, i) => cents(Math.max(0, t.amount - back[i])));
+  const out = order.tenders.map(() => 0);
+  let left = cents(amount);
+  let cardLeft = cents(Math.min(cardShare, amount));
+  order.tenders.forEach((t, i) => {
+    if (t.method !== 'giftcard' || left <= 0) return;
+    const give = cents(Math.min(room[i], cardLeft, left));
+    out[i] += give;
+    room[i] = cents(room[i] - give);
+    cardLeft = cents(cardLeft - give);
+    left = cents(left - give);
+  });
+  for (let i = order.tenders.length - 1; i >= 0 && left > 0; i--) {
+    if (order.tenders[i].method === 'giftcard') continue;
+    const give = cents(Math.min(room[i], left));
+    out[i] += give;
+    left = cents(left - give);
+  }
+  // Rounding, or an order whose only room left is on a card: the last tender takes the cent.
+  if (left > 0 && out.length) out[out.length - 1] = cents(out[out.length - 1] + left);
+  return out.map((a, tender) => ({ tender, amount: cents(a) })).filter((p) => p.amount > 0);
 }
 
 /**

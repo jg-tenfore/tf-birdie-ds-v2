@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, payBadges, radius } from '../../theme/tokens';
 import { money } from '../logic/cart';
-import { allRefundable, refundAmount, refundableQty, refundTender } from '../logic/orders';
+import { allRefundable, refundAmount, refundableQty } from '../logic/orders';
 import { orderItems, tenderLabel } from '../logic/order-lookup';
-import { eventById, lookupOrder, type OperationsModal } from '../state/operations';
+import { eventById, lookupOrder, refundPlan, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon } from '../components/primitives';
 import { Stack } from '../components/Stack';
@@ -42,8 +42,12 @@ export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: '
     return s + (l.isCheckIn ? (l.unitPrice ?? l.price) : l.price) * p.qty;
   }, 0);
   const tax = Math.max(0, Math.round((amount - goods) * 100) / 100);
-  const tender = refundTender(order);
-  const to = tender ? tenderLabel(tender.method, tender.ref, eventById(state, tender.ref?.eventId)?.name) : '';
+  // Tender by tender, exactly as `refundOrder` will do it: a gift card gets back only what it was
+  // good for, and the rest goes to the other tenders.
+  const plan = refundPlan(state, order, picks);
+  const label = (t: (typeof plan)[number]['tender']) => tenderLabel(t.method, t.ref, eventById(state, t.ref?.eventId)?.name);
+  const to =
+    plan.length > 1 ? plan.map((p) => `${label(p.tender)} ${money(p.amount)}`).join(' and ') : plan[0] ? label(plan[0].tender) : '';
 
   const refund = () => {
     if (amount <= 0) return;
@@ -156,9 +160,9 @@ export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: '
         <Row label="Refund" value={money(amount)} strong />
       </Stack>
 
-      {tender && (
+      {plan.length > 0 && (
         <Callout tone="info" icon="keyboard_return">
-          <span data-refund-tender>Goes back to {to}</span> — the tender that paid for it.
+          <span data-refund-tender>Goes back to {to}</span> — {plan.length > 1 ? 'the tenders that paid for it.' : 'the tender that paid for it.'}
         </Callout>
       )}
     </ModalFrame>

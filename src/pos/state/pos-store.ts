@@ -638,7 +638,22 @@ function paidOrderNumber(state: PosState): string {
   return `#A-${30000 + state.restaurantSeq.payment + 1}`;
 }
 
+/**
+ * Actions that put a line on the register's order. After a payment the rail still shows the paid
+ * order — Paid, the method, **New order** — and a tile tapped then used to add to that paid order,
+ * where nothing could pay for it. Tapping an item after a payment starts the next order instead,
+ * which is what the operator is doing.
+ */
+const ADDS_TO_ORDER = new Set(['addItem', 'addRawItem', 'addCombo', 'addGiftCardLine', 'payAccount', 'billEvent']);
+
 export function reducer(state: PosState, action: Action): PosState {
+  const addsToRegister =
+    ADDS_TO_ORDER.has(action.type) || (action.type === 'addDish' && action.target === 'cart');
+  if (state.lastPayment && addsToRegister) {
+    // Keep the screen the operator is on; only the finished order goes.
+    const next = reducer(state, { type: 'clearOrder' });
+    return reducer({ ...next, currentCategory: state.currentCategory, view: state.view }, action);
+  }
   switch (action.type) {
     // ─── Chrome ───────────────────────────────────────────────────────────
     case 'setView':

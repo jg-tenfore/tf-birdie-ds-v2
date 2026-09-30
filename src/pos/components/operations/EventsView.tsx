@@ -5,7 +5,7 @@ import { eventGolf, eventSpend, type EventCharge, type GolfEvent } from '../../d
 import { staffById } from '../../data/staff';
 import { money } from '../../logic/cart';
 import { eventStatusLabel, eventsInOrder, fromDateStr, removableCharge } from '../../logic/event-screen';
-import { eventById, orderByNumber } from '../../state/operations';
+import { eventById, orderByNumber, registerBusy } from '../../state/operations';
 import { usePos } from '../../state/PosProvider';
 import { Callout, Field } from '../../modals/ModalFrame';
 import { ToolbarButton } from '../TeeSheetView';
@@ -131,7 +131,7 @@ function EventDetail({ event: e }: { event: GolfEvent }) {
   const golf = eventGolf(e, state.bookings);
   const spend = eventSpend(e);
   const billed = e.status === 'billed';
-  const busy = state.cart.length > 0;
+  const busy = registerBusy(state);
   const date = fromDateStr(e.date);
   const billedOrder = e.billedOrderNumber && orderByNumber(state, e.billedOrderNumber);
 

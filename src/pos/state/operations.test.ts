@@ -305,3 +305,61 @@ describe('a tee time paid before the session', () => {
     expect(all.orders.filter((o) => o.orderNumber === n)).toHaveLength(1);
   });
 });
+
+describe('refunding an order paid by gift card and card', () => {
+  // The walkthrough's order: a sleeve the card may pay for, two beers it may not.
+  const split = () => {
+    let s = withCart(s0(), [balls(1), beer(2)]);
+    const card = reducer(s, { type: 'payPart', method: 'giftcard', amount: giftCardCovers({ balance: 100 }, s.cart, amountDue(s)), ref: { giftCardId: '261900' } });
+    s = pay(card, 'card');
+    return { s, order: s.orders.at(-1)! };
+  };
+
+  it('gives each tender back exactly what it paid, when the whole order is refunded', () => {
+    const { s, order } = split();
+    const [gift, rest] = order.tenders;
+    const after = reducer(s, { type: 'refundOrder', orderNumber: order.orderNumber });
+    const refunds = after.payments.filter((p) => p.orderNumber === order.orderNumber && p.kind === 'refund');
+    expect(refunds.map((p) => [p.method, p.amount])).toEqual([
+      ['giftcard', -gift.amount],
+      ['card', -rest.amount],
+    ]);
+  });
+
+  it('never puts the beer back on the gift card', () => {
+    const { s, order } = split();
+    const i = order.lines.findIndex((l) => l.name === 'Beer Domestic');
+    const after = reducer(s, { type: 'refundOrder', orderNumber: order.orderNumber, picks: [{ index: i, qty: 2 }] });
+    const refunds = after.payments.filter((p) => p.orderNumber === order.orderNumber && p.kind === 'refund');
+    expect(refunds.map((p) => p.method)).toEqual(['card']);
+  });
+
+  it('puts the sleeve back on the card that bought it, and then nothing more fits there', () => {
+    const { s, order } = split();
+    const sleeve = order.lines.findIndex((l) => l.name === 'Titleist Pro V1 Sleeve');
+    const once = reducer(s, { type: 'refundOrder', orderNumber: order.orderNumber, picks: [{ index: sleeve, qty: 1 }] });
+    expect(once.payments.at(-1)).toMatchObject({ method: 'giftcard', amount: -order.tenders[0].amount });
+    const all = reducer(once, { type: 'refundOrder', orderNumber: order.orderNumber });
+    expect(all.payments.at(-1)).toMatchObject({ method: 'card', amount: -order.tenders[1].amount });
+  });
+});
+
+describe('after a payment', () => {
+  it('tapping an item starts the next order rather than adding to the paid one', () => {
+    const paid = pay(withCart(s0(), [balls(1)]), 'card');
+    expect(paid.lastPayment).not.toBeNull();
+    const next = reducer(paid, { type: 'addItem', name: 'Beer Domestic', price: 5 });
+    expect(next.lastPayment).toBeNull();
+    expect(next.cart.map((l) => l.name)).toEqual(['Beer Domestic']);
+    expect(next.orders).toHaveLength(paid.orders.length);
+  });
+});
+
+describe('a paid order on the register does not block the next job', () => {
+  it('billing an event starts the next order', () => {
+    const s = { ...pay(withCart(s0(), [balls(1)]), 'card'), bookings: [...s0().bookings, ...SEED_EVENT_BOOKINGS] };
+    const billed = reducer(s, { type: 'billEvent', eventId: 'EV-301' });
+    expect(billed.lastPayment).toBeNull();
+    expect(billed.cart.some((l) => l.eventBill)).toBe(true);
+  });
+});
