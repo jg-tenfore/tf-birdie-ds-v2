@@ -71,7 +71,7 @@ const GROUND = 8;
  * The scale that fits the 1366×840 terminal, plus its ground, into the current window.
  * Never above 1: at the counter-terminal viewport the frame renders at its real size.
  */
-function useFitScale(): number {
+export function useFitScale(): number {
   const measure = () =>
     typeof window === 'undefined'
       ? 1

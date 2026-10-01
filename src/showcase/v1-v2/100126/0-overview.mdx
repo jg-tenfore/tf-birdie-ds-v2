@@ -1,0 +1,45 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="V1 → V2 Migration/100126/Overview" />
+
+# 100126 · Feedback round from the Sep 30 call with Weston
+
+Proposals from Justin's call with Weston Farnsworth on Sep 30: the reservation panel, the order
+rail, leagues, the main menu, Settings and the phone. Each change has its own entry in this folder,
+with two stories:
+
+- **Original**: the live V1 → V2 screen as it is today. The phone items use Weston Edits' phone,
+  because V1 → V2 is tablet-only.
+- **Proposal**: a mockup of the change, built in Storybook only and marked **PROPOSAL · 100126**
+  in its corner. Nothing in the app changes until a proposal is approved.
+
+Weston's own priorities on the call: fit the foursome, put membership back, add the order number to
+Financial, then *"let's make sure everything else is in order"*. He is *"not as worried about events
+… to start"*, and happy with the tee sheet and the slide-over *"for now"*.
+
+## The changes
+
+| # | Change | What Weston said | Where today |
+|---|---|---|---|
+| 1 | **Compact player rows**: one line per player, tap to expand | *"that 4th player, you always have to scroll"* | Reservation panel, Players |
+| 2 | **Status chip** instead of the five-stop stepper | *"it does take up a lot of space… maybe they could click on it and change it"* | Each player card |
+| 3 | **Membership and customer type** on every player | *"we want to have the customer type and the membership"* | Each player card |
+| 4 | **Contact details once**: the booker's phone and email in the header | *"we show my email 4 times"* | Panel header |
+| 5 | **Order number per paid player**, with Print receipt and See order | *"we don't have a way to like reprint a receipt for a reservation"* | Financial tab |
+| 6 | **Empty rail collapsed by default**, with a visible Collapse | *"just collapsed if there's nothing in it"* | Register |
+| 7 | **Menu by role**, and a role grid in Settings | *"you could be like pro shop and not see any of the restaurant"* | Main menu |
+| 8 | **League and group view**: the whole outing over the screen | *"1, pay, checkout, 1, pay, checkout"* | Member-Guest, May 30 |
+| 9 | **Settings led by Birdie's sections**: device info, card reader, Clover | *"these I don't think are settings that we have currently"* | Settings |
+| 10 | **Phone: tee sheet header collapses** to the date row on scroll | *"once you start scrolling… collapse"* | Phone tee sheet |
+| 11 | **Phone: reservation without the "30 of 88" pager** | *"I think we could get rid of this"* | Phone reservation |
+| 12 | **Bug: course ⋮ menu** opens under its own button | *"Well, that's a bug"* | Tee sheet course header |
+
+## Not in this round
+
+- **A Starter or Ranger view.** A separate, phone-first view to check in, see paid, and assign
+  carts and keys, with no money on it. Weston likes the idea and suggested *"maybe it's not even
+  tied into Birdie"*. Parked.
+- **Tips, how-tos or release notes in the empty rail.** Parked so the scope stays small.
+- **A redesigned customer record**, with View ID and ID.me: a round of its own.
+- **The Buck settings concepts** and reviewing Buck's pages before they're retired: Buck work, not
+  this prototype.
