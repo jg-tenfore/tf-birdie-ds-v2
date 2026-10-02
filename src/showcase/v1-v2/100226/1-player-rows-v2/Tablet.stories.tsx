@@ -195,7 +195,6 @@ function RowsPanel({ seed, initialOrder = [] }: { seed: Booking; initialOrder?: 
   const list = b.playerStates.map((_, i) => seatView(b, i));
   const sorted = [...order].sort((x, y) => x - y);
   const due = orderOf(b, sorted);
-  const all = orderOf(b, list.filter((s) => !s.paid && !s.noShow).map((s) => s.i));
   const edit = (i: number, patch: Partial<PlayerState>) => setB((cur) => editSeat(cur, i, patch));
   const everyone = (transport: 'cart' | 'walking') => setB((cur) => ({ ...cur, playerStates: cur.playerStates.map((p) => ({ ...p, transport, transportRateId: undefined })) }));
   const add = (i: number) => setOrder((o) => (o.includes(i) ? o : [...o, i]));
@@ -245,11 +244,12 @@ function RowsPanel({ seed, initialOrder = [] }: { seed: Booking; initialOrder?: 
           <Box sx={{ flex: 1 }}>
             {sorted.length ? (
               <>
+                {/* The panel totals the rows and stops there; the order on the rail works out tax and fees (Justin, Oct 2). */}
                 <Typography data-order-summary sx={{ fontSize: 14, fontWeight: 800 }}>
-                  {sorted.length} on the order · Pay {money(due.total)}
+                  {sorted.length} on the order · {money(due.subtotal)} before tax
                 </Typography>
                 <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
-                  {money(due.subtotal)} + tax {money(due.tax)} · {open ? `${open} still to add` : 'everyone added'}
+                  Tax and fees are on the order · {open ? `${open} still to add` : 'everyone added'}
                 </Typography>
               </>
             ) : (
@@ -261,11 +261,11 @@ function RowsPanel({ seed, initialOrder = [] }: { seed: Booking; initialOrder?: 
           <TouchButton>Close</TouchButton>
           {sorted.length ? (
             <TouchButton tone="filled" icon="payments">
-              Pay {money(due.total)}
+              Pay
             </TouchButton>
           ) : (
             <TouchButton tone="filled" onClick={addAll}>
-              Check in & pay all · {money(all.total)}
+              Check in & pay all
             </TouchButton>
           )}
         </Stack>
@@ -333,7 +333,7 @@ export const Proposal: Story = {
     await expect(within(panel).getByRole('button', { name: 'King, D. is on the order' })).toBeTruthy();
     await expect(within(panel).getByRole('button', { name: 'Guest 2 is on the order' })).toBeTruthy();
     const due = orderOf(king(), [0, 1]);
-    await expect(panel.querySelector('[data-order-summary]')!.textContent).toBe(`2 on the order · Pay ${money(due.total)}`);
+    await expect(panel.querySelector('[data-order-summary]')!.textContent).toBe(`2 on the order · ${money(due.subtotal)} before tax`);
     // …and the live register rail opened with both players on it.
     await waitFor(() => expect(canvasElement.querySelector('[aria-label="Clear order"]')).not.toBeNull());
     await waitFor(() => expect(railText(canvasElement, panel, /King, D\./).length).toBeGreaterThan(0));
@@ -366,7 +366,7 @@ export const AfterAddAdd: Story = {
     const panel = await panelOf(canvasElement);
     await expectFoursomeFits(panel);
     await expect(panel.querySelectorAll('[data-on-order]').length).toBe(2);
-    await expect(panel.querySelector('[data-order-summary]')!.textContent).toBe(`2 on the order · Pay ${money(orderOf(king(), [0, 1]).total)}`);
+    await expect(panel.querySelector('[data-order-summary]')!.textContent).toBe(`2 on the order · ${money(orderOf(king(), [0, 1]).subtotal)} before tax`);
     await waitFor(() => expect(canvasElement.querySelector('[aria-label="Clear order"]')).not.toBeNull());
     // Brennan and Guest 4 still have their Add.
     await expect(within(panel).getByRole('button', { name: 'Add Brennan, K.' })).toBeTruthy();
