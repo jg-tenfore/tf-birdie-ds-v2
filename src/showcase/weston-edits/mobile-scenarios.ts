@@ -228,13 +228,10 @@ const edit = (b: Booking, ...edits: Array<(x: Booking) => Partial<Booking>>): Bo
 // ─── Next in line (15) ──────────────────────────────────────────────────────
 
 /**
- * The day's bookings in the order the phone's **‹ n of m ›** steps through them: tee time
- * first, then course, then slot, with blocks and league events left out.
- *
- * The same sort `NextInLine` does against `dayBookings(state)` — repeated here only so a story
- * can say *which* booking comes next without reaching into the component. `dayBookings` filters
- * on the day alone, so this list is the whole club's day, both nines, exactly as the phone
- * sees it.
+ * The day's bookings in tee-sheet order: tee time first, then course, then slot, with blocks and
+ * league events left out — the order the phone's **‹ n of m ›** stepper walked until Oct 1, when
+ * Weston took it out (15 · Next In Line). Kept because 15 still asserts the stepper's counter is
+ * gone, and 16's carts go to the morning's first parties.
  */
 export const dayLine = (): Booking[] =>
   today()
@@ -244,27 +241,8 @@ export const dayLine = (): Booking[] =>
 /** Where a booking sits in that order, 0-based. */
 export const lineIndex = (b: Booking): number => dayLine().findIndex((x) => x.id === b.id);
 
-/** The booking `delta` steps away in that order. */
-export const lineStep = (b: Booking, delta: number): Booking => dayLine()[lineIndex(b) + delta];
-
-/** The first tee time of the day — where ‹ is disabled. */
+/** The first tee time of the day — where the stepper's ‹ used to be disabled. */
 export const firstInLine = (): Booking => dayLine()[0];
-
-/** The last tee time of the day — where › is disabled. */
-export const lastInLine = (): Booking => dayLine()[dayLine().length - 1];
-
-/** Everything on the sheet the stepper refuses to open: maintenance blocks, shift changes. */
-export const dayBlocks = (): Booking[] => today().filter((b) => b.pay === 'block' || b.pay === 'event');
-
-/**
- * The last real tee time at or before the day's first block — the reservation you are sitting
- * on when the next thing *on the sheet* is a block rather than a party.
- */
-export const beforeBlock = (): Booking => {
-  const block = dayBlocks().slice().sort((a, b) => a.timeMin - b.timeMin)[0];
-  const line = dayLine();
-  return line[line.filter((b) => b.timeMin <= block.timeMin).length - 1];
-};
 
 /** Early on the front nine — a reservation a few steps into the morning. */
 export const earlyFrontNine = (): Booking =>

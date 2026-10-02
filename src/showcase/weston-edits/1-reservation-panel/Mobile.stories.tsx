@@ -27,7 +27,7 @@ import { adjustedParty, at18, growableParty, withBookings } from '../mobile-scen
  * | Tabs | `TABS` — Players · Financial · Notes · Activity | `WESTON_TABS` — the same four. Identical lists, kept separate because the bodies differ |
  * | Players body | `PlayersTab` (same file) — a list that pushes Player Detail | `ReservationPlayersTab` (`ReservationPlayers.tsx`) — rows with holes, fee and transport on them. See 2 |
  * | Bottom bar | Check in / Register / Check in & pay, by pay state | `ReservationActions` — one pinned **Check in & pay · $total** |
- * | App bar | Name, time · course, ⋮ | The same, plus the **‹ n of m ›** stepper. See 15 |
+ * | App bar | Name, time · course, ⋮ | The same. The **‹ n of m ›** stepper that sat under it came out on Oct 1. See 15 |
  * | Check in & pay | Opens the order | Checks everyone in (no-shows aside), then `nav.openIn('register', { name: 'order' })` |
  *
  * ## Presentation

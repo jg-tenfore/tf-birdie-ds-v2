@@ -1,8 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Badge, Box, Button, ButtonBase, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import Add from '@mui/icons-material/Add';
-import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
-import CalendarToday from '@mui/icons-material/CalendarToday';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import FilterList from '@mui/icons-material/FilterList';
@@ -24,7 +22,8 @@ import { BottomSheet, MobileScreen, TopAppBar } from '../../chrome';
 import { useMobileNav } from '../../navigation';
 import type { ScreenProps } from '../types';
 import { BookingCard, FilterChip } from './parts';
-import { CalendarSheet, WeekStrip } from './DateNavigation';
+import { CalendarSheet, CompactDateBar, DateChip, WeekStrip } from './DateNavigation';
+import { useCollapsingHeader } from './collapsing-header';
 import { useDemoDayFill } from '../../../state/use-demo-day-fill';
 import { clampToDemoRange } from '../../../state/demo-days';
 import { bandMeta, bandOf, checkedInCount, dayLabel, isSlotHolder, parseDateStr, plural, shortCourse, useLongPress } from './tee-helpers';
@@ -41,6 +40,10 @@ import { bandMeta, bandOf, checkedInCount, dayLabel, isSlotHolder, parseDateStr,
  * — the phone version of the terminal's right-click menu. Long-pressing a booking opens
  * its quick actions. Both sheets are driven by `state.contextMenu`, the same slot the
  * terminal's menus use, so a story can open either declaratively.
+ *
+ * Weston Edits: the header (app bar, date row, week strip, course chips) is part of the list and
+ * scrolls away with it; a one-line date row docks in its place, and scrolling up peeks the full
+ * header back in — see `useCollapsingHeader`. The base edition keeps it pinned above the list.
  */
 export function TeeSheetScreen({ route }: ScreenProps<'teeSheet'>) {
   const { state, dispatch } = usePos();
@@ -68,7 +71,6 @@ export function TeeSheetScreen({ route }: ScreenProps<'teeSheet'>) {
     .filter((t) => !narrowing || byTime.has(t));
 
   const golfers = matches.filter((b) => !isSlotHolder(b)).reduce((s, b) => s + b.players, 0);
-  const isToday = toDateStr(state.currentDate) === toDateStr(DEMO_TODAY());
   const days = useMemo(() => [...new Set(state.bookings.map((b) => b.date))].sort(), [state.bookings]);
 
   const menu = state.contextMenu;
@@ -76,90 +78,101 @@ export function TeeSheetScreen({ route }: ScreenProps<'teeSheet'>) {
   const openTimeMenu = (timeMin: number) => dispatch({ type: 'openContextMenu', menu: { kind: 'timeLabel', timeMin, x: 0, y: 0 } });
   const openBookingMenu = (bookingId: string) => dispatch({ type: 'openContextMenu', menu: { kind: 'booking', bookingId, x: 0, y: 0 } });
 
+  const fold = useCollapsingHeader();
+
   let lastBand = '';
+
+  const header = (
+    <TopAppBar
+      title="Tee Sheet"
+      leading="none"
+      actions={
+        <>
+          <IconButton aria-label="Search bookings" onClick={() => nav.push({ name: 'teeSheetSearch' })}>
+            <Search />
+          </IconButton>
+          <IconButton aria-label="Filters" onClick={() => nav.push({ name: 'teeSheetFilters' })}>
+            <Badge badgeContent={filterCount - (f.courses.length ? 1 : 0)} color="primary" invisible={!narrowing}>
+              <FilterList />
+            </Badge>
+          </IconButton>
+          <IconButton aria-label="Day summary" onClick={() => nav.push({ name: 'daySummary' })}>
+            <Insights />
+          </IconButton>
+        </>
+      }
+    >
+      {/* Date navigation: prev / date chip / next. */}
+      <Stack direction="row" alignItems="center" gap={0.5} sx={{ px: 1, pb: 1 }}>
+        {/* Weston Edits: the week strip covers day-by-day, so ‹ › move a week. */}
+        <IconButton
+          aria-label={weston ? 'Previous week' : 'Previous day'}
+          onClick={() => dispatch(weston ? { type: 'setDate', date: clampToDemoRange(shiftedDate(state.currentDate, -7)) } : { type: 'shiftDate', days: -1 })}
+        >
+          <ChevronLeft />
+        </IconButton>
+        <DateChip onClick={() => setDatesOpen(true)} />
+        <IconButton
+          aria-label={weston ? 'Next week' : 'Next day'}
+          onClick={() => dispatch(weston ? { type: 'setDate', date: clampToDemoRange(shiftedDate(state.currentDate, 7)) } : { type: 'shiftDate', days: 1 })}
+        >
+          <ChevronRight />
+        </IconButton>
+      </Stack>
+      {weston && <WeekStrip />}
+      {/* Course scope: all, or exactly one. */}
+      <Stack
+        direction="row"
+        gap={1}
+        sx={{ px: 2, pb: 1.5, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}
+      >
+        <FilterChip
+          label="All courses"
+          selected={!f.courses.length}
+          onClick={() => dispatch({ type: 'patchListFilters', patch: { courses: [] } })}
+        />
+        {state.courses
+          .filter((c) => c.visible)
+          .map((c) => (
+            <FilterChip
+              key={c.id}
+              label={shortCourse(c)}
+              selected={f.courses.includes(c.id)}
+              onClick={() => dispatch({ type: 'patchListFilters', patch: { courses: [c.id] } })}
+            />
+          ))}
+      </Stack>
+      <Box sx={{ borderBottom: `1px solid ${md3.outlineVariant}` }} />
+    </TopAppBar>
+  );
 
   return (
     <MobileScreen
       topBar={
-        <TopAppBar
-          title="Tee Sheet"
-          leading="none"
-          actions={
-            <>
-              <IconButton aria-label="Search bookings" onClick={() => nav.push({ name: 'teeSheetSearch' })}>
-                <Search />
-              </IconButton>
-              <IconButton aria-label="Filters" onClick={() => nav.push({ name: 'teeSheetFilters' })}>
-                <Badge badgeContent={filterCount - (f.courses.length ? 1 : 0)} color="primary" invisible={!narrowing}>
-                  <FilterList />
-                </Badge>
-              </IconButton>
-              <IconButton aria-label="Day summary" onClick={() => nav.push({ name: 'daySummary' })}>
-                <Insights />
-              </IconButton>
-            </>
-          }
-        >
-          {/* Date navigation: prev / date chip / next. */}
-          <Stack direction="row" alignItems="center" gap={0.5} sx={{ px: 1, pb: 1 }}>
-            {/* Weston Edits: the week strip covers day-by-day, so ‹ › move a week. */}
-            <IconButton
-              aria-label={weston ? 'Previous week' : 'Previous day'}
-              onClick={() => dispatch(weston ? { type: 'setDate', date: clampToDemoRange(shiftedDate(state.currentDate, -7)) } : { type: 'shiftDate', days: -1 })}
-            >
-              <ChevronLeft />
-            </IconButton>
-            <ButtonBase
-              onClick={() => setDatesOpen(true)}
-              aria-label="Choose date"
-              sx={{
-                flex: 1,
-                height: 40,
-                gap: 1,
-                borderRadius: `${radius.sm}px`,
-                border: `1px solid ${md3.outlineVariant}`,
-                typography: 'subtitle2',
-              }}
-            >
-              <CalendarToday sx={{ fontSize: 18, color: md3.onSurfaceVariant }} />
-              {isToday ? 'Today · ' : ''}
-              {dayLabel(state.currentDate)}
-              <ArrowDropDown sx={{ color: md3.onSurfaceVariant }} />
-            </ButtonBase>
-            <IconButton
-              aria-label={weston ? 'Next week' : 'Next day'}
-              onClick={() => dispatch(weston ? { type: 'setDate', date: clampToDemoRange(shiftedDate(state.currentDate, 7)) } : { type: 'shiftDate', days: 1 })}
-            >
-              <ChevronRight />
-            </IconButton>
-          </Stack>
-          {weston && <WeekStrip />}
-          {/* Course scope: all, or exactly one. */}
-          <Stack
-            direction="row"
-            gap={1}
-            sx={{ px: 2, pb: 1.5, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}
-          >
-            <FilterChip
-              label="All courses"
-              selected={!f.courses.length}
-              onClick={() => dispatch({ type: 'patchListFilters', patch: { courses: [] } })}
-            />
-            {state.courses
-              .filter((c) => c.visible)
-              .map((c) => (
-                <FilterChip
-                  key={c.id}
-                  label={shortCourse(c)}
-                  selected={f.courses.includes(c.id)}
-                  onClick={() => dispatch({ type: 'patchListFilters', patch: { courses: [c.id] } })}
-                />
-              ))}
-          </Stack>
-          <Box sx={{ borderBottom: `1px solid ${md3.outlineVariant}` }} />
-        </TopAppBar>
+        weston
+          ? fold.mode !== 'top' && (
+              <CompactDateBar
+                covered={fold.mode === 'peek'}
+                onChooseDate={() => setDatesOpen(true)}
+                onSearch={() => nav.push({ name: 'teeSheetSearch' })}
+              />
+            )
+          : header
       }
+      onBodyScroll={weston ? fold.onScroll : undefined}
     >
+      {weston && (
+        <Box
+          ref={fold.headerRef}
+          data-testid="tee-sheet-header"
+          data-mode={fold.mode}
+          aria-hidden={fold.mode === 'collapsed' || undefined}
+          inert={fold.mode === 'collapsed' || undefined}
+          sx={fold.headerSx}
+        >
+          {header}
+        </Box>
+      )}
       {narrowing && (
         <Stack
           direction="row"
@@ -203,7 +216,9 @@ export function TeeSheetScreen({ route }: ScreenProps<'teeSheet'>) {
                 gap={1}
                 sx={{
                   position: 'sticky',
-                  top: 0,
+                  // Weston Edits: stick under the docked date row, or under the header peeking in.
+                  top: weston ? fold.stickyTop : 0,
+                  transition: weston ? `top ${fold.transitionMs}ms ${mobile.motion.easing}` : undefined,
                   zIndex: 1,
                   height: 36,
                   px: 2,
