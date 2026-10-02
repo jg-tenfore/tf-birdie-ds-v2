@@ -317,6 +317,10 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   const onOrder = state.selectedBookingId === b.id;
   const playing = b.playerStates.filter((p) => !p.noShow).length;
   const eighteens = b.playerStates.filter((p, i) => !p.noShow && playerHoles(b, i) === 18).length;
+  // V1 → V2, 100226: the panel totals the rows and stops there — the order on the rail works out
+  // tax and the course's other fees (Justin, Oct 2). Before tax, the two agree to the cent.
+  const v1v2 = useV1V2();
+  const beforeTax = +(due - tax).toFixed(2);
 
   const checkInAndPay = () => {
     if (!settled) {
@@ -332,8 +336,12 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   const label = settled
     ? 'Open in register'
     : onOrder
-      ? `Update order · ${money(due)}`
-      : `Check in & pay · ${money(due)}`;
+      ? v1v2
+        ? 'Update order'
+        : `Update order · ${money(due)}`
+      : v1v2
+        ? 'Check in & pay'
+        : `Check in & pay · ${money(due)}`;
 
   return (
     <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, p: '12px 16px 14px', flexShrink: 0, bgcolor: md3.onPrimary }}>
@@ -342,7 +350,7 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
           <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
             {playing} playing
             {eighteens > 0 && eighteens < playing ? ` · ${eighteens} on 18` : ''}
-            {settled ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
+            {settled || v1v2 ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
           </Typography>
           {/* The order this was paid under, where the eye already is. Weston asked for it
               beside "paid"; the Financial tab carries it too, because that is where a refund
@@ -350,7 +358,16 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
           <OrderNumberLink booking={b} />
         </Stack>
         <Typography sx={{ fontSize: 18, fontWeight: 800, color: settled ? md3.primary : md3.onSurface }}>
-          {allNoShow ? 'No-show · nothing due' : settled ? 'Paid in full' : `${money(due)} due`}
+          {allNoShow ? 'No-show · nothing due' : settled ? 'Paid in full' : v1v2 ? (
+            <Box component="span" data-before-tax>
+              {money(beforeTax)}
+              <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: md3.onSurfaceVariant, ml: 0.5 }}>
+                before tax
+              </Box>
+            </Box>
+          ) : (
+            `${money(due)} due`
+          )}
         </Typography>
       </Stack>
       <Stack direction="row" gap={0.75} alignItems="center">

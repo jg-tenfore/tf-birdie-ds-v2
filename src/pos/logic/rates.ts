@@ -30,6 +30,11 @@ export interface RateContext {
    * so a customer created this session counts; defaults to the demo roster.
    */
   roster?: readonly Golfer[];
+  /**
+   * Charge each seat the transport price its row shows (V1 → V2, 100226). Off, an untouched seat
+   * pays its booking class's flat cart fee — the authored editions' totals depend on that.
+   */
+  transportFromRow?: boolean;
 }
 
 export type RateBand = 'early' | 'peak' | 'twilight';

@@ -29,8 +29,9 @@ export const golferRoster = (s: Pick<PosState, 'addedGolfers'>): Golfer[] => {
  * price overrides, and the customer roster that says which players are members. Pass it to
  * `playerFee`, `holesFee`, `buildTeeTimeCart` and friends.
  */
-export const rateContext = (s: Pick<PosState, 'timePrices' | 'addedGolfers'>): RateContext => ({
+export const rateContext = (s: Pick<PosState, 'timePrices' | 'addedGolfers'> & { transportFromRow?: boolean }): RateContext => ({
   timePrices: s.timePrices,
   roster: golferRoster(s),
+  ...(s.transportFromRow && { transportFromRow: true }),
 });
 

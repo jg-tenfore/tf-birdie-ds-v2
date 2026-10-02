@@ -304,6 +304,8 @@ export interface PosState extends RegisterExtrasState, RestaurantState, Operatio
    * empty for the session rather than refilling it on the next visit.
    */
   generatedDates: string[];
+  /** V1 → V2 (100226): the order charges each seat the transport price its row shows. Set by the shell. */
+  transportFromRow: boolean;
   /** Mutable copy of `COURSES` — visibility, locks, and notes are edited at runtime. */
   courses: Course[];
   settings: TeeSheetSettings;
@@ -467,6 +469,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     venueId,
     bookings: venueBookings(venueId),
     generatedDates: [],
+    transportFromRow: false,
     courses: config.courses.map((c) => ({ ...c })),
     settings: { ...DEFAULT_TEE_SHEET_SETTINGS },
     cart: [],
@@ -577,6 +580,7 @@ export type Action =
   | { type: 'openSidebar'; courseId?: string | null }
   | { type: 'closeSidebar' }
   | { type: 'setNavOpen'; open: boolean }
+  | { type: 'setTransportFromRow'; on: boolean }
   | { type: 'openPaidOrder'; bookingId: string }
   // Courts and bays (V1 → V2)
   | { type: 'seedResourceDay'; kind: ResourceKind; date: string }
@@ -1091,6 +1095,8 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, sidebarOpen: false, sidebarCourse: null };
     case 'setNavOpen':
       return { ...state, navOpen: action.open };
+    case 'setTransportFromRow':
+      return state.transportFromRow === action.on ? state : { ...state, transportFromRow: action.on };
     case 'openPaidOrder':
       // Same handoff as "Open in register", plus a breadcrumb back to the reservation.
       return { ...reducer(state, { type: 'loadBooking', bookingId: action.bookingId }), returnToBooking: action.bookingId };
