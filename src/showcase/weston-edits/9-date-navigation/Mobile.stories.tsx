@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { COMPACT_DATE_BAR_H } from '../../../pos/mobile/screens/tee/collapsing-header';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { at18 } from '../mobile-scenarios';
 
@@ -23,6 +24,14 @@ import { at18 } from '../mobile-scenarios';
  * calendar greys dates out. The tablet keeps its own controls but gets the same generated
  * days (see **Tablet**); the base phone is unchanged.
  *
+ * **Oct 1 — the header folds away on scroll.** With the strip, the date row and the course chips
+ * pinned, about a third of the phone was header however far down the day you were. Weston:
+ * *"it'd be nice if like once you start scrolling, if you could collapse… at least these like 3
+ * lines… I'd keep the day so then you could just click that and go to a different date if you
+ * need to, or click the arrows."* So the header now scrolls away with the list and one
+ * **compact date row** — ‹ Today · Thu, May 21 › and search — docks in its place; scrolling back
+ * up peeks the full header back in (V1 → V2 Migration / 100126 / 10 was the proposal).
+ *
  * ## The component
  *
  * `src/pos/mobile/screens/tee/DateNavigation.tsx` exports both halves; `TeeSheetScreen` renders
@@ -30,10 +39,12 @@ import { at18 } from '../mobile-scenarios';
  *
  * | Piece | What it is | How it opens |
  * |---|---|---|
- * | `WeekStrip` | Seven days, Sunday first, always visible under the date row | Always on, Weston edition |
+ * | `WeekStrip` | Seven days, Sunday first, under the date row | Weston edition; folds away with the header on scroll |
  * | `CalendarSheet` | The MD3 date picker as a **bottom sheet**, confined to the phone frame | The date chip (`aria-label="Choose date"`), or the `teeSheet` route's `calendar` param so a story can open it declaratively |
  * | `useDayCounts` | Tee times per date, for the dots | `state.bookings`, falling back to `unfilledDemoDay` for dates not yet visited |
  * | `useDemoDayFill(weston)` | Fills the viewed date on arrival | A layout effect in `TeeSheetScreen`, shared with the tablet |
+ * | `useCollapsingHeader` (`collapsing-header.ts`) | The header's `top` → `collapsed` → `peek` state, from the list's scroll | `TeeSheetScreen` passes its `onScroll` to `MobileScreen`'s `onBodyScroll` |
+ * | `CompactDateBar` | ‹ date chip › and search, docked over the list once the header has scrolled off | `mode !== 'top'`; hidden (`aria-hidden`, `inert`) while the header peeks over it |
  *
  * | Route param | Values | Default | What it does |
  * |---|---|---|---|
@@ -60,6 +71,10 @@ import { at18 } from '../mobile-scenarios';
  * | Range | `demoRange()` — `DEMO_TODAY()` ± **12** months. Out-of-range days drop to `opacity: 0.38` and disable; ‹ › stop at the edge |
  * | Today | `DEMO_TODAY()` — **Thu, May 21 2026**; the demo clock is 12:00 PM (`demoNow()`) |
  * | Every date picked | Passed through `clampToDemoRange` before it reaches `setDate` |
+ * | Header on scroll | In the list's flow, so it leaves under the finger; the compact row docks when the list has scrolled `header height − 56`, and nothing above the list ever changes size, so nothing jumps |
+ * | Compact row | `COMPACT_DATE_BAR_H` (**56**) — 48dp ‹ › and search, the same date chip as the full row. ‹ › step a **day** (`Previous day` / `Next day`) |
+ * | Peek | **12px** of upward scroll mid-list; the header goes `sticky` and slides down in **150ms** on `mobile.motion.easing`. 12px back down slides it away again; reaching the top hands it back to the flow |
+ * | Band headers | Stick under whatever covers the top: 56 under the compact row, the header's height while it peeks |
  *
  * ## Scope
  *
@@ -78,6 +93,8 @@ import { at18 } from '../mobile-scenarios';
  * | **TodayButton** | Fri, Jun 12, sheet open | The one-tap way home; the test asserts the chip reads `Today · Thu, May 21` afterwards |
  * | **OutOfRange** | Tue, May 18 2027, sheet open | The far edge of `demoRange()`, greyed |
  * | **BeforeWestonEdits** | the demo day, base edition | The "Go to date" list it replaces |
+ * | **HeaderFoldsOnScroll** | the demo day | Scroll down and the header gives way to the compact row without moving the list; a little scroll up peeks it back; the top restores it |
+ * | **CompactRowStepsADay** | the demo day, scrolled | The compact row's › steps one day, and its date opens the calendar sheet |
  * | **ClearedDayStaysEmpty** | Fri, Jun 12 with `generatedDates: ['2026-06-12']` and no June bookings | A cleared generated day stays cleared: the test steps to Jun 13 (which fills on arrival), comes back, and asserts 0 golfers and `0 tee times` on the strip |
  *
  * ## Where the phone differs from the tablet, and why
@@ -109,6 +126,9 @@ import { at18 } from '../mobile-scenarios';
  *
  * **Twelve months is an assumption**, not something Weston asked for. It covers a real booking
  * horizon; whether the sheet should simply keep generating is undecided.
+ *
+ * **The compact row drops Filters and Day summary.** Search stays (Justin said on the call he'd
+ * bring it back); the other two are one small scroll up away, in the peeking header.
  */
 const meta = {
   title: 'Weston Edits/9 · Date Navigation/Mobile',
@@ -227,6 +247,100 @@ export const BeforeWestonEdits: Story = {
     const c = within(canvasElement);
     await userEvent.click(await c.findByLabelText('Choose date'));
     await c.findByText('Go to date');
+    // The base header stays pinned above the list: no folding header, no compact row.
+    await expect(c.queryByTestId('tee-sheet-header')).toBeNull();
+    await expect(c.queryByTestId('compact-date-bar')).toBeNull();
+  },
+};
+
+/** The tee sheet's scrolling list — the folding header's parent. */
+const listOf = async (c: ReturnType<typeof within>) => (await c.findByTestId('tee-sheet-header')).parentElement!;
+
+/** Scroll the list to `y` and let the scroll event land. */
+const scrollTo = async (list: HTMLElement, y: number) => {
+  list.scrollTop = y;
+  await waitFor(() => expect(list.scrollTop).toBe(y));
+};
+
+/**
+ * **What changed (Oct 1):** scroll the tee sheet and the app bar, date row, week strip and course
+ * chips go with it; once they're off the top, one compact row docks there — **‹ Today · Thu,
+ * May 21 ›** and search. Scroll back up a little anywhere in the day and the full header peeks
+ * back in over the list; scroll down and it slides away again. Back at the top, it's simply
+ * where it always was.
+ *
+ * **Why:** Weston — *"once you start scrolling, if you could collapse… at least these like 3
+ * lines… I'd keep the day so then you could just click that."* The pinned header held a third of
+ * the phone.
+ *
+ * The play test checks the list moves exactly as far as it scrolled (nothing above it changed
+ * size), the compact row and the hidden header at each step, and the band header sticking under
+ * the compact row.
+ */
+export const HeaderFoldsOnScroll: Story = {
+  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    const list = await listOf(c);
+    const header = c.getByTestId('tee-sheet-header');
+    const firstTime = c.getByRole('button', { name: '6:00 AM actions' });
+    const before = firstTime.getBoundingClientRect().top;
+    await expect(header).toHaveAttribute('data-mode', 'top');
+    await expect(c.queryByTestId('compact-date-bar')).toBeNull();
+
+    // Down: the header scrolls off and the compact row docks — and the list moved 400px, no more.
+    await scrollTo(list, 400);
+    const bar = await c.findByTestId('compact-date-bar');
+    await expect(bar).toHaveTextContent('Today · Thu, May 21');
+    await expect(header).toHaveAttribute('data-mode', 'collapsed');
+    await expect(header).toHaveAttribute('aria-hidden', 'true');
+    await expect(Math.round(before - firstTime.getBoundingClientRect().top)).toBe(400);
+    await expect(c.getByRole('button', { name: 'Choose date' })).toBe(within(bar).getByRole('button', { name: 'Choose date' }));
+    await expect(within(bar).getByRole('button', { name: 'Search bookings' })).toBeTruthy();
+    // The band header sticks under the compact row, not under the header that has gone.
+    const band = c.getByText('Early Morning').parentElement!;
+    await waitFor(() => expect(getComputedStyle(band).top).toBe(`${COMPACT_DATE_BAR_H}px`));
+
+    // A little way up: the full header peeks back in over the list, the compact row under it.
+    await scrollTo(list, 380);
+    await waitFor(() => expect(header).toHaveAttribute('data-mode', 'peek'));
+    await expect(header).not.toHaveAttribute('aria-hidden');
+    await expect(c.getByTestId('compact-date-bar')).toHaveAttribute('aria-hidden', 'true');
+    await expect(c.getByRole('button', { name: 'Next week' })).toBeTruthy();
+    await expect(c.getByRole('group', { name: /^Week of/ })).toBeTruthy();
+
+    // Down again: it slides away.
+    await scrollTo(list, 420);
+    await waitFor(() => expect(header).toHaveAttribute('data-mode', 'collapsed'));
+
+    // Back to the top: the full header, in place, and no compact row.
+    await scrollTo(list, 0);
+    await waitFor(() => expect(header).toHaveAttribute('data-mode', 'top'));
+    await expect(c.queryByTestId('compact-date-bar')).toBeNull();
+    await expect(firstTime.getBoundingClientRect().top).toBe(before);
+  },
+};
+
+/**
+ * **What changed (Oct 1):** the compact row's ‹ › step a **day** — the week strip they page in
+ * the full header is folded away — and its date opens the same calendar sheet as the full
+ * row's. This story scrolls, taps ›, and opens the calendar from the compact row.
+ *
+ * **Why:** Weston's *"click that and go to a different date… or click the arrows."*
+ */
+export const CompactRowStepsADay: Story = {
+  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    await scrollTo(await listOf(c), 400);
+    const bar = within(await c.findByTestId('compact-date-bar'));
+    await userEvent.click(bar.getByRole('button', { name: 'Next day' }));
+    await waitFor(() => expect(bar.getByRole('button', { name: 'Choose date' })).toHaveTextContent('Fri, May 22'));
+    await userEvent.click(bar.getByRole('button', { name: 'Previous day' }));
+    await waitFor(() => expect(bar.getByRole('button', { name: 'Choose date' })).toHaveTextContent('Today · Thu, May 21'));
+    await userEvent.click(bar.getByRole('button', { name: 'Choose date' }));
+    await c.findByText('Select date');
+    await c.findByRole('grid', { name: 'May 2026' });
   },
 };
 

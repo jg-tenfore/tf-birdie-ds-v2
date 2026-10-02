@@ -1,7 +1,7 @@
 import { Badge, Box, Button, ButtonBase, IconButton, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import { createContext, useContext, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, UIEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { keyframes } from '@emotion/react';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -120,7 +120,8 @@ export function MobileFrame({
 /**
  * One screen: a top bar, a scrolling body, and an optional pinned bottom region.
  *
- * `fab` floats above the bottom region, bottom-right, per MD3.
+ * `fab` floats above the bottom region, bottom-right, per MD3. `onBodyScroll` hears the body's
+ * scroll — the Weston tee sheet uses it to fold its header away (`useCollapsingHeader`).
  */
 export function MobileScreen({
   topBar,
@@ -129,6 +130,7 @@ export function MobileScreen({
   fab,
   bg = md3.surface,
   bodySx,
+  onBodyScroll,
 }: {
   topBar?: ReactNode;
   children: ReactNode;
@@ -136,11 +138,12 @@ export function MobileScreen({
   fab?: ReactNode;
   bg?: string;
   bodySx?: SxProps<Theme>;
+  onBodyScroll?: (e: UIEvent<HTMLDivElement>) => void;
 }) {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: bg, position: 'relative' }}>
       {topBar}
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', ...bodySx }}>
+      <Box onScroll={onBodyScroll} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', ...bodySx }}>
         {children}
       </Box>
       {fab && (
