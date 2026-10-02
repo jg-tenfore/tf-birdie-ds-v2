@@ -39,7 +39,7 @@ describe('roster', () => {
   it('keeps the hand-authored records, so search still has its awkward cases', () => {
     // Three Brennevins and two Kuznetsovs — a search that cannot tell them apart is the bug.
     expect(roster.filter((c) => c.lastName === 'Brennevin').length).toBeGreaterThanOrEqual(3);
-    expect(searchRoster('hamlet').map((c) => c.displayName)).toContain('Jonah Hamlet - Trial Month');
+    expect(searchRoster('hamlet').map((c) => c.displayName)).toContain('Jonah Hamlet - Single Basic Membership');
   });
 
   it('is deterministic — the same name always reads the same way', () => {
@@ -126,7 +126,7 @@ describe('rate catalog', () => {
 
   it('qualifies a member for their membership rate and a stranger for none of it', () => {
     const rates = ratesForTeeTime('peak', THURSDAY, 18, 'standard');
-    const full = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const full = roster.find((c) => c.memberships.some((m) => m.name === 'Single Premium Membership'))!;
     expect(eligibleRates(rates, full, 18).map((r) => r.name)).toContain('Membership 7 Days');
     // Nobody at all still sees the rack rate, because rack is open to everyone.
     expect(eligibleRates(rates, null, 18).map((r) => r.name)).toEqual(['Weekday Non Resident']);
@@ -134,7 +134,7 @@ describe('rate catalog', () => {
 
   it('picks the best rate the player qualifies for', () => {
     const rates = ratesForTeeTime('peak', THURSDAY, 18, 'standard');
-    const full = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const full = roster.find((c) => c.memberships.some((m) => m.name === 'Single Premium Membership'))!;
     expect(autoRate(rates, full, 18)?.name).toBe('Membership 7 Days');
     expect(price(autoRate(rates, full, 18)!, 18)).toBe(0);
   });

@@ -19,7 +19,7 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *
  * ## What was wrong with it
  *
- * - **The membership was baked into the name** — "Weston Farnsworth - 30 Day booking window" — so two
+ * - **The membership was baked into the name** — "Weston Farnsworth - Couple Premium Membership" — so two
  *   records for one household read as unrelated people, and one person's two records as a family.
  * - **Nothing until you typed**, not even who owes the course.
  * - **Taking money happened on the record.** Swipe and Key CC charged a card with no order in front of
@@ -70,7 +70,7 @@ const pickResult = async (id: string) => {
 
 /**
  * **Searching, and opening someone.** "Brennevin" finds the family. Each row is the person's name with
- * their membership as a chip beside it — not "Ivar Brennevin - Full Golf" — and opening Ivar shows his
+ * their membership as a chip beside it — not "Ivar Brennevin - Single Premium Membership" — and opening Ivar shows his
  * house account, card on file and gift cards next to the list, so the next Brennevin is one tap away.
  */
 export const SearchAndOpen: Story = {
@@ -80,8 +80,8 @@ export const SearchAndOpen: Story = {
     await userEvent.type(c.getByRole('textbox', { name: 'Search customers' }), 'Brennevin');
     const row = await waitFor(() => canvasElement.querySelector<HTMLElement>('[data-customer-row="458337"]')!);
     await expect(row.querySelector('[data-customer-name]')!.textContent).toBe('Ivar Brennevin');
-    await expect(row.querySelector('[data-membership-chip="Full Golf"]')).not.toBeNull();
-    await expect(row.textContent).not.toContain(' - Full Golf');
+    await expect(row.querySelector('[data-membership-chip="Single Premium Membership"]')).not.toBeNull();
+    await expect(row.textContent).not.toContain(' - Single Premium Membership');
     await expect(canvasElement.querySelectorAll('[data-customer-row]').length).toBeGreaterThanOrEqual(3);
 
     await userEvent.click(row);
@@ -173,7 +173,7 @@ export const PayingWaitsForAnEmptyRegister: Story = {
 };
 
 /**
- * **A house-account charge raises the balance.** At checkout, House account: find Ivar — a Full Golf
+ * **A house-account charge raises the balance.** At checkout, House account: find Ivar — a Single Premium Membership
  * member, so he has an account — see his balance now, the order, and the balance after, then charge
  * it. He owes the course the lunch on top of the $861.00 already on his account.
  */
