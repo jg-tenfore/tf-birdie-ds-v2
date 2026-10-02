@@ -1,0 +1,56 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="V1 → V2 Migration/100226/Overview" />
+
+# 100226 · Weston's review of the 100126 proposals, Oct 2
+
+Weston went through the twelve **100126** proposals on Oct 2. Ten are approved and are being built into the app. Two need another round, and those two are
+the mockups in this folder.
+
+As before, each has an **Original** story (the live V1 → V2 screen) and **Proposal** stories (a
+Storybook-only mock, marked **PROPOSAL · 100226** in its corner). Nothing in the app changes from
+these until they are approved.
+
+## Where each 100126 item stands
+
+| # | 100126 change | Oct 2 | Now |
+|---|---|---|---|
+| 1 | Compact player rows | *"this solves the problem, but I feel like we're losing a lot of data"* | **Another round:** 1 · Player rows v2 |
+| 2 | Status chip instead of the stepper | Approved | Being built |
+| 3 | Membership and customer type on every player, including long plan names and players with several | Approved | Being built |
+| 4 | Contact details once, in the header | Approved | Being built |
+| 5 | Order number per paid player | Approved | Being built |
+| 6 | Empty rail collapsed by default | Approved | Being built |
+| 7 | Menu by role | Approved | Being built |
+| 8 | League and group view | Liked: *"a place where you can manage the whole group"*. Needs more on it; not phase one | **Another round:** 8 · League view v2 |
+| 9 | Settings led by Birdie's sections | Approved | Being built |
+| 10 | Phone: tee sheet header collapses | Approved | Being built |
+| 11 | Phone: no "30 of 88" pager | Approved | Being built |
+| 12 | Bug: course ⋮ menu | Approved | Being built |
+
+## 1 · Player rows v2
+
+What Weston asked for:
+
+- Every player open by default, with no expand-all or collapse-all, because *"it adds an extra step"*.
+- **Add** on every row, without expanding it. *"Walking or riding? 9 or 18? You're paying for
+  yourself? Yes."* Then Add, Add, Pay. *"This is going to be the most used thing in all of our apps…
+  it just has to be fast."*
+- The tee fee and the transport fee stay on the row, and names are shown in full.
+- Expanding is only for changing something: Change golfer, No-show, a different rate.
+- Touch-sized controls.
+
+Justin decided that **Add puts the player straight onto the register's order**, and the rail opens.
+The mock has two lines per player, and all four of King, D.'s foursome fit without scrolling.
+
+## 8 · League view v2
+
+What Weston asked for: speed, and checking in golfers who arrive at the same time, e.g. *"Justin's
+here, pay. Johnny, check in, pay."* Justin chose to show all four of these:
+
+- **A separate League view.** The normal per-tee-time flow stays the default, and a league's tee
+  time links to the League view.
+- **Placing the roster on tee times**, ahead of time or on the day: *"Justin, you're the 7:20."*
+- **Checking in without leaving the screen**, with search, Check in and Pay on every golfer, and a
+  quick trip to the register for an extra.
+- **Shotgun or tee times**, plus **several leagues in one day**.
