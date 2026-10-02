@@ -1,6 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import { Box, ButtonBase, Switch, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
+import { demoNow } from '../../data/bookings';
+import { APP_IDENTITY } from '../../data/nav';
 import { SPEND_CATEGORIES, type SpendCategory } from '../../data/spend';
 import { staffById } from '../../data/staff';
 import { usePos } from '../../state/PosProvider';
@@ -33,14 +35,27 @@ import { OpsScreen, OpsToolbar } from './OpsToolbar';
  *
  * ## What this does
  *
- * Four sections down the left, the one open on the right:
+ * Led by **Birdie's real sections**. The first cut opened on four sections the prototype invented,
+ * and Weston said most of them are not settings Birdie has: *"We have device info. We have connecting
+ * to a reader. Then we have Clover settings that I don't think we really use much anymore… This is a
+ * good layout. We would just add those settings here."* So the list down the left starts with:
+ *
+ * - **Device info** — the facility, account, app version and device, the register's name, its card
+ *   reader and when it last synced; and a copy for support. Where Settings opens.
+ * - **Card reader** — the reader this register is connected to, its battery and firmware, Disconnect,
+ *   and the readers nearby to connect instead. It is the same `hardware.cardReader` Terminal &
+ *   hardware edits, so the two always agree.
+ * - **Clover** — flagged *Rarely used*: kept, with a few switches, until we decide to drop it.
+ * - **Tee sheet** — the tee sheet's own display settings, given a second home. These are live.
+ *
+ * Then, under **Proposed — not in Birdie today**, the V1 → V2 sections — still working and still
+ * wired, but each marked *Proposed* until Weston (or Buck) confirms the real list:
  *
  * - **Terminal & hardware** — the register's name, its receipt printer, card reader, cash drawer and
  *   kitchen printer, each with a test; and whether a receipt prints after a sale.
  * - **Checkout & receipts** — tax, the tip presets, which tenders checkout offers, the receipt's
  *   header and footer, and what a new gift card is good for.
  * - **Staff & PINs** — who can sign in, their role and PIN. **Managers only**: anyone else reads it.
- * - **Tee sheet** — the tee sheet's own display settings, given a second home. These are live.
  *
  * Each editable section saves as a whole — Save and Discard under it, and who saved it last — rather
  * than on every keystroke, because a half-typed tax rate is not a setting anyone meant.
@@ -49,14 +64,19 @@ import { OpsScreen, OpsToolbar } from './OpsToolbar';
  * the tax rate, offers the tenders switched on and the tip presets, prints the receipt text on the
  * reader's done step as "Receipts after a sale" says, and starts new gift cards from the default;
  * the register header shows the register's name; and the PIN pad, Time Clock and server pickers read
- * the staff list. The hardware stays simulated — a test is a toast.
+ * the staff list. The hardware stays simulated — a test, a connect, a copy is a toast — and Clover's
+ * switches are the screen's own: nothing reads them.
  */
-const SECTIONS: { key: SettingsSection; label: string; icon: string; blurb: string }[] = [
-  { key: 'hardware', label: 'Terminal & hardware', icon: 'point_of_sale', blurb: 'Printers, card reader, cash drawer' },
-  { key: 'checkout', label: 'Checkout & receipts', icon: 'receipt_long', blurb: 'Tax, tips, tenders, receipt text' },
-  { key: 'staff', label: 'Staff & PINs', icon: 'badge', blurb: 'Who signs in, and how' },
+const SECTIONS: { key: SettingsSection; label: string; icon: string; blurb: string; proposed?: true }[] = [
+  { key: 'device', label: 'Device info', icon: 'info', blurb: 'This tablet, the app, the account' },
+  { key: 'reader', label: 'Card reader', icon: 'contactless', blurb: 'Connect and test the reader' },
+  { key: 'clover', label: 'Clover', icon: 'point_of_sale', blurb: 'Rarely used' },
   { key: 'teesheet', label: 'Tee sheet', icon: 'golf_course', blurb: 'Density, grid, behaviour' },
+  { key: 'hardware', label: 'Terminal & hardware', icon: 'point_of_sale', blurb: 'Printers, card reader, cash drawer', proposed: true },
+  { key: 'checkout', label: 'Checkout & receipts', icon: 'receipt_long', blurb: 'Tax, tips, tenders, receipt text', proposed: true },
+  { key: 'staff', label: 'Staff & PINs', icon: 'badge', blurb: 'Who signs in, and how', proposed: true },
 ];
+const FIRST_PROPOSED = SECTIONS.findIndex((s) => s.proposed);
 
 export function SettingsView() {
   const { state, dispatch } = usePos();
@@ -65,46 +85,241 @@ export function SettingsView() {
     <OpsScreen data-settings>
       <OpsToolbar title="Settings" />
       <Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
-        <Box component="nav" aria-label="Settings sections" sx={{ width: 250, flexShrink: 0, borderRight: `1px solid ${md3.outlineVariant}`, p: 1.25, bgcolor: '#fff' }}>
-          {SECTIONS.map((s) => {
+        <Box component="nav" aria-label="Settings sections" sx={{ width: 250, flexShrink: 0, borderRight: `1px solid ${md3.outlineVariant}`, p: 1.25, bgcolor: '#fff', overflowY: 'auto' }}>
+          {SECTIONS.map((s, i) => {
             const on = s.key === section;
             return (
-              <ButtonBase
-                key={s.key}
-                data-settings-section={s.key}
-                aria-current={on ? 'page' : undefined}
-                onClick={() => dispatch({ type: 'setSettingsSection', section: s.key })}
-                sx={{
-                  width: '100%',
-                  justifyContent: 'flex-start',
-                  gap: 1.25,
-                  p: '10px 12px',
-                  mb: 0.5,
-                  borderRadius: `${radius.md}px`,
-                  textAlign: 'left',
-                  bgcolor: on ? md3.primaryContainer : 'transparent',
-                  color: on ? md3.onPrimaryContainer : md3.onSurface,
-                  '&:hover': { bgcolor: on ? md3.primaryContainer : md3.surfaceContainer },
-                }}
-              >
-                <Icon name={s.icon} size={20} color={on ? md3.onPrimaryContainer : md3.onSurfaceVariant} />
-                <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{s.label}</Typography>
-                  <Typography sx={{ fontSize: 11.5, color: on ? md3.onPrimaryContainer : md3.onSurfaceVariant }}>{s.blurb}</Typography>
-                </Box>
-              </ButtonBase>
+              <Fragment key={s.key}>
+                {i === FIRST_PROPOSED && (
+                  <Typography
+                    data-settings-proposed-heading
+                    sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: md3.outline, m: '14px 12px 6px' }}
+                  >
+                    Proposed — not in Birdie today
+                  </Typography>
+                )}
+                <ButtonBase
+                  data-settings-section={s.key}
+                  data-proposed={s.proposed ? true : undefined}
+                  aria-current={on ? 'page' : undefined}
+                  onClick={() => dispatch({ type: 'setSettingsSection', section: s.key })}
+                  sx={{
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                    gap: 1.25,
+                    p: '10px 12px',
+                    mb: 0.5,
+                    borderRadius: `${radius.md}px`,
+                    textAlign: 'left',
+                    bgcolor: on ? md3.primaryContainer : 'transparent',
+                    color: on ? md3.onPrimaryContainer : md3.onSurface,
+                    '&:hover': { bgcolor: on ? md3.primaryContainer : md3.surfaceContainer },
+                  }}
+                >
+                  <Icon name={s.icon} size={20} color={on ? md3.onPrimaryContainer : md3.onSurfaceVariant} />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{s.label}</Typography>
+                    <Typography sx={{ fontSize: 11.5, color: on ? md3.onPrimaryContainer : md3.onSurfaceVariant }}>{s.blurb}</Typography>
+                    {/* Under the blurb, not beside the label: beside it, "Terminal & hardware" wraps. */}
+                    {s.proposed && (
+                      <Box sx={{ mt: 0.5 }}>
+                        <ProposedChip />
+                      </Box>
+                    )}
+                  </Box>
+                </ButtonBase>
+              </Fragment>
             );
           })}
         </Box>
         <Box sx={{ flex: 1, minWidth: 0, overflowY: 'auto', p: '20px 28px' }}>
           {/* Keyed, so switching section starts a fresh draft of the one opened. */}
+          {section === 'device' && <DeviceSection />}
+          {section === 'reader' && <ReaderSection />}
+          {section === 'clover' && <CloverSection />}
+          {section === 'teesheet' && <TeeSheetSection />}
           {section === 'hardware' && <HardwareSection key="hardware" />}
           {section === 'checkout' && <CheckoutSection key="checkout" />}
           {section === 'staff' && <StaffSection />}
-          {section === 'teesheet' && <TeeSheetSection />}
         </Box>
       </Stack>
     </OpsScreen>
+  );
+}
+
+// ─── Device info ────────────────────────────────────────────────────────────
+
+/** "Thu, May 21 · 12:00 PM" — from the demo's one clock, so every screenshot reads the same. */
+const syncedLabel = (d: Date): string =>
+  `${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+
+/**
+ * Device info: what support asks for first. Nothing here is a setting — it describes this tablet —
+ * so the one action is "Copy for support", which puts the same lines on the clipboard.
+ */
+function DeviceSection() {
+  const { state, toast } = usePos();
+  const hw = state.terminalSettings.hardware;
+  const rows: [string, string][] = [
+    ['Facility', APP_IDENTITY.facility],
+    ['Account', APP_IDENTITY.account],
+    ['App', `${APP_IDENTITY.product} · ${APP_IDENTITY.version}`],
+    ['Device', APP_IDENTITY.device],
+    ['Register', hw.name],
+    ['Card reader', hw.cardReader === 'None' ? 'Not connected' : hw.cardReader],
+    ['Last synced', syncedLabel(demoNow())],
+  ];
+  const copy = () => {
+    // Best effort: a browser that refuses the clipboard still gets the toast, which is the prototype's point.
+    navigator.clipboard?.writeText(rows.map(([k, v]) => `${k}: ${v}`).join('\n')).catch(() => {});
+    toast('Device info copied for support');
+  };
+  return (
+    <Box data-settings-panel="device" sx={{ maxWidth: 640 }}>
+      <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800, mb: 1 }}>
+        Device info
+      </Typography>
+      <Box sx={{ mb: 2 }}>
+        {rows.map(([label, value]) => (
+          <Stack key={label} direction="row" data-device-info={label} sx={{ py: 1, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+            <Typography sx={{ width: 200, flexShrink: 0, fontSize: 13, color: md3.onSurfaceVariant }}>{label}</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{value}</Typography>
+          </Stack>
+        ))}
+      </Box>
+      <OutlineButton onClick={copy}>
+        <Stack component="span" direction="row" alignItems="center" gap={0.75}>
+          <Icon name="content_copy" size={16} />
+          Copy for support
+        </Stack>
+      </OutlineButton>
+    </Box>
+  );
+}
+
+// ─── Card reader ────────────────────────────────────────────────────────────
+
+/** What each simulated reader reports once connected. */
+const READER_STATUS: Record<string, { battery: number; firmware: string }> = {
+  'Stripe Reader S700 · 0184': { battery: 82, firmware: '2.14' },
+  'BBPOS WisePOS E · 2231': { battery: 64, firmware: '1.9.3' },
+};
+const NEARBY_READERS = HARDWARE_OPTIONS.cardReader.filter((r) => r !== 'None');
+
+/**
+ * Card reader: Weston's *"connecting to a reader."* The connected reader is
+ * `terminalSettings.hardware.cardReader`, the one Terminal & hardware lists, so Connect and
+ * Disconnect save it there (through `saveHardware`, the rest of the hardware as it was) and the two
+ * sections never disagree. Simulated, like every device here: connecting is a toast.
+ */
+function ReaderSection() {
+  const { state, dispatch, toast } = usePos();
+  const hw = state.terminalSettings.hardware;
+  const connected = hw.cardReader === 'None' ? null : hw.cardReader;
+  const status = connected ? READER_STATUS[connected] : undefined;
+  const setReader = (cardReader: string) => dispatch({ type: 'saveHardware', hardware: { ...hw, cardReader } });
+  return (
+    <Box data-settings-panel="reader" sx={{ maxWidth: 640 }}>
+      <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800, mb: 1 }}>
+        Card reader
+      </Typography>
+      <Stack
+        direction="row"
+        alignItems="center"
+        gap={1.5}
+        data-reader-status={connected ? 'connected' : 'none'}
+        sx={{ p: '14px 16px', mb: 2.5, borderRadius: `${radius.md}px`, bgcolor: '#fff', border: `1.5px solid ${connected ? md3.primary : md3.outlineVariant}` }}
+      >
+        <Icon name="contactless" size={26} color={connected ? md3.primary : md3.outline} />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 800 }}>{connected ?? 'No reader connected'}</Typography>
+          <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
+            {connected
+              ? ['Connected', status && `battery ${status.battery}%`, status && `firmware ${status.firmware}`].filter(Boolean).join(' · ')
+              : 'Connect a reader nearby to take cards'}
+          </Typography>
+        </Box>
+        {connected ? (
+          <Stack direction="row" gap={0.75}>
+            <OutlineButton onClick={() => toast(TESTS.cardReader(connected))}>Test</OutlineButton>
+            <OutlineButton
+              onClick={() => {
+                setReader('None');
+                toast(`Disconnected ${connected}`);
+              }}
+            >
+              Disconnect
+            </OutlineButton>
+          </Stack>
+        ) : (
+          <StatusChip label="Not connected" tone="warning" />
+        )}
+      </Stack>
+      <Group title="Readers nearby" hint="Simulated in the prototype: these two are always in range.">
+        {NEARBY_READERS.map((r) => (
+          <Stack key={r} direction="row" alignItems="center" gap={1} data-nearby-reader={r} sx={{ py: 1, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+            <Typography sx={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{r}</Typography>
+            {r === connected ? (
+              <StatusChip label="Connected" tone="success" />
+            ) : (
+              <OutlineButton
+                onClick={() => {
+                  setReader(r);
+                  toast(`Connected ${r}`);
+                }}
+              >
+                Connect
+              </OutlineButton>
+            )}
+          </Stack>
+        ))}
+      </Group>
+    </Box>
+  );
+}
+
+// ─── Clover ─────────────────────────────────────────────────────────────────
+
+const CLOVER_SWITCHES = [
+  { key: 'pair', label: 'Pair a Clover device' },
+  { key: 'receipts', label: 'Print receipts through Clover' },
+  { key: 'tips', label: 'Send tips to Clover' },
+] as const;
+type CloverKey = (typeof CLOVER_SWITCHES)[number]['key'];
+
+/**
+ * Clover: in Birdie, but *"I don't think we really use much anymore"* (Weston). Kept, and flagged,
+ * until we decide to drop it. Its switches are this screen's own state: nothing in the prototype
+ * reads them, so they reset when Settings closes.
+ */
+function CloverSection() {
+  const { toast } = usePos();
+  const [on, setOn] = useState<Record<CloverKey, boolean>>({ pair: false, receipts: false, tips: false });
+  return (
+    <Box data-settings-panel="clover" sx={{ maxWidth: 640 }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
+        <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800 }}>
+          Clover
+        </Typography>
+        <StatusChip label="Rarely used" tone="warning" />
+      </Stack>
+      <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant, mb: 1.5 }}>
+        For a course still running a Clover device alongside Birdie. These stay until we decide to drop them.
+      </Typography>
+      {CLOVER_SWITCHES.map((c) => (
+        <Stack key={c.key} direction="row" alignItems="center" data-clover-setting={c.key} sx={{ py: 0.75, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+          <Typography sx={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{c.label}</Typography>
+          <Switch
+            checked={on[c.key]}
+            onChange={(e) => {
+              setOn((o) => ({ ...o, [c.key]: e.target.checked }));
+              toast(`${c.label}: ${e.target.checked ? 'on' : 'off'}`);
+            }}
+            slotProps={{ input: { 'aria-label': c.label } }}
+          />
+        </Stack>
+      ))}
+    </Box>
   );
 }
 
@@ -137,6 +352,7 @@ function HardwareSection() {
     <SectionFrame
       title="Terminal & hardware"
       section="hardware"
+      proposed
       dirty={dirty}
       problem={draft.name.trim() ? null : 'Give the register a name.'}
       onSave={() => dispatch({ type: 'saveHardware', hardware: draft })}
@@ -196,6 +412,7 @@ function CheckoutSection() {
     <SectionFrame
       title="Checkout & receipts"
       section="checkout"
+      proposed
       dirty={dirty}
       problem={problem}
       note="Checkout reads these as soon as they are saved. Tax here is sales tax on retail and food; a round's tax comes from its course's rates. An order already paid keeps the tax it was rung with."
@@ -277,10 +494,12 @@ function StaffSection() {
   const saved = state.settingsSaved.staff;
   return (
     <Box data-settings-panel="staff">
-      <Stack direction="row" alignItems="center" sx={{ mb: 1.5 }}>
-        <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800, flex: 1 }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
+        <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800 }}>
           Staff & PINs
         </Typography>
+        <ProposedChip />
+        <Box sx={{ flex: 1 }} />
         {manager && (
           <FilledButton onClick={() => dispatch({ type: 'openModal', modal: { kind: 'staffForm' } })}>
             <Stack component="span" direction="row" alignItems="center" gap={0.75}>
@@ -374,6 +593,7 @@ function SectionFrame({
   dirty,
   problem,
   note,
+  proposed,
   onSave,
   onDiscard,
   children,
@@ -383,6 +603,8 @@ function SectionFrame({
   dirty: boolean;
   problem: string | null;
   note?: string;
+  /** One of the V1 → V2 sections Birdie does not have today: says so beside the title. */
+  proposed?: boolean;
   onSave: () => void;
   onDiscard: () => void;
   children: ReactNode;
@@ -391,9 +613,12 @@ function SectionFrame({
   const saved = state.settingsSaved[section];
   return (
     <Box data-settings-panel={section} sx={{ maxWidth: 720 }}>
-      <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800, mb: 1.5 }}>
-        {title}
-      </Typography>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
+        <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800 }}>
+          {title}
+        </Typography>
+        {proposed && <ProposedChip />}
+      </Stack>
       {note && (
         <Box sx={{ mb: 1.5 }}>
           <Callout tone="info" icon="info">
@@ -447,4 +672,33 @@ function Group({ title, hint, children }: { title: string; hint?: string; childr
       {children}
     </Box>
   );
+}
+
+/** The fills match `Callout`'s tones, so a chip and a callout of one tone read as one colour. */
+const CHIP_TONES = {
+  muted: { bg: md3.surfaceHigh, text: md3.onSurfaceVariant },
+  warning: { bg: '#fef3c7', text: '#92400e' },
+  success: { bg: '#f0fdf4', text: '#166534' },
+} as const;
+
+function StatusChip({ label, tone, icon }: { label: string; tone: keyof typeof CHIP_TONES; icon?: string }) {
+  const c = CHIP_TONES[tone];
+  return (
+    <Box
+      component="span"
+      data-chip={label}
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.375, px: 0.875, py: '2px', borderRadius: `${radius.xl}px`, bgcolor: c.bg, color: c.text, fontSize: 10.5, fontWeight: 800, whiteSpace: 'nowrap' }}
+    >
+      {icon && <Icon name={icon} size={12} />}
+      {label}
+    </Box>
+  );
+}
+
+/**
+ * Marks a V1 → V2 section Birdie does not have today. It still works — and is still wired — but
+ * stays marked until Weston (or Buck) confirms the real list.
+ */
+function ProposedChip() {
+  return <StatusChip label="Proposed" tone="muted" icon="hourglass_empty" />;
 }

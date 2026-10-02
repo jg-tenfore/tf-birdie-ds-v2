@@ -12,7 +12,7 @@ import { ORDER_SCENARIOS, demoBookings, isOrderScenario } from './scenarios';
 import { isRegisterExtrasModal } from './register-extras';
 import { isRestaurantModal } from './restaurant';
 import { isOperationsModal } from './operations';
-import { SETTINGS_SECTIONS, isSettingsModal, type SettingsSection } from './settings';
+import { DEFAULT_SETTINGS_SECTION, SETTINGS_SECTIONS, isSettingsModal, type SettingsSection } from './settings';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 
 /**
@@ -448,7 +448,7 @@ export function stateToHash(state: PosState): string {
   if (state.selectedEventId) q.set('ev', state.selectedEventId);
   if (state.selectedCustomerId) q.set('cid', state.selectedCustomerId);
   if (state.activeCountId) q.set('count', state.activeCountId);
-  if (state.view === 'settings' && state.settingsSection !== 'hardware') q.set('section', state.settingsSection);
+  if (state.view === 'settings' && state.settingsSection !== DEFAULT_SETTINGS_SECTION) q.set('section', state.settingsSection);
   if (state.multiSelectActive) q.set('select', state.multiSelectIds.join(',') || 'on');
   if (state.settings.compactMode) q.set('compact', '1');
   if (state.settings.hideEmpty) q.set('hide-empty', '1');

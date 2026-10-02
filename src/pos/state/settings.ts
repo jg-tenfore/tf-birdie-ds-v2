@@ -70,8 +70,16 @@ export interface StaffRecord extends StaffMember {
   active: boolean;
 }
 
-export type SettingsSection = 'hardware' | 'checkout' | 'staff' | 'teesheet';
-export const SETTINGS_SECTIONS: SettingsSection[] = ['hardware', 'checkout', 'staff', 'teesheet'];
+/**
+ * Settings' sections, in the order the list shows them. Birdie's own come first — device info, the
+ * card reader, Clover, the tee sheet — then the V1 → V2 proposals, which Birdie does not have today.
+ * Weston: *"We have device info. We have connecting to a reader. Then we have Clover settings… This is
+ * a good layout. We would just add those settings here."* So Settings opens on **Device info**.
+ */
+export type SettingsSection = 'device' | 'reader' | 'clover' | 'teesheet' | 'hardware' | 'checkout' | 'staff';
+export const SETTINGS_SECTIONS: SettingsSection[] = ['device', 'reader', 'clover', 'teesheet', 'hardware', 'checkout', 'staff'];
+/** Where Settings opens, and the section a bare `#/settings` link means. */
+export const DEFAULT_SETTINGS_SECTION: SettingsSection = 'device';
 
 export interface SettingsState {
   terminalSettings: TerminalSettings;
@@ -110,7 +118,7 @@ export const settingsDefaults = (): SettingsState => ({
     },
   },
   staffRoster: STAFF.map((s) => ({ ...s, active: true })),
-  settingsSection: 'hardware',
+  settingsSection: DEFAULT_SETTINGS_SECTION,
   settingsSaved: {},
   settingsSeq: 0,
 });
