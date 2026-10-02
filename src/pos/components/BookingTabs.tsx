@@ -102,6 +102,9 @@ export function BookingFinancial({ booking: b }: { booking: Booking }) {
   const rates = rateContext(state);
   const states = b.playerStates ?? [];
   const actions = b.financialActions ?? [];
+  const v1v2 = useV1V2();
+  // Every paid seat on a reservation is on its one order — the number the reservation prints.
+  const paidNumber = orderNumber(b);
 
   const log = (playerIdx: number, type: 'refund' | 'raincheck' | 'raincheck_all') => {
     const name =
@@ -223,7 +226,37 @@ export function BookingFinancial({ booking: b }: { booking: Booking }) {
                     flexShrink: 0,
                   }}
                 />
-                <Typography sx={{ flex: 1, fontSize: 12.5, fontWeight: 600 }}>{name}</Typography>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>{name}</Typography>
+                  {/* V1 → V2: a paid player's order, one tap from the reservation. Weston: "we don't
+                      have a way to like reprint a receipt for a reservation… I could just find
+                      myself, Weston, click Print Receipt, or click See Order." */}
+                  {v1v2 && p.paid && paidNumber && (
+                    <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 0.25 }} data-seat-order={i}>
+                      <ButtonBase
+                        onClick={() => dispatch({ type: 'openOrderLookup', orderNumber: paidNumber, fromBookingId: b.id })}
+                        sx={{ gap: 0.375, fontSize: 12, fontWeight: 800, color: md3.primary, borderRadius: `${radius.sm}px`, px: 0.25 }}
+                      >
+                        <Icon name="receipt_long" size={13} />
+                        {paidNumber}
+                      </ButtonBase>
+                      <ButtonBase
+                        onClick={() => toast(`Receipt for ${name} · ${paidNumber} sent to the printer`)}
+                        sx={{ gap: 0.375, height: 30, px: 1, borderRadius: `${radius.xl}px`, border: `1.5px solid ${md3.outlineVariant}`, bgcolor: '#fff', fontSize: 11.5, fontWeight: 700 }}
+                      >
+                        <Icon name="print" size={13} />
+                        Print receipt
+                      </ButtonBase>
+                      <ButtonBase
+                        onClick={() => dispatch({ type: 'openOrderLookup', orderNumber: paidNumber, fromBookingId: b.id })}
+                        sx={{ gap: 0.375, height: 30, px: 1, borderRadius: `${radius.xl}px`, border: `1.5px solid ${md3.outlineVariant}`, bgcolor: '#fff', fontSize: 11.5, fontWeight: 700 }}
+                      >
+                        <Icon name="open_in_new" size={13} />
+                        See order
+                      </ButtonBase>
+                    </Stack>
+                  )}
+                </Box>
                 <Typography
                   sx={{
                     fontSize: 12,

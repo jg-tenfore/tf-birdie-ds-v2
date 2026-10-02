@@ -13,6 +13,7 @@
  * wherever the nav exists; `'v1v2'` means live only in V1 → V2. `isLive` is the one reader.
  */
 import type { Edition } from '../edition';
+import type { StaffRole } from './staff';
 
 export type NavKey =
   | 'proshop'
@@ -117,3 +118,27 @@ export function isLive(item: NavItem, edition: Edition): boolean {
   if (item.live === 'v1v2') return edition === 'v1v2';
   return false;
 }
+
+// ─── By role (V1 → V2, 100226) ──────────────────────────────────────────────
+
+const RESTAURANT: NavKey[] = ['quickorder', 'tabs', 'tables', 'reservations', 'orderstips', 'tablechart'];
+const PRO_SHOP: NavKey[] = ['proshop', 'teesheet', 'courtsheet', 'baysheet'];
+const SHARED: NavKey[] = ['customersearch', 'orderlookup', 'timeclock', 'giftcards'];
+
+/**
+ * What each role's menu shows. Justin, Sep 30: *"if it's just a bartender, right? She doesn't need to
+ * see the tee sheet"*; Weston: *"you could be like pro shop and not see any of the restaurant."* He
+ * approved the grid on Oct 2 (*"it'll just change dynamically based on what access they have"*) and
+ * wants editing it to live in Buck, so Birdie only reads it.
+ */
+export const ROLE_ACCESS: Record<StaffRole, NavKey[]> = {
+  manager: NAV_KEYS,
+  server: [...RESTAURANT, ...SHARED],
+  bartender: [...RESTAURANT, ...SHARED],
+  host: ['tables', 'reservations', 'tablechart', 'customersearch', 'timeclock'],
+  'pro-shop': [...PRO_SHOP, ...SHARED, 'events', 'inventory', 'shift'],
+};
+
+/** The groups a role's menu shows — destinations it can't use are left out, not dimmed. */
+export const navGroupsFor = (role: StaffRole | undefined): NavGroup[] =>
+  NAV_GROUPS.map((g) => ({ ...g, items: role ? g.items.filter((i) => ROLE_ACCESS[role].includes(i.key)) : g.items })).filter((g) => g.items.length > 0);

@@ -8,6 +8,8 @@ import { openRuns } from '../logic/openings';
 import { dayBookings, timeRowKey, visibleCourses } from '../state/pos-store';
 import { usePos } from '../state/PosProvider';
 import type { Booking, Course, TimeSlot } from '../types';
+import { useV1V2 } from '../edition';
+import { CourseInfoCallout } from './CourseInfoCallout';
 import { Icon, MemberDot } from './primitives';
 import { Stack } from './Stack';
 import { useOpenBooking } from './use-open-booking';
@@ -287,6 +289,7 @@ function CourseHeader({
   isLast: boolean;
 }) {
   const { dispatch } = usePos();
+  const v1v2 = useV1V2();
   const real = bookings.filter((b) => b.pay !== 'block' && b.pay !== 'event');
   const total = real.reduce((s, b) => s + b.players, 0);
   const riders = real.filter((b) => b.cart === 'cart').reduce((s, b) => s + b.players, 0);
@@ -321,15 +324,20 @@ function CourseHeader({
           </Typography>
         </Box>
         <Stack direction="row" gap={0.375} sx={{ flexShrink: 0 }}>
-          <ButtonBase
-            title="Tee time prices"
-            onClick={() =>
-              dispatch({ type: 'openModal', modal: { kind: 'courseRates', courseId: course.id } })
-            }
-            sx={{ p: 0.375, borderRadius: '50%', color: md3.onSurfaceVariant, '&:hover': { bgcolor: md3.surfaceContainer } }}
-          >
-            <Icon name="info" size={17} />
-          </ButtonBase>
+          {/* V1 → V2: the course at a glance, as a callout under ⓘ; elsewhere the rates dialog. */}
+          {v1v2 ? (
+            <CourseInfoCallout course={course} golfers={total} riders={riders} walkers={walkers} />
+          ) : (
+            <ButtonBase
+              title="Tee time prices"
+              onClick={() =>
+                dispatch({ type: 'openModal', modal: { kind: 'courseRates', courseId: course.id } })
+              }
+              sx={{ p: 0.375, borderRadius: '50%', color: md3.onSurfaceVariant, '&:hover': { bgcolor: md3.surfaceContainer } }}
+            >
+              <Icon name="info" size={17} />
+            </ButtonBase>
+          )}
           <CourseMenuButton course={course} />
         </Stack>
       </Stack>
@@ -488,7 +496,10 @@ export function MenuPopover({
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    // The menu hangs off its own button. It used to anchor to the nearest positioned ancestor —
+    // the whole sheet header — so every course's ⋮ opened at the far right, over the last
+    // course's columns (Weston, Sep 30: "Well, that's a bug").
+    <Box sx={{ position: 'relative', display: 'inline-flex' }} data-menu-popover>
       <ButtonBase
         onClick={() => setOpen(!open)}
         sx={{ p: 0.375, borderRadius: '50%', color: md3.onSurfaceVariant, '&:hover': { bgcolor: md3.surfaceContainer } }}
@@ -572,7 +583,7 @@ export function MenuPopover({
           </Box>
         </>
       )}
-    </>
+    </Box>
   );
 }
 

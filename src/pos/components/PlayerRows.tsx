@@ -32,6 +32,8 @@ import type { Booking, Transport } from '../types';
 import { RoundRail } from './BookingTabs';
 import { RateExpand } from './RateExpand';
 import { IdMeBadge } from './IdMeBadge';
+import { MembershipChips, RoundStatusChip } from './SeatChips';
+import { useV1V2 } from '../edition';
 import { Icon, MemberDot, SectionLabel } from './primitives';
 import { Stack } from './Stack';
 
@@ -197,6 +199,7 @@ export function PlayerRow({
   onToggleExpand?: (seat: number | null) => void;
 }) {
   const { state, dispatch, toast } = usePos();
+  const v1v2 = useV1V2();
   const roster = useGolferRoster();
   // The rate card (and any price override on this row) prices a player switched to the
   // other hole count, and a player whose class isn't the booking's (a member in a guest's
@@ -277,7 +280,7 @@ export function PlayerRow({
         <ButtonBase
           onClick={openCustomer}
           title={liveRecord ? 'Open customer profile' : 'Find this golfer in the database'}
-          sx={{ flex: 1, minWidth: 0, justifyContent: 'flex-start', gap: 0.75, borderRadius: `${radius.sm}px` }}
+          sx={{ flex: v1v2 ? '0 1 auto' : 1, minWidth: 0, justifyContent: 'flex-start', gap: 0.75, borderRadius: `${radius.sm}px` }}
         >
           <Box
             sx={{
@@ -298,7 +301,8 @@ export function PlayerRow({
           </Box>
           {customer && <MemberDot memberType={customer.memberType} size={7} />}
           <Typography
-            sx={{ fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            // V1 → V2: the whole name, never cut — Weston, Oct 2: "we'd probably want to show the full name."
+            sx={{ fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: v1v2 ? 0 : 1 }}
           >
             {name}
           </Typography>
@@ -323,6 +327,18 @@ export function PlayerRow({
             </Box>
           )}
         </ButtonBase>
+
+        {/* V1 → V2: membership and customer type beside the name, and where they are in the round as
+            one chip — in place of the rail at the foot of the card. */}
+        {v1v2 && liveRecord && <MembershipChips record={liveRecord} />}
+        {v1v2 && <Box sx={{ flex: 1 }} />}
+        {v1v2 && !p.noShow && (
+          <RoundStatusChip
+            step={p.step}
+            label={name}
+            onStep={(step) => patch({ playerStates: b.playerStates.map((x, j) => (j === i ? { ...x, step } : x)) })}
+          />
+        )}
 
         {editable && (
           <Tooltip title={customer ? 'Put a different golfer in this position' : 'Find this golfer in the database'}>
@@ -525,8 +541,8 @@ export function PlayerRow({
       {/* ── The rate editor, in place ── */}
       {expanded && !p.noShow && <RateExpand booking={b} seat={i} onClose={() => onToggleExpand(null)} />}
 
-      {/* ── Where they are ── */}
-      {!p.noShow && (
+      {/* ── Where they are ── (V1 → V2 shows it as the chip on the name line) */}
+      {!p.noShow && !v1v2 && (
         <RoundRail
           dense
           state={p}

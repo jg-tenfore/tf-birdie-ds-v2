@@ -17,6 +17,8 @@ import { BookingActivity, BookingFinancial, BookingNotes, OrderNumberLink } from
 import { PlayerRows } from './PlayerRows';
 import { BookingMemberDot, Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
+import { seatRecord } from '../logic/seat-pricing';
+import { useV1V2 } from '../edition';
 import { WalkInTimePicker } from './WalkInTimePicker';
 import { isFreshWalkIn } from '../logic/walk-in';
 
@@ -183,6 +185,8 @@ export function ReservationContent({
   const { state, dispatch } = usePos();
   const course = state.courses.find((c) => c.id === b.course);
   const close = () => dispatch({ type: 'closeReservation' });
+  const v1v2 = useV1V2();
+  const booker = seatRecord(b, 0, state.customerEdits);
 
   return (
     <>
@@ -206,9 +210,25 @@ export function ReservationContent({
               {' · '}
               {roundLabel(b).replace('Tee Time ', '')}
             </Typography>
-            <Typography sx={{ fontSize: 11.5, color: md3.outline, mt: 0.25 }}>
-              {b.conf} · {b.phone || 'No phone'}
-            </Typography>
+            {v1v2 ? (
+              /* V1 → V2: the booker is the group's contact — phone and email once, here, and not on
+                 every player. Weston: "we show my email 4 times, we show my phone number 4 times…
+                 I need to reach out to this group because of something. Who do I contact?" */
+              <Stack direction="row" alignItems="center" gap={1.25} sx={{ mt: 0.25, minWidth: 0 }} data-group-contact>
+                <Typography sx={{ fontSize: 11.5, color: md3.outline, flexShrink: 0 }}>{b.conf} · Group contact</Typography>
+                <Stack direction="row" alignItems="center" gap={0.375} sx={{ fontSize: 12, fontWeight: 700, color: md3.primary, flexShrink: 0 }}>
+                  <Icon name="phone" size={13} /> {b.phone || booker?.phone || 'No phone'}
+                </Stack>
+                <Stack direction="row" alignItems="center" gap={0.375} sx={{ fontSize: 12, fontWeight: 700, color: booker?.email ? md3.primary : md3.outline, minWidth: 0 }}>
+                  <Icon name="mail" size={13} />
+                  <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{booker?.email || 'No email on file'}</Box>
+                </Stack>
+              </Stack>
+            ) : (
+              <Typography sx={{ fontSize: 11.5, color: md3.outline, mt: 0.25 }}>
+                {b.conf} · {b.phone || 'No phone'}
+              </Typography>
+            )}
             {isFreshWalkIn(b) && <WalkInTimePicker booking={b} />}
           </Box>
           {/* "Next in line" — step to the next tee time without closing the panel. Weston on the
