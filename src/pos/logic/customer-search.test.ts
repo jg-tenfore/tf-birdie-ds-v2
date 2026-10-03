@@ -31,9 +31,9 @@ const beer = (qty = 1): CartItem => ({ name: 'Beer Domestic', price: 5, qty });
 
 describe('names and chips', () => {
   it('prints the name without the membership v1 baked into it, and the membership as a chip', () => {
-    expect(ivar.displayName).toBe('Ivar Brennevin - Full Golf');
+    expect(ivar.displayName).toBe('Ivar Brennevin - Single Premium Membership');
     expect(plainName(ivar)).toBe('Ivar Brennevin');
-    expect(customerChips(ivar)[0]).toEqual({ label: 'Full Golf', tone: 'member' });
+    expect(customerChips(ivar)[0]).toEqual({ label: 'Single Premium Membership', tone: 'member' });
   });
 
   it('finds created customers alongside the roster', () => {

@@ -19,7 +19,7 @@ const cents = (n: number) => Math.round(n * 100) / 100;
 /**
  * The person's name, and only their name.
  *
- * v1 printed `displayName` — "Weston Farnsworth - 30 Day booking window" — so a membership read as
+ * v1 printed `displayName` — "Weston Farnsworth - Couple Premium Membership" — so a membership read as
  * part of who someone is, and "Weston Senior - Senior" looked like a relative. The ported records
  * still carry that string (the other editions print it), so V1 → V2 builds the name from its parts
  * and shows the membership as a chip beside it.
@@ -194,7 +194,7 @@ export interface GiftCardListing {
 
 /**
  * The listing with each holder on the roster printed by name alone. `allGiftCards` carries
- * `displayName`, which for a ported record is "Beatriz Kaur - Full Golf".
+ * `displayName`, which for a ported record is "Beatriz Kaur - Single Premium Membership".
  */
 export const withPlainHolders = (list: GiftCardListing[], edits: PosState['customerEdits']): GiftCardListing[] =>
   list.map((x) => {

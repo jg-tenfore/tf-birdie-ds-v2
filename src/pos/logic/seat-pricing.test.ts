@@ -81,7 +81,7 @@ describe('the rate grid', () => {
   });
 
   it('pre-picks a member their membership rate once the seat is linked', () => {
-    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Single Premium Membership'))!;
     const b = foursome({ guests: [{ name: 'x' }, { name: member.displayName, crmId: member.id }] });
     expect(seatRecord(b, 1)?.id).toBe(member.id);
     expect(seatRate(b, 1)?.name).toBe('Membership 7 Days');
@@ -89,7 +89,7 @@ describe('the rate grid', () => {
 
   it('never prices a seat off its name alone', () => {
     // The seat is called exactly what a member is called, but nothing is linked. It pays rack.
-    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Single Premium Membership'))!;
     const b = foursome({ guests: [{ name: 'x' }, { name: member.displayName }] });
     expect(seatRecord(b, 1)).toBeNull();
     expect(seatRate(b, 1)?.rack).toBe(true);
@@ -411,7 +411,7 @@ describe('a name that looks like a customer', () => {
    * "Kim, D." left the counter searching for a person the seat was already named after.
    */
   it('offers the match without pricing it', () => {
-    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Single Premium Membership'))!;
     const named = foursome({ guests: [{ name: 'x' }, { name: bookingName(member) }] });
     // Suggested…
     expect(seatSuggestedRecord(named, 1)?.id).toBe(member.id);
@@ -425,7 +425,7 @@ describe('a name that looks like a customer', () => {
   });
 
   it('suggests nobody once the seat is linked', () => {
-    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Full Golf'))!;
+    const member = roster.find((c) => c.memberships.some((m) => m.name === 'Single Premium Membership'))!;
     const linked = foursome({ guests: [{ name: 'x' }, { name: bookingName(member), crmId: member.id }] });
     expect(seatSuggestedRecord(linked, 1)).toBeNull();
     expect(seatRecord(linked, 1)?.id).toBe(member.id);

@@ -4,9 +4,11 @@ import { Box, Button, ButtonBase, IconButton, Typography } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUp from '@mui/icons-material/ArrowDropUp';
+import CalendarToday from '@mui/icons-material/CalendarToday';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
-import { md3, mobile } from '../../../../theme/tokens';
+import Search from '@mui/icons-material/Search';
+import { md3, mobile, radius } from '../../../../theme/tokens';
 import { DEMO_TODAY, demoRange, isInDemoRange } from '../../../data/bookings';
 import { toDateStr } from '../../../data/courses';
 import { Stack } from '../../../components/Stack';
@@ -14,6 +16,7 @@ import { clampToDemoRange, unfilledDemoDay } from '../../../state/demo-days';
 import { usePos } from '../../../state/PosProvider';
 import { BottomSheet } from '../../chrome';
 import type { RouteOf } from '../../navigation';
+import { COLLAPSE_MS, COMPACT_DATE_BAR_H } from './collapsing-header';
 import { dayLabel, isSlotHolder, plural } from './tee-helpers';
 
 /**
@@ -30,6 +33,9 @@ import { dayLabel, isSlotHolder, plural } from './tee-helpers';
  *    and Today.
  *  - `useDemoDayFill` (`src/pos/state/use-demo-day-fill.ts`, shared with the tablet) — any date
  *    within a year of today gets a generated tee sheet.
+ *  - `useCollapsingHeader` (`./collapsing-header.ts`) + `CompactDateBar` — once the list scrolls, the app bar, date row,
+ *    week strip and course chips fold into one date row; scrolling back up peeks them back in
+ *    (Weston, Oct 1 — V1 → V2 Migration / 100126 / 10).
  *
  * Every date is clamped to `demoRange()` (today ± 12 months); beyond it the calendar and
  * the strip grey days out.
@@ -72,6 +78,91 @@ function useDayCounts() {
     return r < 0.45 ? 0.4 : r < 0.75 ? 0.7 : 1;
   };
   return { count, dot };
+}
+
+// ─── Date chip ──────────────────────────────────────────────────────────────
+
+/**
+ * The viewed date as a tappable chip — "Today · Thu, May 21 ▾" — that opens the date picker.
+ * Shared by the tee sheet's full date row and the collapsed one, so the two can't disagree.
+ */
+export function DateChip({ onClick }: { onClick: () => void }) {
+  const { state } = usePos();
+  const isToday = sameDay(state.currentDate, DEMO_TODAY());
+  return (
+    <ButtonBase
+      onClick={onClick}
+      aria-label="Choose date"
+      sx={{
+        flex: 1,
+        height: 40,
+        gap: 1,
+        borderRadius: `${radius.sm}px`,
+        border: `1px solid ${md3.outlineVariant}`,
+        typography: 'subtitle2',
+      }}
+    >
+      <CalendarToday sx={{ fontSize: 18, color: md3.onSurfaceVariant }} />
+      {isToday ? 'Today · ' : ''}
+      {dayLabel(state.currentDate)}
+      <ArrowDropDown sx={{ color: md3.onSurfaceVariant }} />
+    </ButtonBase>
+  );
+}
+
+// ─── Compact date row ───────────────────────────────────────────────────────
+
+const dockIn = keyframes`from { opacity: 0; } to { opacity: 1; }`;
+
+/**
+ * The collapsed tee sheet header: ‹ [Today · Thu, May 21 ▾] › and search. The date opens the
+ * calendar; the arrows step a **day** — the week strip they page in the full header is folded
+ * away, and "click the arrows" was Weston's way to the next day. Search stays because it is the
+ * other thing you reach for mid-list — Justin said on the call he'd bring it back.
+ *
+ * Laid over the list rather than in the flow, so docking it never moves the list. While the full
+ * header peeks over it, it is hidden from touch and assistive tech.
+ */
+export function CompactDateBar({ covered, onChooseDate, onSearch }: { covered: boolean; onChooseDate: () => void; onSearch: () => void }) {
+  const { state, dispatch } = usePos();
+  const step = (n: 1 | -1) => dispatch({ type: 'setDate', date: clampToDemoRange(addDays(state.currentDate, n)) });
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      gap={0.5}
+      data-testid="compact-date-bar"
+      aria-hidden={covered || undefined}
+      inert={covered || undefined}
+      sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 2,
+        height: COMPACT_DATE_BAR_H,
+        px: 1,
+        bgcolor: md3.surface,
+        borderBottom: `1px solid ${md3.outlineVariant}`,
+        // The same hairline cover as the peeking header's (see `useCollapsingHeader`).
+        boxShadow: `0 -2px 0 ${md3.surface}`,
+        // The surface lands at once — it takes the place of the header's last line, so a fading
+        // surface would flash the list through it — and the controls fade in on it.
+        '& > *': { animation: `${dockIn} ${COLLAPSE_MS}ms ${mobile.motion.easing}` },
+      }}
+    >
+      <IconButton aria-label="Previous day" onClick={() => step(-1)}>
+        <ChevronLeft />
+      </IconButton>
+      <DateChip onClick={onChooseDate} />
+      <IconButton aria-label="Next day" onClick={() => step(1)}>
+        <ChevronRight />
+      </IconButton>
+      <IconButton aria-label="Search bookings" onClick={onSearch}>
+        <Search />
+      </IconButton>
+    </Stack>
+  );
 }
 
 // ─── Week strip ─────────────────────────────────────────────────────────────

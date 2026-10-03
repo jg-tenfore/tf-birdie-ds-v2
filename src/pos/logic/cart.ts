@@ -5,7 +5,7 @@ import { VENUES } from '../data/venues';
 import type { Booking, CartItem, CartPlayer, Course, ModifierTag, Transport } from '../types';
 import { playerFee, playerHoles, playerName, playerTransport, roundLabel } from './reservation';
 import { seatIsMember } from './rates';
-import { seatNetGreenFee, seatTransportOverride } from './seat-pricing';
+import { seatNetGreenFee, seatTransportFee, seatTransportOverride } from './seat-pricing';
 import type { RateContext } from './rates';
 
 /**
@@ -499,8 +499,10 @@ export function seatCharges(b: Booking, i: number, rates?: RateContext): SeatCha
   // how a comped seat came to carry green-fee tax.
   const rateFee = member && b.playerStates[i]?.fee == null ? 0 : playerFee(b, i, rates);
   const greenFee = seatNetGreenFee(b, i, rateFee);
-  // Transport is the class fee until someone picks a row from the catalog or types a price.
-  const chosenTransport = seatTransportOverride(b, i);
+  // Transport is the class fee until someone picks a row from the catalog or types a price —
+  // except in V1 → V2, where the order charges what the row shows (Justin, Oct 2: everything that
+  // is added to the cart is what the row said; the order then works out tax and fees).
+  const chosenTransport = rates?.transportFromRow ? seatTransportFee(b, i) : seatTransportOverride(b, i);
   return {
     member,
     cartFee: chosenTransport ?? row.cartFee ?? 0,

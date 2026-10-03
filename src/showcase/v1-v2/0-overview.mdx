@@ -224,7 +224,7 @@ And the calls made without a question, each in one place to change:
 
 ### Left behind from v1
 
-- Membership **baked into the printed name** ("Nadia Marchetti - Full Golf"). It is a chip beside
+- Membership **baked into the printed name** ("Nadia Marchetti - Single Premium Membership"). It is a chip beside
   the name now, everywhere a name is printed.
 - A new-customer rule you **only found by failing to save**. The form now opens by saying it needs
   a last name and a phone number or an email, and ticks each off as it is met.
@@ -266,8 +266,20 @@ Avery Robertson, the manager, through 6666.
 ## Settings
 
 v1 had no Settings screen. Its tile opened a stub ("Terminal and hardware configuration."), and
-Weston Edits pointed the tile at the tee sheet's display settings. V1 → V2's Settings has four
-sections:
+Weston Edits pointed the tile at the tee sheet's display settings. V1 → V2's Settings is led by
+the sections Birdie really has (approved by Weston on the Oct 1 call: "This is a good layout. We
+would just add those settings here"):
+
+- **Device info**: the facility, account, app version and device, the register's name, its card
+  reader and when it last synced. **Copy for support** copies those lines. Settings opens here.
+- **Card reader**: the connected reader with its battery and firmware, **Disconnect**, and the
+  readers nearby, each with **Connect**. It is the same card reader Terminal & hardware lists.
+- **Clover**: marked *Rarely used*, with a few switches, until we decide to drop it. Nothing reads
+  the switches.
+- **Tee sheet**: the tee sheet's own display settings, the same controls as its tune button.
+
+Under the heading **Proposed — not in Birdie today** come the three sections V1 → V2 added. Each
+is marked *Proposed*. They still work and are still wired:
 
 - **Terminal & hardware**: the register's name, its receipt printer, card reader, cash drawer and
   kitchen printer, and whether a receipt prints after a sale. Each device has a **Test** button;
@@ -276,13 +288,12 @@ sections:
   receipt header and footer, and what a newly sold gift card is good for.
 - **Staff & PINs**: who can sign in, their role and PIN. You can add someone, edit them, or
   deactivate them. No two active people can share a PIN, and nobody can deactivate themselves.
-- **Tee sheet**: the tee sheet's own display settings, the same controls as its tune button.
 
 ### Decisions
 
 | | Chosen | Instead of |
 |---|---|---|
-| **Scope** | All four sections | Terminal only |
+| **Scope** | Birdie's four sections first, then the three V1 → V2 sections, marked *Proposed* | The V1 → V2 sections alone, or terminal only |
 | **Who may change it** | **Anyone** changes the terminal and checkout settings; **only a manager** changes staff and PINs. Anyone else can read the staff list, with the PINs hidden. The reducer refuses a staff change from anyone but a manager | Managers for everything, or anyone for everything |
 | **Wiring** | **Wired**, after a first cut that only recorded changes. The effects are listed below the table | Settings recorded but not read |
 
@@ -300,13 +311,13 @@ Once a section is saved, the rest of the terminal reads it:
 - **Staff.** The PIN pad, Time Clock and the server pickers read the staff list. Someone added can
   sign in, and someone deactivated cannot.
 
-Hardware stays simulated: a test shows a toast. Every edition without Settings keeps the defaults,
+Hardware stays simulated: a test, a connect or a copy shows a toast. Every edition without Settings keeps the defaults,
 which are the prototype's old fixed behaviour.
 
-Each section saves as a whole: **Save** and **Discard changes** under it, then who saved it last.
+Terminal & hardware and Checkout & receipts each save as a whole: **Save** and **Discard changes** under it, then who saved it last.
 Nothing saves as you type, because a half-typed tax rate is not a setting anyone meant.
 
 | Link | Opens |
 |---|---|
-| `#/settings` | Settings, on Terminal & hardware |
-| `#/settings?section=staff` | Staff & PINs (also `checkout`, `teesheet`) |
+| `#/settings` | Settings, on Device info |
+| `#/settings?section=reader` | Card reader (also `clover`, `teesheet`, `hardware`, `checkout`, `staff`) |

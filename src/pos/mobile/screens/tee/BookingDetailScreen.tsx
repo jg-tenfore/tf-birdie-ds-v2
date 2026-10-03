@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MoreVert from '@mui/icons-material/MoreVert';
 import { md3, memberTypes, payBadges, radius } from '../../../../theme/tokens';
@@ -22,7 +21,6 @@ import { money, moneyShort } from '../../../logic/cart';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
-import { dayBookings } from '../../../state/pos-store';
 import { seatNetGreenFee } from '../../../logic/seat-pricing';
 import type { Booking, PlayerState, Transport } from '../../../types';
 import { BottomActionBar, BottomSheet, MobileScreen, TopAppBar } from '../../chrome';
@@ -180,10 +178,9 @@ export function BookingDetailScreen({ route }: ScreenProps<'bookingDetail'>) {
             </IconButton>
           }
         >
-          {/* "Next in line" — step to the next tee time without leaving the reservation. The
-              phone is arguably where this matters most: you are walking the sheet, not standing
-              at a counter with it in front of you. */}
-          {weston && !holder && <NextInLine booking={b} />}
+          {/* Weston Edits: no "‹ 30 of 88 ›" pager here any more. Weston, Oct 1: "I think we could
+              get rid of this… it takes up a line." Stepping tee time to tee time is a league's
+              need, and moves to the league's own view; the summary and tabs take the line back. */}
           <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap" sx={{ px: 2, pb: 1.5 }}>
             <StatusBadge pay={b.pay} />
             {memberType && <MemberBadge type={memberType} />}
@@ -746,52 +743,5 @@ function HolderBody({ booking: b }: { booking: Booking }) {
         {b.conf}
       </Typography>
     </Box>
-  );
-}
-
-/**
- * ‹ n of m › through the day's bookings, in tee-time order.
- *
- * Justin's idea on the call, which Weston took: after working one reservation you are usually
- * going to work the next, and backing out to the sheet to tap a card two rows down buys
- * nothing. Blocks and league holds are skipped — there is nothing to open — and the arrows stop
- * at the ends rather than wrapping, because a silent jump back to the morning is disorienting
- * when you are moving fast.
- */
-function NextInLine({ booking: b }: { booking: Booking }) {
-  const { state } = usePos();
-  const nav = useMobileNav();
-  // "The course in view", as agreed — `dayBookings` filters by date alone, so without this the
-  // stepper walks to a tee time on a course the operator has hidden and the sheet behind the
-  // panel does not move.
-  const onScreen = new Set(state.courses.filter((c) => c.visible).map((c) => c.id));
-  const day = dayBookings(state)
-    .filter((x) => x.pay !== 'block' && x.pay !== 'event' && onScreen.has(x.course))
-    .sort((x, y) => x.timeMin - y.timeMin || x.course.localeCompare(y.course) || x.slot - y.slot);
-  const at = day.findIndex((x) => x.id === b.id);
-  if (at < 0 || day.length < 2) return null;
-
-  const go = (delta: 1 | -1) => {
-    const next = day[at + delta];
-    if (next) nav.replace({ name: 'bookingDetail', bookingId: next.id });
-  };
-
-  return (
-    <Stack direction="row" alignItems="center" justifyContent="center" gap={0.5} sx={{ pb: 0.5 }}>
-      <IconButton aria-label="Previous tee time" disabled={at === 0} onClick={() => go(-1)} size="small">
-        <ChevronLeftIcon fontSize="small" />
-      </IconButton>
-      <Typography variant="caption" sx={{ color: md3.onSurfaceVariant, minWidth: 64, textAlign: 'center' }}>
-        {at + 1} of {day.length}
-      </Typography>
-      <IconButton
-        aria-label="Next tee time"
-        disabled={at === day.length - 1}
-        onClick={() => go(1)}
-        size="small"
-      >
-        <ChevronRightIcon fontSize="small" />
-      </IconButton>
-    </Stack>
   );
 }

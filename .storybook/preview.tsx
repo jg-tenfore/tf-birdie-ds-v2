@@ -291,6 +291,13 @@ const preview: Preview = {
               '11 · Phone reservation pager', ['Original', 'Proposal', '*'],
               '12 · Course menu bug', ['Original', 'Proposal', '*'],
             ],
+            '100226',
+            [
+              'Overview',
+              'Built into the app', ['Tablet'],
+              '1 · Player rows v2', ['Original', 'Proposal', '*'],
+              '8 · League view v2', ['Original', 'Proposal', '*'],
+            ],
           ],
           '*',
         ],

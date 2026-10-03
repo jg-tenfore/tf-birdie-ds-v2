@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { APP_IDENTITY } from '../../../pos/data/nav';
 import { settingsDefaults, type CheckoutSettings, type TerminalHardware } from '../../../pos/state/settings';
 import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
@@ -7,7 +8,8 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
 /**
  * V1 → V2 Migration / 18 · Settings / Tablet
  *
- * **The terminal, checkout and receipts, staff and PINs — and the tee sheet's settings.**
+ * **Birdie's own settings first — device info, the card reader, Clover, the tee sheet — then the
+ * V1 → V2 proposals: the terminal, checkout and receipts, staff and PINs.**
  *
  * ## What v1 did
  *
@@ -16,16 +18,23 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *
  * ## What this does
  *
- * - **Four sections**, the list on the left and the open one on the right: Terminal & hardware,
- *   Checkout & receipts, Staff & PINs, Tee sheet.
- * - **Each section saves as a whole** — Save and Discard under it, and who saved it last — because a
- *   half-typed tax rate is not a setting anyone meant.
+ * - **Led by Birdie's real sections** (approved on the Oct 1 call). Weston: *"We have device info. We
+ *   have connecting to a reader. Then we have Clover settings that I don't think we really use much
+ *   anymore… This is a good layout. We would just add those settings here."* So the list opens on
+ *   **Device info**, then **Card reader**, **Clover** (flagged *Rarely used*) and **Tee sheet**.
+ * - **Then "Proposed — not in Birdie today"**: Terminal & hardware, Checkout & receipts, Staff &
+ *   PINs, each marked *Proposed*. They still work, exactly as before.
+ * - **One card reader.** Card reader's Connect and Disconnect save the same `hardware.cardReader`
+ *   Terminal & hardware lists, so the two sections never disagree.
+ * - **Each proposed section saves as a whole** — Save and Discard under it, and who saved it last —
+ *   because a half-typed tax rate is not a setting anyone meant.
  * - **Staff & PINs is managers only.** Anyone else reads the list, with PINs hidden. The reducer
  *   refuses a staff change from anyone but a manager, so the rule does not rest on a hidden button.
  * - **Wired.** Once saved, checkout charges the tax rate, offers the tenders switched on and the tip
  *   presets, and shows the receipt text on the reader's done step as "Receipts after a sale" says;
  *   new gift cards start from the default; the register header shows the register's name; and the
- *   PIN pad, Time Clock and server pickers read the staff list. The hardware stays simulated.
+ *   PIN pad, Time Clock and server pickers read the staff list. The hardware stays simulated, and
+ *   Clover's switches are the screen's own.
  */
 const meta = {
   title: 'V1 → V2 Migration/18 · Settings/Tablet',
@@ -38,11 +47,76 @@ type Story = StoryObj;
 const at = (extra = {}) => atVenue('eighteen', { view: 'settings', leftPanelCollapsed: true, ...extra });
 const page = (el: HTMLElement) => within(el.ownerDocument.body);
 
-/** **Terminal & hardware.** Each device has a test; Save stays off until something changes. */
-export const TerminalAndHardware: Story = {
+/**
+ * **Device info, where Settings opens.** The facility, account, app and device; the register and its
+ * reader; when it last synced. Birdie's sections lead the list, the proposals sit under their own
+ * heading, and "Copy for support" says it copied.
+ */
+export const DeviceInfo: Story = {
   render: () => <Screen edition="v1v2" initialState={at()} />,
   play: async ({ canvasElement }) => {
+    const panel = canvasElement.querySelector<HTMLElement>('[data-settings-panel="device"]')!;
+    await expect(panel.textContent).toContain(APP_IDENTITY.version);
+    await expect(panel.textContent).toContain(APP_IDENTITY.facility);
+    await expect(panel.querySelector('[data-device-info="Register"]')!.textContent).toContain('Register 1');
+    await expect(panel.querySelector('[data-device-info="Card reader"]')!.textContent).toContain('Stripe Reader S700 · 0184');
+    await expect(panel.querySelector('[data-device-info="Last synced"]')!.textContent).toContain('Thu, May 21');
+    const order = [...canvasElement.querySelectorAll('[data-settings-section]')].map((b) => b.getAttribute('data-settings-section'));
+    await expect(order).toEqual(['device', 'reader', 'clover', 'teesheet', 'hardware', 'checkout', 'staff']);
+    await expect(canvasElement.querySelector('[data-settings-section="device"]')!.getAttribute('aria-current')).toBe('page');
+    await expect(canvasElement.querySelector('[data-settings-proposed-heading]')!.textContent).toBe('Proposed — not in Birdie today');
+    await expect(canvasElement.querySelectorAll('[data-proposed] [data-chip="Proposed"]').length).toBe(3);
+    await userEvent.click(within(panel).getByRole('button', { name: 'Copy for support' }));
+    await page(canvasElement).findByText('Device info copied for support');
+  },
+};
+
+/**
+ * **Card reader: disconnect, then connect another.** The reader is Terminal & hardware's card reader,
+ * so connecting the BBPOS here is what Terminal & hardware — and Device info — then show.
+ */
+export const CardReader: Story = {
+  render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'reader' })} />,
+  play: async ({ canvasElement }) => {
+    const panel = () => within(canvasElement.querySelector<HTMLElement>('[data-settings-panel="reader"]')!);
+    const status = () => canvasElement.querySelector<HTMLElement>('[data-reader-status]')!;
+    await expect(status().getAttribute('data-reader-status')).toBe('connected');
+    await expect(status().textContent).toContain('Connected · battery 82% · firmware 2.14');
+    await userEvent.click(panel().getByRole('button', { name: 'Disconnect' }));
+    await waitFor(() => expect(status().getAttribute('data-reader-status')).toBe('none'));
+    await page(canvasElement).findByText('Disconnected Stripe Reader S700 · 0184');
+    const bbpos = canvasElement.querySelector<HTMLElement>('[data-nearby-reader="BBPOS WisePOS E · 2231"]')!;
+    await userEvent.click(within(bbpos).getByRole('button', { name: 'Connect' }));
+    await waitFor(() => expect(status().textContent).toContain('BBPOS WisePOS E · 2231'));
+    await expect(status().textContent).toContain('firmware 1.9.3');
+    await expect(within(bbpos).getByText('Connected')).toBeTruthy();
+    await userEvent.click(canvasElement.querySelector<HTMLElement>('[data-settings-section="hardware"]')!);
+    await expect(canvasElement.querySelector('[data-device="cardReader"]')!.textContent).toContain('BBPOS WisePOS E · 2231');
+    await userEvent.click(canvasElement.querySelector<HTMLElement>('[data-settings-section="device"]')!);
+    await expect(canvasElement.querySelector('[data-device-info="Card reader"]')!.textContent).toContain('BBPOS WisePOS E · 2231');
+  },
+};
+
+/** **Clover, flagged "Rarely used".** Kept until we decide to drop it; its switches flip and say so. */
+export const Clover: Story = {
+  render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'clover' })} />,
+  play: async ({ canvasElement }) => {
+    const panel = within(canvasElement.querySelector<HTMLElement>('[data-settings-panel="clover"]')!);
+    await expect(panel.getByText('Rarely used')).toBeTruthy();
+    const tips = panel.getByRole('switch', { name: 'Send tips to Clover' });
+    await expect(tips).not.toBeChecked();
+    await userEvent.click(tips);
+    await expect(tips).toBeChecked();
+    await page(canvasElement).findByText('Send tips to Clover: on');
+  },
+};
+
+/** **Terminal & hardware** (proposed). Each device has a test; Save stays off until something changes. */
+export const TerminalAndHardware: Story = {
+  render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'hardware' })} />,
+  play: async ({ canvasElement }) => {
     const c = within(canvasElement);
+    await expect(canvasElement.querySelector('[data-settings-panel="hardware"] [data-chip="Proposed"]')).not.toBeNull();
     await expect(c.getByRole('button', { name: 'Save' })).toBeDisabled();
     const printer = canvasElement.querySelector<HTMLElement>('[data-device="receiptPrinter"]')!;
     await userEvent.click(within(printer).getByRole('button', { name: 'Test' }));
@@ -58,7 +132,7 @@ export const TerminalAndHardware: Story = {
 
 /** **Discard puts it back.** A change not saved is a change not made. */
 export const DiscardPutsItBack: Story = {
-  render: () => <Screen edition="v1v2" initialState={at()} />,
+  render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'hardware' })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     const name = c.getByDisplayValue('Register 1');

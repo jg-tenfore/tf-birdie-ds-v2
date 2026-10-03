@@ -4,7 +4,7 @@
         "courseId": "313489",
         "firstName": "Oda",
         "lastName": "Brennevin",
-        "displayName": "Oda Brennevin - Full Golf",
+        "displayName": "Oda Brennevin - Single Premium Membership",
         "email": "oda.brennevin@att.net",
         "phone": "8017084153",
         "birthday": "02/09/1959",
@@ -15,7 +15,7 @@
         "zip": "22314",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "09/12/2027"
             }
         ],
@@ -69,7 +69,7 @@
         "courseId": "313490",
         "firstName": "Ivar",
         "lastName": "Brennevin",
-        "displayName": "Ivar Brennevin - Full Golf",
+        "displayName": "Ivar Brennevin - Single Premium Membership",
         "email": "ivar.brennevin+1@tenfore.golf",
         "phone": "8017084153",
         "birthday": "02/02/1984",
@@ -78,7 +78,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "07/24/2027"
             }
         ],
@@ -290,7 +290,7 @@
         "courseId": "313493",
         "firstName": "Igor",
         "lastName": "Kuznetsov",
-        "displayName": "Igor Kuznetsov - Weekday Golf",
+        "displayName": "Igor Kuznetsov - Single Standard Membership",
         "email": "igor.kuznetsov@gmail.com",
         "phone": "8015540982",
         "birthday": "10/19/2005",
@@ -301,7 +301,7 @@
         "zip": "20850",
         "memberships": [
             {
-                "name": "Weekday Golf",
+                "name": "Single Standard Membership",
                 "expires": "01/06/2026"
             }
         ],
@@ -432,7 +432,7 @@
         "courseId": "313495",
         "firstName": "Weston",
         "lastName": "Farnsworth",
-        "displayName": "Weston Farnsworth - 30 Day booking window",
+        "displayName": "Weston Farnsworth - Couple Premium Membership",
         "tag": "(tr456)",
         "email": "weston.farnsworth@tenfore.golf",
         "phone": "8017084153",
@@ -444,7 +444,7 @@
         "zip": "22314",
         "memberships": [
             {
-                "name": "30 Day booking window",
+                "name": "Couple Premium Membership",
                 "expires": "01/08/2026"
             }
         ],
@@ -697,7 +697,7 @@
         "courseId": "313499",
         "firstName": "Marissa",
         "lastName": "Chen",
-        "displayName": "Marissa Chen - Weekday Golf",
+        "displayName": "Marissa Chen - Single Standard Membership",
         "email": "marissa.chen+10@tenfore.golf",
         "phone": "8014402219",
         "birthday": "03/19/1990",
@@ -707,7 +707,7 @@
         "zip": "20850",
         "memberships": [
             {
-                "name": "Weekday Golf",
+                "name": "Single Standard Membership",
                 "expires": "06/05/2026"
             }
         ],
@@ -896,7 +896,7 @@
         "courseId": "313502",
         "firstName": "Kelsey",
         "lastName": "Sutton",
-        "displayName": "Kelsey Sutton - Corporate — 4 seat",
+        "displayName": "Kelsey Sutton - Family Premium Membership",
         "sheetName": "Sutton, K.",
         "email": "kelsey.sutton@att.net",
         "phone": "8016604417",
@@ -907,7 +907,7 @@
         "zip": "22314",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "05/18/2027"
             }
         ],
@@ -1046,7 +1046,7 @@
         "courseId": "313504",
         "firstName": "Jonah",
         "lastName": "Hamlet",
-        "displayName": "Jonah Hamlet - Trial Month",
+        "displayName": "Jonah Hamlet - Single Basic Membership",
         "sheetName": "Hamlet, J.",
         "email": "jonah.hamlet@hotmail.com",
         "phone": "8017719305",
@@ -1058,7 +1058,7 @@
         "zip": "20814",
         "memberships": [
             {
-                "name": "Trial Month",
+                "name": "Single Basic Membership",
                 "expires": "05/09/2028"
             }
         ],
@@ -1136,7 +1136,7 @@
         "zip": "22201",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "09/10/2026"
             }
         ],
@@ -1180,7 +1180,7 @@
         "courseId": "313506",
         "firstName": "Quinn",
         "lastName": "Zeller",
-        "displayName": "Quinn Zeller - 30 Day booking window",
+        "displayName": "Quinn Zeller - Couple Premium Membership",
         "email": "quinn.zeller+17@tenfore.golf",
         "phone": "8013155910",
         "birthday": "08/01/1977",
@@ -1191,7 +1191,7 @@
         "zip": "20814",
         "memberships": [
             {
-                "name": "30 Day booking window",
+                "name": "Couple Premium Membership",
                 "expires": "11/07/2027"
             }
         ],
@@ -1550,7 +1550,7 @@
         "courseId": "313512",
         "firstName": "Wren",
         "lastName": "Baptiste",
-        "displayName": "Wren Baptiste - Trial Month",
+        "displayName": "Wren Baptiste - Single Basic Membership",
         "email": "wren.baptiste+23@tenfore.golf",
         "birthday": "10/10/1966",
         "street": "N/A",
@@ -1559,7 +1559,7 @@
         "zip": "20901",
         "memberships": [
             {
-                "name": "Trial Month",
+                "name": "Single Basic Membership",
                 "expires": "07/20/2028"
             }
         ],
@@ -1750,7 +1750,7 @@
         "courseId": "313515",
         "firstName": "Zara",
         "lastName": "Bergstrom",
-        "displayName": "Zara Bergstrom - Full Golf",
+        "displayName": "Zara Bergstrom - Single Premium Membership",
         "email": "zara.bergstrom@gmail.com",
         "phone": "8014712146",
         "birthday": "03/23/1981",
@@ -1761,7 +1761,7 @@
         "zip": "20901",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "01/06/2027"
             }
         ],
@@ -2003,7 +2003,7 @@
         "courseId": "313519",
         "firstName": "Amara",
         "lastName": "Nakamura",
-        "displayName": "Amara Nakamura - Full Golf",
+        "displayName": "Amara Nakamura - Single Premium Membership",
         "email": "amara.nakamura+30@tenfore.golf",
         "phone": "8019118391",
         "birthday": "02/20/1967",
@@ -2013,7 +2013,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "09/02/2027"
             }
         ],
@@ -2188,7 +2188,7 @@
         "courseId": "313522",
         "firstName": "Dermot",
         "lastName": "Nguyen",
-        "displayName": "Dermot Nguyen - Weekday Golf",
+        "displayName": "Dermot Nguyen - Single Standard Membership",
         "email": "dermot.nguyen@gmail.com",
         "phone": "8018190282",
         "birthday": "02/05/1957",
@@ -2198,7 +2198,7 @@
         "zip": "22314",
         "memberships": [
             {
-                "name": "Weekday Golf",
+                "name": "Single Standard Membership",
                 "expires": "08/27/2028"
             }
         ],
@@ -2486,7 +2486,7 @@
         "courseId": "313527",
         "firstName": "Hugh",
         "lastName": "Kaur",
-        "displayName": "Hugh Kaur - Weekday Golf",
+        "displayName": "Hugh Kaur - Single Standard Membership",
         "email": "hugh.kaur@hotmail.com",
         "phone": "8011301906",
         "birthday": "11/12/1985",
@@ -2497,7 +2497,7 @@
         "zip": "20850",
         "memberships": [
             {
-                "name": "Weekday Golf",
+                "name": "Single Standard Membership",
                 "expires": "12/23/2028"
             }
         ],
@@ -2551,7 +2551,7 @@
         "courseId": "313528",
         "firstName": "Ines",
         "lastName": "Osei",
-        "displayName": "Ines Osei - Corporate — 4 seat",
+        "displayName": "Ines Osei - Family Premium Membership",
         "email": "ines.osei@sbcglobal.net",
         "birthday": "06/15/1973",
         "street": "N/A",
@@ -2559,7 +2559,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "01/16/2026"
             }
         ],
@@ -2731,7 +2731,7 @@
         "courseId": "313531",
         "firstName": "Lars",
         "lastName": "Petrov",
-        "displayName": "Lars Petrov - Trial Month",
+        "displayName": "Lars Petrov - Single Basic Membership",
         "email": "lars.petrov+42@tenfore.golf",
         "phone": "8014244109",
         "birthday": "07/16/1984",
@@ -2741,7 +2741,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Trial Month",
+                "name": "Single Basic Membership",
                 "expires": "12/08/2028"
             }
         ],
@@ -2879,7 +2879,7 @@
         "courseId": "313533",
         "firstName": "Nadia",
         "lastName": "Marchetti",
-        "displayName": "Nadia Marchetti - Full Golf",
+        "displayName": "Nadia Marchetti - Single Premium Membership",
         "email": "nadia.marchetti+44@tenfore.golf",
         "phone": "8018058233",
         "birthday": "02/18/1973",
@@ -2890,7 +2890,7 @@
         "zip": "20850",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "02/09/2027"
             }
         ],
@@ -2954,7 +2954,7 @@
         "courseId": "313534",
         "firstName": "Owen",
         "lastName": "Salvatore",
-        "displayName": "Owen Salvatore - Corporate — 4 seat",
+        "displayName": "Owen Salvatore - Family Premium Membership",
         "email": "owen.salvatore@yahoo.com",
         "phone": "8013762186",
         "birthday": "01/12/1970",
@@ -2964,7 +2964,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "01/26/2028"
             }
         ],
@@ -3048,7 +3048,7 @@
         "courseId": "313536",
         "firstName": "Quinn",
         "lastName": "Mbeki",
-        "displayName": "Quinn Mbeki - 30 Day booking window",
+        "displayName": "Quinn Mbeki - Couple Premium Membership",
         "email": "quinn.mbeki@att.net",
         "phone": "8019521167",
         "birthday": "03/27/1963",
@@ -3057,7 +3057,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "30 Day booking window",
+                "name": "Couple Premium Membership",
                 "expires": "09/25/2028"
             }
         ],
@@ -3075,7 +3075,7 @@
         "courseId": "313537",
         "firstName": "Rosa",
         "lastName": "Vasquez",
-        "displayName": "Rosa Vasquez - Full Golf",
+        "displayName": "Rosa Vasquez - Single Premium Membership",
         "email": "rosa.vasquez@att.net",
         "phone": "8013229990",
         "birthday": "02/21/1990",
@@ -3085,7 +3085,7 @@
         "zip": "20901",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "01/17/2026"
             }
         ],
@@ -3134,7 +3134,7 @@
         "courseId": "313538",
         "firstName": "Simone",
         "lastName": "Ferreira",
-        "displayName": "Simone Ferreira - Full Golf",
+        "displayName": "Simone Ferreira - Single Premium Membership",
         "email": "simone.ferreira@aol.com",
         "phone": "8014319895",
         "birthday": "10/27/1990",
@@ -3143,7 +3143,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "07/18/2026"
             }
         ],
@@ -3223,7 +3223,7 @@
         "courseId": "313540",
         "firstName": "Ursula",
         "lastName": "Whitfield",
-        "displayName": "Ursula Whitfield - Trial Month",
+        "displayName": "Ursula Whitfield - Single Basic Membership",
         "email": "ursula.whitfield@att.net",
         "birthday": "10/10/1965",
         "street": "18 Fairway Ln",
@@ -3232,7 +3232,7 @@
         "zip": "22314",
         "memberships": [
             {
-                "name": "Trial Month",
+                "name": "Single Basic Membership",
                 "expires": "06/25/2028"
             }
         ],
@@ -3296,7 +3296,7 @@
         "courseId": "313541",
         "firstName": "Viggo",
         "lastName": "Halloran",
-        "displayName": "Viggo Halloran - Trial Month",
+        "displayName": "Viggo Halloran - Single Basic Membership",
         "email": "viggo.halloran+52@tenfore.golf",
         "birthday": "06/27/1974",
         "notes": "has a standing Saturday foursome",
@@ -3306,7 +3306,7 @@
         "zip": "20901",
         "memberships": [
             {
-                "name": "Trial Month",
+                "name": "Single Basic Membership",
                 "expires": "05/19/2027"
             }
         ],
@@ -3420,7 +3420,7 @@
         "courseId": "313543",
         "firstName": "Xiomara",
         "lastName": "Zeller",
-        "displayName": "Xiomara Zeller - Trial Month",
+        "displayName": "Xiomara Zeller - Single Basic Membership",
         "email": "xiomara.zeller@att.net",
         "phone": "8017817761",
         "birthday": "12/24/1986",
@@ -3430,7 +3430,7 @@
         "state": "VA",
         "memberships": [
             {
-                "name": "Trial Month",
+                "name": "Single Basic Membership",
                 "expires": "01/15/2027"
             }
         ],
@@ -3706,7 +3706,7 @@
         "courseId": "313547",
         "firstName": "Beatriz",
         "lastName": "Kaur",
-        "displayName": "Beatriz Kaur - Full Golf",
+        "displayName": "Beatriz Kaur - Single Premium Membership",
         "email": "beatriz.kaur+58@tenfore.golf",
         "phone": "8016655346",
         "birthday": "03/26/1950",
@@ -3715,7 +3715,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "08/02/2026"
             }
         ],
@@ -4262,7 +4262,7 @@
         "courseId": "313555",
         "firstName": "Fionn",
         "lastName": "Ferreira",
-        "displayName": "Fionn Ferreira - Weekday Golf",
+        "displayName": "Fionn Ferreira - Single Standard Membership",
         "email": "fionn.ferreira@gmail.com",
         "phone": "8010099760",
         "birthday": "07/09/1984",
@@ -4272,7 +4272,7 @@
         "zip": "20850",
         "memberships": [
             {
-                "name": "Weekday Golf",
+                "name": "Single Standard Membership",
                 "expires": "01/27/2026"
             }
         ],
@@ -4655,7 +4655,7 @@
         "courseId": "313560",
         "firstName": "Kelsey",
         "lastName": "Zeller",
-        "displayName": "Kelsey Zeller - 30 Day booking window",
+        "displayName": "Kelsey Zeller - Couple Premium Membership",
         "email": "kelsey.zeller@gmail.com",
         "phone": "8014486825",
         "birthday": "05/16/1957",
@@ -4665,7 +4665,7 @@
         "zip": "22201",
         "memberships": [
             {
-                "name": "30 Day booking window",
+                "name": "Couple Premium Membership",
                 "expires": "01/13/2027"
             }
         ],
@@ -4719,7 +4719,7 @@
         "courseId": "313561",
         "firstName": "Lars",
         "lastName": "Ito",
-        "displayName": "Lars Ito - Weekday Golf",
+        "displayName": "Lars Ito - Single Standard Membership",
         "email": "lars.ito@hotmail.com",
         "phone": "8013756299",
         "birthday": "02/18/1984",
@@ -4729,7 +4729,7 @@
         "state": "VA",
         "memberships": [
             {
-                "name": "Weekday Golf",
+                "name": "Single Standard Membership",
                 "expires": "02/11/2026"
             }
         ],
@@ -4763,7 +4763,7 @@
         "courseId": "313562",
         "firstName": "Milo",
         "lastName": "Okafor",
-        "displayName": "Milo Okafor - Full Golf",
+        "displayName": "Milo Okafor - Single Premium Membership",
         "email": "milo.okafor@yahoo.com",
         "birthday": "04/14/1951",
         "notes": "always pays on account",
@@ -4773,7 +4773,7 @@
         "zip": "22201",
         "memberships": [
             {
-                "name": "Full Golf",
+                "name": "Single Premium Membership",
                 "expires": "11/22/2026"
             }
         ],
@@ -4797,7 +4797,7 @@
         "courseId": "313563",
         "firstName": "Nadia",
         "lastName": "Achebe",
-        "displayName": "Nadia Achebe - 30 Day booking window",
+        "displayName": "Nadia Achebe - Couple Premium Membership",
         "email": "nadia.achebe@att.net",
         "phone": "8018445317",
         "birthday": "01/24/1948",
@@ -4808,7 +4808,7 @@
         "zip": "20814",
         "memberships": [
             {
-                "name": "30 Day booking window",
+                "name": "Couple Premium Membership",
                 "expires": "05/05/2027"
             }
         ],
@@ -4850,7 +4850,7 @@
         "courseId": "313564",
         "firstName": "Owen",
         "lastName": "Kaur",
-        "displayName": "Owen Kaur - Corporate — 4 seat",
+        "displayName": "Owen Kaur - Family Premium Membership",
         "email": "owen.kaur@hotmail.com",
         "phone": "8012389402",
         "birthday": "04/20/1958",
@@ -4860,7 +4860,7 @@
         "state": "MD",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "12/26/2026"
             }
         ],
@@ -4942,7 +4942,7 @@
         "courseId": "313566",
         "firstName": "Quinn",
         "lastName": "Baptiste",
-        "displayName": "Quinn Baptiste - 30 Day booking window",
+        "displayName": "Quinn Baptiste - Couple Premium Membership",
         "email": "quinn.baptiste@sbcglobal.net",
         "phone": "8010861998",
         "birthday": "04/09/1972",
@@ -4953,7 +4953,7 @@
         "zip": "20901",
         "memberships": [
             {
-                "name": "30 Day booking window",
+                "name": "Couple Premium Membership",
                 "expires": "05/23/2028"
             }
         ],
@@ -5434,7 +5434,7 @@
         "courseId": "313573",
         "firstName": "Xiomara",
         "lastName": "Mbeki",
-        "displayName": "Xiomara Mbeki - Corporate — 4 seat",
+        "displayName": "Xiomara Mbeki - Family Premium Membership",
         "email": "xiomara.mbeki@att.net",
         "phone": "8015854457",
         "birthday": "02/21/1960",
@@ -5445,7 +5445,7 @@
         "zip": "22314",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "03/15/2026"
             }
         ],
@@ -5671,7 +5671,7 @@
         "courseId": "313577",
         "firstName": "Beatriz",
         "lastName": "Whitfield",
-        "displayName": "Beatriz Whitfield - Corporate — 4 seat",
+        "displayName": "Beatriz Whitfield - Family Premium Membership",
         "email": "beatriz.whitfield+88@tenfore.golf",
         "phone": "8017526910",
         "birthday": "09/16/1999",
@@ -5682,7 +5682,7 @@
         "zip": "20901",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "04/17/2026"
             }
         ],
@@ -6110,7 +6110,7 @@
         "courseId": "313585",
         "firstName": "Fionn",
         "lastName": "Petrov",
-        "displayName": "Fionn Petrov - Corporate — 4 seat",
+        "displayName": "Fionn Petrov - Family Premium Membership",
         "email": "fionn.petrov@sbcglobal.net",
         "phone": "8012805826",
         "birthday": "11/16/1960",
@@ -6121,7 +6121,7 @@
         "zip": "20814",
         "memberships": [
             {
-                "name": "Corporate — 4 seat",
+                "name": "Family Premium Membership",
                 "expires": "04/25/2027"
             }
         ],

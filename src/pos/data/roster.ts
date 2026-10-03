@@ -88,11 +88,11 @@ const FIRST_NAMES: Record<string, string[]> = {
 const DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'aol.com', 'sbcglobal.net', 'att.net'];
 
 const MEMBERSHIP_NAMES = [
-  'Full Golf',
-  'Weekday Golf',
-  '30 Day booking window',
-  'Corporate — 4 seat',
-  'Trial Month',
+  'Single Premium Membership',
+  'Single Standard Membership',
+  'Couple Premium Membership',
+  'Family Premium Membership',
+  'Single Basic Membership',
   'Junior',
   'Social',
 ];
@@ -252,17 +252,17 @@ function fromGolfer(g: (typeof MEMBER_DB)[number]): Customer {
     email: g.email,
     phone: normalizePhone(g.phone),
     memberships: g.memberType
-      ? [{ name: TIER_MEMBERSHIPS[g.memberType] ?? 'Full Golf', expires: '12/31/2027' }]
+      ? [{ name: TIER_MEMBERSHIPS[g.memberType] ?? 'Single Premium Membership', expires: '12/31/2027' }]
       : [],
   };
 }
 
 /** Tier → the membership a record of that tier holds, the inverse of `MEMBERSHIP_TIERS`. */
 const TIER_MEMBERSHIPS: Record<string, string> = {
-  annual: 'Full Golf',
-  seasonal: 'Weekday Golf',
-  monthly: '30 Day booking window',
-  senior: 'Full Golf',
+  annual: 'Single Premium Membership',
+  seasonal: 'Single Standard Membership',
+  monthly: 'Couple Premium Membership',
+  senior: 'Single Premium Membership',
   student: 'Junior',
 };
 
@@ -273,8 +273,35 @@ const golferRecords = [...MEMBER_DB, ...GOLFER_DB.filter((g) => !MEMBER_DB.some(
 const golferNames = new Set(golferRecords.map((c) => c.sheetName));
 const sheetRecords = SHEET_NAMES.filter((n) => !golferNames.has(n)).map(synthesise);
 
+/**
+ * The long plans a real course sells beside golf (V1 → V2, 100226). Weston, on the Oct 2 call:
+ * *"they can have kind of elaborate names… some of them are like 30 characters long… do they have
+ * 5? Sometimes they do."* So a few members hold a second or third, drawn from a course's actual
+ * catalog — names only. No rate rule mentions them, so nobody's price moves: a member's rate still
+ * comes from their first membership.
+ */
+const EXTRA_PLANS = [
+  '12-Month Member-only Simulator Membership',
+  'Family Fitness Membership (3 Persons)',
+  '12-Month Public Simulator Membership',
+  'Couple Fitness Membership',
+  '3-Month Member-only Simulator Membership',
+  'Individual Fitness Membership',
+];
+
+/** About one member in five gets a second plan, one in fifteen a third. Its own hash, so nothing else in the seed shifts. */
+function withExtraPlans(c: Customer): Customer {
+  if (!c.memberships.length) return c;
+  const h = hash(`${c.id}:plans`);
+  const count = h % 15 === 0 ? 2 : h % 5 === 0 ? 1 : 0;
+  if (!count) return c;
+  const expires = c.memberships[0].expires;
+  const extra = Array.from({ length: count }, (_, i) => ({ name: EXTRA_PLANS[(h + i * 7) % EXTRA_PLANS.length], expires }));
+  return { ...c, memberships: [...c.memberships, ...extra] };
+}
+
 /** Every record the demo knows: ported, synthesised from the sheet, and the original golfers. */
-export const roster: Customer[] = [...PORTED, ...golferRecords, ...sheetRecords];
+export const roster: Customer[] = [...PORTED, ...golferRecords, ...sheetRecords].map(withExtraPlans);
 
 const byBookingName = new Map(roster.map((c) => [bookingName(c), c]));
 const byId = new Map(roster.map((c) => [c.id, c]));

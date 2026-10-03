@@ -193,6 +193,7 @@ export const HoldParksTheOrder: Story = {
     await expect(await p.findByDisplayValue('Chen, Emily')).toBeTruthy();
     await userEvent.click(p.getByRole('button', { name: 'Hold order' }));
     await waitFor(() => expect(canvasElement.querySelector('[data-held-orders]')?.getAttribute('data-held-orders')).toBe('1'));
+    // The rail stays out: an order on hold is waiting on it.
     await expect(canvasElement.textContent).toContain('No items added yet');
     // Nothing to hold now, so Hold is off.
     await expect(canvasElement.querySelector<HTMLButtonElement>('[data-hold-order]')!.disabled).toBe(true);
@@ -248,7 +249,9 @@ export const ResumeOverABusyRailAsksFirst: Story = {
 export const CashPayoutInTheCog: Story = {
   render: () => <Screen edition="v1v2" initialState={register()} />,
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByTitle('Order settings'));
+    // An empty order keeps the rail tucked away (100226); open it on purpose to reach the cog.
+    await userEvent.click(await within(canvasElement).findByRole('button', { name: 'Expand the order rail' }));
+    await userEvent.click(await within(canvasElement).findByTitle('Order settings'));
     const p = page(canvasElement);
     await userEvent.click(await p.findByRole('menuitem', { name: /Cash payout/ }));
     await waitFor(() => expect(p.getByText('Cash out of the drawer — not a sale, and not part of any order')).toBeTruthy());

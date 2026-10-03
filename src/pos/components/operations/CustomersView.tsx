@@ -30,7 +30,7 @@ import { OpsScreen, OpsToolbar } from './OpsToolbar';
  *
  * ## What was wrong with it
  *
- * - **The membership was part of the name.** "Weston Farnsworth - 30 Day booking window" and
+ * - **The membership was part of the name.** "Weston Farnsworth - Couple Premium Membership" and
  *   "Weston Senior - Senior" read as two unrelated people; with households sharing phones, picking
  *   the wrong one was easy.
  * - **An empty screen until you typed.** Nothing to scan, not even who owes the course.

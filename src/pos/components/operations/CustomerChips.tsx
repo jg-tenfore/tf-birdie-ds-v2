@@ -38,7 +38,7 @@ function Pill({ label, bg, fg, ...rest }: { label: string; bg: string; fg: strin
 
 /**
  * Memberships and customer types as chips, beside the name rather than inside it — v1 printed
- * "Weston Farnsworth - 30 Day booking window". `max` keeps a result row to one line; the rest
+ * "Weston Farnsworth - Couple Premium Membership". `max` keeps a result row to one line; the rest
  * collapse into "+n".
  */
 export function CustomerChipRow({ customer, max = 3 }: { customer: Pick<Customer, 'memberships' | 'customerTypes'>; max?: number }) {

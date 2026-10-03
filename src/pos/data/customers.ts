@@ -185,16 +185,16 @@ export const EMAIL_DOMAINS = [
 /**
  * Membership name → the tier badge the POS already draws.
  *
- * The course sells memberships by name ("Full Golf", "Corporate — 4 seat"); the terminal
+ * The course sells memberships by name ("Single Premium Membership", "Family Premium Membership"); the terminal
  * colours them by tier. Keeping the mapping here rather than renaming the memberships means
  * the record still says what the customer bought, which is what they will argue about.
  */
 const MEMBERSHIP_TIERS: Record<string, MemberTypeKey> = {
-  'Full Golf': 'annual',
-  'Corporate — 4 seat': 'annual',
-  'Weekday Golf': 'seasonal',
-  '30 Day booking window': 'monthly',
-  'Trial Month': 'monthly',
+  'Single Premium Membership': 'annual',
+  'Family Premium Membership': 'annual',
+  'Single Standard Membership': 'seasonal',
+  'Couple Premium Membership': 'monthly',
+  'Single Basic Membership': 'monthly',
   Social: 'monthly',
   Junior: 'student',
 };

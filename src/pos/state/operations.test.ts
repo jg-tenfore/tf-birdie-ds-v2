@@ -408,9 +408,9 @@ describe('house accounts are for members', () => {
     const { hasHouseAccount, houseAccountRefusal } = await import('../logic/customer-search');
     const today = new Date(2026, 4, 21);
     const who = { firstName: 'Nora', lastName: 'Quinn' };
-    expect(hasHouseAccount({ memberships: [{ name: 'Full Golf', expires: '12/31/2026' }] }, today)).toBe(true);
+    expect(hasHouseAccount({ memberships: [{ name: 'Single Premium Membership', expires: '12/31/2026' }] }, today)).toBe(true);
     expect(hasHouseAccount({ memberships: [] }, today)).toBe(false);
     expect(houseAccountRefusal({ ...who, memberships: [] }, today)).toMatch(/isn’t a member/);
-    expect(houseAccountRefusal({ ...who, memberships: [{ name: 'Full Golf', expires: '01/31/2026' }] }, today)).toMatch(/lapsed/);
+    expect(houseAccountRefusal({ ...who, memberships: [{ name: 'Single Premium Membership', expires: '01/31/2026' }] }, today)).toMatch(/lapsed/);
   });
 });

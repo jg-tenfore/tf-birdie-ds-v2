@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useLayoutEffect } from 'react';
 import { Box, Snackbar } from '@mui/material';
 import { elevation, md3, radius, shell } from '../theme/tokens';
 import { ContextMenus } from './components/ContextMenus';
@@ -23,6 +23,7 @@ import { ShiftView } from './components/operations/ShiftView';
 import { SignInScreen } from './components/operations/SignInScreen';
 import { TimeClockView } from './components/operations/TimeClockView';
 import { useEventBookings } from './state/use-event-bookings';
+import { useEmptyRail } from './state/use-empty-rail';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
 import { TeeSheetView } from './components/TeeSheetView';
 import { ModalHost } from './modals/ModalHost';
@@ -140,6 +141,12 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // day first, or a link straight to May 30 generates an ordinary Saturday over it.
   const v1v2 = useV1V2();
   useEventBookings(v1v2);
+  // V1 → V2, 100226: an empty order keeps the rail tucked away; the first line opens it.
+  useEmptyRail(v1v2);
+  // V1 → V2, 100226: what a row shows is what the order charges.
+  useLayoutEffect(() => {
+    dispatch({ type: 'setTransportFromRow', on: v1v2 });
+  }, [v1v2, dispatch]);
   useDemoDayFill(useWestonEdits());
   // V1 → V2's screens exist only in V1 → V2. The nav already dims their tiles elsewhere, but a
   // route resolves in any edition — so `#/courts` used to draw the court sheet inside Weston

@@ -3,7 +3,8 @@ import { keyframes } from '@emotion/react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius, reservationPanel } from '../../theme/tokens';
 import { staffById } from '../data/staff';
-import { APP_IDENTITY, NAV_GROUPS, isLive, type NavItem, type NavKey } from '../data/nav';
+import { ROLE_NAMES } from '../state/settings';
+import { APP_IDENTITY, NAV_GROUPS, isLive, navGroupsFor, type NavItem, type NavKey } from '../data/nav';
 import { useEdition, useWestonEdits } from '../edition';
 import { usePos } from '../state/PosProvider';
 import { Icon } from './primitives';
@@ -156,7 +157,7 @@ export function NavOverlay() {
               terminal, switching user *is* signing out and letting the next person in. */}
           {edition === 'v1v2' && operator && (
             <Typography data-signed-in-as sx={{ fontSize: 12.5, color: md3.onSurfaceVariant, mr: 0.5 }}>
-              Signed in as <b>{operator.name}</b>
+              Signed in as <b>{operator.name}</b> · {ROLE_NAMES[operator.role]}
             </Typography>
           )}
           <HeaderAction icon="switch_account" label="Switch user" onClick={edition === 'v1v2' ? signOut : () => toast('Switch user')} />
@@ -178,7 +179,7 @@ export function NavOverlay() {
       </Stack>
 
       <Box sx={{ flex: 1, overflowY: 'auto', px: 3, pb: 3 }}>
-        {NAV_GROUPS.map((group, i) => (
+        {(edition === 'v1v2' ? navGroupsFor(operator?.role) : NAV_GROUPS).map((group, i) => (
           <Box key={group.heading ?? `group-${i}`} sx={{ mb: 3 }}>
             {/* The last block has no heading in the shipping app, so it has none here. */}
             <Typography

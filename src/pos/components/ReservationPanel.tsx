@@ -17,6 +17,8 @@ import { BookingActivity, BookingFinancial, BookingNotes, OrderNumberLink } from
 import { PlayerRows } from './PlayerRows';
 import { BookingMemberDot, Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
+import { seatRecord } from '../logic/seat-pricing';
+import { useV1V2 } from '../edition';
 import { WalkInTimePicker } from './WalkInTimePicker';
 import { isFreshWalkIn } from '../logic/walk-in';
 
@@ -183,6 +185,8 @@ export function ReservationContent({
   const { state, dispatch } = usePos();
   const course = state.courses.find((c) => c.id === b.course);
   const close = () => dispatch({ type: 'closeReservation' });
+  const v1v2 = useV1V2();
+  const booker = seatRecord(b, 0, state.customerEdits);
 
   return (
     <>
@@ -206,9 +210,25 @@ export function ReservationContent({
               {' · '}
               {roundLabel(b).replace('Tee Time ', '')}
             </Typography>
-            <Typography sx={{ fontSize: 11.5, color: md3.outline, mt: 0.25 }}>
-              {b.conf} · {b.phone || 'No phone'}
-            </Typography>
+            {v1v2 ? (
+              /* V1 → V2: the booker is the group's contact — phone and email once, here, and not on
+                 every player. Weston: "we show my email 4 times, we show my phone number 4 times…
+                 I need to reach out to this group because of something. Who do I contact?" */
+              <Stack direction="row" alignItems="center" gap={1.25} sx={{ mt: 0.25, minWidth: 0 }} data-group-contact>
+                <Typography sx={{ fontSize: 11.5, color: md3.outline, flexShrink: 0 }}>{b.conf} · Group contact</Typography>
+                <Stack direction="row" alignItems="center" gap={0.375} sx={{ fontSize: 12, fontWeight: 700, color: md3.primary, flexShrink: 0 }}>
+                  <Icon name="phone" size={13} /> {b.phone || booker?.phone || 'No phone'}
+                </Stack>
+                <Stack direction="row" alignItems="center" gap={0.375} sx={{ fontSize: 12, fontWeight: 700, color: booker?.email ? md3.primary : md3.outline, minWidth: 0 }}>
+                  <Icon name="mail" size={13} />
+                  <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{booker?.email || 'No email on file'}</Box>
+                </Stack>
+              </Stack>
+            ) : (
+              <Typography sx={{ fontSize: 11.5, color: md3.outline, mt: 0.25 }}>
+                {b.conf} · {b.phone || 'No phone'}
+              </Typography>
+            )}
             {isFreshWalkIn(b) && <WalkInTimePicker booking={b} />}
           </Box>
           {/* "Next in line" — step to the next tee time without closing the panel. Weston on the
@@ -297,6 +317,10 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   const onOrder = state.selectedBookingId === b.id;
   const playing = b.playerStates.filter((p) => !p.noShow).length;
   const eighteens = b.playerStates.filter((p, i) => !p.noShow && playerHoles(b, i) === 18).length;
+  // V1 → V2, 100226: the panel totals the rows and stops there — the order on the rail works out
+  // tax and the course's other fees (Justin, Oct 2). Before tax, the two agree to the cent.
+  const v1v2 = useV1V2();
+  const beforeTax = +(due - tax).toFixed(2);
 
   const checkInAndPay = () => {
     if (!settled) {
@@ -312,8 +336,12 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   const label = settled
     ? 'Open in register'
     : onOrder
-      ? `Update order · ${money(due)}`
-      : `Check in & pay · ${money(due)}`;
+      ? v1v2
+        ? 'Update order'
+        : `Update order · ${money(due)}`
+      : v1v2
+        ? 'Check in & pay'
+        : `Check in & pay · ${money(due)}`;
 
   return (
     <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, p: '12px 16px 14px', flexShrink: 0, bgcolor: md3.onPrimary }}>
@@ -322,7 +350,7 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
           <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
             {playing} playing
             {eighteens > 0 && eighteens < playing ? ` · ${eighteens} on 18` : ''}
-            {settled ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
+            {settled || v1v2 ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
           </Typography>
           {/* The order this was paid under, where the eye already is. Weston asked for it
               beside "paid"; the Financial tab carries it too, because that is where a refund
@@ -330,7 +358,16 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
           <OrderNumberLink booking={b} />
         </Stack>
         <Typography sx={{ fontSize: 18, fontWeight: 800, color: settled ? md3.primary : md3.onSurface }}>
-          {allNoShow ? 'No-show · nothing due' : settled ? 'Paid in full' : `${money(due)} due`}
+          {allNoShow ? 'No-show · nothing due' : settled ? 'Paid in full' : v1v2 ? (
+            <Box component="span" data-before-tax>
+              {money(beforeTax)}
+              <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: md3.onSurfaceVariant, ml: 0.5 }}>
+                before tax
+              </Box>
+            </Box>
+          ) : (
+            `${money(due)} due`
+          )}
         </Typography>
       </Stack>
       <Stack direction="row" gap={0.75} alignItems="center">
