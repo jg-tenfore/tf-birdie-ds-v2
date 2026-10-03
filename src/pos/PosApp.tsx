@@ -3,6 +3,7 @@ import { Box, Snackbar } from '@mui/material';
 import { elevation, md3, radius, shell } from '../theme/tokens';
 import { ContextMenus } from './components/ContextMenus';
 import { LeftPanel } from './components/LeftPanel';
+import { railBesidePanel } from './state/order-seats';
 import type { MainView } from './types';
 import { NavOverlay } from './components/NavOverlay';
 import { ResourcePanel } from './components/ResourcePanel';
@@ -163,13 +164,17 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   const panelIsModal =
     (Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze') ||
     Boolean(state.resourcePanel);
+  const railLive = railBesidePanel(state, v1v2);
 
   return (
     <PosShell>
       {syncUrl && <UrlSync />}
       {/* `display: contents` so marking the background inert costs it no layout. */}
-      <Box component="div" inert={panelIsModal || undefined} sx={{ display: 'contents' }}>
+      {/* V1 → V2: the rail holding this reservation's order stays live beside the panel. */}
+      <Box component="div" inert={(panelIsModal && !railLive) || undefined} sx={{ display: 'contents' }}>
         <LeftPanel />
+      </Box>
+      <Box component="div" inert={panelIsModal || undefined} sx={{ display: 'contents' }}>
         {view === 'pos' ? (
           // The fallback is a plain surface, not a spinner: the register's chunk resolves in a
           // frame or two off a warm cache, and a spinner that flashes reads worse than nothing.

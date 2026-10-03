@@ -2,7 +2,7 @@ import { taxRateOf } from '../state/operations';
 import { useEffect } from 'react';
 import { Box, ButtonBase, Dialog, Tab, Tabs, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
-import { elevation, md3, noteColors, reservationPanel } from '../../theme/tokens';
+import { elevation, grid, md3, noteColors, reservationPanel } from '../../theme/tokens';
 import { formatTimeLabel } from '../data/courses';
 import { checkInPlayer } from '../logic/bookings';
 import { buildTeeTimeCart, money, orderTotals } from '../logic/cart';
@@ -15,6 +15,8 @@ import { usePos } from '../state/PosProvider';
 import type { Booking } from '../types';
 import { BookingActivity, BookingFinancial, BookingNotes, OrderNumberLink } from './BookingTabs';
 import { PlayerRows } from './PlayerRows';
+import { PlayerRowsV2 } from './PlayerRowsV2';
+import { orderSeatsOf, railBesidePanel } from '../state/order-seats';
 import { BookingMemberDot, Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
 import { seatRecord } from '../logic/seat-pricing';
@@ -39,6 +41,9 @@ export function ReservationPanel() {
   const { state, dispatch } = usePos();
   const panel = state.reservationPanel;
   const scrimmed = panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze';
+  // V1 → V2, 100226: with this reservation's order on the rail, the rail stays in sight beside the
+  // panel — Add puts a player straight onto it.
+  const railLive = railBesidePanel(state, useV1V2());
 
   // Escape closes a **scrimmed** panel, and only a scrimmed one.
   //
@@ -83,6 +88,7 @@ export function ReservationPanel() {
           sx={{
             position: 'absolute',
             inset: 0,
+            left: railLive ? grid.leftPanelW : 0,
             // Under the panel (80), over the tee-sheet toolbar and the multi-select bar.
             zIndex: 79,
             bgcolor: 'rgba(0,0,0,.7)',
@@ -281,7 +287,7 @@ export function ReservationContent({
 
       {/* ── Body ── */}
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: '14px 16px' }}>
-        {tab === 'players' && <PlayerRows booking={b} />}
+        {tab === 'players' && (v1v2 ? <PlayerRowsV2 booking={b} /> : <PlayerRows booking={b} />)}
         {tab === 'financial' && <BookingFinancial booking={b} />}
         {tab === 'notes' && <BookingNotes key={b.id} booking={b} />}
         {tab === 'activity' && <BookingActivity booking={b} />}
@@ -321,6 +327,13 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   // tax and the course's other fees (Justin, Oct 2). Before tax, the two agree to the cent.
   const v1v2 = useV1V2();
   const beforeTax = +(due - tax).toFixed(2);
+  // V1 → V2, 100226 (Player rows v2): Add, Add, **Pay**. The footer totals what is on the order;
+  // with nothing on it yet, it totals the party and offers Check in & pay all.
+  const seats = orderSeatsOf(state.selectedBookingId, state.orderSeats, b);
+  const seatsTotals = seats.length ? orderTotals(buildTeeTimeCart(b, state.courses, rates, seats), taxRateOf(state)) : null;
+  const seatsBeforeTax = seatsTotals ? +(seatsTotals.total - seatsTotals.tax).toFixed(2) : 0;
+  const stillToAdd = b.playerStates.filter((p, i) => !p.paid && !p.noShow && !seats.includes(i)).length;
+  const v2Paying = v1v2 && !settled && !allNoShow;
 
   const checkInAndPay = () => {
     if (!settled) {
@@ -332,6 +345,8 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
     }
     dispatch({ type: 'loadBooking', bookingId: b.id });
   };
+
+  const pay = () => dispatch({ type: 'payOrderSeats', bookingId: b.id });
 
   const label = settled
     ? 'Open in register'
@@ -347,11 +362,24 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
     <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, p: '12px 16px 14px', flexShrink: 0, bgcolor: md3.onPrimary }}>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 1.25 }}>
         <Stack direction="row" alignItems="baseline" gap={0.75} sx={{ minWidth: 0 }}>
+          {v2Paying ? (
+            <Typography data-order-summary sx={{ fontSize: 12.5, color: md3.onSurfaceVariant }}>
+              {seats.length ? (
+                <>
+                  <b style={{ color: md3.onSurface }}>{seats.length} on the order</b> · tax and fees are on the order ·{' '}
+                  {stillToAdd ? `${stillToAdd} still to add` : 'everyone added'}
+                </>
+              ) : (
+                'Nothing on the order yet · tap Add on each player paying now'
+              )}
+            </Typography>
+          ) : (
           <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant }}>
             {playing} playing
             {eighteens > 0 && eighteens < playing ? ` · ${eighteens} on 18` : ''}
             {settled || v1v2 ? '' : ` · fees ${money(fees)}${extras > 0 ? ` · carts ${money(extras)}` : ''} · tax ${money(tax)}`}
           </Typography>
+          )}
           {/* The order this was paid under, where the eye already is. Weston asked for it
               beside "paid"; the Financial tab carries it too, because that is where a refund
               actually happens. */}
@@ -360,7 +388,7 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
         <Typography sx={{ fontSize: 18, fontWeight: 800, color: settled ? md3.primary : md3.onSurface }}>
           {allNoShow ? 'No-show · nothing due' : settled ? 'Paid in full' : v1v2 ? (
             <Box component="span" data-before-tax>
-              {money(beforeTax)}
+              {money(seats.length ? seatsBeforeTax : beforeTax)}
               <Box component="span" sx={{ fontSize: 12, fontWeight: 600, color: md3.onSurfaceVariant, ml: 0.5 }}>
                 before tax
               </Box>
@@ -395,9 +423,17 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
         </OutlineButton>
         <Box sx={{ flex: 1 }} />
         <OutlineButton onClick={() => dispatch({ type: 'closeReservation' })}>Close</OutlineButton>
-        <FilledButton disabled={allNoShow} onClick={checkInAndPay}>
-          {allNoShow ? 'No-show' : label}
-        </FilledButton>
+        {v2Paying ? (
+          seats.length ? (
+            <FilledButton onClick={pay}>Pay</FilledButton>
+          ) : (
+            <FilledButton onClick={checkInAndPay}>Check in & pay all</FilledButton>
+          )
+        ) : (
+          <FilledButton disabled={allNoShow} onClick={checkInAndPay}>
+            {allNoShow ? 'No-show' : label}
+          </FilledButton>
+        )}
       </Stack>
     </Box>
   );

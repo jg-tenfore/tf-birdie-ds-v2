@@ -114,17 +114,23 @@ export const CourseHeader: Story = {
 
 /**
  * **What the rows say is what the order charges.** King, D.'s four: the rows add up to the panel's
- * "before tax" figure, and Check in & pay puts exactly that on the rail as its subtotal — the rail
- * then adds the tax. (Before 100226 the order charged a flat $20 cart against the rows' Member Cart
+ * "before tax" figure, and after Add, Add the footer and the rail beside the panel show the same
+ * subtotal for the two on the order — the rail then adds the tax. (Before 100226 the order charged a flat $20 cart against the rows' Member Cart
  * $0 and Riding Cart $26.82.)
  */
 export const RowsPanelAndRailAgree: Story = {
   render: () => <Screen edition="v1v2" initialState={panel('p15_p1')} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
-    const beforeTax = await waitFor(() => canvasElement.querySelector<HTMLElement>('[data-before-tax]')!);
-    const amount = beforeTax.textContent!.match(/\$[\d,.]+/)![0];
-    await userEvent.click(c.getByRole('button', { name: 'Check in & pay' }));
-    await waitFor(() => expect(c.getByText('Subtotal').parentElement!.textContent).toContain(amount));
+    const beforeTax = () => canvasElement.querySelector<HTMLElement>('[data-before-tax]')!.textContent!.match(/\$[\d,.]+/)![0];
+    await waitFor(() => expect(canvasElement.querySelector('[data-before-tax]')).not.toBeNull());
+    // The whole party, before anything is on the order…
+    const party = beforeTax();
+    // …then Add, Add: the footer totals the two on the order, and the rail beside it agrees.
+    await userEvent.click(c.getByRole('button', { name: 'Add King, D.' }));
+    await userEvent.click(c.getByRole('button', { name: 'Add Guest 2' }));
+    await waitFor(() => expect(beforeTax()).not.toBe(party));
+    await waitFor(() => expect(c.getByText('Subtotal').parentElement!.textContent).toContain(beforeTax()));
+    await expect(c.getByRole('button', { name: 'Pay' })).toBeTruthy();
   },
 };
