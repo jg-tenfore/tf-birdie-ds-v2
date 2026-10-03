@@ -6,6 +6,7 @@ import { DEMO_TODAY, demoNow } from '../data/bookings';
 import { seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
 import { resourceCartLine } from '../logic/resource-booking';
 import { orderNumberFromId } from '../logic/reservation';
+import { checkInPlayer } from '../logic/bookings';
 import type { OrderScenario } from './scenarios';
 import {
   issueGiftCardsOnPayment,
@@ -44,6 +45,7 @@ import {
   type SettingsModal,
   type SettingsState,
 } from './settings';
+import { isLeagueAction, leagueDefaults, leagueReducer, type LeagueAction, type LeagueState } from './league';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -284,7 +286,7 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState {
+export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState, LeagueState {
   view: MainView;
 
   /**
@@ -511,6 +513,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     ...restaurantDefaults(),
     ...operationsDefaults(),
     ...settingsDefaults(),
+    ...leagueDefaults(),
     ...overrides,
   };
 }
@@ -534,6 +537,13 @@ export type Action =
   /** The ID.me document dialog over the customer record. */
   | { type: 'setViewingId'; open: boolean }
   | { type: 'addSeatToOrder'; bookingId: string; seat: number }
+  /** V1 → V2, 100226: take one seat back off the order (the row's ⋯ → Take off the order). */
+  | { type: 'removeSeatFromOrder'; bookingId: string; seat: number }
+  /**
+   * V1 → V2, 100226: the panel's **Pay** — check the seats on the order in and go straight to
+   * checkout with exactly those seats, rather than topping the order up to the whole booking.
+   */
+  | { type: 'payOrderSeats'; bookingId: string }
   | { type: 'rebuildOrderSeats'; bookingId: string }
   | { type: 'stepReservation'; delta: 1 | -1 }
   | { type: 'setWestonOption'; patch: Partial<WestonOptions> }
@@ -639,7 +649,9 @@ export type Action =
   // The back office (V1 → V2, Wave 3): accounts, orders and refunds, events, stock, the drawer, the clock.
   | OperationsAction
   // Settings (V1 → V2): the terminal, checkout and receipts, staff and PINs.
-  | SettingsAction;
+  | SettingsAction
+  // The League view (V1 → V2, 100226): a league's tee times, check-in and placement — `state/league.ts`.
+  | LeagueAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -820,6 +832,8 @@ export function reducer(state: PosState, action: Action): PosState {
         navOpen: false,
         teeSheetSettingsOpen: false,
         returnToBooking: null,
+        // The League view's way back from the register, likewise (V1 → V2, 100226).
+        returnToLeague: null,
         // The panel, not the bookings: courts and bays are session data like the tee sheet's,
         // and must survive Back / Forward. Only what a link describes is reset.
         resourcePanel: null,
@@ -980,6 +994,28 @@ export function reducer(state: PosState, action: Action): PosState {
         orderScenario: same ? state.orderScenario : null,
         lastPayment: same ? state.lastPayment : null,
       };
+    }
+    case 'removeSeatFromOrder': {
+      const b = state.bookings.find((x) => x.id === action.bookingId);
+      if (!b || state.selectedBookingId !== b.id) return state;
+      // A whole-booking order (`null`) is every seat; taking one off leaves the rest.
+      const held = state.orderSeats ?? b.playerStates.map((_, i) => i);
+      const seats = held.filter((s) => s !== action.seat);
+      const extras = state.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes');
+      if (seats.length) {
+        return { ...state, orderSeats: seats, cart: [...cartLogic.buildTeeTimeCart(b, state.courses, rateContext(state), seats), ...extras] };
+      }
+      // The last seat off: the golf leaves the order, and any retail stays as a plain order.
+      return { ...state, orderSeats: null, selectedBookingId: extras.length ? state.selectedBookingId : null, cart: extras };
+    }
+    case 'payOrderSeats': {
+      const b = state.bookings.find((x) => x.id === action.bookingId);
+      if (!b || state.selectedBookingId !== b.id) return state;
+      const seats = state.orderSeats ?? b.playerStates.map((_, i) => i);
+      const bookings = state.bookings.map((x) =>
+        x.id === b.id ? { ...x, playerStates: x.playerStates.map((p, i) => (seats.includes(i) && !p.noShow ? checkInPlayer(p) : p)) } : x,
+      );
+      return { ...state, bookings, view: 'pos', leftPanelCollapsed: false, reservationPanel: null, modal: { kind: 'checkout' } };
     }
     case 'loadBooking': {
       const b = state.bookings.find((x) => x.id === action.bookingId);
@@ -1271,6 +1307,7 @@ export function reducer(state: PosState, action: Action): PosState {
     default:
       if (isRestaurantAction(action)) return restaurantReducer(state, action);
       if (isOperationsAction(action)) return operationsReducer(state, action);
+      if (isLeagueAction(action)) return leagueReducer(state, action, reducer);
       if (isSettingsAction(action))
         return settingsReducer(state, action, demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
       return isRegisterExtrasAction(action)

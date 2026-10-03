@@ -4,6 +4,7 @@ import {
   defaultTransportFor,
   discountAmount,
   discountById,
+  LEAGUE_RATE,
   price as ratePrice,
   ratesForTeeTime,
   rateAllowsHoles,
@@ -76,9 +77,17 @@ function bookingDate(b: Booking): Date {
   return new Date(y, m - 1, d);
 }
 
-/** Every rate sellable on this booking's slot for a hole count — the tile grid's contents. */
-export const seatRateGrid = (b: Booking, holes: 9 | 18, ctx: SeatPricingContext = {}): GreenFeeRate[] =>
-  ratesForTeeTime(rateBand(b.timeMin), bookingDate(b), holes, ctx.catalog ?? 'standard');
+/**
+ * Every rate sellable on this booking's slot for a hole count — the tile grid's contents.
+ *
+ * A league's tee time (V1 → V2, 100226: a group booking with roster golfers on it) also sells the
+ * League Rate, which its golfers are placed on. No other booking has one, so no other grid changes.
+ */
+export const seatRateGrid = (b: Booking, holes: 9 | 18, ctx: SeatPricingContext = {}): GreenFeeRate[] => {
+  const grid = ratesForTeeTime(rateBand(b.timeMin), bookingDate(b), holes, ctx.catalog ?? 'standard');
+  const league = Boolean(b.groupId) && (b.guests ?? []).some((g) => g?.leagueGolferId);
+  return league && !grid.some((r) => r.id === LEAGUE_RATE.id) ? [...grid, LEAGUE_RATE] : grid;
+};
 
 /**
  * The rate seat `i` is sold on.

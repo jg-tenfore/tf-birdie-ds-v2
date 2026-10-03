@@ -138,6 +138,18 @@ function buildHeavy(): Record<RateBand, Array<Omit<GreenFeeRate, 'id'>>> {
 export const rateId = (name: string): string =>
   `rate-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 
+/**
+ * The League Rate, 18 holes (V1 → V2, 100226) — the 26-rate course's peak row, $36.
+ *
+ * The standard card does not sell it, so it is not in `catalogRates`: it is offered only on a
+ * league's own tee times (`seatRateGrid`), which only V1 → V2 seeds. Every other tee time's grid,
+ * in every edition, is exactly what it was.
+ */
+export const LEAGUE_RATE: GreenFeeRate = (() => {
+  const row = HEAVY_RATE_PRICING.peak.find((r) => r.name === 'League Rate')!;
+  return { ...row, id: rateId(row.name) };
+})();
+
 /** Which catalog a surface is reading. `heavy` is story-only. */
 export type RateCatalogKey = 'standard' | 'heavy';
 

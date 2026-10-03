@@ -7,6 +7,7 @@ import { amountDue } from '../state/operations';
 import type { Booking } from '../types';
 import { bookingForOrderNumber, bookingOrder, bookingOrdersOn, orderFromBooking } from './booking-orders';
 import { buildTeeTimeCart, orderTotals } from './cart';
+import { refundAmount, refundableQty } from './orders';
 import { orderNumber, orderNumberFromId } from './reservation';
 
 /**
@@ -89,5 +90,15 @@ describe("a day's tee-time orders, for search", () => {
     const b = paidToday();
     const day = bookingOrdersOn(bookings, TODAY, new Set([orderNumber(b)!]), courses);
     expect(day.some((e) => e.booking.id === b.id)).toBe(false);
+  });
+});
+
+describe('refunding a tee time', () => {
+  it('gives back the whole charge, carts and walking fees included', () => {
+    // V1 → V2 prices transport from the row, so every seat carries a transport charge.
+    const b = paidToday();
+    const order = orderFromBooking(b, courses, { transportFromRow: true })!;
+    const all = order.lines.map((_, index) => ({ index, qty: refundableQty(order, index) })).filter((p) => p.qty > 0);
+    expect(refundAmount(order, all)).toBe(order.total);
   });
 });

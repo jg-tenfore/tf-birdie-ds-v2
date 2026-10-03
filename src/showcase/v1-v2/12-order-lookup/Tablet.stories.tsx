@@ -212,6 +212,9 @@ export const FromAReservationAndBack: Story = {
   },
 };
 
+/** V1 → V2 prices each seat's transport from its row (100226), so the order as sold does too. */
+const V1V2_RATES = { transportFromRow: true };
+
 /**
  * **A tee time paid before the session.** Its number has no rung-up order behind it, so the screen
  * builds one from the booking — the same seats, fees and tax the register would charge — and says
@@ -221,7 +224,7 @@ export const ATeeTimePaidBeforeTheSession: Story = {
   render: () => <Screen edition="v1v2" initialState={at({ selectedOrderNumber: orderNumber(paidTwilight()) })} />,
   play: async ({ canvasElement }) => {
     const b = paidTwilight();
-    const built = orderFromBooking(b, venue('eighteen').courses)!;
+    const built = orderFromBooking(b, venue('eighteen').courses, V1V2_RATES)!;
     const detail = await waitFor(() => canvasElement.querySelector<HTMLElement>(`[data-order-detail="${built.orderNumber}"]`)!);
     await expect(detail.textContent).toContain('Paid on the tee sheet');
     await expect(detail.textContent).toContain(built.lines[0].name);
@@ -241,7 +244,7 @@ export const ATeeTimePaidBeforeTheSession: Story = {
 export const RefundATeeTimePaidBeforeTheSession: Story = {
   render: () => <Screen edition="v1v2" initialState={at({ selectedOrderNumber: orderNumber(paidTwilight()) })} />,
   play: async ({ canvasElement }) => {
-    const built = orderFromBooking(paidTwilight(), venue('eighteen').courses)!;
+    const built = orderFromBooking(paidTwilight(), venue('eighteen').courses, V1V2_RATES)!;
     await waitFor(() => expect(canvasElement.querySelector(`[data-order-detail="${built.orderNumber}"]`)).not.toBeNull());
     await userEvent.click(canvasElement.querySelector<HTMLElement>('[data-refund]')!);
     const dialog = within(await screen.findByRole('dialog'));

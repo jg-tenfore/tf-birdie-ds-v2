@@ -11,6 +11,7 @@ import { roundLabel } from '../logic/reservation';
 import { seatRecord } from '../logic/seat-pricing';
 import { useStartWalkIn } from './use-start-walk-in';
 import { RegisterGolfSummary } from './RegisterGolfSummary';
+import { ReturnToLeague } from './league/LeagueWayIn';
 import * as cart from '../logic/cart';
 import { dominantTransport, selectedBooking } from '../state/pos-store';
 import { amountDue, registerTotals } from '../state/operations';
@@ -138,6 +139,8 @@ export function LeftPanel() {
           Without this the way back is a fresh hunt through the tee sheet for a tee time the
           operator was reading a second ago. */}
       <ReturnToReservation />
+      {/* V1 → V2, 100226: back to the league an Extra came from. */}
+      <ReturnToLeague />
 
       {/* ── Held orders (V1 → V2) ── only while something is held. */}
       {v1v2 && <HeldOrdersBar />}

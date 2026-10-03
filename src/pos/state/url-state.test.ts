@@ -593,3 +593,61 @@ describe('a seat without its booking', () => {
     expect(back.customerModal?.customerId).toBe('458349');
   });
 });
+
+describe('the League view (V1 → V2, 100226)', () => {
+  const MAY30 = new Date(2026, 4, 30);
+  const league = (extra: Partial<PosState> = {}): Partial<PosState> => ({
+    venueId: 'eighteen',
+    view: 'league',
+    leagueGroupId: 'grp-senior-league',
+    currentDate: MAY30,
+    ...extra,
+  });
+
+  it('links a league, and its Assign tab', () => {
+    expect(stateToHash(createInitialState(league()))).toBe('#/league?venue=eighteen&date=2026-05-30&group=grp-senior-league');
+    expect(stateToHash(createInitialState(league({ leagueTab: 'assign' })))).toBe(
+      '#/league?venue=eighteen&date=2026-05-30&group=grp-senior-league&league-tab=assign',
+    );
+  });
+
+  it.each([
+    ['check in', league()],
+    ['assign', league({ leagueTab: 'assign' })],
+    ['another league', league({ leagueGroupId: 'grp-mens-league' })],
+  ])('round-trips %s', (_label, overrides) => expectStable(overrides));
+
+  it('opens the League view from the link', () => {
+    const patch = hashToState('#/league?venue=eighteen&date=2026-05-30&group=grp-skins-league&league-tab=assign');
+    expect(patch).toMatchObject({ view: 'league', leagueGroupId: 'grp-skins-league', leagueTab: 'assign', venueId: 'eighteen' });
+  });
+
+  it('lands on the tee sheet for a league the club does not have', () => {
+    expect(hashToState('#/league?group=grp-nope').view).toBe('tee');
+    // The Senior League plays at the 18-hole club, not the three nines.
+    expect(hashToState('#/league?venue=three-nines&group=grp-senior-league').view).toBe('tee');
+  });
+
+  it('round-trips the register’s way back to a league', () => {
+    expect(stateToHash(createInitialState({ venueId: 'eighteen', returnToLeague: 'grp-senior-league' }))).toContain(
+      'from-league=grp-senior-league',
+    );
+    expectStable({ venueId: 'eighteen', returnToLeague: 'grp-senior-league' });
+  });
+
+  it('keeps the League view on screen when an order is open behind it', () => {
+    const base = createInitialState(league());
+    const session = { ...base, bookings: [...base.bookings, { ...base.bookings[0], id: 'league-grp-senior-league-2' }] };
+    const patch = hashToState(
+      '#/league?venue=eighteen&date=2026-05-30&group=grp-senior-league&booking=league-grp-senior-league-2',
+      session,
+    );
+    expect(patch.selectedBookingId).toBe('league-grp-senior-league-2');
+    expect(patch.view).toBe('league');
+  });
+
+  it('treats switching league as navigation', () => {
+    const a = createInitialState(league());
+    expect(isNavigation(a, { ...a, leagueGroupId: 'grp-mens-league' })).toBe(true);
+  });
+});

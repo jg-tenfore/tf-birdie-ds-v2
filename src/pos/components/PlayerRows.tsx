@@ -657,7 +657,7 @@ function MetaLine({ left, right, note }: { left: string; right: string; note?: s
 
 // ─── Controls ───────────────────────────────────────────────────────────────
 
-const initials = (name: string) =>
+export const initials = (name: string) =>
   name
     .split(/[,\s]+/)
     .filter(Boolean)
@@ -666,7 +666,7 @@ const initials = (name: string) =>
     .join('')
     .toUpperCase();
 
-function PaidPill({ paid, noShow }: { paid: boolean; noShow: boolean }) {
+export function PaidPill({ paid, noShow }: { paid: boolean; noShow: boolean }) {
   const cfg = noShow ? payBadges.no_show : paid ? payBadges.paid : payBadges.open;
   return (
     <Box
@@ -755,7 +755,7 @@ export function Segmented<T extends string | number>({
  * The per-player tee fee. Commits on blur or Enter (typing "4" on the way to "45" must not
  * reprice the order); a reset appears once it differs from the default for their holes.
  */
-function FeeField({
+export function FeeField({
   label,
   value,
   isDefault,
@@ -816,7 +816,7 @@ function FeeField({
   );
 }
 
-function CountStepper({ value, max, onChange }: { value: number; max: number; onChange: (n: number) => void }) {
+export function CountStepper({ value, max, onChange }: { value: number; max: number; onChange: (n: number) => void }) {
   const btn = (delta: number, disabled: boolean) => (
     <ButtonBase
       aria-label={delta > 0 ? 'Add a player' : 'Remove the last player'}

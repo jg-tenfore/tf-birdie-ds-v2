@@ -39,6 +39,7 @@ import Remove from '@mui/icons-material/Remove';
 import LinkIcon from '@mui/icons-material/Link';
 import AddCircle from '@mui/icons-material/AddCircle';
 import AddShoppingCart from '@mui/icons-material/AddShoppingCart';
+import RemoveShoppingCart from '@mui/icons-material/RemoveShoppingCart';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import AttachMoney from '@mui/icons-material/AttachMoney';
@@ -241,6 +242,7 @@ export const ICONS: Record<string, SvgIconComponent> = {
   link: LinkIcon,
   add_circle: AddCircle,
   add_shopping_cart: AddShoppingCart,
+  remove_shopping_cart: RemoveShoppingCart,
   arrow_back: ArrowBack,
   arrow_drop_down: ArrowDropDown,
   attach_money: AttachMoney,
