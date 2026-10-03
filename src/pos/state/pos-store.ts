@@ -45,6 +45,7 @@ import {
   type SettingsModal,
   type SettingsState,
 } from './settings';
+import { isLeagueAction, leagueDefaults, leagueReducer, type LeagueAction, type LeagueState } from './league';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -285,7 +286,7 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState {
+export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState, LeagueState {
   view: MainView;
 
   /**
@@ -512,6 +513,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     ...restaurantDefaults(),
     ...operationsDefaults(),
     ...settingsDefaults(),
+    ...leagueDefaults(),
     ...overrides,
   };
 }
@@ -647,7 +649,9 @@ export type Action =
   // The back office (V1 → V2, Wave 3): accounts, orders and refunds, events, stock, the drawer, the clock.
   | OperationsAction
   // Settings (V1 → V2): the terminal, checkout and receipts, staff and PINs.
-  | SettingsAction;
+  | SettingsAction
+  // The League view (V1 → V2, 100226): a league's tee times, check-in and placement — `state/league.ts`.
+  | LeagueAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -828,6 +832,8 @@ export function reducer(state: PosState, action: Action): PosState {
         navOpen: false,
         teeSheetSettingsOpen: false,
         returnToBooking: null,
+        // The League view's way back from the register, likewise (V1 → V2, 100226).
+        returnToLeague: null,
         // The panel, not the bookings: courts and bays are session data like the tee sheet's,
         // and must survive Back / Forward. Only what a link describes is reset.
         resourcePanel: null,
@@ -1301,6 +1307,7 @@ export function reducer(state: PosState, action: Action): PosState {
     default:
       if (isRestaurantAction(action)) return restaurantReducer(state, action);
       if (isOperationsAction(action)) return operationsReducer(state, action);
+      if (isLeagueAction(action)) return leagueReducer(state, action, reducer);
       if (isSettingsAction(action))
         return settingsReducer(state, action, demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
       return isRegisterExtrasAction(action)

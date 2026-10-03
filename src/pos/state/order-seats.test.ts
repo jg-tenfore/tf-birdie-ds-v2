@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { venueBookings } from '../data/venues';
 import { orderSeatsOf } from './order-seats';
+import { orderTotals } from '../logic/cart';
+import { playerFee, setPlayerTransport } from '../logic/reservation';
+import { seatPrice } from '../logic/seat-pricing';
+import { rateContext } from './rate-context';
 import { createInitialState, reducer, type PosState } from './pos-store';
 
 /**
@@ -78,5 +82,16 @@ describe('Add, Add, Pay', () => {
     expect(orderSeatsOf(king.id, null, king)).toEqual([0, 1, 2, 3]);
     expect(orderSeatsOf(king.id, [2], king)).toEqual([2]);
     expect(orderSeatsOf('someone-else', [2], king)).toEqual([]);
+  });
+
+  it('a walker is charged the Walking row the player row shows', () => {
+    let s = base();
+    s = run(s, { type: 'patchBooking', bookingId: king.id, patch: setPlayerTransport(king, 1, 'walking') });
+    const b = s.bookings.find((x) => x.id === king.id)!;
+    const row = seatPrice(b, 1, playerFee(b, 1, rateContext(s)), { catalog: s.weston.rateCatalog, customers: s.customerEdits });
+    expect(row.transport.name).toBe('Walking');
+    expect(row.transportFee).toBeGreaterThan(0);
+    s = run(s, { type: 'addSeatToOrder', bookingId: king.id, seat: 1 });
+    expect(orderTotals(s.cart).goods).toBe(row.total);
   });
 });

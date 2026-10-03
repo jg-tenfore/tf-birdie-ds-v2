@@ -23,6 +23,7 @@ import { seatRecord } from '../logic/seat-pricing';
 import { useV1V2 } from '../edition';
 import { WalkInTimePicker } from './WalkInTimePicker';
 import { isFreshWalkIn } from '../logic/walk-in';
+import { LeagueWayIn } from './league/LeagueWayIn';
 
 /**
  * The reservation panel (Weston Edits).
@@ -287,6 +288,7 @@ export function ReservationContent({
 
       {/* ── Body ── */}
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: '14px 16px' }}>
+        {tab === 'players' && <LeagueWayIn booking={b} />}
         {tab === 'players' && (v1v2 ? <PlayerRowsV2 booking={b} /> : <PlayerRows booking={b} />)}
         {tab === 'financial' && <BookingFinancial booking={b} />}
         {tab === 'notes' && <BookingNotes key={b.id} booking={b} />}

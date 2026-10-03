@@ -471,6 +471,11 @@ export interface SeatCharges {
   cartFee: number;
   /** Push-cart fee for this seat's class. */
   pushFee: number;
+  /**
+   * What a walker pays for the course (a trail fee). Nothing, except in V1 → V2, where the order
+   * charges the transport row the player row shows — Walking included.
+   */
+  walkFee: number;
   /** Green-fee tax for this seat — 0 when the seat's green fee is $0. */
   tax: number;
 }
@@ -507,6 +512,7 @@ export function seatCharges(b: Booking, i: number, rates?: RateContext): SeatCha
     member,
     cartFee: chosenTransport ?? row.cartFee ?? 0,
     pushFee: chosenTransport ?? row.pushFee ?? 5,
+    walkFee: rates?.transportFromRow ? (chosenTransport ?? 0) : 0,
     tax: greenFee > 0 ? (row.tax ?? 0) : 0,
   };
 }
@@ -573,6 +579,15 @@ export function buildTeeTimeCart(
         tag: 'Push Cart',
         tagColor: '#7c3aed',
         p: prices.pushFee,
+        isTransport: true,
+      });
+    } else if (transport === 'walking' && prices.walkFee > 0) {
+      // V1 → V2: the row says Walking $8.58, so the order charges it (Justin, Oct 2).
+      modifierTags.push({
+        name: 'Walking',
+        tag: 'Walking',
+        tagColor: '#059669',
+        p: prices.walkFee,
         isTransport: true,
       });
     }

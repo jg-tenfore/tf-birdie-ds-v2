@@ -5,11 +5,15 @@ import { Icon } from './primitives';
 import { Stack } from './Stack';
 
 /**
- * Touch-sized controls (V1 → V2, 100226): the player rows and the League view are worked with a
- * finger at the counter, so nothing on them is smaller than {@link TOUCH}.
+ * Touch-sized parts (V1 → V2, 100226) — moved into the app from the 100226 mock kit
+ * (`showcase/v1-v2/100226/mock-kit-2.tsx`) with the same API, now that the League view is built.
+ *
+ * - `TOUCH` — the smallest target, 40px.
+ * - `Seg` — a segmented toggle, each segment a full touch target (`role="group"`, `aria-pressed`).
+ * - `TouchButton` — a pill button at touch height, in four tones.
  */
 
-/** 40px: the smallest target here — it is a touchscreen. */
+/** 40px: the smallest target on these screens — it is a touchscreen. */
 export const TOUCH = 40;
 
 /** A segmented toggle, each segment a full touch target. */

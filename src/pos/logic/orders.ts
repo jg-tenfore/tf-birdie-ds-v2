@@ -1,4 +1,5 @@
 import type { CartItem } from '../types';
+import { payableTotal } from './cart';
 
 /**
  * A paid order, as it was sold (V1 → V2, Wave 3) — what Order Lookup finds and refunds.
@@ -96,8 +97,12 @@ export function refundableQty(order: OrderRecord, index: number): number {
   return Math.max(0, l.qty - refundedQty(order, index));
 }
 
-/** One unit of a line, before tax. */
-const unitOf = (l: CartItem) => (l.isCheckIn ? (l.unitPrice ?? l.price) : l.price);
+/**
+ * One unit of a line, before tax. A tee time's unit is a seat with everything it was charged —
+ * green fee *and* its cart, push cart or walking fee — so refunding the whole tee time gives back
+ * exactly what it took. (It used to be the green fee alone, which left every cart fee behind.)
+ */
+const unitOf = (l: CartItem) => (l.isCheckIn ? (l.qty > 0 ? payableTotal([l]) / l.qty : 0) : l.price);
 
 /**
  * What refunding `picks` gives back: the goods, plus their proportional share of the order's tax.
