@@ -22,6 +22,7 @@ import { SettingsView } from './components/operations/SettingsView';
 import { ShiftView } from './components/operations/ShiftView';
 import { SignInScreen } from './components/operations/SignInScreen';
 import { TimeClockView } from './components/operations/TimeClockView';
+import { LeagueView } from './components/league/LeagueView';
 import { useEventBookings } from './state/use-event-bookings';
 import { useEmptyRail } from './state/use-empty-rail';
 import { TeeSheetSidebar } from './components/TeeSheetSidebar';
@@ -151,7 +152,8 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // V1 → V2's screens exist only in V1 → V2. The nav already dims their tiles elsewhere, but a
   // route resolves in any edition — so `#/courts` used to draw the court sheet inside Weston
   // Edits and the base prototypes. A view this edition does not have falls back to the tee sheet.
-  const v1v2View = state.view === 'courts' || state.view === 'bays' || Boolean(RESTAURANT_VIEWS[state.view]);
+  const v1v2View =
+    state.view === 'courts' || state.view === 'bays' || state.view === 'league' || Boolean(RESTAURANT_VIEWS[state.view]);
   const view = v1v2View && !v1v2 ? 'tee' : state.view;
 
   // A scrimmed reservation panel is modal: nothing behind it is usable until an action on the
@@ -160,9 +162,12 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // the tab order, out of the accessibility tree and out of pointer events together.
   const panel = state.reservationPanel;
   // The court / bay panel always dims the sheet, so it makes the background inert the same way.
+  // V1 → V2, 100226: the League view covers the terminal the same way.
+  const leagueOpen = view === 'league';
   const panelIsModal =
     (Boolean(panel) && panel?.presentation !== 'modal' && panel?.backdrop !== 'squeeze') ||
-    Boolean(state.resourcePanel);
+    Boolean(state.resourcePanel) ||
+    leagueOpen;
 
   return (
     <PosShell>
@@ -179,6 +184,9 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
         ) : view === 'courts' || view === 'bays' ? (
           // V1 → V2: one scheduler, configured per sheet — see `data/resources.ts`.
           <ResourceSheetView kind={view === 'courts' ? 'court' : 'bay'} />
+        ) : leagueOpen ? (
+          // V1 → V2, 100226: the League view covers the stage (below); nothing needs drawing under it.
+          <Box sx={{ flex: 1, bgcolor: md3.surface }} />
         ) : RESTAURANT_VIEWS[view] ? (
           // V1 → V2, Wave 2: the restaurant.
           RESTAURANT_VIEWS[view]!()
@@ -190,6 +198,8 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
 
       <ReservationPanel />
       <ResourcePanel />
+      {/* V1 → V2, 100226: a league's tee times, over the whole terminal. */}
+      {leagueOpen && <LeagueView />}
       {/* The customer record layers over everything, including the reservation. */}
       <CustomerModal />
       {/* Above both: navigating away is the one action that outranks whatever is open. */}

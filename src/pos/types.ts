@@ -212,6 +212,11 @@ export interface BookingGuest {
   notes?: string;
   /** Set when the guest was linked to a CRM record rather than typed free-form. */
   crmId?: string;
+  /**
+   * The league roster golfer sitting in this seat (V1 → V2, League view) — `LeagueGolfer.id`,
+   * unique within the booking's `groupId`. Set when the golfer is placed on the tee time.
+   */
+  leagueGolferId?: string;
 }
 
 export interface ActivityEntry {
@@ -490,7 +495,9 @@ export type MainView =
   | 'inventory'
   | 'shift'
   // Settings (V1 → V2).
-  | 'settings';
+  | 'settings'
+  // A league's tee times in one place (V1 → V2, 100226).
+  | 'league';
 export type TeeSheetViewMode = 'cal' | 'list';
 export type FlowMode = '' | 'walkin' | 'reserve';
 

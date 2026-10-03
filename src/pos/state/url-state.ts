@@ -14,6 +14,7 @@ import { isRestaurantModal } from './restaurant';
 import { isOperationsModal } from './operations';
 import { DEFAULT_SETTINGS_SECTION, SETTINGS_SECTIONS, isSettingsModal, type SettingsSection } from './settings';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
+import { leagueById } from '../data/leagues';
 
 /**
  * Deep linking: a two-way map between POS state and a URL.
@@ -40,6 +41,8 @@ import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
  *   #/register?order=walkin&modal=modifiers&i=0&p=1
  *   #/tee-sheet?modal=block&t=0912                 blocking the 9:12 row
  *   #/tee-sheet?res=p43&res-tab=financial            the reservation panel (Weston Edits)
+ *   #/league?venue=eighteen&date=2026-05-30&group=grp-senior-league&league-tab=assign
+ *                                                    a league's tee times (V1 → V2, 100226)
  *
  * Times are `HHMM` in 24-hour form (`0912`) rather than raw minutes — same information,
  * legible to a human scanning the link.
@@ -408,6 +411,9 @@ export function stateToHash(state: PosState): string {
         return `/${OPERATIONS_PATHS[state.view]}`;
       case 'tee':
         return state.teeSheetMode === 'list' ? '/tee-sheet/list' : '/tee-sheet';
+      // V1 → V2, 100226: the League view.
+      case 'league':
+        return '/league';
       default:
         return state.currentCategory
           ? `/register/${encodeURIComponent(state.currentCategory)}`
@@ -437,6 +443,13 @@ export function stateToHash(state: PosState): string {
   if (state.navOpen) q.set('nav', '1');
   if (state.teeSheetSettingsOpen) q.set('sheet-settings', '1');
   if (state.returnToBooking) q.set('from-res', state.returnToBooking);
+  // The League view: which league, which tab (Check in is the default), and the way back to it
+  // from the register after an Extra.
+  if (state.view === 'league' && state.leagueGroupId) {
+    q.set('group', state.leagueGroupId);
+    if (state.leagueTab !== 'checkin') q.set('league-tab', state.leagueTab);
+  }
+  if (state.returnToLeague) q.set('from-league', state.returnToLeague);
   // A court or bay booking's panel (V1 → V2).
   if (state.resourcePanel) q.set('rb', state.resourcePanel.bookingId);
   // The restaurant (V1 → V2, Wave 2): the tab open in the editor, and which room of the floor.
@@ -569,6 +582,20 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
     // V1 → V2's resource sheets. Full width, like the tee sheet.
     view = screen;
     patch.leftPanelCollapsed = q.get('panel') !== 'open';
+  } else if (screen === 'league') {
+    // V1 → V2, 100226: a league the link's club has. Anything else is a stale link, and lands on the
+    // tee sheet rather than an empty League view.
+    const l = leagueById(q.get('group'));
+    const venueParam = q.get('venue');
+    const club = venueParam && isVenueId(venueParam) ? venueParam : buildVenue();
+    if (l && l.venueId === club) {
+      view = 'league';
+      patch.leagueGroupId = l.groupId;
+      patch.leagueTab = q.get('league-tab') === 'assign' ? 'assign' : 'checkin';
+    } else {
+      view = 'tee';
+      patch.leftPanelCollapsed = true;
+    }
   } else if (screen === 'register' || !screen) {
     view = 'pos';
     if (segments[1]) patch.currentCategory = decodeURIComponent(segments[1]);
@@ -616,7 +643,8 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
       // Back to the booking already on the order keeps the order as rung up, not a fresh copy.
       const keepCart = live && live.selectedBookingId === booking.id && live.cart.length > 0;
       if (!keepCart) patch.cart = buildTeeTimeCart(booking, courses);
-      patch.view = 'pos';
+      // An order open behind the League view (a golfer's Pay) keeps the League view on screen.
+      if (patch.view !== 'league') patch.view = 'pos';
     }
   } else if (order && isOrderScenario(order)) {
     if (live && live.orderScenario === order && live.cart.length > 0) {
@@ -648,6 +676,8 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   // reservation the operator never came from.
   const fromRes = q.get('from-res');
   if (fromRes && bookings.some((b) => b.id === fromRes)) patch.returnToBooking = fromRes;
+  const fromLeague = leagueById(q.get('from-league'));
+  if (fromLeague && fromLeague.venueId === venueId) patch.returnToLeague = fromLeague.groupId;
   // The id is resolved when the sheet seeds its day, so it is taken on trust here; the panel
   // renders nothing for an id that never resolves, which is the visible failure a stale link
   // should have.
@@ -797,6 +827,8 @@ export function isNavigation(prev: PosState, next: PosState): boolean {
     // Opening the main navigation covers the screen, so Back should close it rather than
     // leaving the tee sheet underneath.
     prev.navOpen !== next.navOpen ||
+    // Switching league in the League view.
+    (next.view === 'league' && prev.leagueGroupId !== next.leagueGroupId) ||
     toDateStr(prev.currentDate) !== toDateStr(next.currentDate)
   );
 }
