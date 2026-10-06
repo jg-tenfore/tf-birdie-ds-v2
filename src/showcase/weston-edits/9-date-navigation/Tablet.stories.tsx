@@ -8,7 +8,8 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * Round 2 was a 46-second Loom about the **phone**: *"If I'm on the tee sheet and I want to go
  * to, let's say, June — there's no way to select the month, so I just have to click."* The
  * tablet already had a month calendar, so its controls stay exactly as they are — ‹ ›, the
- * date's calendar popover, **Today** and **Weekend**. What changes here is what is *behind*
+ * date's calendar popover and **Today** (the **Weekend** button was taken off the bar on Oct 6). What
+ * changes here is what is *behind*
  * them: the tablet could always reach June, there was just nothing to see when it got there.
  *
  * Any date within twelve months of today now has a tee sheet — the same generated day the

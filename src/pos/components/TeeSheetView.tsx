@@ -133,15 +133,6 @@ function TeeSheetToolbar() {
       />
 
       <ToolbarButton label="Today" onClick={() => dispatch({ type: 'setDate', date: DEMO_TODAY() })} />
-      <ToolbarButton
-        label="Weekend"
-        onClick={() => {
-          const d = DEMO_TODAY();
-          const day = d.getDay();
-          d.setDate(d.getDate() + (day === 6 ? 0 : 6 - day));
-          dispatch({ type: 'setDate', date: d });
-        }}
-      />
 
       <Divider orientation="vertical" flexItem sx={{ my: 1.25, mx: 0.25 }} />
 
