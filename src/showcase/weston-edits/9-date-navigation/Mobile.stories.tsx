@@ -153,7 +153,7 @@ type Story = StoryObj;
  * within the week, so the arrows take the bigger step.
  */
 export const WeekStrip: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
 };
 
 /**
@@ -164,7 +164,7 @@ export const WeekStrip: Story = {
  * **Why:** the list only offered the demo's eleven days, with no month or way to page.
  */
 export const CalendarSheet: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: {} }]} />,
+  render: () => <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: {} }]} />,
 };
 
 /**
@@ -175,7 +175,7 @@ export const CalendarSheet: Story = {
  * **Why:** Weston's exact case — "I want to go to, let's say, June".
  */
 export const JumpToJune: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByLabelText('Choose date'));
@@ -196,7 +196,7 @@ export const JumpToJune: Story = {
  */
 export const YearChooser: Story = {
   render: () => (
-    <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: { view: 'years' } }]} />
+    <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: { view: 'years' } }]} />
   ),
 };
 
@@ -209,7 +209,6 @@ export const YearChooser: Story = {
 export const TodayButton: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18(undefined, { currentDate: new Date(2026, 5, 12) })}
       tab="tee"
       stack={[{ name: 'teeSheet', calendar: {} }]}
@@ -232,7 +231,6 @@ export const TodayButton: Story = {
 export const OutOfRange: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18(undefined, { currentDate: new Date(2027, 4, 18) })}
       tab="tee"
       stack={[{ name: 'teeSheet', calendar: {} }]}
@@ -281,7 +279,7 @@ const scrollTo = async (list: HTMLElement, y: number) => {
  * the compact row.
  */
 export const HeaderFoldsOnScroll: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     const list = await listOf(c);
@@ -332,7 +330,7 @@ export const HeaderFoldsOnScroll: Story = {
  * **Why:** Weston's *"click that and go to a different date… or click the arrows."*
  */
 export const CompactRowStepsADay: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await scrollTo(await listOf(c), 400);
@@ -360,7 +358,6 @@ export const CompactRowStepsADay: Story = {
 export const ClearedDayStaysEmpty: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       // June 12 was filled, then every booking on it deleted: no June bookings in state,
       // and the date recorded as generated.
       initialState={at18(undefined, { currentDate: new Date(2026, 5, 12), generatedDates: ['2026-06-12'] })}

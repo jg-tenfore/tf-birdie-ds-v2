@@ -130,6 +130,15 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
+
 /** Seat `i`'s row, scoped for queries. */
 const row = (canvasElement: HTMLElement, i: number) =>
   within(canvasElement.querySelector<HTMLElement>(`[data-player-row="${i}"]`)!);
@@ -158,7 +167,8 @@ const fee = (canvasElement: HTMLElement, i: number, name: string) =>
  * last number is the point of the whole section.
  */
 export const TheirOwnCard: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(punchParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(punchParty())} />,
   play: async ({ canvasElement }) => {
     const b = punchParty();
     const name = playerName(b, 1);
@@ -184,7 +194,7 @@ export const TheirOwnCard: Story = {
  * beside it — a punched seat is an edited seat, and the row never pretends the round was free.
  */
 export const OnTheRow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(ownCardApplied())} />,
+  render: () => <Screen initialState={sheetWithPanel(ownCardApplied())} />,
 };
 
 /**
@@ -200,7 +210,8 @@ export const OnTheRow: Story = {
  * whose card it was.
  */
 export const AnotherCustomersCard: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(punchParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(punchParty())} />,
   play: async ({ canvasElement }) => {
     const b = punchParty();
     const name = playerName(b, 2);
@@ -228,7 +239,8 @@ export const AnotherCustomersCard: Story = {
  * never turns up keeps its rounds.
  */
 export const SpentAtCheckIn: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(ownCardApplied())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(ownCardApplied())} />,
   play: async ({ canvasElement }) => {
     const b = ownCardApplied();
     await openRates(canvasElement, 1, playerName(b, 1));
@@ -245,7 +257,8 @@ export const SpentAtCheckIn: Story = {
  * not a re-pricing decision.
  */
 export const RemovingItRepricesBack: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(ownCardApplied())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(ownCardApplied())} />,
   play: async ({ canvasElement }) => {
     const b = ownCardApplied();
     const name = playerName(b, 1);
@@ -274,6 +287,6 @@ export const RoundsNotRides: Story = {
     const punched = { ...walking, ...applyPunchCard(walking, 1, punchHolder().id, cardOf(punchHolder()).name) };
     const riding = { ...punched, ...setPlayerTransport(punched, 2, 'cart') };
     const both = { ...riding, ...applyPunchCard(riding, 2, donor.id, cardOf(donor).name) };
-    return <Screen edition="weston" initialState={sheetWithPanel(both)} />;
+    return <Screen initialState={sheetWithPanel(both)} />;
   },
 };

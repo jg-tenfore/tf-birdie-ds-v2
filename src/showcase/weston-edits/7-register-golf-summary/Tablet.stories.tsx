@@ -100,9 +100,17 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2's reservation footer is Player rows v2's (**Pay** for the players on the order, see
+ * Reviews › Oct 2 – Proposal review › 1. Player rows v2), so Weston's **Update order** button,
+ * which this story presses, is Weston Edits only.
+ */
+const westonOnly = [withEdition('weston')];
+
 /** An adjusted party checked in: a mixed 9/18 round, per-player charges, one total. */
 export const AdjustedParty: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(adjustedParty())} />,
+  render: () => <Screen initialState={registerWith(adjustedParty())} />,
 };
 
 /** The same order with retail rung up after the golf — retail keeps its normal lines. */
@@ -111,7 +119,6 @@ export const WithRetail: Story = {
     const s = registerWith(openParty());
     return (
       <Screen
-        edition="weston"
         initialState={{ ...s, cart: [...(s.cart ?? []), { name: 'Titleist Pro V1 Sleeve', price: 16, qty: 1 }, { name: 'Water', price: 2.5, qty: 2 }] }}
       />
     );
@@ -120,7 +127,7 @@ export const WithRetail: Story = {
 
 /** A paid booking in the register: every seat PAID, "Golf paid", and nothing due. */
 export const PaidBooking: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(paidTwilight())} />,
+  render: () => <Screen initialState={registerWith(paidTwilight())} />,
 };
 
 /**
@@ -128,7 +135,8 @@ export const PaidBooking: Story = {
  * test clicks it and checks the panel opened.
  */
 export const EditReservation: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(adjustedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={registerWith(adjustedParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.queryByText('+ modifier')).toBeNull();
@@ -151,7 +159,7 @@ const RETAIL: CartItem[] = [
 export const RetailIsTaxed: Story = {
   render: () => {
     const s = registerWith(openParty());
-    return <Screen edition="weston" initialState={{ ...s, cart: [...(s.cart ?? []), ...RETAIL] }} />;
+    return <Screen initialState={{ ...s, cart: [...(s.cart ?? []), ...RETAIL] }} />;
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -176,7 +184,6 @@ export const WalkInOrder: Story = {
     const checkedIn = { ...w, playerStates: w.playerStates.map((p) => ({ ...p, step: ROUND_STEP.checkedIn })) };
     return (
       <Screen
-        edition="weston"
         initialState={atVenue('eighteen', {
           bookings: [...(base.bookings ?? []), checkedIn],
           view: 'pos',

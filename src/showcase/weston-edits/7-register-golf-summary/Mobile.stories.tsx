@@ -111,7 +111,7 @@ type Story = StoryObj;
  * plus the goods.
  */
 export const GolfSummary: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(adjustedParty(), { extras: true })} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(adjustedParty(), { extras: true })} tab="register" stack={[{ name: 'order' }]} />,
 };
 
 /** **Edit reservation**: back on the Tee Sheet destination, on this booking's reservation. */
@@ -124,7 +124,7 @@ export const EditReservation: Story = {
 
 /** Paid seats stay on the summary so the whole party is visible, struck through and not charged. */
 export const PaidSeats: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(partlyPaidNamed())} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(partlyPaidNamed())} tab="register" stack={[{ name: 'order' }]} />,
 };
 
 /**

@@ -168,6 +168,15 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
+
 // ─── Play-test helpers ──────────────────────────────────────────────────────
 
 /** One player's row in the panel. */
@@ -209,7 +218,8 @@ const feeOf = (canvasElement: HTMLElement, i: number) =>
  * The play test clicks the booker's rates button and waits for the tile grid.
  */
 export const OpensOnTheRow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     const expand = await openRates(canvasElement, b, 0);
@@ -233,7 +243,8 @@ export const OpensOnTheRow: Story = {
  * the number it changes is on screen while it changes.
  */
 export const TheWholeEditor: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     await openRates(canvasElement, openParty(), 0);
   },
@@ -257,7 +268,8 @@ export const TheWholeEditor: Story = {
  * ineligible tile carries the override warning rather than being disabled.
  */
 export const EligibleFirstThenTheRest: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
   play: async ({ canvasElement }) => {
     const expand = await openRates(canvasElement, adjustedParty(), 1);
     // Eligible for a member: the membership rows and the public rack rate.
@@ -290,9 +302,9 @@ export const EligibleFirstThenTheRest: Story = {
  * it exists so the overflow treatment has something real to work against.
  */
 export const HeavyCatalog: Story = {
+  decorators: westonOnly,
   render: () => (
     <Screen
-      edition="weston"
       initialState={sheetWithPanel(openParty(), 'players', {
         weston: { ...DEFAULT_WESTON_OPTIONS, rateCatalog: 'heavy' },
       })}
@@ -319,9 +331,9 @@ export const HeavyCatalog: Story = {
  * to open more up."*
  */
 export const OpenTheFullCatalog: Story = {
+  decorators: westonOnly,
   render: () => (
     <Screen
-      edition="weston"
       initialState={sheetWithPanel(openParty(), 'players', {
         weston: { ...DEFAULT_WESTON_OPTIONS, rateCatalog: 'heavy' },
       })}
@@ -346,9 +358,9 @@ export const OpenTheFullCatalog: Story = {
  * senior rates remain.
  */
 export const SearchingTheCatalog: Story = {
+  decorators: westonOnly,
   render: () => (
     <Screen
-      edition="weston"
       initialState={sheetWithPanel(openParty(), 'players', {
         weston: { ...DEFAULT_WESTON_OPTIONS, rateCatalog: 'heavy' },
       })}
@@ -381,7 +393,8 @@ export const SearchingTheCatalog: Story = {
  * The play test checks the walking tile is present with its fee.
  */
 export const TransportTiles: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const expand = await openRates(canvasElement, openParty(), 0);
     const walking = tiles(expand).find((t) => t.startsWith('Walking') && !t.startsWith('Walking,'));
@@ -407,7 +420,8 @@ export const TransportTiles: Story = {
  * fee field now reads that rate's price.
  */
 export const SaveFeesToAll: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     const expand = await openRates(canvasElement, b, 0);
@@ -430,7 +444,8 @@ export const SaveFeesToAll: Story = {
  * returns to the rack rate this tee time sells at.
  */
 export const ResetPutsItBack: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     const expand = await openRates(canvasElement, b, 0);
@@ -453,7 +468,8 @@ export const ResetPutsItBack: Story = {
  * back where it started **and** the editor has closed.
  */
 export const CancelPutsItBack: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     const expand = await openRates(canvasElement, b, 0);
@@ -472,7 +488,8 @@ export const CancelPutsItBack: Story = {
  * this cannot pass by the editor failing to render at all.
  */
 export const NoDiscountRow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const expand = await openRates(canvasElement, openParty(), 0);
     await expect(within(expand).queryByText('Discount')).toBeNull();

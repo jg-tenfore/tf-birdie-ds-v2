@@ -138,7 +138,6 @@ const reservation = () => {
   const b = annotatedParty();
   return (
     <MobileStory
-      edition="weston"
       initialState={at18(withBookings(b))}
       tab="tee"
       stack={[{ name: 'bookingDetail', bookingId: b.id }]}

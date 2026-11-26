@@ -128,7 +128,6 @@ const dayWithCartsOut = (b: Booking) => at18(withBookings(b, ...cartsAlreadyOut(
 /** The reservation, with the key picker pushed over it for one seat. */
 const picker = (b: Booking, seat = 0) => (
   <MobileStory
-    edition="weston"
     initialState={dayWithCartsOut(b)}
     tab="tee"
     stack={[
@@ -156,7 +155,6 @@ const metaLine = async (c: ReturnType<typeof within>, seat: number) =>
 export const FromTheRowMenu: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={dayWithCartsOut(openParty())}
       tab="tee"
       stack={[{ name: 'bookingDetail', bookingId: openParty().id }]}

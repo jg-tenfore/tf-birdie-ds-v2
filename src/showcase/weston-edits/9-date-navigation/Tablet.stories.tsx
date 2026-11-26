@@ -109,7 +109,7 @@ const golferCount = (canvasElement: HTMLElement): number => {
  * there; there was just nothing to see.
  */
 export const GeneratedDay: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { currentDate: JUNE_12 })} />,
+  render: () => <Screen initialState={atVenue('eighteen', { currentDate: JUNE_12 })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await c.findByText(/Fri, Jun 12, 2026/);
@@ -127,7 +127,7 @@ export const GeneratedDay: Story = {
  * dead end.
  */
 export const CalendarRange: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { currentDate: new Date(2027, 4, 18) })} />,
+  render: () => <Screen initialState={atVenue('eighteen', { currentDate: new Date(2027, 4, 18) })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByText(/Tue, May 18, 2027/));
@@ -142,7 +142,7 @@ export const CalendarRange: Story = {
  * its generated tee sheet.
  */
 export const PickJuneFromCalendar: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen')} />,
+  render: () => <Screen initialState={atVenue('eighteen')} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByText(/Thu, May 21, 2026/));

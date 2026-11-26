@@ -101,7 +101,7 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
  *
  * ## Scope
  *
- * Weston edition only (`<Screen edition="weston" />`), on the **18-hole club**. Both tee-sheet
+ * Weston edition only (`<Screen />`), on the **18-hole club**. Both tee-sheet
  * modes are covered — the grid and the list narrow and scroll alike. The base edition has no
  * panel at all; clicking a chip there still loads the register.
  *
@@ -155,7 +155,7 @@ type Story = StoryObj;
  * playing, how many holes, what each pays, how they get round.
  */
 export const OverTheTeeSheet: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
 };
 
 /**
@@ -164,7 +164,7 @@ export const OverTheTeeSheet: Story = {
  * on the sheet and checks the panel opened and the order is still empty.
  */
 export const ClickABookingOpensIt: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen')} />,
+  render: () => <Screen initialState={atVenue('eighteen')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const b = openParty();
@@ -187,7 +187,7 @@ export const ClickABookingOpensIt: Story = {
  */
 export const SwitchesBooking: Story = {
   render: () => (
-    <Screen edition="weston" initialState={sheetWithPanel(openParty())} />
+    <Screen initialState={sheetWithPanel(openParty())} />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -207,22 +207,22 @@ export const SwitchesBooking: Story = {
  * its place underneath — closing the record returns to it untouched. See 4 · Customer Profile.
  */
 export const CustomerRecordOverPanel: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(adjustedParty(), 1)} />,
+  render: () => <Screen initialState={sheetWithCustomer(adjustedParty(), 1)} />,
 };
 
 /** The Financial tab — per-player amounts, refunds and rain checks. See 5. */
 export const FinancialTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty(), 'financial')} />,
 };
 
 /** The Notes tab — tags, the group note, and per-player notes. See 5. */
 export const NotesTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty(), 'notes')} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty(), 'notes')} />,
 };
 
 /** The Activity tab — the booking's audit trail. See 5. */
 export const ActivityTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty(), 'activity')} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty(), 'activity')} />,
 };
 
 /**
@@ -235,7 +235,6 @@ export const ActivityTab: Story = {
 export const ModalComparison: Story = {
   render: () => (
     <Screen
-      edition="weston"
       initialState={sheetWithPanel(adjustedParty(), 'players', { panel: { presentation: 'modal' } })}
     />
   ),
@@ -287,7 +286,7 @@ function rowScrolledIntoView(canvasElement: HTMLElement, bookingId: string): boo
  * the panel.
  */
 export const OpeningScrollsIntoView: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(lateBackNine(), 'players', fromTheTop)} />,
+  render: () => <Screen initialState={sheetWithPanel(lateBackNine(), 'players', fromTheTop)} />,
   play: async ({ canvasElement }) => {
     const b = lateBackNine();
     await within(canvasElement).findByRole('complementary', { name: `Reservation · ${b.name}` });
@@ -301,7 +300,7 @@ export const OpeningScrollsIntoView: Story = {
  */
 export const OpeningScrollsIntoViewList: Story = {
   render: () => (
-    <Screen edition="weston" initialState={sheetWithPanel(lateBackNine(), 'players', { ...fromTheTop, teeSheetMode: 'list' })} />
+    <Screen initialState={sheetWithPanel(lateBackNine(), 'players', { ...fromTheTop, teeSheetMode: 'list' })} />
   ),
   play: async ({ canvasElement }) => {
     const b = lateBackNine();
@@ -314,7 +313,7 @@ export const OpeningScrollsIntoViewList: Story = {
  * front-nine chip opens the panel and the sheet stays exactly where it was — no jump.
  */
 export const AlreadyVisibleDoesNotJump: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', fromTheTop)} />,
+  render: () => <Screen initialState={atVenue('eighteen', fromTheTop)} />,
   play: async ({ canvasElement }) => {
     const b = earlyFrontNine();
     const chip = await waitFor(() => {
@@ -350,7 +349,7 @@ export const AlreadyVisibleDoesNotJump: Story = {
  * Comparison**.
  */
 export const FreezesTheSheet: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     await within(canvasElement).findByRole('complementary', { name: `Reservation · ${openParty().name}` });
     // After the slide and the fade finish.

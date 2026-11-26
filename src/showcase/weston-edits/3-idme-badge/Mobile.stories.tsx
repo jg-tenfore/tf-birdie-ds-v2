@@ -104,7 +104,7 @@ const party = () => {
 export const OnPlayerRows: Story = {
   render: () => {
     const { b, state } = party();
-    return <MobileStory edition="weston" initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 
@@ -114,7 +114,6 @@ export const OnPlayerDetail: Story = {
     const { b, state } = party();
     return (
       <MobileStory
-        edition="weston"
         initialState={state}
         tab="tee"
         stack={[
@@ -136,7 +135,6 @@ export const OnTheCustomerRecord: Story = {
     const state = at18(withBookings(b));
     return (
       <MobileStory
-        edition="weston"
         initialState={state}
         tab="tee"
         stack={[
@@ -150,5 +148,5 @@ export const OnTheCustomerRecord: Story = {
 
 /** On the order's golf summary, so the counter sees who is verified when taking payment. */
 export const OnOrderSummary: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(adjustedParty())} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(adjustedParty())} tab="register" stack={[{ name: 'order' }]} />,
 };

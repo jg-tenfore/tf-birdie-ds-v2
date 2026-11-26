@@ -67,7 +67,7 @@ type Story = StoryObj;
 const position = (b: Booking) => `${lineIndex(b) + 1} of ${dayLine().length}`;
 
 const reservation = (b: Booking) => (
-  <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />
+  <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />
 );
 
 /** No stepper anywhere on the screen: no counter, and neither arrow. */

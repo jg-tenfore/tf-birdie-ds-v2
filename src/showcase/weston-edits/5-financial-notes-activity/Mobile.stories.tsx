@@ -99,7 +99,7 @@ type Story = StoryObj;
 export const Financial: Story = {
   render: () => {
     const b = adjustedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
   },
 };
 
@@ -107,7 +107,7 @@ export const Financial: Story = {
 export const FinancialWithComp: Story = {
   render: () => {
     const b = compedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
   },
 };
 
@@ -115,7 +115,7 @@ export const FinancialWithComp: Story = {
 export const FinancialPartlyPaid: Story = {
   render: () => {
     const b = partlyPaidNamed();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
   },
 };
 
@@ -123,7 +123,7 @@ export const FinancialPartlyPaid: Story = {
 export const Notes: Story = {
   render: () => {
     const b = adjustedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'notes' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'notes' }]} />;
   },
 };
 
@@ -131,6 +131,6 @@ export const Notes: Story = {
 export const Activity: Story = {
   render: () => {
     const b = partlyPaidNamed();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'activity' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'activity' }]} />;
   },
 };

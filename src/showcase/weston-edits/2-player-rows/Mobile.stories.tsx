@@ -142,7 +142,7 @@ const adjusted = () => {
 export const PlayerRows: Story = {
   render: () => {
     const { b, state } = adjusted();
-    return <MobileStory edition="weston" initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 
@@ -154,7 +154,7 @@ export const PlayerRows: Story = {
  */
 export const RateCardFeeOnSwitch: Story = {
   render: () => (
-    <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: openParty().id }]} />
+    <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: openParty().id }]} />
   ),
   play: async ({ canvasElement }) => {
     const b = openParty();
@@ -178,7 +178,7 @@ export const RateCardFeeOnSwitch: Story = {
 export const MixedMemberGuestGroup: Story = {
   render: () => {
     const b = mixedGroup();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
   play: async ({ canvasElement }) => {
     const b = mixedGroup();
@@ -260,7 +260,7 @@ export const GroupActions: Story = {
  */
 export const AddPlayer: Story = {
   render: () => (
-    <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: growableParty().id }]} />
+    <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: growableParty().id }]} />
   ),
   play: async ({ canvasElement }) => {
     await userEvent.click(await within(canvasElement).findByLabelText('Add player'));
@@ -274,7 +274,7 @@ export const AddPlayer: Story = {
 export const PaidPlayersLocked: Story = {
   render: () => {
     const b = partlyPaidNamed();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 
@@ -288,7 +288,6 @@ export const PlayerDetail: Story = {
     const { b, state } = adjusted();
     return (
       <MobileStory
-        edition="weston"
         initialState={state}
         tab="tee"
         stack={[
@@ -309,7 +308,6 @@ export const SwapCustomer: Story = {
     const { b, state } = adjusted();
     return (
       <MobileStory
-        edition="weston"
         initialState={state}
         tab="tee"
         stack={[

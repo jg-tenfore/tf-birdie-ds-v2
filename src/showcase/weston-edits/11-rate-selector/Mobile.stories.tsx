@@ -159,7 +159,6 @@ const feeFor = (b: Booking, seat: number, rate: string) => {
 /** The reservation with one seat's rate editor open over it. */
 const rateEditor = (b: Booking, seat: number, extra: Partial<PosState> = {}): ReactElement => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b), extra)}
     tab="tee"
     stack={[
@@ -188,7 +187,6 @@ const heavy = { weston: { ...DEFAULT_WESTON_OPTIONS, rateCatalog: 'heavy' as con
 export const OpensFromTheFeeChip: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18()}
       tab="tee"
       stack={[{ name: 'bookingDetail', bookingId: openParty().id }]}

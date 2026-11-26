@@ -100,25 +100,25 @@ type Story = StoryObj;
  * adjusted per player. Refund and rain check stay per player.
  */
 export const FinancialAdjusted: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty(), 'financial')} />,
 };
 
 /** Financial on a paid booking — nothing outstanding; the same $29 the reservation shows. */
 export const FinancialPaid: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight(), 'financial')} />,
 };
 
 /** Financial on a no-show party: nobody owes, and the rain-check trail is where action is. */
 export const FinancialNoShow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(noShowParty(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(noShowParty(), 'financial')} />,
 };
 
 /** Notes: tags, the group note (shown on the chip and cart), and per-player notes. */
 export const Notes: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty(), 'notes')} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty(), 'notes')} />,
 };
 
 /** Activity: the audit trail, seeded from the booking's state so it is never empty. */
 export const Activity: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight(), 'activity')} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight(), 'activity')} />,
 };

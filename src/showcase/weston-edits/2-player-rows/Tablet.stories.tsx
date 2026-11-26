@@ -127,9 +127,18 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
+
 /** An untouched party: every row reads the booking's own holes, rate and transport. */
 export const AsBooked: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
 };
 
 /**
@@ -139,13 +148,14 @@ export const AsBooked: Story = {
 export const PlayerSwitchedTo18: Story = {
   render: () => {
     const b = openParty();
-    return <Screen edition="weston" initialState={sheetWithPanel({ ...b, ...setPlayerHoles(b, 1, 18) })} />;
+    return <Screen initialState={sheetWithPanel({ ...b, ...setPlayerHoles(b, 1, 18) })} />;
   },
 };
 
 /** The same switch, driven by clicking the 18 on player 3's row. */
 export const Switch18ByClick: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const row = within(canvasElement.querySelector<HTMLElement>('[data-player-row="2"]')!);
     const fee = row.getByLabelText(/tee fee/) as HTMLInputElement;
@@ -169,7 +179,8 @@ const otherHoles = (b: ReturnType<typeof openParty>): 9 | 18 => (bookingHoles(b)
  * override.
  */
 export const RateCardFeeOnSwitch: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     const h = otherHoles(b);
@@ -186,9 +197,10 @@ export const RateCardFeeOnSwitch: Story = {
  * override is the green fee for that row, so the switched player defaults to it.
  */
 export const RateCardOverrideOnSwitch: Story = {
+  decorators: westonOnly,
   render: () => {
     const b = openParty();
-    return <Screen edition="weston" initialState={sheetWithPanel(b, 'players', { timePrices: { [bookingRowKey(b)]: { label: 'Aeration special', fee: 44 } } })} />;
+    return <Screen initialState={sheetWithPanel(b, 'players', { timePrices: { [bookingRowKey(b)]: { label: 'Aeration special', fee: 44 } } })} />;
   },
   play: async ({ canvasElement }) => {
     const row = within(canvasElement.querySelector<HTMLElement>('[data-player-row="1"]')!);
@@ -203,7 +215,7 @@ export const RateCardOverrideOnSwitch: Story = {
  * booker on a typed-in $25 (with a reset back to the rate).
  */
 export const AdjustedFees: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
 };
 
 /**
@@ -216,7 +228,8 @@ export const AdjustedFees: Story = {
  * the member's switch.
  */
 export const MixedMemberGuestGroup: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(mixedGroup())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(mixedGroup())} />,
   play: async ({ canvasElement }) => {
     const b = mixedGroup();
     const row = (i: number) => within(canvasElement.querySelector<HTMLElement>(`[data-player-row="${i}"]`)!);
@@ -243,12 +256,12 @@ export const MixedMemberGuestGroup: Story = {
  * is gone — a party can't straddle the booking beside it.
  */
 export const PlayerCountAtMax: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(fullParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(fullParty())} />,
 };
 
 /** Adding a player with the stepper: a new unnamed, unpaid seat on the booking's defaults. */
 export const AddPlayer: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const before = canvasElement.querySelectorAll('[data-player-row]').length;
@@ -262,7 +275,7 @@ export const AddPlayer: Story = {
  * undo it. They charge nothing — the footer says so.
  */
 export const NoShow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(noShowParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(noShowParty())} />,
 };
 
 // ─── Round 4: the language of the row ───────────────────────────────────────
@@ -293,7 +306,8 @@ export const NoShow: Story = {
  * searching."* One tap.
  */
 export const ChangeGolfer: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>('[data-player-row="1"]')!;
     await userEvent.click(within(row).getByRole('button', { name: /Change golfer in position 2/ }));
@@ -320,7 +334,6 @@ export const ChangeGolfer: Story = {
 export const PlayerNoteAlert: Story = {
   render: () => (
     <Screen
-      edition="weston"
       initialState={sheetWithPanel({
         ...adjustedParty(),
         playerNotes: { 1: 'Needs an accessible cart — knee replacement in March.' },
@@ -355,7 +368,8 @@ export const PlayerNoteAlert: Story = {
  * that shrinks under a flex parent still looks right in a screenshot.
  */
 export const TouchTargets: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>('[data-player-row="1"]')!;
     const names = [/Change golfer in position 2/, /^Add .* to the order$/];

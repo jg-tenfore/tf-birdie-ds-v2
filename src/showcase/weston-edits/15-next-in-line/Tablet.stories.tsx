@@ -129,7 +129,7 @@ const position = (b: Booking) => `${lineIndex(b) + 1} of ${dayLine().length}`;
  * by accident.
  */
 export const TheStepper: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(earlyFrontNine())} />,
+  render: () => <Screen initialState={sheetWithPanel(earlyFrontNine())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(position(earlyFrontNine()))).toBeTruthy();
@@ -148,7 +148,7 @@ export const TheStepper: Story = {
  * doesn't throw the page around.
  */
 export const SteppingForwardAndBack: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(earlyFrontNine())} />,
+  render: () => <Screen initialState={sheetWithPanel(earlyFrontNine())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const here = earlyFrontNine();
@@ -171,7 +171,7 @@ export const SteppingForwardAndBack: Story = {
  * thing that *doesn't* happen: no dialog opens, nothing closes, and the sheet is never left.
  */
 export const BoomBoomBoom: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(firstInLine())} />,
+  render: () => <Screen initialState={sheetWithPanel(firstInLine())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const start = firstInLine();
@@ -194,7 +194,7 @@ export const BoomBoomBoom: Story = {
  * stepper's order is a block — so a change to the demo data can't quietly put one back.
  */
 export const BlocksAndEmptySlotsAreSkipped: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(beforeBlock())} />,
+  render: () => <Screen initialState={sheetWithPanel(beforeBlock())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(dayBlocks().length).toBeGreaterThan(0);
@@ -212,7 +212,7 @@ export const BlocksAndEmptySlotsAreSkipped: Story = {
  * explanation.
  */
 export const AtTheStartOfTheDay: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(firstInLine())} />,
+  render: () => <Screen initialState={sheetWithPanel(firstInLine())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(position(firstInLine()))).toBeTruthy();
@@ -227,7 +227,7 @@ export const AtTheStartOfTheDay: Story = {
  * which is a decision, not a keystroke.
  */
 export const AtTheEndOfTheDay: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(lastInLine())} />,
+  render: () => <Screen initialState={sheetWithPanel(lastInLine())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(position(lastInLine()))).toBeTruthy();

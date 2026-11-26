@@ -162,7 +162,7 @@ type Story = StoryObj;
  * badge beside their name, where the counter already looks for the member dot.
  */
 export const OnThePlayerRow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(idMeParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(idMeParty())} />,
 };
 
 /**
@@ -171,12 +171,12 @@ export const OnThePlayerRow: Story = {
  * the seat is on the member rate.
  */
 export const OnALinkedGuest: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
 };
 
 /** On the Players tab, where the badge sits beside the name. */
 export const OnThePlayersTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(idMeParty(), 'players')} />,
+  render: () => <Screen initialState={sheetWithPanel(idMeParty(), 'players')} />,
 };
 
 /**
@@ -185,7 +185,7 @@ export const OnThePlayersTab: Story = {
  * that does the only thing it is there to do.
  */
 export const OnTheCustomerRecord: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await expect(await record.findByRole('button', { name: 'View ID' })).toBeTruthy();
@@ -203,7 +203,7 @@ export const OnTheCustomerRecord: Story = {
  * where the portrait goes.
  */
 export const TheIdOnFile: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await userEvent.click(await record.findByRole('button', { name: 'View ID' }));

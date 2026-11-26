@@ -118,6 +118,15 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
+
 /** The collapsed rail, when it is there. */
 const strip = (canvasElement: HTMLElement) =>
   canvasElement.querySelector<HTMLElement>('[data-order-rail="collapsed"]');
@@ -139,7 +148,7 @@ const strip = (canvasElement: HTMLElement) =>
  * The play test taps the empty state and checks the 56px strip takes over.
  */
 export const EmptyAndSoCollapsible: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { leftPanelCollapsed: false })} />,
+  render: () => <Screen initialState={atVenue('eighteen', { leftPanelCollapsed: false })} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(strip(canvasElement)).toBeNull();
@@ -166,7 +175,7 @@ export const EmptyAndSoCollapsible: Story = {
  * survived.
  */
 export const ItemsOnTheOrderClear: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithOrder(openParty())} />,
+  render: () => <Screen initialState={sheetWithOrder(openParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Clear order' }));
@@ -187,7 +196,7 @@ export const ItemsOnTheOrderClear: Story = {
  * The play test confirms the clear and checks the button has become the nav hamburger.
  */
 export const ClearedBackToTheHamburger: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithOrder(openParty())} />,
+  render: () => <Screen initialState={sheetWithOrder(openParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Clear order' }));
@@ -222,7 +231,7 @@ export const ClearedBackToTheHamburger: Story = {
  * actions are gone from it.
  */
 export const TheCollapsedStrip: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithOrder(openParty(), { leftPanelCollapsed: true })} />,
+  render: () => <Screen initialState={sheetWithOrder(openParty(), { leftPanelCollapsed: true })} />,
   play: async ({ canvasElement }) => {
     const el = strip(canvasElement)!;
     await expect(el.offsetWidth).toBe(56);
@@ -244,7 +253,7 @@ export const TheCollapsedStrip: Story = {
  * a rail that was showing nothing.
  */
 export const TheCollapsedStripEmpty: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen')} />,
+  render: () => <Screen initialState={atVenue('eighteen')} />,
   play: async ({ canvasElement }) => {
     const rail = within(strip(canvasElement)!);
     await expect(rail.getByRole('button', { name: 'Order is empty' })).toBeTruthy();
@@ -265,7 +274,8 @@ export const TheCollapsedStripEmpty: Story = {
  * with that player's golf on it.
  */
 export const AddingSomethingReExpands: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     await expect(strip(canvasElement)).not.toBeNull();

@@ -138,7 +138,6 @@ const chips = (c: ReturnType<typeof within>): HTMLElement[] => c.getAllByLabelTe
 
 const reservation = (b: ReturnType<typeof openParty>) => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[{ name: 'bookingDetail', bookingId: b.id }]}
@@ -226,7 +225,6 @@ export const AddingTwoOneAtATime: Story = {
 export const TheOrderTheySplit: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={seatOrder(openParty(), [0, 2])}
       tab="register"
       stack={[{ name: 'order' }]}
@@ -258,7 +256,6 @@ export const CheckInAndPayTopsUp: Story = {
     const b = openParty();
     return (
       <MobileStory
-        edition="weston"
         initialState={seatOrder(b, [0])}
         tab="tee"
         stack={[{ name: 'bookingDetail', bookingId: b.id }]}
@@ -289,7 +286,6 @@ export const AdjustmentsSurviveTheTopUp: Story = {
     const b = adjustedParty();
     return (
       <MobileStory
-        edition="weston"
         initialState={seatOrder(b, [1])}
         tab="tee"
         stack={[{ name: 'bookingDetail', bookingId: b.id }]}

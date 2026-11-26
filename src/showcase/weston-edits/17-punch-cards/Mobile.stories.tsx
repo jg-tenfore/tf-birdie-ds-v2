@@ -155,7 +155,6 @@ const owes = (b: Booking, seat: number) =>
 
 const rateEditor = (b: Booking, seat: number): ReactElement => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[
@@ -167,7 +166,6 @@ const rateEditor = (b: Booking, seat: number): ReactElement => (
 
 const reservation = (b: Booking): ReactElement => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[{ name: 'bookingDetail', bookingId: b.id }]}

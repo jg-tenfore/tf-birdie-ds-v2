@@ -116,6 +116,15 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
+
 /** Seat `i`'s row, scoped for queries. */
 const row = (canvasElement: HTMLElement, i: number) =>
   within(canvasElement.querySelector<HTMLElement>(`[data-player-row="${i}"]`)!);
@@ -154,7 +163,6 @@ const dayWithCartsOut = (extra: Parameters<typeof sheetWithPanel>[2] = {}) => {
 export const TheKeyPicker: Story = {
   render: () => (
     <Screen
-      edition="weston"
       initialState={dayWithCartsOut({ modal: { kind: 'cartSignout', bookingId: openParty().id, seat: 0 } })}
     />
   ),
@@ -179,7 +187,8 @@ export const TheKeyPicker: Story = {
  * the seat reads back completely when the golfer asks what they have.
  */
 export const SigningOneOut: Story = {
-  render: () => <Screen edition="weston" initialState={dayWithCartsOut()} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={dayWithCartsOut()} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     const seat = row(canvasElement, 0);
@@ -204,7 +213,7 @@ export const SigningOneOut: Story = {
  * state the reservation is in.
  */
 export const TheKeyOnTheRow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(withCartKey(openParty(), 0, 22))} />,
+  render: () => <Screen initialState={sheetWithPanel(withCartKey(openParty(), 0, 22))} />,
 };
 
 /**
@@ -217,11 +226,11 @@ export const TheKeyOnTheRow: Story = {
  * count back up by one.
  */
 export const ReturningIt: Story = {
+  decorators: westonOnly,
   render: () => {
     const b = withCartKey(openParty(), 0, 22);
     return (
       <Screen
-        edition="weston"
         initialState={sheetWithPanel(b, 'players', {
           bookings: withBookings(b, ...cartsAlreadyOut()),
           modal: { kind: 'cartSignout', bookingId: b.id, seat: 0 },
@@ -255,7 +264,6 @@ export const ReturningIt: Story = {
 export const TheGridIsTight: Story = {
   render: () => (
     <Screen
-      edition="weston"
       initialState={dayWithCartsOut({ modal: { kind: 'cartSignout', bookingId: openParty().id, seat: 0 } })}
     />
   ),

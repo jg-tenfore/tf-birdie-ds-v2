@@ -112,7 +112,6 @@ type Story = StoryObj;
 export const Reservation: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18()}
       tab="tee"
       stack={[{ name: 'bookingDetail', bookingId: growableParty().id }]}
@@ -125,7 +124,7 @@ export const Reservation: Story = {
  * an order. Nothing reaches the register until **Check in & pay**.
  */
 export const FromTheTeeSheet: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
 };
 
 /**
@@ -137,7 +136,7 @@ export const FromTheTeeSheet: Story = {
 export const AdjustedReservation: Story = {
   render: () => {
     const b = adjustedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 

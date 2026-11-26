@@ -124,7 +124,6 @@ type Story = StoryObj;
 /** The reservation, then that seat's record stacked over it. */
 const recordOver = (b: Booking, seat: number) => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[
@@ -186,7 +185,6 @@ export const FourTabs: Story = {
     const b = adjustedParty();
     return (
       <MobileStory
-        edition="weston"
         initialState={at18(withBookings(b))}
         tab="tee"
         stack={[{ name: 'bookingDetail', bookingId: b.id }]}

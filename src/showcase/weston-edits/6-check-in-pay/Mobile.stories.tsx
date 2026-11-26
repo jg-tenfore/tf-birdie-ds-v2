@@ -124,7 +124,7 @@ export default meta;
 type Story = StoryObj;
 
 const detail = (b: ReturnType<typeof adjustedParty>) => (
-  <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />
+  <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />
 );
 
 /** An adjusted, unpaid reservation: **Check in & pay · $amount**, with the amount the order will show. */
@@ -163,7 +163,7 @@ export const MemberNoCharge: Story = {
 
 /** The order a paid-in-full reservation opens: every seat struck through, nothing to charge. */
 export const PaidInFullOrder: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(paidParty())} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(paidParty())} tab="register" stack={[{ name: 'order' }]} />,
 };
 
 /**
@@ -176,7 +176,6 @@ export const PaidInFullOrder: Story = {
 export const QuickSheetOpensReservation: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18(withBookings(adjustedParty()), { contextMenu: { kind: 'booking', bookingId: adjustedParty().id, x: 0, y: 0 } })}
       tab="tee"
     />
@@ -195,7 +194,7 @@ export const QuickSheetOpensReservation: Story = {
  * the party is set up; its Check in & pay brings it to the order.
  */
 export const WalkInFromRegister: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="register" />,
+  render: () => <MobileStory initialState={at18()} tab="register" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByText('Walk-in'));
