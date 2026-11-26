@@ -129,6 +129,9 @@ const SHOTS = [
   // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
   { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
   { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },
+  // ── Design System pages (names prefixed `ds-`) ──
+  // Layout & Structure › Table: the open tabs list, Birdie's sortable table (`TabList`).
+  { name: 'ds-tablet-tab-list', hash: '#/tabs' },
   // ── How to switch device: the prototype's Device panel, and Storybook's Device toolbar ──
   // Whole-window shots (`page`), not a device clip.
   { name: 'prototype-device-panel', page: () => `${PROTO}/?device=large-display#/tee-sheet?shift=early`, click: /Open the device panel/, deviceOnly: true },
