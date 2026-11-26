@@ -2,7 +2,7 @@ import { taxRateOf } from '../state/operations';
 import { useEffect } from 'react';
 import { Box, ButtonBase, Dialog, Tab, Tabs, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
-import { elevation, grid, md3, noteColors, reservationPanel } from '../../theme/tokens';
+import { elevation, md3, noteColors, reservationPanel } from '../../theme/tokens';
 import { formatTimeLabel } from '../data/courses';
 import { checkInPlayer } from '../logic/bookings';
 import { buildTeeTimeCart, money, orderTotals } from '../logic/cart';
@@ -21,6 +21,7 @@ import { BookingMemberDot, Icon, PayBadge } from './primitives';
 import { Stack } from './Stack';
 import { seatRecord } from '../logic/seat-pricing';
 import { useV1V2 } from '../edition';
+import { useLeftPanelWidth } from '../device-context';
 import { WalkInTimePicker } from './WalkInTimePicker';
 import { isFreshWalkIn } from '../logic/walk-in';
 import { LeagueWayIn } from './league/LeagueWayIn';
@@ -45,6 +46,7 @@ export function ReservationPanel() {
   // V1 → V2, 100226: with this reservation's order on the rail, the rail stays in sight beside the
   // panel — Add puts a player straight onto it.
   const railLive = railBesidePanel(state, useV1V2());
+  const railW = useLeftPanelWidth();
 
   // Escape closes a **scrimmed** panel, and only a scrimmed one.
   //
@@ -89,7 +91,7 @@ export function ReservationPanel() {
           sx={{
             position: 'absolute',
             inset: 0,
-            left: railLive ? grid.leftPanelW : 0,
+            left: railLive ? railW : 0,
             // Under the panel (80), over the tee-sheet toolbar and the multi-select bar.
             zIndex: 79,
             bgcolor: 'rgba(0,0,0,.7)',

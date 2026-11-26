@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { md3, radius } from '../../theme/tokens';
 import { usePos } from '../state/PosProvider';
 import { useModalContainer } from './modal-container';
+import { useTabletFrameClass } from '../device-context';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Stack } from '../components/Stack';
 
@@ -56,6 +57,10 @@ export function ModalFrame({
   // Normally null, meaning `document.body`. Scoped only where a story renders more than
   // one sheet and the dialog has to belong to one of them.
   const container = useModalContainer();
+  // A terminal shorter than the 840px design canvas (the Clover Mini is 800) gives the dialog
+  // its margin back: 16px instead of 32px a side, which is what lets Checkout's keypad and
+  // tenders fit without scrolling. The design canvas and the large display keep the default.
+  const { compact } = useTabletFrameClass();
 
   return (
     <Dialog
@@ -74,8 +79,11 @@ export function ModalFrame({
           sx: {
             width,
             maxWidth: container ? '94%' : '92vw',
-            ...(container && { maxHeight: '88%' }),
-            ...(tall && { height: 'min(720px, 88vh)' }),
+            ...(container && { maxHeight: compact ? 'calc(100% - 32px)' : '88%' }),
+            ...(compact && { my: 2, ...(!container && { maxHeight: 'calc(100% - 32px)' }) }),
+            // A scoped dialog measures against its pane, not the window — the device frame
+            // in the prototype, which can be shorter than the window it sits in.
+            ...(tall && { height: container ? 'min(720px, 88%)' : 'min(720px, 88vh)' }),
             display: 'flex',
             flexDirection: 'column',
           },
