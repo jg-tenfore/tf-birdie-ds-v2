@@ -1,15 +1,31 @@
-import { SHEETS, resourceById, type ResourceBooking, type ResourceKind } from '../data/resources';
+import { formatTimeLabel } from '../data/courses';
+import { membershipPlan } from '../data/memberships';
+import { BAY_DAILY_LIMIT, SHEETS, bayFeeFor, capacityOf, resourceById, type ResourceBooking, type ResourceKind } from '../data/resources';
+import { liveCustomer } from '../data/roster';
 import type { CartItem } from '../types';
 
 /**
  * The rules for booking a court or a bay. Pure, so the sheet, the panel and the tests agree.
  */
 
-/** What a booking costs: the resource's hourly rate for its length, to the cent. */
-export function resourcePrice(b: Pick<ResourceBooking, 'resourceId' | 'durationMin'>): number {
+/** Whether a booking's golfer holds a plan Buck gives the member bay rate. */
+export const holdsMemberSimRate = (b: Pick<ResourceBooking, 'crmId'>): boolean =>
+  (liveCustomer(b.crmId)?.memberships ?? []).some((m) => membershipPlan(m.name)?.memberSimRate);
+
+/**
+ * The fee a booking pays and why: for a bay, Buck's fee for its start time and golfer ("Sim Hour
+ * Evening", "Member Sim Hour"); for a court, the court's hourly rate.
+ */
+export function resourceFee(b: Pick<ResourceBooking, 'kind' | 'resourceId' | 'durationMin' | 'startMin' | 'crmId'>): { name: string; hourly: number; amount: number } {
   const r = resourceById(b.resourceId);
-  if (!r) return 0;
-  return Math.round(r.hourly * (b.durationMin / 60) * 100) / 100;
+  if (!r) return { name: '', hourly: 0, amount: 0 };
+  if (r.kind === 'bay') return bayFeeFor(holdsMemberSimRate(b), b.startMin, b.durationMin);
+  return { name: `${r.name} hourly`, hourly: r.hourly, amount: Math.round(r.hourly * (b.durationMin / 60) * 100) / 100 };
+}
+
+/** What a booking costs, to the cent. */
+export function resourcePrice(b: Pick<ResourceBooking, 'kind' | 'resourceId' | 'durationMin' | 'startMin' | 'crmId'>): number {
+  return resourceFee(b).amount;
 }
 
 export const endMin = (b: Pick<ResourceBooking, 'startMin' | 'durationMin'>): number => b.startMin + b.durationMin;
@@ -111,4 +127,62 @@ export function formatDuration(min: number): string {
   if (h && m) return `${h} hr ${m} min`;
   if (h) return `${h} hr`;
   return `${m} min`;
+}
+
+// ─── Buck's bay rules: the daily limit, and refusals that say why ──────────
+
+/**
+ * The golfer's other bookings on the same sheet and day — what Buck's daily limit counts. Matched by
+ * customer record, never by name: two "Kim, D."s are two golfers until somebody links them.
+ */
+export function sameDayBookings(b: ResourceBooking, all: ResourceBooking[]): ResourceBooking[] {
+  if (!b.crmId) return [];
+  return all.filter((x) => x.id !== b.id && !x.draft && x.kind === b.kind && x.date === b.date && x.crmId === b.crmId);
+}
+
+/**
+ * Why Buck's daily limit refuses this booking, or `null`. Bays only — Buck set the limit for bays.
+ * Staff can override it; the panel says so rather than hiding the button.
+ */
+export function dailyLimitProblem(b: ResourceBooking, all: ResourceBooking[]): string | null {
+  if (b.kind !== 'bay') return null;
+  const others = sameDayBookings(b, all);
+  if (others.length < BAY_DAILY_LIMIT) return null;
+  const list = others
+    .sort((x, y) => x.startMin - y.startMin)
+    .map((x) => `${resourceById(x.resourceId)?.name ?? 'a bay'} at ${formatTimeLabel(x.startMin)}`)
+    .join(' and ');
+  return `${b.name} already has ${others.length} bookings today (${list}). The limit is ${BAY_DAILY_LIMIT} a day.`;
+}
+
+/**
+ * Why a booking cannot be moved or resized to `to`, in words — or `null` when it can. Buck's rule is
+ * that a refusal explains itself: the sheet names the booking in the way, the closing time, or the
+ * bay's capacity, instead of snapping back in silence.
+ */
+export function moveProblem(
+  b: ResourceBooking,
+  to: { resourceId: string; startMin: number; durationMin: number },
+  all: ResourceBooking[],
+): string | null {
+  const cfg = SHEETS[b.kind];
+  const r = resourceById(to.resourceId);
+  if (!r || r.kind !== b.kind) return 'That is not somewhere this booking can go.';
+  if (to.startMin < cfg.openMin) return `${r.name} opens at ${formatTimeLabel(cfg.openMin)}.`;
+  if (to.startMin + to.durationMin > cfg.closeMin) return `${r.name} closes at ${formatTimeLabel(cfg.closeMin)}.`;
+  if (to.durationMin < cfg.minDurationMin) return `The shortest booking is ${formatDuration(cfg.minDurationMin)}.`;
+  if (to.durationMin > cfg.maxDurationMin) return `The longest booking is ${formatDuration(cfg.maxDurationMin)}.`;
+  if (b.players > capacityOf(r)) return `${r.name} holds ${capacityOf(r)}; this booking is for ${b.players}.`;
+  const clash = conflictsWith({ ...b, ...to }, all)[0];
+  if (clash) {
+    return `${r.name} has ${clash.name} from ${formatTimeLabel(clash.startMin)} to ${formatTimeLabel(endMin(clash))}.`;
+  }
+  // The same golfer cannot be in two bays at once.
+  const elsewhere = b.crmId
+    ? all.find((x) => x.id !== b.id && x.crmId === b.crmId && x.kind === b.kind && x.date === b.date && overlaps(x, { ...b, ...to }))
+    : undefined;
+  if (elsewhere) {
+    return `${b.name} is already in ${resourceById(elsewhere.resourceId)?.name ?? 'another bay'} from ${formatTimeLabel(elsewhere.startMin)}.`;
+  }
+  return null;
 }
