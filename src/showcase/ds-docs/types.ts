@@ -61,6 +61,12 @@ export interface DsBirdieComponent {
 export interface DsDoc {
   /** One or two sentences: what it is and the job it does in Birdie. Read first by everyone. */
   summary: ReactNode;
+  /**
+   * Banner illustration, a name in .storybook/static/docs without the extension ('ds-colors').
+   * Foundation pages and the overview have Higgsfield art in the Start Here style; component pages
+   * show the product instead (In Birdie), so they usually leave this out.
+   */
+  art?: string;
   /** Overrides the status the usage scan implies. Give a reason in `statusNote`. */
   status?: DsStatus;
   statusNote?: ReactNode;

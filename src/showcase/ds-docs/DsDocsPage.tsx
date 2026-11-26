@@ -14,6 +14,7 @@ import {
   ScreenCard,
   Section,
   StatusPill,
+  art as artUrl,
   mobilePrototype,
   screen,
   tabletPrototype,
@@ -169,7 +170,7 @@ export function DsDocsPage() {
 
   return (
     <DocPage>
-      <Banner eyebrow={`Design System · ${group}`} title={name} pills={pills}>
+      <Banner eyebrow={`Design System · ${group}`} title={name} pills={pills} art={doc?.art ? artUrl(doc.art) : undefined}>
         {doc?.summary ?? (
           <>
             This page has its live examples but no write-up yet. Its content goes in{' '}
