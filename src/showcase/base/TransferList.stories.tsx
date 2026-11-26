@@ -14,7 +14,8 @@ import {
   Typography,
 } from '@mui/material';
 
-// Stations/categories a manager can assign to a single KDS display.
+// Kitchen stations assigned to one ticket printer — an illustration only: no Birdie screen uses a
+// transfer list (see the Design System page for what Birdie does instead).
 type Item = string;
 
 const not = (a: Item[], b: Item[]) => a.filter((v) => !b.includes(v));
@@ -107,8 +108,8 @@ const meta = {
       description: {
         component:
           'The Transfer List pattern moves items between two checkbox lists with the buttons in the middle. ' +
-          'On the KDS it lets a manager choose which **stations / categories** appear on a given display — tick items in either column, ' +
-          'then press **>** or **<** to move the checked ones across. Built from two MUI `List`s, `Checkbox`es, and move `Button`s.',
+          'Tick items in either column, then press **>** or **<** to move the checked ones across. Built from two MUI `List`s, `Checkbox`es, and move `Button`s. ' +
+          'No Birdie screen uses it; the Design System page says what to use instead.',
       },
     },
   },

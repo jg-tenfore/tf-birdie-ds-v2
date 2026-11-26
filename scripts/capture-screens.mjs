@@ -117,6 +117,14 @@ const SHOTS = [
   { name: 'mobile-quick-order', route: 'prototypes-mobile-quick-order-counter-on-the-handheld--the-counter' },
   { name: 'mobile-reservations', route: 'prototypes-mobile-reservations-today-on-the-handheld--todays-book' },
   { name: 'mobile-orders-tips', route: 'prototypes-mobile-orders-tips-today-on-the-handheld--the-day-so-far' },
+  // ── Design System › Forms: switches, notes, money fields, the cash keypad (ds-forms-b) ──
+  { name: 'ds-tablet-tee-sheet-settings', hash: '#/settings?section=teesheet' },
+  { name: 'ds-tablet-price-override', hash: '#/tee-sheet?modal=price&t=0912' },
+  { name: 'ds-tablet-time-note', hash: '#/tee-sheet?modal=note&t=0912' },
+  { name: 'ds-mobile-course-settings', route: 'mobile-screens-6-·-operations--course-settings' },
+  { name: 'ds-mobile-price-override', route: 'mobile-screens-6-·-operations--price-override' },
+  { name: 'ds-mobile-time-note', route: 'mobile-screens-6-·-operations--time-note' },
+  { name: 'ds-mobile-cash-tendered', route: 'mobile-screens-5-·-payment--reader-cash' },
   // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
   { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
   { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },
