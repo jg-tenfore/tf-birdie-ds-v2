@@ -20,6 +20,12 @@ const dirname =
 export default defineConfig({
   plugins: [react()],
 
+  server: {
+    // Agent worktrees live in .claude/worktrees inside the repo. Watching them reloads every open
+    // page each time an agent saves a file, and deleting one (thousands of files) hung Storybook.
+    watch: { ignored: ['**/.claude/**', '**/site/**'] },
+  },
+
   optimizeDeps: {
     // `aria-query` ships CJS with no named ESM exports. The a11y addon's setup file does
     // `import { elementRoles } from 'aria-query'`, which Vite can't satisfy from the raw
