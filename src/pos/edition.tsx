@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
+import type { VenueId } from './data/venues';
 
 /**
  * Which edition of the POS is rendering.
@@ -46,6 +47,13 @@ export const CURRENT_EDITION = { tablet: 'v1v2', mobile: 'weston' } as const sat
 
 /** The edition the archive pins: the original port, before Weston's rounds. */
 export const ARCHIVED_EDITION: Edition = 'base';
+
+/**
+ * The club the current Birdie is shown at: the 18-hole course, where Weston's rounds were
+ * reviewed. The archive keeps the original three nines. Read by the prototype's entry when
+ * neither the URL nor the build names a club, so `npm run dev` opens like `/prototype/` does.
+ */
+export const CURRENT_VENUE: VenueId = 'eighteen';
 
 /**
  * An edition chosen at page load, ahead of `VITE_EDITION` — set from `?edition=` in

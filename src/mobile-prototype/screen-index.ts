@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { buildEdition } from '../pos/edition';
+import { ARCHIVED_EDITION, buildEdition } from '../pos/edition';
 import { parseStoryExports, storyId, storyNameFromExport } from './story-meta';
 
 /**
@@ -101,8 +101,11 @@ function buildIndex(
   return entries;
 }
 
-/** True in the Weston Edits mobile prototype. */
-export const WESTON = buildEdition() === 'weston';
+/**
+ * True when the phone prototype renders Weston's edits — the current phone (`weston`, see
+ * `CURRENT_EDITION`), or any edition built on them — and false only in the archive (`base`).
+ */
+export const WESTON = buildEdition() !== ARCHIVED_EDITION;
 
 const MOBILE_SCREENS = buildIndex(modules, sources, (title) =>
   title.startsWith(PREFIX) ? title.slice(PREFIX.length) : title,
