@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { DishTarget } from '../state/restaurant';
 
 /**
  * Mobile navigation — the whole information architecture in one file.
@@ -27,13 +28,22 @@ import type { ReactNode } from 'react';
 
 // ─── Destinations ───────────────────────────────────────────────────────────
 
-export type MobileTab = 'tee' | 'register' | 'people' | 'more';
+export type MobileTab = 'tee' | 'register' | 'people' | 'more' | 'tables' | 'tabs' | 'quick' | 'reservations';
 
+/**
+ * Every destination the bar can show. Which of them it *does* show is the signed-in operator's
+ * (`barFor` in `bar-by-role.ts`); each keeps its own back stack whether or not it is on the bar.
+ */
 export const TABS: Array<{ id: MobileTab; label: string; root: MobileRoute }> = [
   { id: 'tee', label: 'Tee Sheet', root: { name: 'teeSheet' } },
   { id: 'register', label: 'Register', root: { name: 'register' } },
   { id: 'people', label: 'People', root: { name: 'people' } },
   { id: 'more', label: 'More', root: { name: 'more' } },
+  // V1 → V2: the restaurant, as a server's or a host's bar.
+  { id: 'tables', label: 'Tables', root: { name: 'tables' } },
+  { id: 'tabs', label: 'Tabs', root: { name: 'tabs' } },
+  { id: 'quick', label: 'Quick Order', root: { name: 'quickOrder' } },
+  { id: 'reservations', label: 'Reservations', root: { name: 'reservations' } },
 ];
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
@@ -104,7 +114,8 @@ export type MobileRoute =
   | { name: 'reserveConfirm'; payMode: 'now' | 'later' }
   | { name: 'checkout' }
   | { name: 'tip'; method: string }
-  | { name: 'paymentReader'; method: string; amount: number }
+  /** `amount` includes `tip`; the tip rides apart so the payment ledger can keep it apart (Orders & Tips). */
+  | { name: 'paymentReader'; method: string; amount: number; tip?: number }
   | { name: 'paymentComplete' }
   // ── People (desktop section 7 · People)
   | { name: 'people' }
@@ -118,7 +129,32 @@ export type MobileRoute =
   | { name: 'priceOverride'; timeMin: number }
   | { name: 'league'; timeMin: number }
   | { name: 'rateCard'; courseId?: string }
-  | { name: 'courseSettings'; courseId?: string };
+  | { name: 'courseSettings'; courseId?: string }
+  // ── Restaurant (V1 → V2): the tablet's Tables, Tabs, Quick Order, Reservations, Orders & Tips
+  /** The live floor, room by room. A server's or host's root; a push from More for a manager. */
+  | { name: 'tables' }
+  /** Every open tab. */
+  | { name: 'tabs' }
+  /** The counter: the menu, selling onto the register's own order. */
+  | { name: 'quickOrder' }
+  /** Today's dining reservations. */
+  | { name: 'reservations' }
+  /** Today's payments and tips, read-only on the handheld. */
+  | { name: 'ordersTips' }
+  /** One tab, seat by seat. */
+  | { name: 'tab'; tabId: string }
+  /** The menu, adding to a tab at a seat (`null` is a shared plate). */
+  | { name: 'menu'; tabId: string; seat?: number | null }
+  /** Choose a dish's modifiers — adding one, or changing one not yet sent (`lineId`). */
+  | { name: 'dish'; target: DishTarget; menuItemId: string; lineId?: string; seat?: number }
+  /** Seat a walk-in at `tableId`, or open a tab with no table. */
+  | { name: 'openTab'; tableId?: string }
+  /** Move a tab to another table. */
+  | { name: 'moveTab'; tabId: string }
+  /** Choose the table a reservation sits at, and seat it. */
+  | { name: 'seatReservation'; reservationId: string }
+  /** The counter order Quick Order is building: send it, charge it. */
+  | { name: 'counterOrder' };
 
 export type RouteName = MobileRoute['name'];
 export type RouteOf<N extends RouteName> = Extract<MobileRoute, { name: N }>;
@@ -166,6 +202,21 @@ export const PRESENTATION: Record<RouteName, Presentation> = {
   league: 'dialog',
   rateCard: 'push',
   courseSettings: 'push',
+
+  // The restaurant's lists are a server's roots and a manager's pushes from More. A stack's
+  // first screen never animates, so `push` is how they enter whenever they are not a root.
+  tables: 'push',
+  tabs: 'push',
+  quickOrder: 'push',
+  reservations: 'push',
+  ordersTips: 'push',
+  tab: 'push',
+  menu: 'push',
+  dish: 'dialog',
+  openTab: 'dialog',
+  moveTab: 'dialog',
+  seatReservation: 'dialog',
+  counterOrder: 'push',
 };
 
 // ─── Navigator ──────────────────────────────────────────────────────────────

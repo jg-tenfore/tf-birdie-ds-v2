@@ -5,6 +5,14 @@ import type { ReactNode, UIEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { keyframes } from '@emotion/react';
 import ArrowBack from '@mui/icons-material/ArrowBack';
+import AssignmentTurnedIn from '@mui/icons-material/AssignmentTurnedIn';
+import AssignmentTurnedInOutlined from '@mui/icons-material/AssignmentTurnedInOutlined';
+import Bolt from '@mui/icons-material/Bolt';
+import BoltOutlined from '@mui/icons-material/BoltOutlined';
+import CreditCard from '@mui/icons-material/CreditCard';
+import CreditCardOutlined from '@mui/icons-material/CreditCardOutlined';
+import Restaurant from '@mui/icons-material/Restaurant';
+import RestaurantOutlined from '@mui/icons-material/RestaurantOutlined';
 import Close from '@mui/icons-material/Close';
 import GolfCourse from '@mui/icons-material/GolfCourse';
 import GolfCourseOutlined from '@mui/icons-material/GolfCourseOutlined';
@@ -21,6 +29,7 @@ import { md3, mobile } from '../../theme/tokens';
 import { Stack } from '../components/Stack';
 import { useMobileFrame } from '../device-context';
 import type { MobileTab } from './navigation';
+import { GOLF_BAR } from './bar-by-role';
 import { TABS, useMobileNav } from './navigation';
 
 /**
@@ -310,19 +319,31 @@ export function BottomActionBar({ children, summary }: { children: ReactNode; su
   );
 }
 
+/** The restaurant's icons are the tablet main menu's (`data/nav.ts`), so a destination looks the same on both. */
 const TAB_ICONS: Record<MobileTab, { on: typeof GolfCourse; off: typeof GolfCourse }> = {
   tee: { on: GolfCourse, off: GolfCourseOutlined },
   register: { on: PointOfSale, off: PointOfSaleOutlined },
   people: { on: Group, off: GroupOutlined },
   more: { on: Menu, off: MenuOutlined },
+  tables: { on: Restaurant, off: RestaurantOutlined },
+  tabs: { on: CreditCard, off: CreditCardOutlined },
+  quick: { on: Bolt, off: BoltOutlined },
+  reservations: { on: AssignmentTurnedIn, off: AssignmentTurnedInOutlined },
 };
 
 /**
- * MD3 navigation bar: four destinations, filled icon + pill indicator on the active one.
- * `badges` puts a count on a destination — the Register shows how many lines are on the
- * open order, so an order in progress is visible from anywhere.
+ * MD3 navigation bar: three to five destinations, filled icon + pill indicator on the active one.
+ * `tabs` is the signed-in operator's bar (`barFor` in `navigation.tsx`) — the golf bar unless a
+ * role says otherwise. `badges` puts a count on a destination — the Register shows how many lines
+ * are on the open order, so an order in progress is visible from anywhere.
  */
-export function NavigationBar({ badges = {} }: { badges?: Partial<Record<MobileTab, number>> }) {
+export function NavigationBar({
+  badges = {},
+  tabs = GOLF_BAR,
+}: {
+  badges?: Partial<Record<MobileTab, number>>;
+  tabs?: MobileTab[];
+}) {
   const nav = useMobileNav();
   return (
     <Stack
@@ -331,7 +352,7 @@ export function NavigationBar({ badges = {} }: { badges?: Partial<Record<MobileT
       aria-label="Main"
       sx={{ height: mobile.navBarH, bgcolor: md3.surfaceContainer, flexShrink: 0 }}
     >
-      {TABS.map((t) => {
+      {tabs.map((id) => TABS.find((t) => t.id === id)!).map((t) => {
         const active = nav.tab === t.id;
         const Ico = active ? TAB_ICONS[t.id].on : TAB_ICONS[t.id].off;
         const count = badges[t.id] ?? 0;

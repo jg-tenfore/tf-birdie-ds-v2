@@ -6,10 +6,12 @@ import { mobileTheme } from '../../theme/mobile-theme';
 import { md3, mobile } from '../../theme/tokens';
 import type { PosState } from '../state/pos-store';
 import { PosProvider, usePos } from '../state/PosProvider';
-import { EditionProvider } from '../edition';
+import { EditionProvider, useV1V2 } from '../edition';
 import type { Edition } from '../edition';
+import { staffById } from '../data/staff';
 import { MobileFrame, NavigationBar } from './chrome';
 import type { MobileRoute, MobileTab, NavState } from './navigation';
+import { barFor } from './bar-by-role';
 import { MobileNavProvider, PRESENTATION, createNavState, useMobileNav } from './navigation';
 import { SCREENS } from './screens/registry';
 import type { ScreenProps } from './screens/types';
@@ -142,6 +144,15 @@ function Router() {
   const nav = useMobileNav();
   const { state, dispatch } = usePos();
   const orderLines = state.cart.filter((i) => !i.isSubItem).length;
+  // The bar is the signed-in operator's (V1 → V2, menu by role); the golf bar everywhere else.
+  const bar = barFor(staffById(state.operatorId, state.staffRoster)?.role, useV1V2());
+  // A destination the operator's bar doesn't have — a story opened on the tee sheet for a server,
+  // or a manager signing out in favour of a host — gives way to the bar's first. More is on every
+  // bar, so switching operator from More never lands here mid-task.
+  const offBar = !bar.includes(nav.tab) && nav.atRoot;
+  useEffect(() => {
+    if (offBar) nav.selectTab(bar[0]);
+  }, [offBar, bar, nav]);
 
   const exiting = useExiting(nav.tab, nav.stack);
   const layers = nav.stack.map((route, i) => ({ route, index: i, leaving: false }));
@@ -181,7 +192,7 @@ function Router() {
       </Box>
       {/* Held back while a screen leaves: showing it at once would shrink the content area
           and jolt the leaving screen's bottom bar up by the bar's height. */}
-      {nav.atRoot && !exiting && <NavigationBar badges={{ register: orderLines }} />}
+      {nav.atRoot && !exiting && <NavigationBar tabs={bar} badges={{ register: orderLines }} />}
       <Snackbar
         open={Boolean(state.toast)}
         message={state.toast ?? ''}
