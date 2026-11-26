@@ -26,11 +26,11 @@ const config: StorybookConfig = {
   // pages moved in the Nov 26 regroup to their new ids (loaded by manager-head.html and
   // preview-head.html).
   //
-  // `public/docs` is the docs pages' art and screenshots (`scripts/capture-screens.mjs`), served
+  // `static/docs` is the docs pages' art and screenshots (`scripts/capture-screens.mjs`), served
   // at `/docs` so MDX can use relative URLs (`docs/hero-overview.webp`) that hold locally and
-  // under the Pages base. Only that folder, not all of `public/`: `public/favicon.svg` is the
-  // prototype's and would replace Storybook's own favicon.
-  staticDirs: ['./static', { from: '../public/docs', to: '/docs' }],
+  // under the Pages base. It lives here rather than in `public/` because Vite copies all of
+  // `public/` into every prototype build, and the prototypes have no use for 2.6 MB of docs art.
+  staticDirs: ['./static'],
   docs: { defaultName: 'Overview' },
 };
 

@@ -66,7 +66,7 @@ export const AreaPills = ({ app }: { app: App }) => (
 /* ------------------------------------------------------------- what each area is */
 
 interface AreaCopy {
-  /** Screenshot name (`public/docs/screens/<shot>.webp`). Areas without one get a plain card. */
+  /** Screenshot name (`.storybook/static/docs/screens/<shot>.webp`). Areas without one get a plain card. */
   shot?: string;
   title: string;
   blurb: ReactNode;

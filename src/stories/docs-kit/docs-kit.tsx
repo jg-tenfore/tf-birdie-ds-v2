@@ -27,8 +27,8 @@
  * ## Images
  *
  * `screen('tablet-tee-sheet')` is a screenshot captured by `scripts/capture-screens.mjs` into
- * `public/docs/screens/`. Art is `docs/<name>.webp`. Both are **relative** URLs: `public/docs` is a
- * Storybook static dir served at `/docs`, and docs render in `<base>/iframe.html`, so the same
+ * `.storybook/static/docs/screens/`. Art is `docs/<name>.webp`. Both are **relative** URLs:
+ * `.storybook/static` is Storybook's static dir, so `static/docs` is served at `/docs`, and docs render in `<base>/iframe.html`, so the same
  * string works on `storybook dev` and under `/tf-birdie-ds-v2/` on Pages.
  */
 import type { CSSProperties, MouseEvent, ReactNode } from 'react';
@@ -190,10 +190,10 @@ export const archivePrototype = (app: 'tablet' | 'mobile', path = '') => surface
 /** The original HTML prototype, read-only. */
 export const referencePrototype = () => surfaceUrl('reference');
 
-/** A screenshot from `scripts/capture-screens.mjs` (`public/docs/screens/<name>.webp`). */
+/** A screenshot from `scripts/capture-screens.mjs` (`.storybook/static/docs/screens/<name>.webp`). */
 export const screen = (name: string) => `docs/screens/${name}.webp`;
 
-/** A piece of Start Here art (`public/docs/<name>.webp`). */
+/** A piece of Start Here art (`.storybook/static/docs/<name>.webp`). */
 export const art = (name: string) => `docs/${name}.webp`;
 
 /* ----------------------------------------------------------------- icons */

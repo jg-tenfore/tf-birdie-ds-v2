@@ -65,7 +65,7 @@ The Start Here, Screen index, Review summary and Archive pages are built on a sm
 Three scripts keep them honest, each run against a running Storybook or prototype:
 
 ```bash
-node scripts/capture-screens.mjs    # prototype screenshots → public/docs/screens/*.webp, on each device
+node scripts/capture-screens.mjs    # prototype screenshots → .storybook/static/docs/screens/*.webp, on each device
 node scripts/gen-screen-index.mjs   # the Screen index rows and Archive counts, from /index.json
 node scripts/check-doc-links.mjs    # every docs link points at a story or page that exists
 ```

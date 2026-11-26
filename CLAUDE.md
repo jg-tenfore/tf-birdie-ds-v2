@@ -246,8 +246,8 @@ no Tailwind: the kit styles itself inline plus one injected stylesheet, and ever
   `devices.ts`, Buck counts from `buck-sources.ts`.
 - **Screens are real screenshots** in the flat `TerminalFrame` / `HandheldFrame`, never generated
   device art. `node scripts/capture-screens.mjs` retakes them on their devices (prototype on :5193,
-  Storybook on :6044 for the few clipped from a story). Higgsfield art lives in `public/docs/` and
-  is for these pages only.
+  Storybook on :6044 for the few clipped from a story). Higgsfield art lives in `.storybook/static/docs/`
+  (not `public/`, which Vite copies into every prototype build) and is for these pages only.
 - `node scripts/check-doc-links.mjs` fails on any link target missing from `/index.json`.
 
 ## Weston Edits (editions)

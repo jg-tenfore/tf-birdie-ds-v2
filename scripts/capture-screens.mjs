@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Screenshots for the docs pages: public/docs/screens/<name>.webp.
+ * Screenshots for the docs pages: .storybook/static/docs/screens/<name>.webp.
  *
  * Drives the running prototype (and, for the few states a URL can't express, the running
  * Storybook) in headless Chromium, clips the device's screen out of the page, and converts it
@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'public/docs/screens');
+const OUT = path.join(ROOT, '.storybook/static/docs/screens');
 const PROTO = (process.env.PROTOTYPE_URL ?? 'http://localhost:5193').replace(/\/$/, '');
 const SB = (process.env.STORYBOOK_URL ?? 'http://localhost:6044').replace(/\/$/, '');
 const CWEBP = process.env.CWEBP ?? (fs.existsSync('/opt/homebrew/bin/cwebp') ? '/opt/homebrew/bin/cwebp' : 'cwebp');
