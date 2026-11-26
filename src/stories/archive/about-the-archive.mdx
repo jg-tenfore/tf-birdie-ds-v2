@@ -1,7 +1,110 @@
 import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, Code, DocButton, DocLink, DocPage, Grid, NavCard, Pill, ScreenCard, Section, archivePrototype, referencePrototype, screen, tabletPrototype, mobilePrototype } from '../docs-kit/docs-kit';
+import { ArchiveFolderCard, archiveStoryCount } from './archive-parts';
 
 <Meta title="Archive/About the archive" />
 
-# About the archive
+<DocPage>
 
-Designs Birdie has moved on from, kept so the history stays readable: the original port of the HTML prototype (tablet and phone, rendered in the archived base edition), the tee sheet action showcase built on it, the scaffold's account screens, and the V1 to V2 migration overview. Nothing here is the current design; for that, see **Prototypes**. Every story keeps the address it had before the move, so old links still open it.
+<Banner
+  eyebrow="Archive"
+  title="What Birdie has moved on from, kept so the history stays readable."
+  pills={<><Pill>{archiveStoryCount()} stories</Pill><Pill>4 folders</Pill><Pill>Starts collapsed</Pill><Pill tone="amber">Not the current design</Pill></>}
+  actions={<><DocButton to="start-here-overview--overview">Back to the Overview</DocButton><DocButton variant="secondary" href={archivePrototype('tablet', '#/tee-sheet')}>Open the archived tablet</DocButton></>}
+>
+  Work a later round replaced. Nothing here needs a review, and nothing here should be built from: for the current design, see <strong>Prototypes</strong>. It stays so the reasoning behind today's screens is one click away, and so links shared at the time still open.
+</Banner>
+
+<Section title="What's in it" intro="Four folders, each with what replaced it. Counts are read from the Storybook index.">
+<Grid cols={2}>
+  <ArchiveFolderCard folder="Original port/Tablet" eyebrow="Aug – Sep 2026" title="The original port: tablet" replaced="the current tablet, V1 → V2, under Prototypes › Tablet">
+    The React port of the single-file HTML prototype, in the archived <Code>base</Code> edition: the register, the tee sheet, booking and check-in, tee-time selection, payment, operations and people, at the original three-nines club.
+  </ArchiveFolderCard>
+  <ArchiveFolderCard folder="Original port/Mobile" eyebrow="Sep 21, 2026" title="The original port: phone" replaced="Weston Edits on the phone, under Prototypes › Mobile">
+    Mobile Screens as first built, before Weston's rounds: the phone's navigation map and every screen in the same seven sections as the tablet.
+  </ArchiveFolderCard>
+  <ArchiveFolderCard folder="Tee Sheet Actions" eyebrow="Sep 3, 2026" title="Tee Sheet Actions" replaced="the reservation panel and the tee sheet's stories under Prototypes › Tablet › Tee Sheet">
+    Every action that writes to the tee sheet, one story each: the sheet before with the dialog open, the sheet after, and the difference derived from the reducer. Built on the original port.
+  </ArchiveFolderCard>
+  <ArchiveFolderCard folder="Account" eyebrow="Aug 2026" title="Account screens from the scaffold" replaced="PIN sign-in, under Prototypes › Tablet › Sign-in">
+    Log in, sign up, forgot password and verification, carried over from the Goose KDS repo Birdie was scaffolded from. Birdie signs staff in with a PIN instead.
+  </ArchiveFolderCard>
+</Grid>
+<div style={{ marginTop: 16 }}>
+<NavCard eyebrow="Sep 29 – Oct 6, 2026" title="V1 to V2 migration: the overview and its coverage table" to="archive-v1-to-v2-migration--overview" cta="Read the migration overview">
+  How every destination in v1's nav was rebuilt rather than reproduced, wave by wave: what v1 did, what was wrong with it, what each wave decided, and a coverage table read from the same flag that makes a nav tile live. Every destination it lists now opens a screen, and its stories are under Prototypes by nav area.
+</NavCard>
+</div>
+</Section>
+
+<Section title="The original port still runs" intro="Same tee sheet, same club and day: the archive on the left of each pair, the current Birdie on the right.">
+<Grid cols={2}>
+  <ScreenCard
+    src={screen('archive-tablet-tee-sheet')}
+    eyebrow="Archive · tablet"
+    title="The original port, at three nines"
+    lookAt="click a tee time: it goes straight to the register, which is what Weston's round 1 changed."
+    links={[
+      { label: 'Open the archived tablet', href: archivePrototype('tablet', '#/tee-sheet') },
+      { label: 'Stories', to: 'pos-screens-2-·-tee-sheet--overview' },
+    ]}
+  >
+    <Code>/archive/prototype/</Code> on Pages; in dev, the same server with <Code>?edition=base</Code>.
+  </ScreenCard>
+  <ScreenCard
+    src={screen('tablet-tee-sheet')}
+    eyebrow="Current · tablet"
+    title="The current Birdie, at 18 holes"
+    lookAt="click a tee time: the reservation slides over the sheet."
+    links={[
+      { label: 'Open the current tablet', href: tabletPrototype('#/tee-sheet?shift=early') },
+      { label: 'Screen index', to: 'prototypes-tablet-screen-index--overview' },
+    ]}
+  >
+    <Code>/prototype/</Code> on Pages. Old links to <Code>/v1-v2/</Code>, <Code>/weston-edits/</Code> and the per-club paths redirect here.
+  </ScreenCard>
+  <ScreenCard
+    src={screen('archive-mobile-tee-sheet')}
+    frame="handheld"
+    eyebrow="Archive · phone"
+    title="The original phone"
+    links={[
+      { label: 'Open the archived phone', href: archivePrototype('mobile') },
+      { label: 'Stories', to: 'mobile-screens-2-·-tee-sheet--overview' },
+    ]}
+  >
+    <Code>/archive/mobile/</Code> on Pages.
+  </ScreenCard>
+  <ScreenCard
+    src={screen('mobile-tee-sheet')}
+    frame="handheld"
+    eyebrow="Current · phone"
+    title="Weston Edits on the phone"
+    links={[
+      { label: 'Open the current phone', href: mobilePrototype() },
+      { label: 'Screen index', to: 'prototypes-mobile-screen-index--overview' },
+    ]}
+  >
+    <Code>/mobile/</Code> on Pages.
+  </ScreenCard>
+</Grid>
+</Section>
+
+<Section title="Why keep it">
+<Grid cols={3}>
+  <NavCard eyebrow="1" title="The reasoning stays visible">
+    When someone asks why a screen works the way it does, the version before it is one click away, still clickable.
+  </NavCard>
+  <NavCard eyebrow="2" title="Old links still open">
+    Every story that moved on Nov 26 kept its id, and moved docs pages redirect, so a link pasted into Slack or Linear at the time opens the same thing.
+  </NavCard>
+  <NavCard eyebrow="3" title="It stays out of the way">
+    The folder sits last in the sidebar and starts collapsed. Superseded work moves here rather than being deleted.
+  </NavCard>
+</Grid>
+<Callout title="Older still:">
+the single-file HTML prototype the port came from is published read-only at <Code>/reference/</Code>. <DocLink href={referencePrototype()}>Open the original</DocLink>
+</Callout>
+</Section>
+
+</DocPage>

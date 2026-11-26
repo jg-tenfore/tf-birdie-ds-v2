@@ -30,19 +30,27 @@ the screen in the link and the club the old path was for.
 The front door, and the place to review anything in isolation. The sidebar is grouped the way
 TF Crane's is (regrouped Nov 26, 2026):
 
-- **Start Here**: the overview, style guide, devices, process and roadmap, how to review, and
-  the deep-link scheme.
+- **Start Here**: the [Overview](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-overview--overview),
+  [Style guide](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-style-guide--overview),
+  [Devices](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-devices--overview),
+  [Buck and Birdie](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-buck-and-birdie--overview) (which Buck screen sets up which
+  part of the counter), [Process & roadmap](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-process-roadmap--overview),
+  [How to review](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-how-to-review--overview) and the
+  [deep-link scheme](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-deep-links--overview).
 - **Prototypes**: the current Birdie (`CURRENT_EDITION` in `src/pos/edition.tsx`), area by area
   in the nav's own order. **Tablet** is the V1 → V2 edition (Weston's edits plus every nav
-  destination); **Mobile** is the Weston Edits edition. Each opens on a **Screen index**.
+  destination); **Mobile** is the Weston Edits edition. Each opens on a **Screen index**
+  ([tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/prototypes-tablet-screen-index--overview),
+  [phone](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/prototypes-mobile-screen-index--overview)): every story, area by area, with a
+  link into the prototype.
 - **Design System**: **Styles** (MD3 colour roles, type, spacing, radius, elevation, icons,
   logos, images) and **Components** (the MUI library, grouped by purpose).
 - **Reviews**: one folder per review round, newest first, each with a **Summary** and its
   change stories: the Oct 2 proposal review, the Oct 1 proposals from the Sep 30 call, and
   Weston Edits rounds 1–5 (Sep 22 onward).
-- **Archive**: the original port (69 tablet and 84 phone stories, in the archived `base`
-  edition), the tee sheet action showcase, the scaffold's account screens and the V1 → V2
-  migration overview.
+- **Archive**: the original port (tablet and phone, in the archived `base` edition), the tee
+  sheet action showcase, the scaffold's account screens and the V1 → V2 migration overview.
+  [About the archive](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/archive-about-the-archive--overview) counts and explains each.
 
 Every story file says which edition it renders in its meta (`decorators: [withEdition(…)]`,
 `src/showcase/edition-decorator.tsx`), and every file that moved kept its story ids (a pinned
@@ -51,6 +59,16 @@ are redirected by `.storybook/static/legacy-redirects.js`.
 
 Every story is built from plain state, so the screen you review is exactly the one the
 prototypes render.
+
+The Start Here, Screen index, Review summary and Archive pages are built on a small docs kit
+(`src/stories/docs-kit/`, ported from TF Crane's) with real screenshots in flat device frames.
+Three scripts keep them honest, each run against a running Storybook or prototype:
+
+```bash
+node scripts/capture-screens.mjs    # prototype screenshots → public/docs/screens/*.webp, on each device
+node scripts/gen-screen-index.mjs   # the Screen index rows and Archive counts, from /index.json
+node scripts/check-doc-links.mjs    # every docs link points at a story or page that exists
+```
 
 Four questions Weston asked to *see* rather than decide from a description are on the
 Storybook **toolbar** — panel width, row density, transport style and rate catalog. They feed

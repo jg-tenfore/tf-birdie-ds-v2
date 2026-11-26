@@ -1,0 +1,98 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, Code, DocButton, DocLink, DocPage, DocTable, Grid, NavCard, P, Section, ScreenCard, StatusPill, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { BuckPills, BuckSourcesTable, BuckStatus } from './buck-sources';
+
+<Meta title="Start Here/Buck and Birdie" />
+
+<DocPage>
+
+<Banner
+  eyebrow="Buck and Birdie"
+  title="Buck sets the club up. Birdie is the counter that uses it."
+  pills={<BuckPills />}
+  actions={<><DocButton href={tabletPrototype('#/settings?section=birdie')}>See Set in Buck in Settings</DocButton><DocLink href="https://jg-tenfore.github.io/tf-buck-ds-v1/">TF Buck's Storybook</DocLink></>}
+>
+  <strong>Buck</strong> is TenFore's back office, in a browser: where a club's managers set up products, menus, modifiers and discounts, rates and taxes, payment types, printers and tablets, credits, bays and memberships. <strong>Birdie</strong> is the counter that uses them all day. It reads what Buck set up and almost never edits it. This page lists, area by area, which Buck screen sets up what the counter shows, and how closely the prototype follows Buck today.
+</Banner>
+
+<P>
+  The rows come from <Code>src/pos/data/buck-sources.ts</Code>, the same file the prototype's own Settings and tests read, so this table can't drift from the app. Its status says how far the counter follows Buck:
+</P>
+
+<div style={{ marginTop: 14 }}>
+<Grid cols={3}>
+  <NavCard title={<BuckStatus status="aligned" />}>
+    Same names, structure and rules as Buck. What a manager sets there is what the counter does.
+  </NavCard>
+  <NavCard title={<BuckStatus status="partial" />}>
+    Buck's vocabulary and structure, with a difference the row states: something Birdie adds, or something it doesn't act on yet.
+  </NavCard>
+  <NavCard title={<BuckStatus status="not yet" />}>
+    Buck has it; the counter doesn't use it yet, and still runs on Birdie's own sample data for it.
+  </NavCard>
+</Grid>
+</div>
+
+<Section title="What Buck sets up, area by area" intro="In the main nav's order. The note under a row says what differs or what's missing; the file under the Buck screen is where Birdie keeps its side.">
+<BuckSourcesTable />
+</Section>
+
+<Section title="See it on the counter" intro="Three places the Buck data shows most plainly.">
+<Grid cols={3}>
+  <ScreenCard
+    src={screen('tablet-settings-buck')}
+    eyebrow="Settings"
+    title="Set in Buck, read-only here"
+    lookAt="each section saying where in Buck it's changed, under Buck's own names."
+    links={[
+      { label: 'Open in the prototype', href: tabletPrototype('#/settings?section=taxes') },
+      { label: 'Stories', to: 'prototypes-tablet-settings-set-in-buck--buck-birdie-section' },
+    ]}
+  >
+    Settings splits in two: what the counter edits (device, card reader, Clover, tee sheet, register and printers, tips and gift cards, staff) and what Buck sets (Birdie, Taxes & Fees, Payments, Transportation Types, Printers & Tablets, Main Info).
+  </ScreenCard>
+  <ScreenCard
+    src={screen('tablet-quick-order')}
+    eyebrow="Quick Order · Tabs"
+    title="Menus by day and time"
+    lookAt="which menu is up at the demo's noon, and More menus for the rest."
+    links={[
+      { label: 'Open in the prototype', href: tabletPrototype('#/quick-order') },
+      { label: 'Stories', to: 'prototypes-tablet-quick-order-menus-by-day-and-time--opens-on-what-is-running' },
+    ]}
+  >
+    Buck's menus, titles and windows; the counter opens on the menu running now. Modifier groups and discount types use Buck's names and colours.
+  </ScreenCard>
+  <ScreenCard
+    src={screen('tablet-bay-sheet')}
+    eyebrow="Bay Sheet"
+    title="Buck's bays, fees and limit"
+    lookAt="the ribbons in each golfer's membership colour, and a refused move that says why."
+    links={[
+      { label: 'Open in the prototype', href: tabletPrototype('#/bays') },
+      { label: 'Stories', to: 'prototypes-tablet-bay-sheet-buck-bays--ten-bays-and-ribbons' },
+    ]}
+  >
+    Ten bays with Buck's capacities and fees, a daily limit with a staff override, and Buck's Layout A: drag to move or extend, +30m and +1h, undo.
+  </ScreenCard>
+</Grid>
+</Section>
+
+<Section title="Open questions" intro="Where Buck and Birdie disagree, or Buck hasn't said. Each one is one place to change once it's answered.">
+<DocTable
+  columns={['Question', 'Today', 'Status']}
+  widths={['44%', '44%', '12%']}
+  rows={[
+    ['Should Staff & PINs move to Set in Buck?', 'Buck keeps employees and PINs; Birdie still lets a manager edit them at the counter.', <StatusPill tone="open" />],
+    ['Does Buck’s bay daily limit count bookings or hours?', 'Birdie counts bookings: two a day, with a staff override.', <StatusPill tone="open" />],
+    ['Should Buck rename “Burger Temps”, and is a Lunch menu OK?', 'Birdie calls the group Burger Add-ons, and adds Lunch (11 AM–4 PM) so the dining room has a menu at noon.', <StatusPill tone="open" />],
+    ['Bays named after real golfers: keep the names?', 'Birdie uses Buck’s sample bays as Buck names them, Nicklaus Bay and Palmer Bay among them.', <StatusPill tone="open" />],
+    ['Should the tee sheet draw plan colours for Senior and Junior members?', 'The tee sheet draws by tier, which matches every plan colour except those two customer-type overrides.', <StatusPill tone="open" />],
+  ]}
+/>
+<Callout title="Not on the counter yet:">
+products, product groups and price stickers (the register still sells Birdie's catalog), booking rules and advance-booking fees, and the courts' own pricing. They're the <strong>Not yet</strong> rows above.
+</Callout>
+</Section>
+
+</DocPage>

@@ -1,50 +1,61 @@
 import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, DocButton, DocLink, DocPage, DocTable, P, Pill, Section, StatusPill, tabletPrototype } from '../../../stories/docs-kit/docs-kit';
 
 <Meta title="Reviews/Oct 1 – Proposals from the Sep 30 call/Summary" />
 
-# 100126 · Feedback round from the Sep 30 call with Weston
+<DocPage>
 
-Proposals from Justin's call with Weston Farnsworth on Sep 30: the reservation panel, the order
-rail, leagues, the main menu, Settings and the phone. Each change has its own entry in this folder,
-with two stories:
+<Banner
+  eyebrow="Review · Sep 30 call, proposals Oct 1, 2026"
+  title="Twelve proposals from the Sep 30 call with Weston"
+  pills={<><Pill>12 proposals</Pill><Pill>Original beside Proposal</Pill><Pill tone="brand">All 12 built</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet?res=p04_m6')}>Open the tablet prototype</DocButton><DocLink to="reviews-oct-2-proposal-review-summary--overview">The Oct 2 review</DocLink></>}
+>
+  Justin's call with Weston Farnsworth on Sep 30 covered the reservation panel, the order rail, leagues, the main menu, Settings and the phone. Each proposal has its own folder here with two stories: <strong>Original</strong>, the live screen, and <strong>Proposal</strong>, a mockup marked PROPOSAL · 100126 in its corner. Nothing in the app changed until a proposal was approved.
+</Banner>
 
-- **Original**: the live V1 → V2 screen as it is today. The phone items use Weston Edits' phone,
-  because V1 → V2 is tablet-only.
-- **Proposal**: a mockup of the change, built in Storybook only and marked **PROPOSAL · 100126**
-  in its corner. Nothing in the app changes until a proposal is approved.
+<P>
+  <strong>Weston's priorities on the call:</strong> fit the foursome, put membership back, add the order number to Financial, then “let's make sure everything else is in order”.
+</P>
 
-Weston's own priorities on the call: fit the foursome, put membership back, add the order number to
-Financial, then *"let's make sure everything else is in order"*. He is *"not as worried about events
-… to start"*, and happy with the tee sheet and the slide-over *"for now"*.
+<Section title="Decisions" intro="Weston reviewed all twelve on Oct 2. Ten were approved then; items 1 and 8 went another round and were approved Oct 3.">
+<DocTable
+  columns={['#', 'Proposal', 'What Weston said', 'Where', 'Status']}
+  widths={['5%', '30%', '33%', '17%', '15%']}
+  rows={[
+    ['1', <DocLink to="v1-→-v2-migration-100126-1-·-compact-player-rows--original">Compact player rows: one line, tap to expand</DocLink>, '“That 4th player, you always have to scroll.”', 'Reservation panel', <StatusPill tone="done">Built as v2</StatusPill>],
+    ['2', <DocLink to="v1-→-v2-migration-100126-2-·-status-chip-instead-of-the-stepper--original">A status chip instead of the stepper</DocLink>, '“It does take up a lot of space… maybe they could click on it and change it.”', 'Each player card', <StatusPill tone="done">Built</StatusPill>],
+    ['3', <DocLink to="v1-→-v2-migration-100126-3-·-membership-on-every-player--original">Membership and customer type on every player</DocLink>, '“We want to have the customer type and the membership.”', 'Each player card', <StatusPill tone="done">Built</StatusPill>],
+    ['4', <DocLink to="v1-→-v2-migration-100126-4-·-contact-details-once--original">Contact details once, in the header</DocLink>, '“We show my email 4 times.”', 'Panel header', <StatusPill tone="done">Built</StatusPill>],
+    ['5', <DocLink to="v1-→-v2-migration-100126-5-·-financial-order-number-per-player--original">Order number per paid player</DocLink>, '“We don’t have a way to like reprint a receipt for a reservation.”', 'Financial tab', <StatusPill tone="done">Built</StatusPill>],
+    ['6', <DocLink to="v1-→-v2-migration-100126-6-·-empty-rail-collapsed-by-default--original">Empty rail collapsed by default</DocLink>, '“Just collapsed if there’s nothing in it.”', 'Register', <StatusPill tone="done">Built</StatusPill>],
+    ['7', <DocLink to="v1-→-v2-migration-100126-7-·-menu-by-role--original">Menu by role, and a role grid in Settings</DocLink>, '“You could be like pro shop and not see any of the restaurant.”', 'Main menu', <StatusPill tone="done">Built</StatusPill>],
+    ['8', <DocLink to="v1-→-v2-migration-100126-8-·-league-and-group-view--original">League and group view</DocLink>, '“1, pay, checkout, 1, pay, checkout.”', 'Member-Guest, May 30', <StatusPill tone="done">Built as v2</StatusPill>],
+    ['9', <DocLink to="v1-→-v2-migration-100126-9-·-settings-birdie-sections--original">Settings led by Birdie’s sections</DocLink>, '“These I don’t think are settings that we have currently.”', 'Settings', <StatusPill tone="done">Built</StatusPill>],
+    ['10', <DocLink to="v1-→-v2-migration-100126-10-·-phone-tee-sheet-header--original">Phone: tee sheet header collapses on scroll</DocLink>, '“Once you start scrolling… collapse.”', 'Phone tee sheet', <StatusPill tone="done">Built</StatusPill>],
+    ['11', <DocLink to="v1-→-v2-migration-100126-11-·-phone-reservation-pager--original">Phone: no “30 of 88” pager</DocLink>, '“I think we could get rid of this.”', 'Phone reservation', <StatusPill tone="done">Built</StatusPill>],
+    ['12', <DocLink to="v1-→-v2-migration-100126-12-·-course-menu-bug--original">Bug: the course ⋮ menu opens under its own button</DocLink>, '“Well, that’s a bug.”', 'Tee sheet course header', <StatusPill tone="done">Built</StatusPill>],
+  ]}
+/>
+<Callout>
+Each <strong>Original</strong> story renders the live app, so since the Oct 2 review the Originals for the approved items show the new design; the <strong>Proposal</strong> mockups still show what was proposed. Items 1 and 8: see <DocLink to="reviews-oct-2-proposal-review-summary--overview">Oct 2 – Proposal review</DocLink>.
+</Callout>
+</Section>
 
-> **Since the Oct 2 review (100226):** Weston approved items 2–7 and 9–12, and they are now built
-> into the prototype. Because each **Original** story renders the live app, the Originals for those
-> items now show the new design; the **Proposal** mocks still show what was proposed. Items 1 and 8
-> went another round, see **Reviews › Oct 2 – Proposal review**.
+<Section title="Left open" intro="Raised on the call and kept out of this round, so the scope stayed small.">
+<DocTable
+  columns={['Idea', 'Where it stands', 'Status']}
+  widths={['30%', '55%', '15%']}
+  rows={[
+    ['A Starter or Ranger view', 'A separate, phone-first view to check in, see who has paid, and assign carts and keys, with no money on it. Weston likes it and suggested “maybe it’s not even tied into Birdie.”', <StatusPill tone="parked" />],
+    ['Tips, how-tos or release notes in the empty rail', 'Not built.', <StatusPill tone="parked" />],
+    ['A redesigned customer record, with View ID and ID.me', 'A round of its own.', <StatusPill tone="parked" />],
+    ['The Buck settings concepts, and reviewing Buck’s pages before they’re retired', 'Buck work, not this prototype. What Buck sets up for the counter is now on Start Here › Buck and Birdie.', <StatusPill tone="parked" />],
+  ]}
+/>
+<Callout tone="amber" title="Weston, on scope:">
+“Not as worried about events… to start”, and happy with the tee sheet and the slide-over “for now”.
+</Callout>
+</Section>
 
-## The changes
-
-| # | Change | What Weston said | Where today |
-|---|---|---|---|
-| 1 | **Compact player rows**: one line per player, tap to expand | *"that 4th player, you always have to scroll"* | Reservation panel, Players |
-| 2 | **Status chip** instead of the five-stop stepper | *"it does take up a lot of space… maybe they could click on it and change it"* | Each player card |
-| 3 | **Membership and customer type** on every player | *"we want to have the customer type and the membership"* | Each player card |
-| 4 | **Contact details once**: the booker's phone and email in the header | *"we show my email 4 times"* | Panel header |
-| 5 | **Order number per paid player**, with Print receipt and See order | *"we don't have a way to like reprint a receipt for a reservation"* | Financial tab |
-| 6 | **Empty rail collapsed by default**, with a visible Collapse | *"just collapsed if there's nothing in it"* | Register |
-| 7 | **Menu by role**, and a role grid in Settings | *"you could be like pro shop and not see any of the restaurant"* | Main menu |
-| 8 | **League and group view**: the whole outing over the screen | *"1, pay, checkout, 1, pay, checkout"* | Member-Guest, May 30 |
-| 9 | **Settings led by Birdie's sections**: device info, card reader, Clover | *"these I don't think are settings that we have currently"* | Settings |
-| 10 | **Phone: tee sheet header collapses** to the date row on scroll | *"once you start scrolling… collapse"* | Phone tee sheet |
-| 11 | **Phone: reservation without the "30 of 88" pager** | *"I think we could get rid of this"* | Phone reservation |
-| 12 | **Bug: course ⋮ menu** opens under its own button | *"Well, that's a bug"* | Tee sheet course header |
-
-## Not in this round
-
-- **A Starter or Ranger view.** A separate, phone-first view to check in, see paid, and assign
-  carts and keys, with no money on it. Weston likes the idea and suggested *"maybe it's not even
-  tied into Birdie"*. Parked.
-- **Tips, how-tos or release notes in the empty rail.** Parked so the scope stays small.
-- **A redesigned customer record**, with View ID and ID.me: a round of its own.
-- **The Buck settings concepts** and reviewing Buck's pages before they're retired: Buck work, not
-  this prototype.
+</DocPage>
