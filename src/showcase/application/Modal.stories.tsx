@@ -9,7 +9,12 @@ import {
   DialogTitle,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import { md3 } from '../../theme/tokens';
+import { PosProvider } from '../../pos/state/PosProvider';
+import { FilledButton, ModalFrame, OutlineButton } from '../../pos/modals/ModalFrame';
 
 const meta = {
   title: 'Design System/Components/Feedback & Status/Dialog',
@@ -20,9 +25,9 @@ const meta = {
     docs: {
       description: {
         component:
-          'MUI `Dialog` — a modal overlay that interrupts the workflow to confirm an action, surface a decision, or collect a short piece of input. ' +
-          'Compose it from `DialogTitle`, `DialogContent` (optionally with `DialogContentText`), and `DialogActions`. ' +
-          'Use it for destructive confirmations (recall, void, clear) and quick forms; for passive, non-blocking messages prefer a **Snackbar** or **Alert** instead.',
+          'MUI `Dialog` — a modal overlay that interrupts the work to confirm an action or collect a short input. ' +
+          'In Birdie every tablet dialog is `ModalFrame` (see **In Birdie**), which wraps this; the handheld has no centred dialogs. ' +
+          'The plain MUI compositions below are for reference.',
       },
     },
   },
@@ -37,20 +42,19 @@ function PlaygroundDemo() {
   return (
     <>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Recall ticket
+        Check in party
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Recall ticket #42?</DialogTitle>
+        <DialogTitle>Check in all 3 players?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This returns the ticket to the active board with a recalled marker. Original completion
-            history is preserved.
+            Checking in doesn&apos;t take payment. To settle a balance, use Check in &amp; pay on the booking.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={() => setOpen(false)}>
-            Recall
+            Check in
           </Button>
         </DialogActions>
       </Dialog>
@@ -68,19 +72,19 @@ function AlertDialogDemo() {
   return (
     <>
       <Button variant="outlined" color="error" onClick={() => setOpen(true)}>
-        Clear all tickets
+        Clear order
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby="clear-title">
-        <DialogTitle id="clear-title">Clear all tickets?</DialogTitle>
+        <DialogTitle id="clear-title">Clear this order?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            All active tickets on this station will be removed from the board. This cannot be undone.
+            Removes 3 lines and the customer. The booking stays on the tee sheet. This can&apos;t be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)}>Keep order</Button>
           <Button variant="contained" color="error" onClick={() => setOpen(false)}>
-            Clear all
+            Clear order
           </Button>
         </DialogActions>
       </Dialog>
@@ -102,20 +106,20 @@ function FormDialogDemo() {
   return (
     <>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Rename station
+        Rename register
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Rename station</DialogTitle>
+        <DialogTitle>Rename register</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            Enter a new display name for this KDS station.
+            The name prints on receipts and shows in Orders &amp; Tips.
           </DialogContentText>
           <Stack spacing={2}>
             <TextField
               autoFocus
               fullWidth
-              label="Station name"
-              placeholder="Expo 1"
+              label="Register name"
+              placeholder="Pro Shop 1"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -136,5 +140,54 @@ export const FormDialog: Story = {
   render: () => <FormDialogDemo />,
   parameters: {
     docs: { description: { story: 'A Dialog containing a form field for quick edits.' } },
+  },
+};
+
+/** Birdie's destructive confirm, built as `ConfirmDialog` builds it: ModalFrame, 440px, red icon. */
+function BirdieConfirmDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <PosProvider>
+      <OutlineButton destructive onClick={() => setOpen(true)}>
+        Clear 9:12 AM
+      </OutlineButton>
+      {open && (
+        <ModalFrame
+          width={440}
+          title="Clear 9:12 AM?"
+          icon="warning"
+          iconColor={md3.error}
+          onClose={() => setOpen(false)}
+          actions={
+            <>
+              <OutlineButton onClick={() => setOpen(false)}>Cancel</OutlineButton>
+              <FilledButton destructive onClick={() => setOpen(false)}>
+                Clear time
+              </FilledButton>
+            </>
+          }
+        >
+          <Typography sx={{ fontSize: 13, lineHeight: 1.55, color: md3.onSurfaceVariant }}>
+            6 tee times across all courses will be removed and the slots released.
+          </Typography>
+        </ModalFrame>
+      )}
+    </PosProvider>
+  );
+}
+
+/**
+ * **In Birdie · tablet.** `ModalFrame` as the confirm uses it: icon tile, the question as the title,
+ * the consequence with a count, Cancel and a red button that repeats the verb. Open it, then Cancel.
+ */
+export const InBirdie: Story = {
+  name: 'In Birdie · tablet confirm',
+  render: () => <BirdieConfirmDemo />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Clear 9:12 AM' }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await expect(dialog.getByText('Clear 9:12 AM?')).toBeTruthy();
+    await userEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   },
 };
