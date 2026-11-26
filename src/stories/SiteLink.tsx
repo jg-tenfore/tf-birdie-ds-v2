@@ -103,7 +103,8 @@ const IS_DEV = Boolean(import.meta.env?.DEV);
 const DEV_PROTOTYPE_ORIGIN =
   (import.meta.env?.VITE_PROTOTYPE_ORIGIN as string | undefined) ?? 'http://localhost:5173';
 
-function surfaceUrl(id: SurfaceId, path = ''): string {
+/** The URL of a surface (and a deep link inside it), for this environment. The docs kit builds on it. */
+export function surfaceUrl(id: SurfaceId, path = ''): string {
   const surface = SURFACES[id];
 
   if (IS_DEV) {
