@@ -21,7 +21,7 @@ const doc: DsDoc = {
       tiles; {DISHES} menu photos sit on the restaurant's dish tiles, with {STAND_INS} unbranded stand-ins for the {BRANDED} branded
       snacks, sodas, beers and wines. Every photo is square, on white, matched to its item by file name. Rates, modifiers and
       memberships have no picture, on purpose. Scene art exists only in these docs.
-      <ArtNote>Banner: a tabletop food-photo set, a white sweep, softboxes and a plated burger.</ArtNote>
+      <ArtNote>Banner: frames of three proportions with crop marks, and a tiny contour picture inside one.</ArtNote>
     </>
   ),
   status: 'core',

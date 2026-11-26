@@ -21,7 +21,7 @@ const doc: DsDoc = {
       counter: who has paid, what time of day it is, who is a member, whose seat it is, and what hasn't gone to the kitchen. A
       colour means the same thing on the counter terminal and the handheld, and it never carries meaning alone: a word or an icon
       always goes with it. Light mode only.
-      <ArtNote>Banner: a fan of paint chips in course colours, greens, sand, pond blue and a red flag.</ArtNote>
+      <ArtNote>Banner: a putting green's contour map, its bands stepping through Birdie's greens to sand — a colour scale in line art.</ArtNote>
     </>
   ),
   status: 'core',

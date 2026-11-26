@@ -14,7 +14,7 @@ const doc: DsDoc = {
       of thumb: the bigger the thing, the softer its corner, and anything you press that has a label is a full pill. So a status
       tag is nearly square, a tile is 12px, a dialog is 16px, and every button and chip on the counter is round-ended. The
       handheld follows Material Design 3 where it differs: 8dp chips, 4dp text fields, 16dp FABs.
-      <ArtNote>Banner: a putting green of round forms.</ArtNote>
+      <ArtNote>Banner: nested outlines from a sharp square to rounder and rounder corners, ending in a circle.</ArtNote>
     </>
   ),
   status: 'core',

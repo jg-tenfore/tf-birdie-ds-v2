@@ -17,7 +17,7 @@ const doc: DsDoc = {
       the ported data files can keep naming icons the way the HTML prototype did. The handheld imports Material icons directly, in
       MD3's style: <strong>outlined at rest, filled when active</strong>. An icon helps someone scan; it never stands in for a label
       on anything that moves money.
-      <ArtNote>Banner: a pegboard of golf gear laid out in a grid, like an icon set.</ArtNote>
+      <ArtNote>Banner: an icon construction sheet — keyline grids with a flag, a ball, a tee, a cart and a cup, one stroke weight.</ArtNote>
     </>
   ),
   status: 'core',

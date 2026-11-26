@@ -20,13 +20,13 @@ export const PAGES = [
 <Banner
   eyebrow="Review · Nov 26, 2026"
   title="Design System header styles"
-  pills={<><Pill>3 options</Pill><Pill>Shown on Colors, Spacing and Radius</Pill><StatusPill tone="open">Open</StatusPill></>}
+  pills={<><Pill>3 options</Pill><Pill>Shown on Colors, Spacing and Radius</Pill><StatusPill tone="done">Decided: C · Contour line art</StatusPill></>}
 >
-  Justin asked for the foundation pages' headers to move from illustrated golf scenes to something more abstract: minimal, and about the design system, with golf only hinted at. Three directions follow, each drawn as the real page header (the white fade, the eyebrow, the title) on three pages. The chosen direction gets drawn for all ten foundation pages and the Design System overview.
+  Justin asked for the foundation pages' headers to move from illustrated golf scenes to something more abstract: minimal, and about the design system, with golf only hinted at. Three directions follow, each drawn as the real page header (the white fade, the eyebrow, the title) on three pages. <strong>Justin chose C, contour line art</strong>, and it is now drawn for all ten: the nine foundation pages and the Design System overview.
 </Banner>
 
-<Section title="Today" intro="The illustrated header now on the foundation pages, for comparison.">
-  <Banner eyebrow="Design System · Styles" title="Colors" art={art('ds-colors')}>
+<Section title="Before" intro="The illustrated header the foundation pages had first, for comparison.">
+  <Banner eyebrow="Design System · Styles" title="Colors" art={art('options/ds-before-colors')}>
     {PAGES[0].line}
   </Banner>
 </Section>
@@ -48,11 +48,11 @@ export const PAGES = [
     columns={['Question', 'Options', 'Status']}
     widths={['34%', 'auto', '14%']}
     rows={[
-      ['Which header style for the foundation pages and the Design System overview?', 'A · Flat geometry (recommended), B · Soft 3D forms, C · Contour line art', <StatusPill tone="open" />],
+      ['Which header style for the foundation pages and the Design System overview?', 'C · Contour line art — chosen by Justin, Nov 26. Drawn for all ten pages, each a design-system idea as a technical drawing: a contour colour scale, baseline guides, a measured grid, nested radii, outline weights, layered elevation, an icon construction sheet, a crest with clear space, and image frames.', <StatusPill tone="done">Decided</StatusPill>],
     ]}
   />
-  <Callout title="Why A is recommended">
-    The foundation pages are about tokens and rules: flat colour, exact spacing, precise corners. Flat geometry looks like what the pages describe, stays sharp at any size, and sits quietly behind the white fade. B is lovely but competes with the text; C is elegant but its thin lines fade out at banner size.
+  <Callout title="Why C works">
+    It reads as a design system's own drawings, measured and precise, and the golf link is in the drawing itself: a green's contour map, a ball's flight, a pin. It sits quietest behind the page title, and line art compresses small (all ten headers come to about 250 KB).
   </Callout>
 </Section>
 

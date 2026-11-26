@@ -16,7 +16,7 @@ const doc: DsDoc = {
       text is small and heavy: a 13px base, 11px capital labels over every group, names at 700 to 800. The handheld follows
       Material Design 3's type scale for a thumb: a 16px body, 22px titles, 500 weight. Money and times are written one way
       everywhere, by shared formatters.
-      <ArtNote>Banner: a printer's type case of blank blocks.</ArtNote>
+      <ArtNote>Banner: baseline, x-height and cap-height guides in three sizes, with the parts of glyphs resting on them.</ArtNote>
     </>
   ),
   status: 'core',

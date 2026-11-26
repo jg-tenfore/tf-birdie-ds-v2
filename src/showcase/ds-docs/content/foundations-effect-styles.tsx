@@ -14,7 +14,7 @@ const doc: DsDoc = {
       <strong>three levels</strong> from Material Design 3: <code>e1</code> for tiles you press, <code>e2</code> for the one raised
       action, <code>e3</code> for anything that floats over the screen. A scrim dims what an overlay pauses, and motion is short and
       decelerating, so a panel arrives without making anyone wait.
-      <ArtNote>Banner: long shadows, and stacked cards casting layered shadows.</ArtNote>
+      <ArtNote>Banner: three cards stacked in layers, each shadow widening and fading with its height.</ArtNote>
     </>
   ),
   status: 'core',

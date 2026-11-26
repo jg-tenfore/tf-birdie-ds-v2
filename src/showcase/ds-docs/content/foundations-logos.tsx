@@ -14,7 +14,7 @@ const doc: DsDoc = {
       white (<code>src/assets/images</code>). They introduce TenFore: in this Storybook's sidebar, on documents, on an app icon. They
       don't appear inside a working Birdie screen. At the counter the screen names the club, The Dunes of Delgado, because that's
       whose shop it is.
-      <ArtNote>Banner: caps, polos and a flag carrying one consistent blank crest.</ArtNote>
+      <ArtNote>Banner: a crest drawn on its construction circles, with its clear-space margin and its smallest size.</ArtNote>
     </>
   ),
   status: 'core',

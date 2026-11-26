@@ -16,7 +16,7 @@ const doc: DsDoc = {
       shadows can stay rare. A line changes colour or weight only when it means something: green for selected or still owed, a
       dark outline for the selected booking, a coloured left edge for whose row it is, red for danger. The handheld's outlined
       buttons and cards use MD3's 1dp lines.
-      <ArtNote>Banner: the crisp edges of a green, a bunker and a row of white stakes.</ArtNote>
+      <ArtNote>Banner: a green's edge traced as outlines of different weights, and a box drawn thin and thick.</ArtNote>
     </>
   ),
   status: 'core',

@@ -14,7 +14,7 @@ const doc: DsDoc = {
       The counter terminal is tight, in fine steps between 4 and 18px (most 2px apart, ported from the prototype as drawn), so
       the tee sheet and the order fit on one screen. The handheld keeps to Material Design 3's 8dp grid, with 16dp screen margins and 48dp rows, because a thumb needs
       room. A few measures that layouts depend on, like a tee-sheet row, are tokens of their own.
-      <ArtNote>Banner: range mats laid out at even intervals.</ArtNote>
+      <ArtNote>Banner: circles on a measuring grid at exactly equal intervals, the gaps marked like dimensions.</ArtNote>
     </>
   ),
   status: 'core',
