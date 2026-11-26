@@ -11,7 +11,7 @@ const meta = {
       description: {
         component:
           'Native MUI `Skeleton` — a placeholder that mirrors the shape of content while it loads, reducing layout shift and perceived wait. ' +
-          'In the KDS it stands in for ticket cards while orders stream in from the POS, keeping the board stable during network latency. ' +
+          'Birdie does not use it yet (nothing in the prototype loads); the first real use should be tee-sheet rows or booking cards. ' +
           'Edit the props in the **Controls** panel to preview each shape and animation, then **Show code** to copy the result.',
       },
     },
@@ -60,13 +60,14 @@ export const Variants: Story = {
   ),
 };
 
-/** Several skeletons composed into a placeholder for a loading ticket card. */
+/** Several skeletons composed into a placeholder for a loading card. */
 export const LoadingTicketCard: Story = {
+  name: 'Loading card',
   parameters: {
     docs: {
       description: {
         story:
-          'A ticket-card placeholder: a media block for the item image, a circular avatar for the server, header and body text lines, and a footer action — shown while the order loads from the POS.',
+          'A card placeholder: a media block, a circular avatar, two text lines, body lines and a footer action. Birdie\'s first real skeleton should copy the shape of a handheld booking card instead.',
       },
     },
   },

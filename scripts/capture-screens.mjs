@@ -95,6 +95,12 @@ const SHOTS = [
   { name: 'tablet-sign-in', story: 'v1-→-v2-migration-sign-in-tablet--demo-pins' },
   { name: 'tablet-settings-buck', hash: '#/settings?section=taxes' },
   { name: 'tablet-dish-dialog', story: 'prototypes-tablet-quick-order-menu-photography--the-dish-dialog' },
+  // ── Design System › Feedback & Status, Chip (ds-feedback) ──
+  { name: 'ds-tablet-tab-list', hash: '#/tabs' },
+  { name: 'ds-bay-sheet-all-off', hash: '#/bays?hide=bay-1,bay-2,bay-3,bay-4,bay-5,lesson,nicklaus,palmer,east-porch,west-porch' },
+  { name: 'ds-tablet-confirm', story: 'prototypes-tablet-tee-sheet-operations--destructive-confirm' },
+  { name: 'ds-mobile-open-tabs', route: 'prototypes-mobile-tabs-tabs-on-the-handheld--open-tabs' },
+  { name: 'ds-mobile-remove-sheet', story: 'weston-edits-2-·-player-rows-mobile--remove-player', device: 'quest-handheld' },
   // ── Phone: the key screens (routes are story ids, as the phone prototype routes) ──
   { name: 'mobile-tee-sheet', route: '' },
   { name: 'mobile-reservation', route: 'weston-edits-1-·-reservation-panel-mobile--reservation' },
