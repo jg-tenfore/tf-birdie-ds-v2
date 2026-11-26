@@ -11,9 +11,9 @@ const meta = {
     docs: {
       description: {
         component:
-          'Inline navigational text, built on MUI `Link`. ' +
-          'Across the golf-diner KDS it carries lightweight cross-references — jumping from a ticket to its order detail, opening the item-availability doc, or linking a member profile — without the weight of a button. ' +
-          'Control the `underline` behaviour, semantic `color`, and typographic `variant` to fit inline body copy or standalone actions.',
+          'MUI `Link`, an anchor. Birdie doesn’t import it: its in-app links are text actions on `ButtonBase` (a paid ' +
+          'reservation’s order number opens that order in Order Lookup), because moving in Birdie is a store action, not a URL. ' +
+          'Use MUI Link only for a real URL. Control `underline`, `color` and `variant` below.',
       },
     },
   },
@@ -39,7 +39,7 @@ const meta = {
     },
   },
   args: {
-    children: 'View order #1042',
+    children: 'Order #A-34768',
     underline: 'always',
     color: 'primary',
     variant: 'body1',
@@ -58,11 +58,11 @@ export const WithinParagraph: Story = {
   parameters: { docs: { description: { story: 'An inline link inside a sentence of running text.' } } },
   render: () => (
     <Typography variant="body1" sx={{ maxWidth: 420 }}>
-      Ticket #1042 is running long. Open the{' '}
+      Reed, M. paid in full. Open{' '}
       <Link href="#" underline="hover">
-        item availability
+        order #A-34768
       </Link>{' '}
-      panel to check the 86&apos;d list before firing the next course.
+      to reprint the receipt or refund a line.
     </Typography>
   ),
 };
@@ -72,9 +72,9 @@ export const RowOfLinks: Story = {
   parameters: { docs: { description: { story: 'Several links laid out horizontally as a quick-jump strip.' } } },
   render: () => (
     <Stack direction="row" spacing={3}>
-      <Link href="#" underline="hover">Open</Link>
-      <Link href="#" underline="hover">Completed</Link>
-      <Link href="#" underline="hover">All-day counts</Link>
+      <Link href="#" underline="hover">Tee Sheet</Link>
+      <Link href="#" underline="hover">Register</Link>
+      <Link href="#" underline="hover">Order Lookup</Link>
       <Link href="#" underline="hover">Settings</Link>
     </Stack>
   ),
@@ -89,7 +89,7 @@ export const WithIcon: Story = {
       underline="hover"
       sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
     >
-      Open member profile
+      Open the help article
       <OpenInNew fontSize="small" />
     </Link>
   ),
@@ -101,9 +101,9 @@ export const Colors: Story = {
   render: () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       <Link href="#" color="primary">Primary — view order</Link>
-      <Link href="#" color="secondary">Secondary — view station</Link>
+      <Link href="#" color="secondary">Secondary — view the booking</Link>
       <Link href="#" color="textPrimary">Text primary — inline reference</Link>
-      <Link href="#" color="error">Error — void ticket</Link>
+      <Link href="#" color="error">Error — see the refused payment</Link>
     </Box>
   ),
 };

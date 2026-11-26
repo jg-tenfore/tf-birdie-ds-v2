@@ -5,11 +5,11 @@ import Print from '@mui/icons-material/Print';
 import Restore from '@mui/icons-material/Restore';
 import PriorityHigh from '@mui/icons-material/PriorityHigh';
 
-// Ticket-level quick actions surfaced from a single floating trigger.
+// A booking's actions fanned out of one trigger — the pattern Birdie avoids (see the page).
 const actions = [
-  { icon: <Print />, name: 'Print' },
-  { icon: <Restore />, name: 'Recall' },
-  { icon: <PriorityHigh />, name: 'Prioritize' },
+  { icon: <Print />, name: 'Print receipt' },
+  { icon: <Restore />, name: 'Issue rain check' },
+  { icon: <PriorityHigh />, name: 'Mark no-show' },
 ];
 
 // Named component so useState (open) obeys react-hooks/rules-of-hooks.
@@ -19,7 +19,7 @@ function SpeedDialDemo({ direction = 'up' as const }: { direction?: 'up' | 'down
     // A tall relative box gives the fanned-out actions room to render inside the story.
     <Box sx={{ position: 'relative', height: 320, width: 320 }}>
       <SpeedDial
-        ariaLabel="Ticket quick actions"
+        ariaLabel="Booking actions"
         sx={{ position: 'absolute', bottom: 16, right: 16 }}
         icon={<SpeedDialIcon />}
         direction={direction}
@@ -49,9 +49,9 @@ const meta = {
     docs: {
       description: {
         component:
-          'A `SpeedDial` is a floating action button that fans out into related actions when opened. ' +
-          'On the KDS it packs a ticket\'s secondary actions — **Print**, **Recall**, **Prioritize** — behind one thumb-friendly trigger, ' +
-          'keeping the board uncluttered. Hover or tap the button to reveal the actions.',
+          'MUI `SpeedDial`: a floating button that fans out into icon buttons whose names show only as tooltips. ' +
+          'Birdie avoids it: several actions on one booking are a labelled right-click menu on the tablet and a bottom sheet ' +
+          'on the handheld. Shown here so the pattern is recognisable. Hover or tap the button to reveal the actions.',
       },
     },
   },
@@ -59,7 +59,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Open the dial to reveal Print, Recall, and Prioritize actions. */
+/** Open the dial: three unlabelled icons. Compare the booking menu on the Menu page, which names and groups its actions. */
 export const Playground: Story = {};
 
 /** The same actions fanning out to the left instead of up. */

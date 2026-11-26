@@ -24,7 +24,7 @@ export const FilterBars: Story = {
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
         <TextField
           size="small"
-          placeholder="Search tickets"
+          placeholder="Search name, confirmation, or phone"
           slotProps={{
             input: {
               startAdornment: (
@@ -35,16 +35,16 @@ export const FilterBars: Story = {
             },
           }}
         />
-        <TextField size="small" select label="Station" defaultValue="all" sx={{ minWidth: 140 }}>
-          {['all', 'grill', 'fry', 'cold', 'beverage'].map((s) => (
+        <TextField size="small" select label="Course" defaultValue="all" sx={{ minWidth: 140 }}>
+          {['all', 'Front 9', 'Back 9'].map((s) => (
             <MenuItem key={s} value={s}>
               {s}
             </MenuItem>
           ))}
         </TextField>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Chip label="Dine-in" onDelete={() => {}} size="small" />
-          <Chip label="Late" onDelete={() => {}} size="small" color="error" />
+          <Chip label="Unpaid" onDelete={() => {}} size="small" />
+          <Chip label="Has a note" onDelete={() => {}} size="small" />
         </Box>
       </Stack>
     </Paper>

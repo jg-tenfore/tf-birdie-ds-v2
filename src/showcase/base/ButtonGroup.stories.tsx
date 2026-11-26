@@ -15,14 +15,14 @@ export const ButtonGroup_: Story = {
   render: () => (
     <Stack spacing={2}>
       <ButtonGroup variant="contained">
-        <Button>Complete</Button>
-        <Button>Recall</Button>
-        <Button>Priority</Button>
+        <Button>Print</Button>
+        <Button>Email</Button>
+        <Button>Void</Button>
       </ButtonGroup>
       <ButtonGroup variant="outlined">
-        <Button>One</Button>
-        <Button>Two</Button>
-        <Button>Three</Button>
+        <Button>Move</Button>
+        <Button>Delete</Button>
+        <Button>Close</Button>
       </ButtonGroup>
     </Stack>
   ),
