@@ -66,7 +66,8 @@ const DEVICE_GLOBAL_TYPES = {
         { value: 'auto', title: 'Device: story canvas' },
         ...DEVICES.map((d) => ({
           value: d.id,
-          title: `${DEVICE_GROUP_LABELS[d.group].replace(/s$/, '')} · ${d.shortLabel} ${formatSize(d.viewport)}`,
+          // Singular: "Counter terminals" → "Counter terminal", "Design canvases" → "Design canvas".
+          title: `${DEVICE_GROUP_LABELS[d.group].replace(/(canvas)es$|s$/, '$1')} · ${d.shortLabel} ${formatSize(d.viewport)}`,
         })),
       ],
     },

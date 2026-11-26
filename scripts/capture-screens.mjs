@@ -93,6 +93,8 @@ const SHOTS = [
   { name: 'tablet-checkout', hash: '#/register?order=walkin&modal=checkout' },
   { name: 'tablet-tee-sheet-list', hash: '#/tee-sheet/list?status=open&sort=status' },
   { name: 'tablet-sign-in', story: 'v1-→-v2-migration-sign-in-tablet--demo-pins' },
+  { name: 'tablet-settings-buck', hash: '#/settings?section=taxes' },
+  { name: 'tablet-dish-dialog', story: 'prototypes-tablet-quick-order-menu-photography--the-dish-dialog' },
   // ── Phone: the key screens (routes are story ids, as the phone prototype routes) ──
   { name: 'mobile-tee-sheet', route: '' },
   { name: 'mobile-reservation', route: 'weston-edits-1-·-reservation-panel-mobile--reservation' },
@@ -108,6 +110,18 @@ const SHOTS = [
   { name: 'mobile-card-reader', route: 'mobile-screens-5-·-payment--reader-card' },
   { name: 'mobile-people', route: 'mobile-screens-7-·-people--people-list' },
   { name: 'mobile-more', route: 'mobile-screens-6-·-operations--more-root' },
+  // ── How to switch device: the prototype's Device panel, and Storybook's Device toolbar ──
+  // Whole-window shots (`page`), not a device clip.
+  { name: 'prototype-device-panel', page: () => `${PROTO}/?device=large-display#/tee-sheet?shift=early`, click: /Open the device panel/, deviceOnly: true },
+  {
+    name: 'storybook-device-toolbar',
+    page: () => `${SB}/?path=/story/${encodeURIComponent('weston-edits-1-·-reservation-panel-tablet--over-the-tee-sheet')}&globals=device:clover-mini`,
+    // The toolbar control is named by its description; the sidebar is left out of the clip.
+    click: /^Render the story on a device/,
+    x: 300,
+    height: 600,
+    deviceOnly: true,
+  },
   // ── One per device, for Start Here › Devices (device mode only) ──
   { name: 'device-clover-mini', hash: `#/tee-sheet?res=${RES}`, device: 'clover-mini', deviceOnly: true },
   { name: 'device-large-display', hash: `#/tee-sheet?res=${RES}`, device: 'large-display', deviceOnly: true },
@@ -118,6 +132,7 @@ const SHOTS = [
 ];
 
 const appOf = (shot) => (shot.route !== undefined ? 'mobile' : 'tablet');
+
 
 function urlFor(shot, deviceId) {
   if (shot.story) {
@@ -154,6 +169,29 @@ async function screenRect(page, w, h) {
   );
 }
 
+/** A whole browser window at 1440×900 (2×), for the shots that show the tools around a screen. */
+async function pageShot(shot) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  try {
+    await page.goto(shot.page(), { waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000);
+    if (shot.click) {
+      await page.getByRole('button', { name: shot.click }).first().click();
+      await page.waitForTimeout(800);
+    }
+    const png = path.join(tmp, `${shot.name}.png`);
+    const x = shot.x ?? 0;
+    await page.screenshot({ path: png, clip: { x, y: 0, width: 1440 - x, height: shot.height ?? 900 } });
+    execFileSync(CWEBP, ['-quiet', '-q', '78', '-resize', '1600', '0', png, '-o', path.join(OUT, `${shot.name}.webp`)]);
+    console.log(`✓ ${shot.name}.webp  (window)`);
+  } catch (e) {
+    failed.push(shot.name);
+    console.error(`✗ ${shot.name}: ${e.message}`);
+  }
+  await ctx.close();
+}
+
 fs.mkdirSync(OUT, { recursive: true });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'birdie-screens-'));
 const browser = await chromium.launch();
@@ -161,6 +199,10 @@ const failed = [];
 const shots = SHOTS.filter((s) => (!ONLY || ONLY.includes(s.name)) && !(CANVAS && s.deviceOnly));
 
 for (const shot of shots) {
+  if (shot.page) {
+    await pageShot(shot);
+    continue;
+  }
   const deviceId = shot.device ?? DEFAULT_DEVICE[appOf(shot)];
   const d = DEVICES[deviceId];
   // Room around the device for whatever the page puts beside it, so the app renders at 1:1.
