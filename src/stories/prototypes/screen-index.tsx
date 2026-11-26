@@ -8,7 +8,7 @@
  */
 import type { ReactNode } from 'react';
 import { NAV_GROUPS } from '../../pos/data/nav';
-import { DOC, DocLink, DocTable, Grid, NavCard, Pill, ScreenCard, SubHead, art, mobilePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { DOC, DocLink, DocTable, Grid, HeroScreen, NavCard, Pill, ScreenCard, SubHead, art, mobilePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
 import type { LinkTarget } from '../docs-kit/docs-kit';
 import { MOBILE_SCREENS, TABLET_SCREENS } from './screen-index-data';
 import type { ScreenIndexRow } from './screen-index-data';
@@ -346,4 +346,59 @@ export const ScreenIndexTable = ({ app }: { app: App }) => (
       </span>,
     ])}
   />
+);
+
+/* ------------------------------------------------------------- key states */
+
+interface KeyScreen {
+  shot: string;
+  label: string;
+  /** Tablet: a hash route. Phone: a story id ('' is the app's home). */
+  route: string;
+}
+
+/** The states worth opening first, as captured on the device, each a link into the prototype. */
+const KEY_SCREENS: Record<App, KeyScreen[]> = {
+  tablet: [
+    { shot: 'tablet-reservation', label: 'A reservation over the tee sheet', route: '#/tee-sheet?res=p04_m6' },
+    { shot: 'tablet-rate-editor', label: 'The rate editor on a player row', route: '#/tee-sheet?res=p04_m6&rate=0' },
+    { shot: 'tablet-customer-record', label: 'The customer record', route: '#/tee-sheet?res=p04_m6&cust=607469&cust-seat=0' },
+    { shot: 'tablet-paid-reservation', label: 'A paid reservation and its order number', route: '#/tee-sheet?res=p03_m6' },
+    { shot: 'tablet-check-in-pay', label: 'The register after Check in & pay', route: '#/register/GOLF%20BALLS?booking=p04_m6' },
+    { shot: 'tablet-register-order', label: 'A retail order on the rail', route: '#/register?order=retail' },
+    { shot: 'tablet-checkout', label: 'Checkout', route: '#/register?order=walkin&modal=checkout' },
+    { shot: 'tablet-tee-sheet-list', label: 'The unpaid worklist', route: '#/tee-sheet/list?status=open&sort=status' },
+    { shot: 'tablet-main-nav', label: 'The main nav', route: '#/register?nav=1' },
+  ],
+  mobile: [
+    { shot: 'mobile-tee-sheet', label: 'The tee sheet', route: '' },
+    { shot: 'mobile-date-navigation', label: 'The calendar sheet', route: 'weston-edits-9-·-date-navigation-mobile--calendar-sheet' },
+    { shot: 'mobile-reservation', label: 'A reservation', route: 'weston-edits-1-·-reservation-panel-mobile--reservation' },
+    { shot: 'mobile-player-rows', label: 'Player rows', route: 'weston-edits-2-·-player-rows-mobile--player-rows' },
+    { shot: 'mobile-rate-selector', label: 'The rate dialog', route: 'weston-edits-11-·-rate-selector-mobile--the-whole-editor' },
+    { shot: 'mobile-cart-signout', label: 'Cart signout', route: 'weston-edits-16-·-cart-signout-mobile--the-key-picker' },
+    { shot: 'mobile-check-in-pay', label: 'Check in & pay', route: 'weston-edits-6-·-check-in-pay-mobile--check-in-and-pay' },
+    { shot: 'mobile-customer-record', label: 'The customer record', route: 'weston-edits-4-·-customer-profile-mobile--booker-record' },
+    { shot: 'mobile-register', label: 'An order in progress', route: 'mobile-screens-1-·-register-order--order-in-progress' },
+    { shot: 'mobile-golf-summary', label: 'The golf summary on the order', route: 'weston-edits-7-·-register-golf-summary-mobile--golf-summary' },
+    { shot: 'mobile-checkout', label: 'Checkout', route: 'mobile-screens-5-·-payment--checkout' },
+    { shot: 'mobile-card-reader', label: 'The card reader takeover', route: 'mobile-screens-5-·-payment--reader-card' },
+    { shot: 'mobile-people', label: 'People', route: 'mobile-screens-7-·-people--people-list' },
+    { shot: 'mobile-more', label: 'More', route: 'mobile-screens-6-·-operations--more-root' },
+  ],
+};
+
+/** The key states as a grid of framed screens, each opening the prototype there. */
+export const KeyScreens = ({ app }: { app: App }) => (
+  <div className={`bd-grid bd-grid--${app === 'tablet' ? 3 : 4}`} style={{ alignItems: 'end', gap: 20, borderRadius: 18, background: DOC.surface, padding: '22px 20px 16px', boxShadow: `inset 0 0 0 1px ${DOC.line}` }}>
+    {KEY_SCREENS[app].map((k) => (
+      <HeroScreen
+        key={k.shot}
+        src={screen(k.shot)}
+        frame={app === 'tablet' ? 'terminal' : 'handheld'}
+        label={k.label}
+        href={app === 'tablet' ? tabletPrototype(k.route) : mobilePrototype(k.route)}
+      />
+    ))}
+  </div>
 );
