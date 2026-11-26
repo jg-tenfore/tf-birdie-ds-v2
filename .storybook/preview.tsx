@@ -360,8 +360,6 @@ const preview: Preview = {
           ],
           'Reviews',
           [
-            'Nov 26 – Design System header styles',
-            ['Summary', '*'],
             'Oct 2 – Proposal review',
             ['Summary', 'Built into the app', '1. Player rows v2', '8. League view v2', '*'],
             'Oct 1 – Proposals from the Sep 30 call',
