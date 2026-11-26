@@ -418,7 +418,8 @@ export const ANewBarTab: Story = {
  * control, open on sent plates too, because none of them touches the food: moving a fired plate from
  * seat 4 to seat 2 changes who pays, not what the cook makes.
  *
- * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other.
+ * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other with Buck's
+ * Shift Drink discount type.
  */
 export const AdjustingASentPlate: Story = {
   render: () => <Screen edition="v1v2" initialState={onTab('T-1001')} />,
@@ -450,7 +451,8 @@ export const AdjustingASentPlate: Story = {
     const left = both.find((el) => band(canvasElement, 4).contains(el))!;
     const leftPanel = q(left, '[data-dish-adjust]');
     if (!leftPanel) throw new Error('the seat-4 line should still have its Adjust panel open after the split');
-    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Comp' }));
+    // Since Nov 26 the Discount row offers Buck's discount types; a beer takes Shift Drink (100%).
+    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Shift Drink · 100%' }));
     await waitFor(() => expect(left.textContent).toContain('$0.00'));
     await expect(canvas.queryByText(/Voided/)).toBeNull();
   },

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
+import { discountLabel, discountTypeById } from '../../data/discount-types';
 import { money } from '../../logic/cart';
 import { splitAlerts } from '../../logic/dish-choice';
 import { isSent } from '../../logic/restaurant';
@@ -101,6 +102,15 @@ export function DishLine({
           {rest.map((m) => (m.price ? `${m.name} +${money(m.price)}` : m.name)).join(' · ')}
         </Typography>
       )}
+
+      {dish.discountPct ? (
+        <Typography data-dish-discount sx={{ fontSize: 12, fontWeight: 700, color: md3.error, lineHeight: 1.4, mt: 0.25 }}>
+          {(() => {
+            const t = discountTypeById(dish.discountTypeId);
+            return t ? discountLabel(t) : `${dish.discountPct === 100 ? 'Comped' : `${dish.discountPct}% off`}`;
+          })()}
+        </Typography>
+      ) : null}
 
       {alerts.length > 0 && (
         <Stack direction="row" gap={0.5} flexWrap="wrap" sx={{ mt: 0.5 }}>
