@@ -51,7 +51,7 @@ const byId: Record<string, DsDoc> = Object.fromEntries(
 /** The content for a page, by its meta id — exported for the Design System overview's index. */
 export const dsDocFor = (id: string): DsDoc | undefined => byId[id];
 
-const STATUS: Record<DsStatus, { label: string; tone: 'done' | 'now' | 'next' | 'parked'; meaning: string }> = {
+export const STATUS: Record<DsStatus, { label: string; tone: 'done' | 'now' | 'next' | 'parked'; meaning: string }> = {
   core: { label: 'Core', tone: 'now', meaning: 'Used on both the tablet and the handheld — the default choice.' },
   'in-use': { label: 'In use', tone: 'done', meaning: 'Used in the product today.' },
   available: { label: 'Available', tone: 'next', meaning: 'Themed and documented, not used by a Birdie screen yet. Fine to adopt.' },
