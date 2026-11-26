@@ -338,7 +338,12 @@ function BookingBlock({
     if (b.paid || e.button !== 0) return;
     e.stopPropagation();
     drag.current = { mode, x: e.clientX, y: e.clientY, moved: false };
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    // Captured so the drag follows the pointer across columns; a synthetic event has no live pointer.
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* not capturable */
+    }
   };
   const move = (e: ReactPointerEvent) => {
     const d = drag.current;

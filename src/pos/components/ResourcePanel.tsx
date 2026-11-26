@@ -329,8 +329,9 @@ export function ResourcePanel() {
                     setOverridden(true);
                     const go = limitAsk;
                     setLimitAsk(null);
-                    toast('Daily limit overridden');
-                    go();
+                    // After this click has finished: it removes the panel it was made in, and the
+                    // toast's click-away would otherwise read it as a click elsewhere and close it.
+                    window.setTimeout(go, 0);
                   }}
                 >
                   Book anyway
@@ -371,7 +372,7 @@ export function ResourcePanel() {
                   confirmOrWarn(() => {
                     patch({ draft: false });
                     dispatch({ type: 'closeResourcePanel' });
-                    toast(`${resource?.name} booked`);
+                    toast(`${resource?.name} booked${limit ? ' · daily limit overridden' : ''}`);
                   })
                 }
               >
