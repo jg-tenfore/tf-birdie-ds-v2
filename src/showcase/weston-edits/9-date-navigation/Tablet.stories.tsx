@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * Weston Edits / 9 · Date Navigation / Tablet
+ * Prototypes / Tablet / Tee Sheet / Date navigation (Weston Edits, section 9)
  *
  * Round 2 was a 46-second Loom about the **phone**: *"If I'm on the tee sheet and I want to go
  * to, let's say, June — there's no way to select the month, so I just have to click."* The
@@ -79,7 +80,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * Weston whether the tee sheet should stop at a year or simply keep generating.
  */
 const meta = {
-  title: 'Weston Edits/9 · Date Navigation/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Date navigation',
+  id: 'weston-edits-9-·-date-navigation-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

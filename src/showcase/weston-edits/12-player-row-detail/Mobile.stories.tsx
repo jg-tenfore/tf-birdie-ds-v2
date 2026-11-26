@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, within } from 'storybook/test';
 import { money } from '../../../pos/logic/cart';
 import { playerFee, playerHoles } from '../../../pos/logic/reservation';
@@ -7,7 +8,7 @@ import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { CARTS_OUT, annotatedParty, at18, cardOf, punchHolder, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 12 · Player Row Detail / Mobile
+ * Prototypes / Mobile / Tee Sheet / Player row detail (Weston Edits, section 12)
  *
  * What a player row says underneath the name, at 402px.
  *
@@ -113,7 +114,9 @@ import { CARTS_OUT, annotatedParty, at18, cardOf, punchHolder, withBookings } fr
  *   record is several taps away.
  */
 const meta = {
-  title: 'Weston Edits/12 · Player Row Detail/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Player row detail',
+  id: 'weston-edits-12-·-player-row-detail-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { TextField } from '@mui/material';
 
 const meta = {
-  title: 'Components/Forms/Textarea',
+  title: 'Design System/Components/Forms/Textarea',
+  id: 'components-forms-textarea',
   component: TextField,
   tags: ['autodocs'],
   parameters: {

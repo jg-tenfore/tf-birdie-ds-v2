@@ -9,7 +9,8 @@ import Restaurant from '@mui/icons-material/Restaurant';
 type ChipArgs = Omit<ChipProps, 'onDelete'> & { onDelete?: boolean };
 
 const meta = {
-  title: 'Components/Typography & Content/Chip',
+  title: 'Design System/Components/Typography & Content/Chip',
+  id: 'components-typography-content-chip',
   // Cast because the Playground exposes `onDelete` as a boolean toggle (ChipArgs) rather than a handler.
   component: Chip as unknown as React.ComponentType<ChipArgs>,
   parameters: {

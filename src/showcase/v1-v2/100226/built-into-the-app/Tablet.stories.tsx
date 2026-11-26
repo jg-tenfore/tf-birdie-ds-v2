@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { venueBookings } from '../../../../pos/data/venues';
 import { Screen, atVenue } from '../../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 100226 / Built into the app / Tablet
+ * Reviews / Oct 2 – Proposal review / Built into the app (100226)
  *
  * **What Weston approved on Oct 2, now in the V1 → V2 prototype itself** — not mocks. Each story
  * opens the live screen where the change is and checks it.
@@ -21,7 +22,9 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
  *   and fees (Justin, Oct 2).
  */
 const meta = {
-  title: 'V1 → V2 Migration/100226/Built into the app/Tablet',
+  title: 'Reviews/Oct 2 – Proposal review/Built into the app',
+  id: 'v1-→-v2-migration-100226-built-into-the-app-tablet',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

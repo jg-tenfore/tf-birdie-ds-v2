@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box, Typography } from '@mui/material';
 import { expect, waitFor } from 'storybook/test';
 import { md3 } from '../../../../theme/tokens';
@@ -9,7 +10,7 @@ import { FullRow, MockPanel, MockPanelFooter, MockPanelHeader, ProposalTerminal,
 import { king, panelOn, sheet } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 4 · Contact details once
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 4. Contact details once (100126)
  *
  * **Weston:** *"we do show the phone number and email for each player? I don't know if that's
  * necessary… if we show the email there… okay, I need to reach out to this group because of
@@ -22,7 +23,9 @@ import { king, panelOn, sheet } from '../scenarios';
  * one tap to call or write. Players carry no contact details; a player's own are in their record.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/4 · Contact details once',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/4. Contact details once',
+  id: 'v1-→-v2-migration-100126-4-·-contact-details-once',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

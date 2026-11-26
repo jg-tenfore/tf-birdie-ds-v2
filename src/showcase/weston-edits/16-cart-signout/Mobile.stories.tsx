@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { CART_FLEET } from '../../../pos/data/carts';
 import type { Booking } from '../../../pos/types';
@@ -6,7 +7,7 @@ import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { CARTS_OUT, at18, cartKeyParty, cartsAlreadyOut, cartsFree, openParty, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 16 · Cart Signout / Mobile
+ * Prototypes / Mobile / Tee Sheet / Cart signout (Weston Edits, section 16)
  *
  * The old prototype put **Cart signout** on every player row and a key glyph on the booking once
  * a cart was out. It is a small feature with a real constraint behind it: the course owns a fixed
@@ -109,7 +110,9 @@ import { CARTS_OUT, at18, cartKeyParty, cartsAlreadyOut, cartsFree, openParty, w
  *   next step and is not modelled.
  */
 const meta = {
-  title: 'Weston Edits/16 · Cart Signout/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Cart signout',
+  id: 'weston-edits-16-·-cart-signout-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

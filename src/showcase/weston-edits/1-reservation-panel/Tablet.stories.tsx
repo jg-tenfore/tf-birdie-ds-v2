@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 import { DEFAULT_TEE_SHEET_SETTINGS } from '../../../pos/data/courses';
@@ -6,7 +7,7 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
   sheetWithPanel, twilightNine } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 1 · Reservation Panel / Tablet
+ * Prototypes / Tablet / Tee Sheet / Reservation panel (Weston Edits, section 1)
  *
  * What a tee time opens into. This is the section every other one sits inside: rate editing,
  * per-seat carts, punch cards and the customer record are all things that happen *in* this
@@ -137,7 +138,9 @@ import { adjustedParty, earlyFrontNine, lateBackNine, openParty, sheetWithCustom
  * - **`presentation` is not linkable**, by design: a prototype URL never carries a variant.
  */
 const meta = {
-  title: 'Weston Edits/1 · Reservation Panel/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Reservation panel',
+  id: 'weston-edits-1-·-reservation-panel-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

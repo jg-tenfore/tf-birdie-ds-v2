@@ -23,7 +23,8 @@ function Spacing() {
 }
 
 const meta = {
-  title: 'Foundations/Spacing',
+  title: 'Design System/Styles/Spacing',
+  id: 'foundations-spacing',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 export default meta;

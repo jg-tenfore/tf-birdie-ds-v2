@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, bookerWithRecord, loadedOrder, withBookings } from '../mobile-scenarios';
 import { seatRecord } from '../../../pos/logic/seat-pricing';
 
 /**
- * Weston Edits / 3 · ID.me Badge / Mobile
+ * Prototypes / Mobile / Tee Sheet / ID.me badge (Weston Edits, section 3)
  *
  * Weston asked to see ID.me status on the reservation. As on the terminal it is a **badge
  * only** — a shield and the verified group, in one neutral blue so it reads as *identity*
@@ -82,7 +83,9 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
  *   Groups** story is the only place all five are visible.
  */
 const meta = {
-  title: 'Weston Edits/3 · ID.me Badge/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/ID.me badge',
+  id: 'weston-edits-3-·-id-me-badge-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

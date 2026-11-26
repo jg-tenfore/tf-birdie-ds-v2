@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { withEdition } from '../../edition-decorator';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { expect, within } from 'storybook/test';
@@ -8,7 +9,7 @@ import { venueBookings } from '../../../pos/data/venues';
 import { seatRecord } from '../../../pos/logic/seat-pricing';
 
 /**
- * Weston Edits / 19 · Deep Links / Tablet
+ * Prototypes / Tablet / Global Nav / Deep links (Weston Edits, section 19)
  *
  * **Every screen in the Weston tablet prototype, as a URL.**
  *
@@ -73,7 +74,9 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
  * which is what QA-ing the shipped setting wants.
  */
 const meta = {
-  title: 'Weston Edits/19 · Deep Links/Tablet',
+  title: 'Prototypes/Tablet/Global Nav/Deep links',
+  id: 'weston-edits-19-·-deep-links-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

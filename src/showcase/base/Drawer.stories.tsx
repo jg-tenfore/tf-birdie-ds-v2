@@ -20,7 +20,8 @@ import Settings from '@mui/icons-material/Settings';
 import ReceiptLong from '@mui/icons-material/ReceiptLong';
 
 const meta = {
-  title: 'Components/Navigation/Drawer',
+  title: 'Design System/Components/Navigation/Drawer',
+  id: 'components-navigation-drawer',
   component: Drawer,
   parameters: {
     layout: 'centered',

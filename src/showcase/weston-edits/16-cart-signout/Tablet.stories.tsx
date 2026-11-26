@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { CART_FLEET, availableCarts } from '../../../pos/data/carts';
 import { playerName } from '../../../pos/logic/reservation';
@@ -13,7 +14,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 16 · Cart Signout / Tablet
+ * Prototypes / Tablet / Tee Sheet / Cart signout (Weston Edits, section 16)
  *
  * The old prototype put **Cart signout** on every player row and a key glyph on the booking once
  * a cart was out. It is a small feature with a real constraint behind it: the course owns a fixed
@@ -105,7 +106,9 @@ import {
  *   as one of them holding it.
  */
 const meta = {
-  title: 'Weston Edits/16 · Cart Signout/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Cart signout',
+  id: 'weston-edits-16-·-cart-signout-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { money } from '../../../pos/logic/cart';
 import { playerName } from '../../../pos/logic/reservation';
@@ -14,7 +15,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 12 · Player Row Detail / Tablet
+ * Prototypes / Tablet / Tee Sheet / Player row detail (Weston Edits, section 12)
  *
  * What a player row says underneath the name.
  *
@@ -116,7 +117,9 @@ import {
  *   *and* a cart, is taller in both densities.
  */
 const meta = {
-  title: 'Weston Edits/12 · Player Row Detail/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Player row detail',
+  id: 'weston-edits-12-·-player-row-detail-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

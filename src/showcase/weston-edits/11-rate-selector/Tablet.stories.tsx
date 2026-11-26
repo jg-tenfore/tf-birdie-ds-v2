@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { playerName } from '../../../pos/logic/reservation';
 import { DEFAULT_WESTON_OPTIONS } from '../../../pos/state/pos-store';
@@ -7,7 +8,7 @@ import { adjustedParty, openParty, sheetWithPanel } from '../tablet-scenarios';
 import type { Booking } from '../../../pos/types';
 
 /**
- * Weston Edits / 11 · Rate Selector / Tablet
+ * Prototypes / Tablet / Tee Sheet / Rate selector (Weston Edits, section 11)
  *
  * Round 3's biggest change: a player's fee stops being a number somebody types and becomes a
  * **rate somebody chooses**.
@@ -157,7 +158,9 @@ import type { Booking } from '../../../pos/types';
  *   means the Cancel is only reachable while you are still on the seat.
  */
 const meta = {
-  title: 'Weston Edits/11 · Rate Selector/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Rate selector',
+  id: 'weston-edits-11-·-rate-selector-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

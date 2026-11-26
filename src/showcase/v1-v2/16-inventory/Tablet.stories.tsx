@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { CATALOG } from '../../../pos/data/catalog';
 import { STOCK_ITEMS, seedStock } from '../../../pos/data/stock';
@@ -8,7 +9,7 @@ import { createInitialState, reducer, type PosState } from '../../../pos/state/p
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 16 · Inventory / Tablet
+ * Prototypes / Tablet / Inventory / Stock & counts (V1 → V2 Migration, section 16)
  *
  * **What is on the shelf — live, taken down by sales — and counting it.**
  *
@@ -37,7 +38,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   a draft can be discarded.
  */
 const meta = {
-  title: 'V1 → V2 Migration/16 · Inventory/Tablet',
+  title: 'Prototypes/Tablet/Inventory/Stock & counts',
+  id: 'v1-→-v2-migration-16-·-inventory-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

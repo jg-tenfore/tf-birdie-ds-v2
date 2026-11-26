@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, loadedOrder, memberParty, paidParty, partlyPaidNamed, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 6 · Check In & Pay / Mobile
+ * Prototypes / Mobile / Tee Sheet / Check in & pay (Weston Edits, section 6)
  *
  * The reservation's pinned bottom action — the one moment the golf goes to the register.
  * Its amount is what the order will charge for the reservation *as adjusted* (fees, holes,
@@ -110,7 +111,9 @@ import { adjustedParty, at18, loadedOrder, memberParty, paidParty, partlyPaidNam
  * no-show flag; an accidental Check in & pay is corrected on the player rows, not from the bar.
  */
 const meta = {
-  title: 'Weston Edits/6 · Check In & Pay/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Check in & pay',
+  id: 'weston-edits-6-·-check-in-pay-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

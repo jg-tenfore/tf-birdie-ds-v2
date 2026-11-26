@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Screen, atVenue, screenParams } from '../screen-helpers';
 
 /**
- * POS Screens / 2 · Tee Sheet — Club layouts
+ * Archive / Original port / Tablet / Tee Sheet / Club Layouts (POS Screens, section 2)
  *
  * The same application against three shapes of club. Each is published as its own prototype
  * (`/prototype/`, `/prototype-18/`, `/prototype-9/`), but they are one codebase: the tee
@@ -13,7 +14,9 @@ import { Screen, atVenue, screenParams } from '../screen-helpers';
  * them — and density is what the sheet's whole design is tuned around.
  */
 const meta = {
-  title: 'POS Screens/2 · Tee Sheet/Club Layouts',
+  title: 'Archive/Original port/Tablet/Tee Sheet/Club Layouts',
+  id: 'pos-screens-2-·-tee-sheet-club-layouts',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

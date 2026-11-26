@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen } from '../../pos/screen-helpers';
 import { orderNumber } from '../../../pos/logic/reservation';
@@ -6,7 +7,7 @@ import { openParty, paidTwilight, registerWith, sheetWithPanel } from '../tablet
 import type { Booking } from '../../../pos/types';
 
 /**
- * Weston Edits / 21 · Notes & Order Number / Tablet
+ * Prototypes / Tablet / Tee Sheet / Notes & order number (Weston Edits, section 21)
  *
  * **Two small things from the fifth call, both about showing what is already known.**
  *
@@ -67,7 +68,9 @@ import type { Booking } from '../../../pos/types';
  * no order, and a number shown before one exists is a number someone will quote down the phone.
  */
 const meta = {
-  title: 'Weston Edits/21 · Notes & Order Number/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Notes & order number',
+  id: 'weston-edits-21-·-notes-order-number-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { Booking } from '../../../pos/types';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { at18, dayLine, earlyFrontNine, firstInLine, lineIndex } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 15 · Next In Line / Mobile
+ * Prototypes / Mobile / Tee Sheet / Next in line (Weston Edits, section 15)
  *
  * **Retired on the phone, Oct 1.** The third call gave the reservation a **‹ n of m ›** stepper —
  * Justin's idea, which Weston took: after working one reservation you are usually about to work
@@ -50,7 +51,9 @@ import { at18, dayLine, earlyFrontNine, firstInLine, lineIndex } from '../mobile
  *   question, not this screen's.
  */
 const meta = {
-  title: 'Weston Edits/15 · Next In Line/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Next in line',
+  id: 'weston-edits-15-·-next-in-line-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

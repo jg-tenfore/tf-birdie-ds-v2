@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { SHEETS, resourcesOf, seedResourceDay } from '../../../pos/data/resources';
 import { resourceCartLine } from '../../../pos/logic/resource-booking';
@@ -6,7 +7,7 @@ import { Screen, TODAY_STR } from '../../pos/screen-helpers';
 import { at, booking, panelOn, sheetWith, tapAt } from '../resource-scenarios';
 
 /**
- * V1 → V2 Migration / 4 · Bay Sheet / Tablet
+ * Prototypes / Tablet / Bay Sheet / Bay bookings (V1 → V2 Migration, section 4)
  *
  * **The simulator bays — the same scheduler as the courts, configured for bays.**
  *
@@ -36,7 +37,9 @@ import { at, booking, panelOn, sheetWith, tapAt } from '../resource-scenarios';
  * the line rather than adding a second one.
  */
 const meta = {
-  title: 'V1 → V2 Migration/4 · Bay Sheet/Tablet',
+  title: 'Prototypes/Tablet/Bay Sheet/Bay bookings',
+  id: 'v1-→-v2-migration-4-·-bay-sheet-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

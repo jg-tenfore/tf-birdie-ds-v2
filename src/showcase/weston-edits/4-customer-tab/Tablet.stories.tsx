@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Screen } from '../../pos/screen-helpers';
 import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 4 · Customer Profile / Tablet
+ * Prototypes / Tablet / Customer Search / Customer profile (Weston Edits, section 4)
  *
  * **The Customer tab is gone.** Round 1 put a customer profile inside the reservation as a
  * fifth tab; round 3 took it back out. Weston: *"I don't think it needs to be a tab on the
@@ -157,7 +158,9 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, 
  * - **`CustomerTab.tsx` is still in the tree and rendered by nothing.** Dead since the tab went.
  */
 const meta = {
-  title: 'Weston Edits/4 · Customer Profile/Tablet',
+  title: 'Prototypes/Tablet/Customer Search/Customer profile',
+  id: 'weston-edits-4-·-customer-profile-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

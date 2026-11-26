@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { DEMO_TODAY } from '../../../pos/data/bookings';
 import { emptyListFilters, timeRowKey } from '../../../pos/state/pos-store';
 import { MobileStory, mobileMeta, paidFoursome, unpaidBooking } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 2 · Tee Sheet
+ * Archive / Original port / Mobile / Tee Sheet (Mobile Screens, section 2)
  *
  * The terminal's 1366px courses × time grid does not shrink to a phone, so the phone draws
  * the same day as a vertical time list: one row per tee time, bookings as cards, open
@@ -18,7 +19,9 @@ import { MobileStory, mobileMeta, paidFoursome, unpaidBooking } from '../mobile-
  * bottom sheet over the list.
  */
 const meta = {
-  title: 'Mobile Screens/2 · Tee Sheet',
+  title: 'Archive/Original port/Mobile/Tee Sheet',
+  id: 'mobile-screens-2-·-tee-sheet',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

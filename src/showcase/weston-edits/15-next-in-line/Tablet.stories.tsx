@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { Booking } from '../../../pos/types';
 import { Screen } from '../../pos/screen-helpers';
@@ -15,7 +16,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 15 · Next In Line / Tablet
+ * Prototypes / Tablet / Tee Sheet / Next in line (Weston Edits, section 15)
  *
  * Justin's idea on the third call, which Weston took immediately: once you have worked one
  * reservation you are usually about to work the next one, and closing the panel to hunt for a
@@ -109,7 +110,9 @@ import {
  *   `dayLine()` rather than hard-coding it.
  */
 const meta = {
-  title: 'Weston Edits/15 · Next In Line/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Next in line',
+  id: 'weston-edits-15-·-next-in-line-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

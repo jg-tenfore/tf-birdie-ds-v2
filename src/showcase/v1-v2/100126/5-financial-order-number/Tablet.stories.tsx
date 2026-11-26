@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { expect, waitFor, within } from 'storybook/test';
 import { md3, playerAccents, radius } from '../../../../theme/tokens';
@@ -11,7 +12,7 @@ import { Chip, MockPanel, MockPanelFooter, MockPanelHeader, PillButton, Proposal
 import { farnsworth, farnsworthHalfPaid, panelOn, sheet, withBooking } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 5 · Financial: order number per player
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 5 · Financial: order number per player (100126)
  *
  * **Weston:** *"On the financial… show more details like the order number. So if like he paid, you
  * could see the order number for Nakamura and then maybe you can click into it and manage that order,
@@ -26,7 +27,9 @@ import { farnsworth, farnsworthHalfPaid, panelOn, sheet, withBooking } from '../
  * **See order** (Order Lookup, back to here) and refund on the row. An unpaid seat says what it owes.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/5 · Financial order number per player',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/5. Financial order number per player',
+  id: 'v1-→-v2-migration-100126-5-·-financial-order-number-per-player',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

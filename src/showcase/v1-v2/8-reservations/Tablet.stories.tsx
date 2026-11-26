@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_RESERVATIONS } from '../../../pos/data/restaurant-seed';
 import type { DiningReservation } from '../../../pos/logic/restaurant';
@@ -6,7 +7,7 @@ import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 8 · Reservations / Tablet
+ * Prototypes / Tablet / Reservations / Table reservations (V1 → V2 Migration, section 8)
  *
  * **A day of the dining room's bookings — each with a table, a status and the actions it allows.**
  *
@@ -42,7 +43,9 @@ import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
  * nothing.
  */
 const meta = {
-  title: 'V1 → V2 Migration/8 · Reservations/Tablet',
+  title: 'Prototypes/Tablet/Reservations/Table reservations',
+  id: 'v1-→-v2-migration-8-·-reservations-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

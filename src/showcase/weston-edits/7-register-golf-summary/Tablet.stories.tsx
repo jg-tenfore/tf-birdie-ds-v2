@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, within } from 'storybook/test';
 import { ROUND_STEP } from '../../../pos/data/config';
 import { venue, venueBookings } from '../../../pos/data/venues';
@@ -9,7 +10,7 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
 import { adjustedParty, openParty, paidTwilight, registerWith } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 7 · Register Golf Summary / Tablet
+ * Prototypes / Tablet / Pro Shop / Register golf summary (Weston Edits, section 7)
  *
  * In the recording, "+ modifier" and "Guest Details" dominated each golf line before the golf
  * was confirmed, and "I click modifier, which — modifiers are used for food and beverage, so
@@ -89,7 +90,9 @@ import { adjustedParty, openParty, paidTwilight, registerWith } from '../tablet-
  * reason. That is worth closing on both, since the register is where an owner asks the question.
  */
 const meta = {
-  title: 'Weston Edits/7 · Register Golf Summary/Tablet',
+  title: 'Prototypes/Tablet/Pro Shop/Register golf summary',
+  id: 'weston-edits-7-·-register-golf-summary-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

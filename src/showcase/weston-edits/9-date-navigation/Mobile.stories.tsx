@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { COMPACT_DATE_BAR_H } from '../../../pos/mobile/screens/tee/collapsing-header';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { at18 } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 9 · Date Navigation / Mobile
+ * Prototypes / Mobile / Tee Sheet / Date navigation (Weston Edits, section 9)
  *
  * Weston's second round: *"If I'm on the tee sheet and I want to go to, let's say, June —
  * there's no way to select the month, so I just have to click."* On the base phone the date
@@ -131,7 +132,9 @@ import { at18 } from '../mobile-scenarios';
  * bring it back); the other two are one small scroll up away, in the peeking header.
  */
 const meta = {
-  title: 'Weston Edits/9 · Date Navigation/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Date navigation',
+  id: 'weston-edits-9-·-date-navigation-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

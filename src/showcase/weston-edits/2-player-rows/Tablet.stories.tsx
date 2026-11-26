@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { venue } from '../../../pos/data/venues';
 import { buildTeeTimeCart, money, orderTotals, seatCharges } from '../../../pos/logic/cart';
@@ -8,7 +9,7 @@ import { Screen } from '../../pos/screen-helpers';
 import { adjustedParty, fullParty, mixedGroup, noShowParty, openParty, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 2 · Player Rows / Tablet
+ * Prototypes / Tablet / Tee Sheet / Player rows (Weston Edits, section 2)
  *
  * The Players tab: one row per player, and the only place the golf is adjusted.
  *
@@ -116,7 +117,9 @@ import { adjustedParty, fullParty, mixedGroup, noShowParty, openParty, sheetWith
  *   a no-show toggle, and a mis-tap costs the seat's edits.
  */
 const meta = {
-  title: 'Weston Edits/2 · Player Rows/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Player rows',
+  id: 'weston-edits-2-·-player-rows-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

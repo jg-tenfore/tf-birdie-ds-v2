@@ -50,7 +50,8 @@ function Verification() {
 }
 
 const meta = {
-  title: 'Account/Verification',
+  title: 'Archive/Account/Verification',
+  id: 'account-verification',
   component: Verification,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof Verification>;

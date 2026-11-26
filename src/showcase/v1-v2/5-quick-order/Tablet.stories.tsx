@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { menuItem } from '../../../pos/data/menu';
 import { dishLine } from '../../../pos/logic/restaurant';
@@ -7,7 +8,7 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
 import { createInitialState, reducer } from '../../../pos/state/pos-store';
 
 /**
- * V1 → V2 Migration / 5 · Quick Order / Tablet
+ * Prototypes / Tablet / Quick Order / Counter orders (V1 → V2 Migration, section 5)
  *
  * **The counter: food and drink rung onto the register's own order, and sent to the kitchen.**
  *
@@ -38,7 +39,9 @@ import { createInitialState, reducer } from '../../../pos/state/pos-store';
  *   locked on the rail: Void, behind a confirm, instead of Remove.
  */
 const meta = {
-  title: 'V1 → V2 Migration/5 · Quick Order/Tablet',
+  title: 'Prototypes/Tablet/Quick Order/Counter orders',
+  id: 'v1-→-v2-migration-5-·-quick-order-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

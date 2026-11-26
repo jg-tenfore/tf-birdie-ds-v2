@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, openParty, partlyPaidNamed, seatOrder, seatsTotal, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 14 · Per-seat Cart / Mobile
+ * Prototypes / Mobile / Pro Shop / Per-seat cart (Weston Edits, section 14)
  *
  * Weston, on the third call, describing how a group that splits the bill actually gets rung up:
  * *"you hit add to cart for each player, and then you hit save."*
@@ -112,7 +113,9 @@ import { adjustedParty, at18, openParty, partlyPaidNamed, seatOrder, seatsTotal,
  *   but it is a string compare of two built carts on every render of the order screen.
  */
 const meta = {
-  title: 'Weston Edits/14 · Per-seat Cart/Mobile',
+  title: 'Prototypes/Mobile/Pro Shop/Per-seat cart',
+  id: 'weston-edits-14-·-per-seat-cart-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

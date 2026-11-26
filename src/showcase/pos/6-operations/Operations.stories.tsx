@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Screen, onTeeSheet, screenParams } from '../screen-helpers';
 
 /**
- * POS Screens / 6 · Operations
+ * Archive / Original port / Tablet / Operations (POS Screens, section 6)
  *
  * Everything reachable from the tee sheet's time gutter, plus per-course configuration.
  *
@@ -11,7 +12,9 @@ import { Screen, onTeeSheet, screenParams } from '../screen-helpers';
  * one of these can silently destroy real bookings, so each shows the damage first.
  */
 const meta = {
-  title: 'POS Screens/6 · Operations',
+  title: 'Archive/Original port/Tablet/Operations',
+  id: 'pos-screens-6-·-operations',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

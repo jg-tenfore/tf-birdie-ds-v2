@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import {
   DEMO_BOOKINGS,
   Screen,
@@ -11,7 +12,7 @@ import {
 } from '../screen-helpers';
 
 /**
- * POS Screens / 1 · Register & Order
+ * Archive / Original port / Tablet / Register & Order (POS Screens, section 1)
  *
  * The register is the left panel plus the catalog. The left panel is the constant —
  * it persists across both views, because an operator moves between the tee sheet and
@@ -19,7 +20,9 @@ import {
  * this design could do.
  */
 const meta = {
-  title: 'POS Screens/1 · Register & Order',
+  title: 'Archive/Original port/Tablet/Register & Order',
+  id: 'pos-screens-1-·-register-order',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

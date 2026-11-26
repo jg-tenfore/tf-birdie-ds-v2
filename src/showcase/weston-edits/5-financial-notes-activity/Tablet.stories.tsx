@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Screen } from '../../pos/screen-helpers';
 import { adjustedParty, noShowParty, openParty, paidTwilight, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 5 · Financial, Notes & Activity / Tablet
+ * Prototypes / Tablet / Tee Sheet / Financial, notes & activity (Weston Edits, section 5)
  *
  * The rest of the old Booking Detail dialog, moved into the panel so the reservation is one
  * place. Weston's ask was that the golf be worked before the order — "you're still massaging
@@ -83,7 +84,9 @@ import { adjustedParty, noShowParty, openParty, paidTwilight, sheetWithPanel } f
  * events are synthesised from the booking's state. Edits made in the panel do not append to it.
  */
 const meta = {
-  title: 'Weston Edits/5 · Financial, Notes & Activity/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Financial, notes & activity',
+  id: 'weston-edits-5-·-financial-notes-activity-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

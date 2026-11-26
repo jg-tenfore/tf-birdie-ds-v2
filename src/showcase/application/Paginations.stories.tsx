@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Pagination, Stack } from '@mui/material';
 
 const meta = {
-  title: 'Components/Navigation/Paginations',
+  title: 'Design System/Components/Navigation/Paginations',
+  id: 'components-navigation-paginations',
   component: Pagination,
   tags: ['autodocs'],
 } satisfies Meta<typeof Pagination>;

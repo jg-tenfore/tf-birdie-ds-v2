@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { MEMBER_DB, findMemberByPhone } from '../../../pos/data/golfers';
 import { TIMES } from '../../../pos/data/courses';
 import { buildVenue, venue } from '../../../pos/data/venues';
@@ -16,7 +17,7 @@ import {
 } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 3 · Booking & Check-in
+ * Archive / Original port / Mobile / Booking & Check-in (Mobile Screens, section 3)
  *
  * The booking record and the flows that change it, one level below the tee sheet.
  * Booking Detail is a **push** (a place you drill into, Back returns to the list); the
@@ -28,7 +29,9 @@ import {
  * and pays separately.
  */
 const meta = {
-  title: 'Mobile Screens/3 · Booking & Check-in',
+  title: 'Archive/Original port/Mobile/Booking & Check-in',
+  id: 'mobile-screens-3-·-booking-check-in',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

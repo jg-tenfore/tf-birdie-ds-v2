@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 import { NAV_GROUPS } from '../../../pos/data/nav';
 import { openParty, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 20 · Main Nav / Tablet
+ * Prototypes / Tablet / Global Nav / Main nav (Weston Edits, section 20)
  *
  * **The main navigation, and the hamburger that finally means one thing.**
  *
@@ -67,7 +68,9 @@ import { openParty, sheetWithPanel } from '../tablet-scenarios';
  * `nav.test.ts` fails if that list drifts from what actually opens.
  */
 const meta = {
-  title: 'Weston Edits/20 · Main Nav/Tablet',
+  title: 'Prototypes/Tablet/Global Nav/Main nav',
+  id: 'weston-edits-20-·-main-nav-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

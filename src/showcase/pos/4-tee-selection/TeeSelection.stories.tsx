@@ -1,15 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Screen, screenParams, withWalkInOrder } from '../screen-helpers';
 
 /**
- * POS Screens / 4 · Tee Time Selection
+ * Archive / Original port / Tablet / Tee Time Selection (POS Screens, section 4)
  *
  * Choosing a slot for an order. Only slots with room for the *whole* party are offered —
  * a threesome never sees a time with two seats left, because splitting a group across
  * tee times is a different and deliberate operation.
  */
 const meta = {
-  title: 'POS Screens/4 · Tee Time Selection',
+  title: 'Archive/Original port/Tablet/Tee Time Selection',
+  id: 'pos-screens-4-·-tee-time-selection',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

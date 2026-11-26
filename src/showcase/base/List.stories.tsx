@@ -17,7 +17,8 @@ import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 
 const meta = {
-  title: 'Components/Layout & Structure/List',
+  title: 'Design System/Components/Layout & Structure/List',
+  id: 'components-layout-structure-list',
   component: List,
   parameters: {
     layout: 'centered',

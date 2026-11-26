@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { buildTeeTimeCart, money, orderTotals } from '../../../pos/logic/cart';
 import { venue } from '../../../pos/data/venues';
@@ -12,7 +13,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 6 · Check In & Pay / Tablet
+ * Prototypes / Tablet / Tee Sheet / Check in & pay (Weston Edits, section 6)
  *
  * "You're still massaging the reservation before you submit it to the cart and then check
  * it out." **Check in & pay** is that submit: the panel's primary action. It checks in the
@@ -110,7 +111,9 @@ import {
  * leaves `playerStates[].paid` alone, so a refunded booking reopened here reads settled.
  */
 const meta = {
-  title: 'Weston Edits/6 · Check In & Pay/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Check in & pay',
+  id: 'weston-edits-6-·-check-in-pay-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

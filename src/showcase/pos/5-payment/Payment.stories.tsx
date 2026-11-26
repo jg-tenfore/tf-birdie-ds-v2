@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Screen, screenParams, unpaidBooking, withLoadedBooking, withWalkInOrder } from '../screen-helpers';
 
 /**
- * POS Screens / 5 · Payment
+ * Archive / Original port / Tablet / Payment (POS Screens, section 5)
  *
  * Receipt left, keypad right. The keypad has two modes because the operator does two
  * different arithmetic jobs here — cash tendered (to compute change) and tip. Tips are
@@ -10,7 +11,9 @@ import { Screen, screenParams, unpaidBooking, withLoadedBooking, withWalkInOrder
  * before the balance moves. That's what stops a mistyped tip becoming the amount charged.
  */
 const meta = {
-  title: 'POS Screens/5 · Payment',
+  title: 'Archive/Original port/Tablet/Payment',
+  id: 'pos-screens-5-·-payment',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

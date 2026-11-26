@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { playerName } from '../../../pos/logic/reservation';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 import { openParty, sheetWithOrder, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 13 · Order Rail / Tablet
+ * Prototypes / Tablet / Pro Shop / Order rail (Weston Edits, section 13)
  *
  * The 320px order rail down the left of the terminal, and what happens to it on the tee sheet.
  *
@@ -107,7 +108,9 @@ import { openParty, sheetWithOrder, sheetWithPanel } from '../tablet-scenarios';
  *   it was not compared against anything wider.
  */
 const meta = {
-  title: 'Weston Edits/13 · Order Rail/Tablet',
+  title: 'Prototypes/Tablet/Pro Shop/Order rail',
+  id: 'weston-edits-13-·-order-rail-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

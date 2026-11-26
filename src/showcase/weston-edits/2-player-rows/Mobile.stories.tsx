@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { venue } from '../../../pos/data/venues';
 import { buildTeeTimeCart, money, orderTotals, seatCharges } from '../../../pos/logic/cart';
@@ -8,7 +9,7 @@ import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, growableParty, mixedGroup, openParty, partlyPaidNamed, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 2 · Player Rows / Mobile
+ * Prototypes / Mobile / Tee Sheet / Player rows (Weston Edits, section 2)
  *
  * The same three per-player decisions Weston asked for — *"change the players, the amount of
  * players, the tee fee, or change from 9 to 18 holes per player"* — on a 402px screen, where a
@@ -115,7 +116,9 @@ import { adjustedParty, at18, growableParty, mixedGroup, openParty, partlyPaidNa
  *   fix is what it says, not how tightly it is packed.
  */
 const meta = {
-  title: 'Weston Edits/2 · Player Rows/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Player rows',
+  id: 'weston-edits-2-·-player-rows-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

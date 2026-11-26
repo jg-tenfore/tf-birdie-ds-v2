@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Exhibit, T0, actionParams, afterShows, convergesOnAfter, mk, row } from './action-helpers';
 
 /**
- * Tee Sheet Actions / **1 · Create**
+ * Archive / Tee Sheet Actions / **Create** (Tee Sheet Actions, section 1)
  *
  * The three ways a tee time appears on the sheet: booked one party at a time, reserved in
  * bulk as a league or outing, or closed off as a block.
@@ -13,7 +14,9 @@ import { Exhibit, T0, actionParams, afterShows, convergesOnAfter, mk, row } from
  * dialog to prove the dialog agrees.
  */
 const meta = {
-  title: 'Tee Sheet Actions/1 · Create',
+  title: 'Archive/Tee Sheet Actions/Create',
+  id: 'tee-sheet-actions-1-·-create',
+  decorators: [withEdition('archived')],
   parameters: actionParams,
 } satisfies Meta;
 

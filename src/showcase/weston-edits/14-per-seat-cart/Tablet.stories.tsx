@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { playerName } from '../../../pos/logic/reservation';
 import { Screen } from '../../pos/screen-helpers';
@@ -11,7 +12,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 14 · Per-seat Cart / Tablet
+ * Prototypes / Tablet / Pro Shop / Per-seat cart (Weston Edits, section 14)
  *
  * Weston, on the third call, describing how a group that splits the bill actually gets rung up:
  * *"you hit add to cart for each player, and then you hit save."*
@@ -110,7 +111,9 @@ import {
  *   order.
  */
 const meta = {
-  title: 'Weston Edits/14 · Per-seat Cart/Tablet',
+  title: 'Prototypes/Tablet/Pro Shop/Per-seat cart',
+  id: 'weston-edits-14-·-per-seat-cart-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
