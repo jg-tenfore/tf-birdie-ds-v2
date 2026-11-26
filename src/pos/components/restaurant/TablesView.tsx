@@ -77,7 +77,9 @@ const BADGE_MIN = 70;
 export function TablesView() {
   const { state, dispatch } = usePos();
   const ctx = useLiveFloor();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // The selected table is the store's (`floorTableId`), so a tab's **Table view** can land on it.
+  const selectedId = state.floorTableId;
+  const setSelectedId = (tableId: string | null) => dispatch({ type: 'selectFloorTable', tableId });
   const room = state.floor.find((r) => r.id === state.floorRoomId) ?? state.floor[0];
   const statusOf = (t: FloorElement): TableStatus => tableStatus(t, ctx);
   const tables = room ? room.elements.filter((e) => e.kind === 'table') : [];

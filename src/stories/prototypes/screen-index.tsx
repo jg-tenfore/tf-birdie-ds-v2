@@ -109,7 +109,8 @@ const TABLET_AREAS: Record<string, AreaCopy> = {
   'Bay Sheet': {
     shot: 'tablet-bay-sheet',
     title: 'Simulator bays',
-    blurb: 'Bays by the half hour, 90 minutes by default, priced by length and paid through the register.',
+    blurb: 'Buck’s ten bays by the half hour: drag to move or resize, ribbons in the golfer’s membership colour, and a chip per bay to switch its column off and on.',
+    lookAt: 'switching a few bays off — the rest widen, and the toolbar says how many bookings are out of sight.',
     route: '#/bays',
   },
   'Quick Order': {
@@ -121,7 +122,7 @@ const TABLET_AREAS: Record<string, AreaCopy> = {
   Tabs: {
     shot: 'tablet-tabs',
     title: 'Bar and table tabs',
-    blurb: 'Every open tab, seats per guest, send to kitchen, and Pay handing over to the register.',
+    blurb: 'Every open tab, seats per guest, send to kitchen, and Pay handing over to the register. Table view goes back to the floor with the tab’s table selected.',
     route: '#/tabs',
   },
   Tables: {

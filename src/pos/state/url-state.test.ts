@@ -651,3 +651,63 @@ describe('the League view (V1 → V2, 100226)', () => {
     expect(isNavigation(a, { ...a, leagueGroupId: 'grp-mens-league' })).toBe(true);
   });
 });
+
+describe('courts and bays switched off (Nov 26)', () => {
+  it('carries the bay sheet’s switched-off bays in hide=, and round-trips', () => {
+    const { first } = roundTrip({ view: 'bays', hiddenResources: ['bay-3', 'palmer'] });
+    expect(first).toContain('#/bays?');
+    expect(new URLSearchParams(first.split('?')[1]).get('hide')).toBe('bay-3,palmer');
+    expectStable({ view: 'bays', hiddenResources: ['bay-3', 'palmer'] });
+  });
+
+  it('only carries the sheet on screen — a bay off doesn’t ride along on the court sheet’s link', () => {
+    const hash = stateToHash(createInitialState({ view: 'courts', hiddenResources: ['bay-3', 'pool-1'] }));
+    expect(new URLSearchParams(hash.split('?')[1]).get('hide')).toBe('pool-1');
+  });
+
+  it('drops ids the club doesn’t have, so a stale link shows every column', () => {
+    expect(hashToState('#/bays?hide=bay-3,no-such-bay').hiddenResources).toEqual(['bay-3']);
+  });
+
+  it('switches a column off and on, and All brings back only its own sheet’s', () => {
+    let s = createInitialState({ view: 'bays' });
+    s = reducer(s, { type: 'setResourceShown', resourceId: 'bay-3', shown: false });
+    s = reducer(s, { type: 'setResourceShown', resourceId: 'pool-1', shown: false });
+    expect(s.hiddenResources).toEqual(['bay-3', 'pool-1']);
+    s = reducer(s, { type: 'setResourceShown', resourceId: 'bay-3', shown: true });
+    expect(s.hiddenResources).toEqual(['pool-1']);
+    s = reducer(s, { type: 'setResourceShown', resourceId: 'palmer', shown: false });
+    s = reducer(s, { type: 'showAllResources', kind: 'bay' });
+    expect(s.hiddenResources).toEqual(['pool-1']);
+  });
+});
+
+describe('the tab editor’s Table view (Nov 26)', () => {
+  it('lands on Tables in the tab’s room with its table selected, and drops the open tab', () => {
+    let s = createInitialState({ view: 'tabs', activeTabId: 'T-1003' });
+    const tab = s.tabs.find((t) => t.id === 'T-1003')!;
+    s = reducer(s, { type: 'showTabOnFloor', tabId: 'T-1003' });
+    expect(s.view).toBe('tables');
+    expect(s.activeTabId).toBeNull();
+    expect(s.floorTableId).toBe(tab.tableId);
+    expect(s.floor.find((r) => r.id === s.floorRoomId)!.elements.some((e) => e.id === tab.tableId)).toBe(true);
+  });
+
+  it('names the selected table in the link (table=), and round-trips', () => {
+    const s = reducer(createInitialState({ view: 'tabs', activeTabId: 'T-1003' }), { type: 'showTabOnFloor', tabId: 'T-1003' });
+    const hash = stateToHash(s);
+    expect(hash).toContain('#/tables?');
+    expect(new URLSearchParams(hash.split('?')[1]).get('table')).toBe(s.floorTableId);
+    expect(stateToHash(createInitialState(hashToState(hash)))).toBe(hash);
+  });
+
+  it('a table selected elsewhere switches the floor to its room; null clears it', () => {
+    let s = createInitialState({ view: 'tables' });
+    const other = s.floor.find((r) => r.id !== s.floorRoomId && r.elements.some((e) => e.kind === 'table'))!;
+    const t = other.elements.find((e) => e.kind === 'table')!;
+    s = reducer(s, { type: 'selectFloorTable', tableId: t.id });
+    expect([s.floorRoomId, s.floorTableId]).toEqual([other.id, t.id]);
+    s = reducer(s, { type: 'selectFloorTable', tableId: null });
+    expect(s.floorTableId).toBeNull();
+  });
+});

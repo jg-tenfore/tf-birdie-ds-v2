@@ -36,7 +36,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   open, status, total — sorts on any of them, groups by server or room, and searches. Status says
  *   *Check requested*, *N not sent*, *Nothing ordered* or *All sent*.
  * - **The editor's header is the tab**: name in place, table, a guest stepper (it will not drop
- *   below a seat that has a plate), server, and *Check requested*.
+ *   below a seat that has a plate), server, and **Table view** back to the floor with the tab's
+ *   table selected (Nov 26; it took the *Check requested* toggle's place — a requested check now
+ *   shows as a tag by the table, and is set from the table's panel on the floor).
  * - **Seat bands**, empty ones and *Shared* included. v1's one good idea is kept: **tapping a band
  *   makes it the seat that receives the next item**; nothing collapses.
  * - **One menu browser**, shared with Quick Order, beside the check and never replacing it.
@@ -149,10 +151,32 @@ export const ADeepLinkOpensIt: Story = {
     await expect(q(canvasElement, '[data-tab-editor="T-1003"]')).not.toBeNull();
     await expect(qa(canvasElement, '[data-seat-band]')).toHaveLength(9);
     await expect(canvas.getByRole('button', { name: 'One fewer guest' })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Check requested' })).toHaveAttribute('aria-pressed', 'true');
+    // T-1003 has asked for its check: a tag by the table, not a button.
+    await expect(q(canvasElement, '[data-check-requested]')!.textContent).toBe('Check requested');
     await userEvent.click(canvas.getByRole('button', { name: 'One more guest' }));
     await waitFor(() => expect(qa(canvasElement, '[data-seat-band]')).toHaveLength(10));
     await expect(within(band(canvasElement, 9)).getByText('Nothing yet')).toBeTruthy();
+  },
+};
+
+/**
+ * **Table view goes back to the floor** (Nov 26). From T-1003 — Table 10, which has asked for its
+ * check — Table view opens Tables in the Dining Room with Table 10 selected, its panel showing the
+ * request and the way to clear it. Open tab there comes straight back.
+ */
+export const TableViewGoesBackToTheFloor: Story = {
+  render: () => <Screen edition="v1v2" initialState={onTab('T-1003')} />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(q(canvasElement, '[data-table-view]')!);
+    await waitFor(() => expect(q(canvasElement, '[data-restaurant-view="TablesView"]')).not.toBeNull());
+    const panel = q(canvasElement, '[data-table-panel]')!;
+    await expect(panel.getAttribute('data-table-panel')).not.toBe('overview');
+    await expect(panel.getAttribute('aria-label')).toBe('Table 10 details');
+    await expect(within(panel).getByText('The table has asked for its check.')).toBeTruthy();
+    await expect(within(panel).getByRole('button', { name: 'Clear check request' })).toBeTruthy();
+    // And back into the tab from the table.
+    await userEvent.click(within(panel).getByRole('button', { name: 'Open tab' }));
+    await waitFor(() => expect(q(canvasElement, '[data-tab-editor="T-1003"]')).not.toBeNull());
   },
 };
 
