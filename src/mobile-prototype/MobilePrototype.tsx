@@ -135,11 +135,19 @@ const tabletHref = () =>
     dev: DEV,
   });
 
-/** Which Birdie this is: the current phone is Weston Edits (the archive is the original port). */
+/**
+ * Which Birdie this is: the current phone is V1 → V2 — Weston's edits plus the restaurant — and
+ * the archive is the original port. A page opened with `?edition=weston` says so.
+ */
 function EditionLabel() {
   return (
     <Stack direction="row" gap={0.75} sx={{ mt: 1.25 }}>
-      <Chip label="Current · Weston Edits" size="small" color="primary" variant="filled" />
+      <Chip
+        label={buildEdition() === 'weston' ? 'Weston Edits' : 'Current · V1 → V2'}
+        size="small"
+        color="primary"
+        variant="filled"
+      />
     </Stack>
   );
 }

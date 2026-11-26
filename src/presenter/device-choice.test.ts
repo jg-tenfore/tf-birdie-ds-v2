@@ -50,8 +50,9 @@ describe('currentVenue', () => {
 
 describe('otherAppHref', () => {
   it('maps the current edition to the other app’s current, and keeps the archive', () => {
-    expect(pairedEdition('v1v2', 'handheld')).toBe('weston');
+    expect(pairedEdition('v1v2', 'handheld')).toBe('v1v2');
     expect(pairedEdition('weston', 'tablet')).toBe('v1v2');
+    expect(pairedEdition('weston', 'handheld')).toBe('v1v2');
     expect(pairedEdition('base', 'handheld')).toBe('base');
   });
 

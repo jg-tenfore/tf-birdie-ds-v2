@@ -236,7 +236,7 @@ newest first, `Summary` first), **Archive** (collapsed). The order lives in `sto
 reservation flow). It's a context, not a fork: branch with `useWestonEdits()` only where the
 edits differ, and pass `edition="weston"` to `<Screen>` / `<MobileStory>` / `<PosApp>` /
 `<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=`, and with
-neither the prototype opens `CURRENT_EDITION` (`v1v2` on the tablet, `weston` on the phone) — the
+neither the prototype opens `CURRENT_EDITION` (`v1v2` on the tablet and the phone) — the
 current Birdie, published at `/prototype/` and `/mobile/` (18-hole club). The Weston Edits story files
 (`src/showcase/weston-edits/`, one folder per changed component, `Tablet` and `Mobile`) now sit
 in Storybook under **Prototypes** by nav area; their overview is **Reviews › Sep 22 – Weston

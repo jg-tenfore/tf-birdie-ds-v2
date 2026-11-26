@@ -120,8 +120,9 @@ function buildIndex(
 }
 
 /**
- * True when the phone prototype renders Weston's edits — the current phone (`weston`, see
- * `CURRENT_EDITION`), or any edition built on them — and false only in the archive (`base`).
+ * True when the phone prototype renders Weston's edits — the current phone (`v1v2` since Nov 26,
+ * see `CURRENT_EDITION`), Weston Edits itself, or any edition built on them — and false only in the
+ * archive (`base`).
  */
 export const WESTON = buildEdition() !== ARCHIVED_EDITION;
 

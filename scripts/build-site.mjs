@@ -76,7 +76,7 @@ writeFileSync(
 // hash-only everywhere — Pages has no SPA fallback.
 const PROTOTYPES = [
   { dir: 'prototype', app: 'tablet', venue: 'eighteen', edition: 'v1v2', label: 'current tablet · V1 → V2' },
-  { dir: 'mobile', app: 'mobile', venue: 'eighteen', edition: 'weston', label: 'current phone · Weston Edits' },
+  { dir: 'mobile', app: 'mobile', venue: 'eighteen', edition: 'v1v2', label: 'current phone · V1 → V2' },
   { dir: 'archive/prototype', app: 'tablet', venue: 'three-nines', edition: 'base', label: 'archive tablet · the original port' },
   { dir: 'archive/mobile', app: 'mobile', venue: 'three-nines', edition: 'base', label: 'archive phone · the original port' },
 ];
