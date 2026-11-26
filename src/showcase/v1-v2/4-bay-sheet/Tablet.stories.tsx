@@ -56,7 +56,7 @@ export const AnOrdinaryDay: Story = {
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelectorAll('[data-resource-column]').length).toBe(resourcesOf(KIND).length);
     await expect(canvasElement.querySelectorAll('[data-resource-capacity]').length).toBe(10);
-    await expect(within(canvasElement).getAllByText('Up to 6 · from $60/hr').length).toBeGreaterThan(0);
+    await expect(within(canvasElement).getAllByText('Up to 6').length).toBeGreaterThan(0);
     await expect(canvasElement.querySelectorAll('[data-resource-booking]').length).toBeGreaterThan(10);
   },
 };

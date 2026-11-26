@@ -63,8 +63,8 @@ import { Stack } from './Stack';
 export const PPM = 1.6;
 const GUTTER = 64;
 const HEADER = 52;
-/** Ten bays have to share the width; 120 keeps a name and a ribbon legible in each. */
-const COL_MIN = 120;
+/** Ten bays share the width of a 1280px Clover Mini; 110 keeps a name and a ribbon legible in each. */
+const COL_MIN = 110;
 
 export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
   const { state, dispatch, toast } = usePos();
@@ -174,7 +174,8 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
                 {r.name}
               </Typography>
               <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }} data-resource-capacity>
-                {r.kind === 'bay' ? `Up to ${capacityOf(r)} · from $${r.hourly}/hr` : `$${r.hourly}/hr`}
+                {/* A bay's price depends on the hour and the golfer (Buck's fees); its capacity does not. */}
+                {r.kind === 'bay' ? `Up to ${capacityOf(r)}` : `$${r.hourly}/hr`}
               </Typography>
             </Box>
           ))}
