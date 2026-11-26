@@ -105,11 +105,12 @@ export const DEFAULT_VENUE: VenueId = 'three-nines';
 export const isVenueId = (v: string): v is VenueId => v in VENUES;
 
 /**
- * A venue chosen at page load, ahead of `VITE_VENUE`. Only the mobile prototype sets it
- * (from `?venue=`, in `main.tsx`, before its modules load), because its screens come from
- * story files that pick their bookings at import time — re-homing afterwards, as the
- * terminal's deep links do, would leave those stories pointing at bookings the club
- * doesn't have. Setting it first makes every story build against that club from the start.
+ * A venue chosen at page load, ahead of `VITE_VENUE`. The prototypes set it (from `?venue=`,
+ * in `main.tsx`, before their modules load). The mobile prototype needs it because its screens
+ * come from story files that pick their bookings at import time — re-homing afterwards, as the
+ * terminal's deep links do, would leave those stories pointing at bookings the club doesn't
+ * have. The tablet uses it so one build can open at any club from a plain query string (the
+ * redirects from the old per-club paths rely on that); its hash `?venue=` still re-homes.
  */
 export function setVenueOverride(id: VenueId): void {
   (globalThis as { __BIRDIE_VENUE__?: VenueId }).__BIRDIE_VENUE__ = id;

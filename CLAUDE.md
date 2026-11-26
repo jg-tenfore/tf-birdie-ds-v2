@@ -3,8 +3,10 @@
 A **React 19 + MUI v9 + Emotion** design system for the TenFore golf-course point of sale,
 plus the prototype built from it. Scaffolded from `jg-tenfore/goose-kds`.
 
-Published at https://jg-tenfore.github.io/tf-birdie-ds-v2/ — Storybook at the root, the
-prototype at `/prototype/`, the original HTML prototype at `/reference/`.
+Published at https://jg-tenfore.github.io/tf-birdie-ds-v2/ — Storybook at the root, the current
+tablet at `/prototype/` and phone at `/mobile/`, the original port under `/archive/prototype/`
+and `/archive/mobile/`, the original HTML prototype at `/reference/`. The older per-club and
+per-edition paths are redirect pages (`scripts/build-site.mjs`).
 
 ## The rule that matters
 
@@ -12,11 +14,18 @@ prototype at `/prototype/`, the original HTML prototype at `/reference/`.
 second copy of anything. If you find yourself writing a component for one and not the other,
 stop — that's the drift this repo exists to prevent.
 
-That includes the **three prototypes**. They are not forks: a club is a course layout
-(`src/pos/data/venues.ts`), the tee sheet renders one column group per course, and each
-deployment is the same build with a different `VITE_VENUE`. Adding a fourth club is adding an
-entry to `VENUES` and a line to `PROTOTYPES` in `scripts/build-site.mjs` — never a copy of the
-app.
+That includes the **clubs**. They are not forks: a club is a course layout
+(`src/pos/data/venues.ts`), the tee sheet renders one column group per course, and any build
+opens at any club with `?venue=`. Adding a fourth club is adding an entry to `VENUES` — never a
+copy of the app.
+
+And the **devices**. The frames are `useTabletFrame()` / `useMobileFrame()` from
+`src/pos/device-context.tsx`, never the `shell` / `mobile.frame` constants: with no
+`DeviceProvider` they are the 1366×840 / 402×797 design canvases, and the prototype's device
+panel or Storybook's **Device** toolbar can put any screen on the Clover Mini (1280×800), the
+large display (1920×1080), the Quest (360×800) or the Clover Flex (360×720). Layout that depends
+on the room reads `useTabletFrameClass()` / `useMobileFrameClass()`; check a change on the
+Clover Mini and a 360px handheld before calling it done.
 
 `/reference/` is the original single-file HTML prototype, unmodified. It is the answer to
 "is this what the original did", and it is never edited.
@@ -179,9 +188,9 @@ Anything else that differs from `/reference/` is a bug, not a decision.
 ## Mobile Screens
 
 The phone companion lives in `src/pos/mobile/`, its stories in `src/showcase/pos-mobile/`
-(numbered to match POS Screens), and the hosted mobile prototypes in `src/mobile-prototype/`
-(`/mobile/`, `/mobile-18/`, `/mobile-9/` — one build per club, like the terminal), whose screen
-list is *read from* those story files — add a story and it appears. Every story must work at
+(numbered to match POS Screens), and the hosted mobile prototype in `src/mobile-prototype/`
+(`/mobile/`, current; `/archive/mobile/`, the original port), whose screen list is *read from*
+those story files — add a story and it appears. Every story must work at
 all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the stories load
 (`setVenueOverride`), so a story that assumes two courses will break at the single nine.
 
@@ -192,7 +201,8 @@ all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the st
   `dialog` (full-screen, ✕ + confirm), `takeover` (no exit; payment only). No centred
   dialogs on the phone. Short contextual choices use `BottomSheet` from `chrome.tsx`
   (never MUI `Drawer`/`Dialog`, which portal outside the frame).
-- **402×797, MD3 touch density** via `src/theme/mobile-theme.ts` and the `mobile` token block.
+- **MD3 touch density** via `src/theme/mobile-theme.ts` and the `mobile` token block, designed
+  at 402×797 and run on 360px-wide handhelds (the Quest is the priority device).
 - **Story metas must write `parameters` inline** (`parameters: { ...mobileMeta.parameters }`).
   Storybook's docs plugin injects its own `parameters` key and silently overwrites one that
   arrives by spread or by variable, dropping `layout: 'fullscreen'`.
@@ -225,8 +235,9 @@ newest first, `Summary` first), **Archive** (collapsed). The order lives in `sto
 `src/pos/edition.tsx` defines editions: `base` (default) and `weston` (Weston's golf-first
 reservation flow). It's a context, not a fork: branch with `useWestonEdits()` only where the
 edits differ, and pass `edition="weston"` to `<Screen>` / `<MobileStory>` / `<PosApp>` /
-`<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=weston`. Published
-as `/weston-edits/` and `/weston-edits-mobile/` (18-hole club). The Weston Edits story files
+`<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=`, and with
+neither the prototype opens `CURRENT_EDITION` (`v1v2` on the tablet, `weston` on the phone) — the
+current Birdie, published at `/prototype/` and `/mobile/` (18-hole club). The Weston Edits story files
 (`src/showcase/weston-edits/`, one folder per changed component, `Tablet` and `Mobile`) now sit
 in Storybook under **Prototypes** by nav area; their overview is **Reviews › Sep 22 – Weston
 Edits, rounds 1–5 › Summary**. Per-player reservation values (`holes`, `fee`, `transport`) live on

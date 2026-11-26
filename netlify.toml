@@ -12,8 +12,9 @@
 # is what keeps them straight.
 
 [build]
-  # Assembles all three surfaces: Storybook at the root, the React prototype at
-  # /prototype/, and the original HTML at /reference/. See scripts/build-site.mjs.
+  # Assembles every surface: Storybook at the root, the current prototypes at /prototype/
+  # and /mobile/, the original port at /archive/, redirect pages at the old paths, and the
+  # original HTML at /reference/. See scripts/build-site.mjs.
   command = "npm run build:site"
   publish = "site"
 
@@ -43,5 +44,10 @@
 
 [[headers]]
   for = "/prototype/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/mobile/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"

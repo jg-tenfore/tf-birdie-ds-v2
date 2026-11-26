@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import { md3, mobile, payBadges, playerAccents, radius, shell } from '../../../theme/tokens';
+import { md3, mobile, payBadges, playerAccents, radius } from '../../../theme/tokens';
+import { useMobileFrame, useTabletFrame } from '../../../pos/device-context';
 import { PosApp } from '../../../pos/PosApp';
 import { ROUND_STEPS } from '../../../pos/data/config';
 import { formatTimeLabel } from '../../../pos/data/courses';
@@ -71,6 +72,7 @@ export function ProposalTerminal({
   edition?: 'v1v2' | 'weston';
 }) {
   const scale = useFitScale();
+  const shell = useTabletFrame();
   const frame = (
     <Box sx={{ width: shell.width, height: shell.height, position: 'relative', borderRadius: `${radius.lg}px`, overflow: 'hidden' }}>
       {backdrop && <PosApp initialState={backdrop} edition={edition} />}
@@ -93,12 +95,13 @@ export function ProposalTerminal({
 
 /** The phone frame, 402×797 on the dark ground, for the mobile proposals. */
 export function ProposalPhone({ children }: { children: ReactNode }) {
+  const frame = useMobileFrame();
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: md3.scrim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Box
         sx={{
-          width: mobile.frame.width,
-          height: mobile.frame.height,
+          width: frame.width,
+          height: frame.height,
           position: 'relative',
           bgcolor: md3.surface,
           borderRadius: '28px',
