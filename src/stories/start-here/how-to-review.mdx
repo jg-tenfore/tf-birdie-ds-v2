@@ -1,7 +1,201 @@
 import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, Code, DocButton, DocLink, DocPage, Grid, NavCard, NumberedRow, P, Pill, ScreenCard, Section, mobilePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
 
 <Meta title="Start Here/How to review" />
 
-# How to review
+<DocPage>
 
-How to look at Birdie and say what to keep or change: open the prototype beside Storybook, go area by area, and use the stories for the states that are hard to reach by tapping. Placeholder: this page is being written.
+<Banner
+  eyebrow="How to review"
+  title="Open the prototype beside Storybook, pick a device, and go screen by screen."
+  pills={<><Pill>Nine screens first</Pill><Pill>Two apps</Pill><Pill>Keep · change · mix</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet')}>Open the tablet prototype</DocButton><DocButton variant="secondary" href={mobilePrototype()}>Open the phone prototype</DocButton></>}
+>
+  You're judging how Birdie works at a busy counter: whether the next step is obvious, whether the money is right and says why, whether a screen holds on the device it runs on, and whether the words are the ones staff use. Start with the tablet, then the handheld.
+</Banner>
+
+<Section title="Set up">
+<NumberedRow
+  items={[
+    { title: 'Side by side', body: 'The prototype in one window, Storybook in the other. The prototype is the app to click through; Storybook has every state, including the ones that take a dozen taps to reach.' },
+    { title: 'Pick the device', body: <>The prototype opens on the Clover Mini (tablet) or the Quest handheld (phone). The Device panel switches; <Code>?device=</Code> puts it in a link. In Storybook, use the Device toolbar.</> },
+    { title: 'Go in order', body: 'The nine screens below cover most of a day at the counter. For each, say keep, change or mix, and point at the exact piece.' },
+  ]}
+/>
+</Section>
+
+<Section title="The screens that matter most, in order" intro="Open each in the prototype, then its stories for the other states.">
+<Grid cols={3}>
+  <ScreenCard
+    src={screen('tablet-tee-sheet')}
+    badge="1"
+    eyebrow="Tablet · Tee Sheet"
+    title="The day on the tee sheet"
+    lookAt="whether you can tell who still owes at a glance, and how you get to another day."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/tee-sheet?shift=early') },
+      { label: 'Stories', to: 'prototypes-tablet-tee-sheet-sheet-views--calendar-grid' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('tablet-reservation')}
+    badge="2"
+    eyebrow="Tablet · Tee Sheet"
+    title="A reservation"
+    lookAt="the player rows: 9 or 18, the rate's name, walk or ride, Add, and Check in & pay."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/tee-sheet?res=p04_m6') },
+      { label: 'Stories', to: 'weston-edits-1-·-reservation-panel-tablet--over-the-tee-sheet' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('tablet-rate-editor')}
+    badge="3"
+    eyebrow="Tablet · Tee Sheet"
+    title="Changing a player's rate"
+    lookAt="the rate the system picked, the dimmed ones you can still choose, Reset and Save fees to all."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/tee-sheet?res=p04_m6&rate=0') },
+      { label: 'Stories', to: 'weston-edits-11-·-rate-selector-tablet--the-whole-editor' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('tablet-check-in-pay')}
+    badge="4"
+    eyebrow="Tablet · Pro Shop"
+    title="After Check in & pay"
+    lookAt="the golf as a read-only summary with Edit reservation, then adding a sleeve of balls."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/register/GOLF%20BALLS?booking=p04_m6') },
+      { label: 'Stories', to: 'weston-edits-7-·-register-golf-summary-tablet--adjusted-party' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('tablet-checkout')}
+    badge="5"
+    eyebrow="Tablet · Pro Shop"
+    title="Checkout"
+    lookAt="the total and its tax, the tip, and the tenders: card, cash, gift card, house account, check."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/register?order=walkin&modal=checkout') },
+      { label: 'Stories', to: 'prototypes-tablet-pro-shop-payment--checkout' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('tablet-tabs')}
+    badge="6"
+    eyebrow="Tablet · Restaurant"
+    title="A tab"
+    lookAt="seats, a dish with choices, Send to kitchen, and Pay handing over to the register."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/tabs?tab=T-1003') },
+      { label: 'Stories', to: 'v1-→-v2-migration-6-·-tabs-tablet--the-list' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('tablet-main-nav')}
+    badge="7"
+    eyebrow="Tablet · Global Nav"
+    title="The main nav"
+    lookAt="whether each destination is where you'd look for it, and what your role would see."
+    links={[
+      { label: 'Open the prototype', href: tabletPrototype('#/register?nav=1') },
+      { label: 'Stories', to: 'weston-edits-20-·-main-nav-tablet--the-navigation' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('mobile-reservation')}
+    frame="handheld"
+    badge="8"
+    eyebrow="Handheld · Tee Sheet"
+    title="A reservation on the Quest"
+    lookAt="whether the rows fit at 360 wide, the rate dialog, and the pinned Check in & pay."
+    links={[
+      { label: 'Open the prototype', href: mobilePrototype('weston-edits-1-·-reservation-panel-mobile--reservation') },
+      { label: 'Stories', to: 'weston-edits-1-·-reservation-panel-mobile--reservation' },
+    ]}
+  />
+  <ScreenCard
+    src={screen('mobile-register')}
+    frame="handheld"
+    badge="9"
+    eyebrow="Handheld · Pro Shop"
+    title="An order on the handheld"
+    lookAt="the order screen, then checkout and the card reader, which a stray swipe can't abandon."
+    links={[
+      { label: 'Open the prototype', href: mobilePrototype('mobile-screens-1-·-register-order--order-in-progress') },
+      { label: 'Stories', to: 'prototypes-mobile-pro-shop-register-order--order-in-progress' },
+    ]}
+  />
+</Grid>
+<P><strong>Then, if there's time:</strong></P>
+<div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', columnGap: 20, rowGap: 8 }}>
+  <DocLink href={tabletPrototype('#/bays')}>Bay Sheet</DocLink>
+  <DocLink href={tabletPrototype('#/tables')}>Tables</DocLink>
+  <DocLink href={tabletPrototype('#/customers?cid=M005')}>Customer Search</DocLink>
+  <DocLink href={tabletPrototype('#/order-lookup')}>Order Lookup</DocLink>
+  <DocLink href={tabletPrototype('#/settings?section=birdie')}>Settings</DocLink>
+  <DocLink href={tabletPrototype('#/shift')}>Shift</DocLink>
+  <DocLink to="prototypes-tablet-screen-index--overview">Every tablet screen</DocLink>
+  <DocLink to="prototypes-mobile-screen-index--overview">Every phone screen</DocLink>
+</div>
+</Section>
+
+<Section title="What to look at on each screen">
+<Grid cols={3}>
+  <NavCard eyebrow="Flow" title="Is the next step obvious?">
+    At a busy counter, with a foursome waiting: can you get from the tee time to paid without hunting?
+  </NavCard>
+  <NavCard eyebrow="Money" title="Is it right, and does it say why?">
+    Every price should name its rate, every discount its reason, and the total should match on every screen it appears.
+  </NavCard>
+  <NavCard eyebrow="Device" title="Does it hold on the hardware?">
+    Try the Clover Mini, the large display and the Quest. Anything cramped, cut off or stretched too far?
+  </NavCard>
+  <NavCard eyebrow="Touch" title="Can you hit it?">
+    The counter is mouse and touch; the handheld is a thumb. Any target too small or too close to another?
+  </NavCard>
+  <NavCard eyebrow="Words" title="Are these the words staff use?">
+    Labels, buttons and messages. Weston has caught several already ("seat" is for food and beverage; "Link" meant nothing).
+  </NavCard>
+  <NavCard eyebrow="Buck" title="Who owns this setting?" to="start-here-buck-and-birdie--overview" cta="Buck and Birdie">
+    If it's set up in Buck, the counter should read it, not ask for it again.
+  </NavCard>
+</Grid>
+</Section>
+
+<Section title="Different on purpose">
+<Grid cols={2}>
+  <NavCard eyebrow="Sample data" title="Everything is invented">
+    Golfers, orders, balances and prices are made up, because this Storybook is public. The club is The Dunes of Delgado, and the demo PINs (1111 to 6666) are printed on the sign-in pad.
+  </NavCard>
+  <NavCard eyebrow="Sample data" title="It is always noon on Thursday, May 21, 2026">
+    The tee sheet, walk-ins and timestamps all read one demo clock, so a screen looks the same every time you open it. Other dates within a year have a generated sheet.
+  </NavCard>
+  <NavCard eyebrow="Simulated" title="Hardware answers in toasts">
+    Card readers, printers and cash drawers are simulated: a test, a connect or a print shows what the device would say. Simulate approval stands in for a real card.
+  </NavCard>
+  <NavCard eyebrow="Toolbar" title="Some choices are left open on purpose" to="reviews-sep-22-weston-edits-rounds-1-5-summary--overview" cta="Why">
+    Panel width, row density, transport and the rate catalog are switches on the Storybook toolbar, because Weston asked to see them rather than decide from a description.
+  </NavCard>
+</Grid>
+</Section>
+
+<Section title="Leaving feedback" intro="Name the screen, then say one of three things.">
+<Grid cols={3}>
+  <NavCard eyebrow="Say" title="Keep">
+    This works as it is.
+  </NavCard>
+  <NavCard eyebrow="Say" title="Change">
+    What's wrong and what you'd expect instead. Point at the exact piece.
+  </NavCard>
+  <NavCard eyebrow="Say" title="Mix">
+    This part from one version, that part from another. A screenshot or a short recording works best.
+  </NavCard>
+</Grid>
+<Callout title="Send a link, not a description.">
+Every story has its own URL: copy it from the address bar and it opens that exact screen and state for whoever you send it to. The prototype's address bar works the same way for every screen and dialog (<DocLink to="start-here-deep-links--overview">the deep-link scheme</DocLink>). Each round of feedback gets its own folder in <DocLink to="reviews-oct-2-proposal-review-summary--overview">Reviews</DocLink>, with what was decided and left open.
+</Callout>
+</Section>
+
+</DocPage>
