@@ -6,6 +6,7 @@ import { staffById } from '../data/staff';
 import { ROLE_NAMES } from '../state/settings';
 import { APP_IDENTITY, NAV_GROUPS, isLive, navGroupsFor, type NavItem, type NavKey } from '../data/nav';
 import { useEdition, useWestonEdits } from '../edition';
+import { useTileColumns } from '../device-context';
 import { usePos } from '../state/PosProvider';
 import { Icon } from './primitives';
 import { Stack } from './Stack';
@@ -42,6 +43,7 @@ export function NavOverlay() {
   const { state, dispatch, toast } = usePos();
   const weston = useWestonEdits();
   const edition = useEdition();
+  const columns = useTileColumns(4, 6);
   const close = () => dispatch({ type: 'setNavOpen', open: false });
   const operator = staffById(state.operatorId, state.staffRoster);
   const signOut = () => {
@@ -199,7 +201,8 @@ export function NavOverlay() {
                 borderTop: `1px solid ${md3.outlineVariant}`,
                 pt: 1.5,
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                // Six to a row on the large display, so a tile stays a tile instead of a 370px bar.
+                gridTemplateColumns: `repeat(${columns}, 1fr)`,
                 gap: '12px',
               }}
             >

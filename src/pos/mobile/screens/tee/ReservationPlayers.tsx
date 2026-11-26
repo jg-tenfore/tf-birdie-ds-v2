@@ -44,6 +44,7 @@ import {
 import { seatPrice, seatRecord } from '../../../logic/seat-pricing';
 import { Icon } from '../../../components/primitives';
 import { Stack } from '../../../components/Stack';
+import { useMobileFrameClass } from '../../../device-context';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
 import type { Booking, PlayerState, Transport } from '../../../types';
 import { BottomSheet } from '../../chrome';
@@ -75,6 +76,7 @@ export function ReservationPlayersTab({ booking: b }: { booking: Booking }) {
   const { dispatch, toast } = usePos();
   const { course, is18, max, day } = useReservationLimits(b);
   const [sheet, setSheet] = useState<SheetState>(null);
+  const { narrow } = useMobileFrameClass();
   const states = b.playerStates ?? [];
   const closed = b.pay === 'no_show' || b.pay === 'refund';
   const patch = (p: Partial<Booking>, msg?: string) => {
@@ -117,7 +119,7 @@ export function ReservationPlayersTab({ booking: b }: { booking: Booking }) {
         {checkedInCount(b)}/{b.players} checked in · {states.filter((p) => p.paid).length} paid
       </SectionHeader>
 
-      <Stack gap={1} sx={{ px: 2 }}>
+      <Stack gap={1} sx={{ px: narrow ? 1.5 : 2 }}>
         {states.map((p, i) => (
           <PlayerRow key={i} booking={b} index={i} p={p} is18={is18} locked={closed || !isEditableSeat(p)} onSheet={(kind) => setSheet({ kind, index: i })} />
         ))}
@@ -273,6 +275,7 @@ function PlayerRow({
   const record = seatRecord(b, i, state.customerEdits);
   const inOrder = state.selectedBookingId === b.id && (state.orderSeats?.includes(i) ?? false);
   const status = p.noShow ? 'No-show' : roundStepOf(p).label;
+  const { narrow } = useMobileFrameClass();
 
   return (
     <Box
@@ -324,9 +327,13 @@ function PlayerRow({
         <ChevronRightIcon sx={{ color: md3.onSurfaceVariant }} />
       </ButtonBase>
 
-      <Stack direction="row" alignItems="center" gap={1} sx={{ pl: 1.5, pr: 0.5, pb: 1 }}>
+      {/* On a 360px handheld the row is 42px narrower than the canvas it was drawn on, and its
+          six controls overran the card. They keep their 36px height and their order; only the
+          gaps and the chips' side padding tighten (`narrow`). */}
+      <Stack direction="row" alignItems="center" gap={narrow ? 0.5 : 1} sx={{ pl: narrow ? 1.25 : 1.5, pr: 0.5, pb: 1 }}>
         {is18 ? (
           <HolesToggle
+            narrow={narrow}
             value={holes}
             disabled={locked}
             onChange={(h) => {
@@ -347,14 +354,23 @@ function PlayerRow({
           label={`Tee fee ${money(sp.greenFee)}`}
           onClick={() => nav.push({ name: 'seatRate', bookingId: b.id, seat: i })}
           strong={b.playerStates[i]?.fee != null || b.playerStates[i]?.rateId != null}
+          narrow={narrow}
         >
           {money(sp.greenFee)}
         </ControlChip>
-        <ControlChip disabled={locked} label={`Transport ${t.long}`} onClick={() => onSheet('transport')} strong={b.playerStates[i]?.transport != null}>
+        <ControlChip
+          disabled={locked}
+          label={`Transport ${t.long}`}
+          onClick={() => onSheet('transport')}
+          strong={b.playerStates[i]?.transport != null}
+          narrow={narrow}
+        >
           <Icon name={t.icon} size={16} />
           {t.label}
         </ControlChip>
-        <Box sx={{ flex: 1 }} />
+        {/* Pushes what follows to the right edge — a margin rather than a spacer box, so it
+            costs no gap of its own. */}
+        <Box sx={{ ml: 'auto' }} />
         {/* Weston: "you hit add to cart for each player, and then you hit save." The pinned
             Check in & pay stays; this is for a group splitting the bill. */}
         {!locked && (
@@ -363,11 +379,12 @@ function PlayerRow({
             onClick={() => dispatch({ type: 'addSeatToOrder', bookingId: b.id, seat: i })}
             strong={inOrder}
             pressed={inOrder}
+            narrow={narrow}
           >
             <Icon name={inOrder ? 'shopping_cart' : 'add_shopping_cart'} size={16} />
           </ControlChip>
         )}
-        <IconButton aria-label={`More for ${name}`} onClick={() => onSheet('row')}>
+        <IconButton aria-label={`More for ${name}`} onClick={() => onSheet('row')} sx={narrow ? { p: '10px' } : undefined}>
           <MoreVert />
         </IconButton>
       </Stack>
@@ -398,7 +415,18 @@ function PlayerRow({
 }
 
 /** A compact 9 | 18 segmented control, 36dp tall — the row's first control. */
-export function HolesToggle({ value, onChange, disabled }: { value: 9 | 18; onChange: (h: 9 | 18) => void; disabled?: boolean }) {
+export function HolesToggle({
+  value,
+  onChange,
+  disabled,
+  narrow,
+}: {
+  value: 9 | 18;
+  onChange: (h: 9 | 18) => void;
+  disabled?: boolean;
+  /** A 360px handheld: 40px segments instead of 44. */
+  narrow?: boolean;
+}) {
   return (
     <ToggleButtonGroup
       exclusive
@@ -411,8 +439,8 @@ export function HolesToggle({ value, onChange, disabled }: { value: 9 | 18; onCh
         flexShrink: 0,
         '& .MuiToggleButton-root': {
           height: 36,
-          minWidth: 44,
-          px: 1.25,
+          minWidth: narrow ? 40 : 44,
+          px: narrow ? 1 : 1.25,
           borderColor: md3.outline,
           color: md3.onSurface,
           fontWeight: 600,
@@ -437,12 +465,15 @@ function ControlChip({
   disabled,
   strong,
   pressed,
+  narrow,
 }: {
   children: ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
   strong?: boolean;
+  /** A 360px handheld: 8px side padding instead of 10. */
+  narrow?: boolean;
   /**
    * Marks the chip as a toggle that is on. Without it a chip whose only state cue is its fill
    * reads to a screen reader as a plain button — the terminal's equivalent already says so.
@@ -457,7 +488,7 @@ function ControlChip({
       disabled={disabled}
       sx={{
         height: 36,
-        px: 1.25,
+        px: narrow ? 1 : 1.25,
         gap: 0.5,
         flexShrink: 0,
         borderRadius: `${radius.sm}px`,

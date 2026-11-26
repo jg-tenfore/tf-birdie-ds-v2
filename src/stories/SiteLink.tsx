@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 import { elevation, fontFamily, md3, radius } from '../theme/tokens';
+import { ARCHIVED_EDITION, CURRENT_EDITION } from '../pos/edition';
+import type { Edition } from '../pos/edition';
+import type { VenueId } from '../pos/data/venues';
 
 /**
  * Links from Storybook docs to the published prototypes and the reference HTML.
@@ -14,75 +17,100 @@ import { elevation, fontFamily, md3, radius } from '../theme/tokens';
  *    different ports, so no relative path can reach one from the other.
  *
  * They also open in a new tab: a same-frame link would load the whole POS *inside* the docs
- * iframe, which is a poor way to look at a 1366×840 terminal.
+ * iframe, which is a poor way to look at a counter terminal.
  */
 
-/** The published prototypes — three terminal clubs and the phone — and the read-only original. */
+/**
+ * The published surfaces: the **current** Birdie on the tablet and the phone, the original
+ * port under `/archive/`, and the read-only original HTML. Paths and editions mirror
+ * `scripts/build-site.mjs`; the editions come from `CURRENT_EDITION` / `ARCHIVED_EDITION`.
+ */
 export const SURFACES = {
-  prototype: {
+  'current-tablet': {
     dir: 'prototype',
-    venue: 'three-nines',
-    label: 'Three nines',
-    detail: 'Ponds, Valley and Rolling as independent nine-hole tracks — twelve cells a row.',
-  },
-  'prototype-18': {
-    dir: 'prototype-18',
+    app: 'tablet',
+    edition: CURRENT_EDITION.tablet,
     venue: 'eighteen',
-    label: '18-hole course',
-    detail: 'One championship course split into front and back nines — eight cells a row.',
-  },
-  'prototype-9': {
-    dir: 'prototype-9',
-    venue: 'nine',
-    label: 'Single nine',
-    detail: 'One nine-hole course — four cells a row, the sparsest of the three.',
-  },
-  mobile: {
-    dir: 'mobile',
-    venue: 'three-nines',
-    label: 'Mobile · Three nines',
+    label: 'Tablet · current',
     detail:
-      'The phone app at 402×797 — every Mobile Screens story as a live, linked screen, plus a free-running app.',
+      'The counter terminal as the team works from it: Weston Edits plus every nav destination (V1 → V2), at the 18-hole club. Opens on the Clover Mini.',
   },
-  'mobile-18': {
-    dir: 'mobile-18',
+  'current-mobile': {
+    dir: 'mobile',
+    app: 'mobile',
+    edition: CURRENT_EDITION.mobile,
     venue: 'eighteen',
-    label: 'Mobile · 18-hole course',
-    detail: 'The same phone screens against the championship course and its two nines.',
+    label: 'Phone · current',
+    detail:
+      'The phone with Weston’s edits — every phone story as a live, linked screen, plus a free-running app. Opens on the Quest handheld.',
   },
-  'mobile-9': {
-    dir: 'mobile-9',
-    venue: 'nine',
-    label: 'Mobile · Single nine',
-    detail: 'The same phone screens against one nine-hole course.',
+  'archive-tablet': {
+    dir: 'archive/prototype',
+    app: 'tablet',
+    edition: ARCHIVED_EDITION,
+    venue: 'three-nines',
+    label: 'Tablet · archive',
+    detail: 'The original port of the HTML prototype, before Weston’s rounds, at the original three-nines club.',
   },
-  'weston-edits': {
-    dir: 'weston-edits',
-    venue: 'eighteen',
-    label: 'Weston Edits · Tablet',
-    detail: 'The 18-hole terminal with the golf-first reservation flow: click a tee time, adjust the golf in a slide-over, then check in and pay.',
-  },
-  'weston-edits-mobile': {
-    dir: 'weston-edits-mobile',
-    venue: 'eighteen',
-    label: 'Weston Edits · Mobile',
-    detail: 'The same edits on the phone, at the 18-hole club.',
-  },
-  'v1-v2': {
-    dir: 'v1-v2',
-    venue: 'eighteen',
-    label: 'V1 → V2 · Tablet',
-    detail: 'Weston’s edits plus the rest of the application, migrated from v1 a destination at a time.',
+  'archive-mobile': {
+    dir: 'archive/mobile',
+    app: 'mobile',
+    edition: ARCHIVED_EDITION,
+    venue: 'three-nines',
+    label: 'Phone · archive',
+    detail: 'The original phone screens, before Weston’s rounds.',
   },
   reference: {
     dir: 'reference',
+    app: null,
+    edition: null,
     venue: null,
     label: 'The original',
     detail: 'The single-file HTML prototype this port came from. Read-only.',
   },
-} as const;
+} as const satisfies Record<
+  string,
+  {
+    dir: string;
+    app: 'tablet' | 'mobile' | null;
+    edition: Edition | null;
+    venue: VenueId | null;
+    label: string;
+    detail: string;
+  }
+>;
 
-export type SurfaceId = keyof typeof SURFACES;
+export type CanonicalSurfaceId = keyof typeof SURFACES;
+
+/**
+ * The ids this component used before the archive existed, one per published build. Each now
+ * means what its old path redirects to — the current Birdie — at the club the old build was
+ * for, so a deep link written against the three nines (`?summary=ponds`) still finds its
+ * courses. Kept so existing docs pages keep working; new links should use the ids above.
+ */
+export const SURFACE_ALIASES = {
+  prototype: { surface: 'current-tablet', venue: 'three-nines' },
+  'prototype-18': { surface: 'current-tablet', venue: 'eighteen' },
+  'prototype-9': { surface: 'current-tablet', venue: 'nine' },
+  mobile: { surface: 'current-mobile', venue: 'three-nines' },
+  'mobile-18': { surface: 'current-mobile', venue: 'eighteen' },
+  'mobile-9': { surface: 'current-mobile', venue: 'nine' },
+  'weston-edits': { surface: 'current-tablet', venue: null },
+  'weston-edits-mobile': { surface: 'current-mobile', venue: null },
+  'v1-v2': { surface: 'current-tablet', venue: null },
+} as const satisfies Record<string, { surface: CanonicalSurfaceId; venue: VenueId | null }>;
+
+export type SurfaceId = CanonicalSurfaceId | keyof typeof SURFACE_ALIASES;
+
+/** An id, alias or not, as the surface it opens and the club it opens at. */
+function resolveSurface(id: SurfaceId, venue?: VenueId): { surface: CanonicalSurfaceId; venue: VenueId | null } {
+  if (id in SURFACE_ALIASES) {
+    const alias = SURFACE_ALIASES[id as keyof typeof SURFACE_ALIASES];
+    return { surface: alias.surface, venue: venue ?? alias.venue };
+  }
+  const surface = id as CanonicalSurfaceId;
+  return { surface, venue: venue ?? null };
+}
 
 /**
  * Whether Storybook is running from its dev server rather than a built site.
@@ -95,46 +123,34 @@ export type SurfaceId = keyof typeof SURFACES;
 const IS_DEV = Boolean(import.meta.env?.DEV);
 
 /**
- * The prototype dev server's port.
- *
- * Only one venue runs at a time in dev (whichever `VITE_VENUE` was set), so dev links carry
- * `?venue=` to switch — the app honours it regardless of which build it is.
+ * The prototype dev server's origin. One dev server serves both apps (the phone at
+ * `/mobile/`) and every edition and club, chosen by `?edition=` and `?venue=`.
  */
 const DEV_PROTOTYPE_ORIGIN =
   (import.meta.env?.VITE_PROTOTYPE_ORIGIN as string | undefined) ?? 'http://localhost:5173';
 
-function surfaceUrl(id: SurfaceId, path = ''): string {
-  const surface = SURFACES[id];
+function surfaceUrl(id: SurfaceId, path = '', venueOverride?: VenueId): string {
+  const { surface: sid, venue: wanted } = resolveSurface(id, venueOverride);
+  const surface = SURFACES[sid];
+  const venue = wanted ?? surface.venue;
 
-  if (IS_DEV) {
+  if (sid === 'reference') {
     // The reference HTML is only assembled by the site build, so in dev it points at the
     // deployed copy rather than a path that doesn't exist yet.
-    if (id === 'reference') return 'https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/';
-
-    // Weston's edits: the same dev server with `?edition=weston`, at the 18-hole club.
-    if (id === 'weston-edits') {
-      return `${DEV_PROTOTYPE_ORIGIN}/?edition=weston${path || '#/tee-sheet'}${path.includes('?') ? '&' : '?'}venue=eighteen`;
-    }
-    if (id === 'weston-edits-mobile') {
-      return `${DEV_PROTOTYPE_ORIGIN}/mobile/?edition=weston&venue=eighteen${path}`;
-    }
-    // V1 → V2: the same dev server with `?edition=v1v2`.
-    if (id === 'v1-v2') {
-      return `${DEV_PROTOTYPE_ORIGIN}/?edition=v1v2${path || '#/tee-sheet'}${path.includes('?') ? '&' : '?'}venue=eighteen`;
-    }
-
-    // The mobile prototypes are the same dev server on its own path; `?venue=` picks the club.
-    if (id === 'mobile' || id === 'mobile-18' || id === 'mobile-9') {
-      return `${DEV_PROTOTYPE_ORIGIN}/mobile/?venue=${surface.venue}${path}`;
-    }
-
-    // One dev server serves whichever venue it was started with; `?venue=` picks another.
-    const hash = path.startsWith('#') ? path : '';
-    const sep = hash.includes('?') ? '&' : '?';
-    return `${DEV_PROTOTYPE_ORIGIN}/${hash}${hash ? sep : '#/register?'}venue=${surface.venue}`;
+    return IS_DEV ? 'https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/' : `./${surface.dir}/`;
   }
 
-  return `./${surface.dir}/${path}`;
+  if (IS_DEV) {
+    const q = new URLSearchParams();
+    if (surface.edition) q.set('edition', surface.edition);
+    if (venue) q.set('venue', venue);
+    return `${DEV_PROTOTYPE_ORIGIN}${surface.app === 'mobile' ? '/mobile/' : '/'}?${q.toString()}${path}`;
+  }
+
+  // Built: each surface is its own build with its edition and club baked in, so only a
+  // different club needs saying. `./`, not `../` — docs render in `<base>/iframe.html`.
+  const query = venue && venue !== surface.venue ? `?venue=${venue}` : '';
+  return `./${surface.dir}/${query}${path}`;
 }
 
 // ─── Button styling ─────────────────────────────────────────────────────────
@@ -193,6 +209,7 @@ export type LinkButtonTone = 'filled' | 'tonal' | 'outlined';
 export function SiteLink({
   to,
   path = '',
+  venue,
   children,
   tone = 'tonal',
   size = 'sm',
@@ -201,13 +218,15 @@ export function SiteLink({
   to: SurfaceId;
   /** Appended to the surface root — e.g. a deep-link hash like `#/tee-sheet`. */
   path?: string;
+  /** Open at another club than the surface's own. */
+  venue?: VenueId;
   children: ReactNode;
   tone?: LinkButtonTone;
   size?: 'sm' | 'md';
   /** A plain text link, for inline code-style deep links. */
   plain?: boolean;
 }) {
-  const href = surfaceUrl(to, path);
+  const href = surfaceUrl(to, path, venue);
   if (plain) {
     return (
       <a href={href} target="_blank" rel="noreferrer">
@@ -239,46 +258,39 @@ const GROUPS: Array<{
   spec: string;
   body: string;
   /** `path` opens the prototype somewhere other than its landing screen, e.g. `#/register`. */
-  links: Array<{ to: SurfaceId; label: string; path?: string }>;
+  links: Array<{ to: SurfaceId; label: string; path?: string; venue?: VenueId }>;
 }> = [
   {
     emoji: '🖥️',
-    title: 'Tablet prototypes',
-    spec: 'Counter terminal · 1366×840',
-    body: 'The full pro-shop POS: register, tee sheet, check-in and payments, with a persistent order panel.',
+    title: 'Tablet',
+    spec: 'Counter terminal · Clover Mini 1280×800 · 21.5″ display 1920×1080',
+    body: 'The current Birdie: Weston Edits plus every nav destination — register, tee sheet, courts and bays, the restaurant, operations and settings.',
     links: [
-      { to: 'prototype', label: 'Three nines' },
-      { to: 'prototype-18', label: '18-hole course' },
-      { to: 'prototype-9', label: 'Single nine' },
+      { to: 'current-tablet', label: 'Open the tablet' },
+      { to: 'current-tablet', label: 'Three nines', venue: 'three-nines' },
+      { to: 'current-tablet', label: 'Single nine', venue: 'nine' },
     ],
   },
   {
     emoji: '📱',
-    title: 'Mobile prototypes',
-    spec: 'Phone · 402×797 · MD3',
-    body: 'Every Mobile Screens story as a live, linked screen, plus a free-running app from the Tee Sheet.',
+    title: 'Phone',
+    spec: 'Handheld · Quest 360×800 · Clover Flex 360×720 · MD3',
+    body: 'Weston’s edits on the phone: every phone story as a live, linked screen, plus a free-running app from the Tee Sheet.',
     links: [
-      { to: 'mobile', label: 'Three nines' },
-      { to: 'mobile-18', label: '18-hole course' },
-      { to: 'mobile-9', label: 'Single nine' },
+      { to: 'current-mobile', label: 'Open the phone' },
+      { to: 'current-mobile', label: 'Three nines', venue: 'three-nines' },
+      { to: 'current-mobile', label: 'Single nine', venue: 'nine' },
     ],
   },
   {
-    emoji: '✏️',
-    title: 'Weston Edits',
-    spec: '18-hole club · tablet + phone',
-    body: 'Golf first, order second: a tee time opens its reservation, and only Check in & pay sends it to the register.',
+    emoji: '🗄️',
+    title: 'Archive',
+    spec: 'The original port · three nines',
+    body: 'The port of the HTML prototype as it stood before Weston’s rounds — still running, for comparison.',
     links: [
-      { to: 'weston-edits', label: 'Tablet' },
-      { to: 'weston-edits-mobile', label: 'Mobile' },
+      { to: 'archive-tablet', label: 'Tablet' },
+      { to: 'archive-mobile', label: 'Phone' },
     ],
-  },
-  {
-    emoji: '🔁',
-    title: 'V1 → V2',
-    spec: '18-hole club · tablet',
-    body: 'Weston Edits plus every other destination from v1: courts and bays, the restaurant, order lookup and refunds, gift cards, events, inventory, shift and PIN sign-in.',
-    links: [{ to: 'v1-v2', label: 'Tablet', path: '#/register' }],
   },
   {
     emoji: '📄',
@@ -327,9 +339,10 @@ export function PrototypeLaunchpad() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
             {g.links.map((l, i) => (
               <SiteLink
-                key={l.to}
+                key={`${l.to}:${l.venue ?? ''}`}
                 to={l.to}
                 path={l.path}
+                venue={l.venue}
                 size="md"
                 // A prototype's first link is the filled one; only the read-only original is outlined.
                 tone={l.to === 'reference' ? 'outlined' : i === 0 ? 'filled' : 'tonal'}
@@ -347,8 +360,8 @@ export function PrototypeLaunchpad() {
 /**
  * A deep link into a prototype, e.g. `<DeepLink hash="#/tee-sheet?shift=peak">`.
  *
- * Defaults to the three-nines club, which is the one the deep-link documentation's examples
- * are written against.
+ * Defaults to `prototype` — now the current tablet at the three-nines club, which is the one
+ * the deep-link documentation's examples are written against.
  */
 export function DeepLink({
   hash,
@@ -366,19 +379,14 @@ export function DeepLink({
   );
 }
 
-/** The prototypes as a linked list — used by the Introduction and Deep Links pages. */
+/** The prototypes as a linked list — current first, then the archive. */
 export function PrototypeLinks({ mobile = false }: { mobile?: boolean } = {}) {
-  const ids: SurfaceId[] = mobile
-    ? ['mobile', 'mobile-18', 'mobile-9']
-    : ['prototype', 'prototype-18', 'prototype-9'];
+  const ids: CanonicalSurfaceId[] = mobile ? ['current-mobile', 'archive-mobile'] : ['current-tablet', 'archive-tablet'];
   return (
     <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
       {ids.map((id) => (
         <li key={id} style={{ marginBottom: 10 }}>
-          <SiteLink to={id}>
-            {SURFACES[id].label}
-          </SiteLink>{' '}
-          {SURFACES[id].detail}
+          <SiteLink to={id}>{SURFACES[id].label}</SiteLink> {SURFACES[id].detail}
         </li>
       ))}
     </ul>
