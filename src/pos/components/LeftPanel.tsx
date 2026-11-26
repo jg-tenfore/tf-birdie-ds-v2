@@ -966,6 +966,11 @@ function StandardLine({ item, index }: { item: CartItem; index: number }) {
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{item.name}</Typography>
+        {item.lesson && (
+          <Typography data-lesson-instructor={item.lesson.instructorId} sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: 0.25 }}>
+            With {item.lesson.instructor}
+          </Typography>
+        )}
         {item.priceOverride && (
           <Typography data-price-was sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: 0.25 }}>
             {cart.money(item.price)} each · was {cart.money(item.priceOverride.from)}
@@ -1044,7 +1049,7 @@ function ServiceChargeLine({ item, index, amount }: { item: CartItem; index: num
       <Icon name="add_circle" size={16} color={md3.onSurfaceVariant} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{c.percent != null ? `${c.label} ${c.percent}%` : c.label}</Typography>
-        <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{c.appliesTo === 'fnb' ? 'On the food and drink' : 'On the order'} · untaxed</Typography>
+        <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{c.appliesTo === 'fnb' ? 'On the food and drink' : 'On the order'} · {state.clubPricing.taxServiceCharges ? 'taxed' : 'untaxed'}</Typography>
       </Box>
       <Typography sx={{ fontSize: 12, fontWeight: 700, color: md3.primary }}>{cart.money(amount)}</Typography>
       {!state.splitTender && (

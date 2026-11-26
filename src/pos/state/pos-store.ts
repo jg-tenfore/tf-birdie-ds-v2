@@ -709,7 +709,7 @@ function paidOrderNumber(state: PosState): string {
  * where nothing could pay for it. Tapping an item after a payment starts the next order instead,
  * which is what the operator is doing.
  */
-const ADDS_TO_ORDER = new Set(['addItem', 'addRawItem', 'addCombo', 'addGiftCardLine', 'payAccount', 'billEvent']);
+const ADDS_TO_ORDER = new Set(['addItem', 'addRawItem', 'addCombo', 'addGiftCardLine', 'payAccount', 'billEvent', 'addLesson']);
 
 export function reducer(state: PosState, action: Action): PosState {
   const addsToRegister =

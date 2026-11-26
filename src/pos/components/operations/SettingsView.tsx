@@ -647,7 +647,9 @@ function BuckBirdieSection() {
 /**
  * Buck › Taxes & Fees. Buck names a tax for each kind of line, and a stacking Tax Rate 2. In V1 → V2 the
  * register charges them per line (Nov 26, `logic/pricing.ts`); the default type's rate is the sales tax
- * this terminal charges. The service charges are added too, each as its own line.
+ * this terminal charges. A tee time from the sheet is taxed the same way. Food has a rate of its own,
+ * Same as sales tax until Buck sets one. The service charges are added too, each as its own line, and
+ * Buck's **Tax service charges** switch says whether they are taxed.
  */
 function BuckTaxesSection() {
   const { state } = usePos();
@@ -657,22 +659,44 @@ function BuckTaxesSection() {
   const typeLabel = (id: string | null) => {
     if (!id) return 'No second tax';
     const t = club.taxTypes.find((x) => x.id === id);
-    return t ? taxTypeLabel({ name: t.name, rate: t.isDefault ? rate : t.rate }) : id;
+    return t ? taxTypeLabel({ name: t.name, rate: t.isDefault || t.sameAsDefault ? rate : t.rate }) : id;
   };
+  const food = club.taxTypes.find((t) => t.id === 'food');
   return (
     <BuckFrame title="Taxes & Fees" section="taxes" buck="Taxes & Fees" intro="Tax rates and the fees applied to bookings and orders.">
-      <BuckGroup title="Tax Rates" buck="Taxes & Fees" hint="Which configured tax applies to each kind of line item. A tee time from the sheet keeps the tax it was booked with.">
+      <BuckGroup title="Tax Rates" buck="Taxes & Fees" hint="Which configured tax applies to each kind of line item. A tee time from the sheet is taxed the same way: its green fees and its carts.">
         {TAX_RATE_FIELDS.map((f) => (
           <Box key={f.label} sx={{ display: 'contents' }}>
             <ReadRow label={f.label} value={typeLabel(club.fields[f.field].tax)} note={f.appliesTo} followed={followed} />
             <ReadRow label={`${f.label} 2`} value={typeLabel(club.fields[f.field].tax2)} followed={followed} />
           </Box>
         ))}
+        {food && (
+          <Box data-food-tax-rate sx={{ display: 'contents' }}>
+            <ReadRow
+              label="Food Tax Rate"
+              value={food.sameAsDefault ? `Same as sales tax (${(rate * 100).toFixed(2)}%)` : `${(food.rate * 100).toFixed(2)}%`}
+              note="The Food Tax type's own rate, for clubs where prepared food is taxed differently"
+              followed={followed}
+            />
+          </Box>
+        )}
       </BuckGroup>
-      <BuckGroup title="Service Charges" buck="Taxes & Fees" hint="Added as their own line on the order, the checkout and the receipt. Untaxed.">
+      <BuckGroup
+        title="Service Charges"
+        buck="Taxes & Fees"
+        hint={
+          club.taxServiceCharges
+            ? 'Added as their own line on the order, the checkout and the receipt, and taxed: food and drink at the Food Tax rate, the rest at the sales tax.'
+            : 'Added as their own line on the order, the checkout and the receipt. Untaxed, because Tax service charges is off.'
+        }
+      >
         {SERVICE_CHARGES.map((c) => (
           <ReadRow key={c.label} label={c.label} value={`${club.serviceCharges[c.id]}%`} note={c.appliesTo} followed={followed} />
         ))}
+        <Box data-tax-service-charges={club.taxServiceCharges ? 'on' : 'off'} sx={{ display: 'contents' }}>
+          <ReadRow label="Tax service charges" value={<OnOff on={club.taxServiceCharges} />} note="Each club follows its state’s rule" followed={followed} />
+        </Box>
       </BuckGroup>
     </BuckFrame>
   );
@@ -708,10 +732,15 @@ function BuckPaymentsSection() {
           Also on in Buck, not tenders at this counter: {BUCK_ONLY_PAYMENT_TYPES.join(', ')}.
         </Typography>
       </BuckGroup>
-      <BuckGroup title="Other Settings" buck="Payments">
-        {PAYMENT_OPTIONS.map((o) => (
-          <ReadRow key={o.label} label={o.label} value={<OnOff on={o.on} />} followed={o.followed} />
-        ))}
+      <BuckGroup title="Other Settings" buck="Payments" hint="The two manager switches decide when the counter asks for a manager’s PIN: to refund, and to clear an order.">
+        {PAYMENT_OPTIONS.map((o) => {
+          const on = o.managerSwitch ? state.managerSwitches[o.managerSwitch] : o.on;
+          return (
+            <Box key={o.label} data-payment-option={o.managerSwitch} sx={{ display: 'contents' }}>
+              <ReadRow label={o.label} value={<OnOff on={on} />} followed={o.managerSwitch ? state.buckCheckout : o.followed} />
+            </Box>
+          );
+        })}
       </BuckGroup>
     </BuckFrame>
   );

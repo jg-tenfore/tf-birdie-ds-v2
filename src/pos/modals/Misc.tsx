@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { md3, payBadges } from '../../theme/tokens';
 import { formatTimeLabel } from '../data/courses';
+import { staffById } from '../data/staff';
 import * as cart from '../logic/cart';
+import { managerNeededFor } from '../state/checkout';
 import { usePos } from '../state/PosProvider';
+import { ManagerPin } from './DiscountDialogs';
 import { MemberDot } from '../components/primitives';
 import {
   Callout,
@@ -98,8 +101,11 @@ export function ConfirmDialog({
   onConfirm: string;
 }) {
   const { state, dispatch, toast } = usePos();
+  // Clearing an order is Buck's "order cancel": when the club's switch says so, a manager approves it.
+  const needsManager = onConfirm === 'clearOrder' && managerNeededFor(state, 'cancel');
+  const [asking, setAsking] = useState(false);
 
-  const run = () => {
+  const run = (approvedBy?: string) => {
     const [kind, arg] = onConfirm.split(':');
 
     if (kind === 'voidTeeTime') {
@@ -128,7 +134,8 @@ export function ConfirmDialog({
       toast(`${formatTimeLabel(timeMin)} cleared · ${ids.length} removed`);
     } else if (kind === 'clearOrder') {
       dispatch({ type: 'clearOrder' });
-      toast('Order cleared');
+      const who = approvedBy ? staffById(approvedBy, state.staffRoster)?.short : null;
+      toast(who ? `Order cleared · approved by ${who}` : 'Order cleared');
     } else if (kind === 'removeResourceBooking' && arg) {
       // A court or bay booking (V1 → V2). Its line comes off the order with it.
       dispatch({ type: 'removeResourceBooking', id: arg });
@@ -147,13 +154,19 @@ export function ConfirmDialog({
       actions={
         <>
           <OutlineButton onClick={() => dispatch({ type: 'closeModal' })}>Cancel</OutlineButton>
-          <FilledButton destructive onClick={run}>
+          <FilledButton destructive disabled={asking} onClick={() => (needsManager ? setAsking(true) : run())}>
             {confirmLabel}
           </FilledButton>
         </>
       }
     >
       <Typography sx={{ fontSize: 13, lineHeight: 1.55, color: md3.onSurfaceVariant }}>{body}</Typography>
+      {needsManager && !asking && (
+        <Typography data-needs-manager sx={{ fontSize: 12, color: md3.outline, mt: 1 }}>
+          This club asks a manager to approve cancelling an order.
+        </Typography>
+      )}
+      {asking && <ManagerPin what="cancelling this order" onApproved={(id) => run(id)} onCancel={() => setAsking(false)} />}
     </ModalFrame>
   );
 }

@@ -65,16 +65,21 @@ export const BuckBirdieSection: Story = {
 };
 
 /**
- * **Taxes & Fees.** Buck names a tax for each kind of line; Birdie charges one sales-tax rate, so each
- * row reads the rate checkout charges. Service charges are Buck's and not added at the counter yet.
+ * **Taxes & Fees.** Buck names a tax for each kind of line, and the register charges them per line. Open
+ * food takes the Food Tax type, whose own rate is Same as sales tax at this club (Nov 26 decision), and
+ * Buck's **Tax service charges** switch is off, so the service charges are added untaxed.
  */
 export const TaxesAndFees: Story = {
   render: () => <Screen edition={CURRENT_EDITION.tablet} initialState={at({ settingsSection: 'taxes' })} />,
   play: async ({ canvasElement }) => {
     const p = panel(canvasElement, 'taxes');
-    for (const label of ['General Tee Fee Tax Rate', 'Transportation Tax Rate', 'Open Food Tax Rate', 'Open Liquor Tax Rate']) {
+    for (const label of ['General Tee Fee Tax Rate', 'Transportation Tax Rate', 'Open Liquor Tax Rate']) {
       await expect(row(p, label).textContent).toContain('Sales Tax (8.00%)');
     }
+    await expect(row(p, 'Open Food Tax Rate').textContent).toContain('Food Tax (8.00%)');
+    await expect(row(p, 'Food Tax Rate').textContent).toContain('Same as sales tax (8.00%)');
+    await expect(row(p, 'Tax service charges').textContent).toContain('Off');
+    await expect(row(p, 'Tax service charges').textContent).not.toContain('Shown only');
     // Charged per line since Nov 26: beer, wine and liquor carry Buck's Tax Rate 2, and the service
     // charges are added — so neither reads "Shown only" any more.
     await expect(row(p, 'Open Liquor Tax Rate 2').textContent).toContain('Alcohol Tax (6.70%)');
@@ -90,7 +95,10 @@ export const TaxesAndFees: Story = {
 export const ABuckTaxChange: Story = {
   render: () => <Screen edition={CURRENT_EDITION.tablet} initialState={at({ settingsSection: 'taxes', ...fromBuck({ taxRate: 0.0825 }) })} />,
   play: async ({ canvasElement }) => {
-    await expect(row(panel(canvasElement, 'taxes'), 'Open Food Tax Rate').textContent).toContain('Sales Tax (8.25%)');
+    const p = panel(canvasElement, 'taxes');
+    await expect(row(p, 'General Tee Fee Tax Rate').textContent).toContain('Sales Tax (8.25%)');
+    // Food follows it, being Same as sales tax.
+    await expect(row(p, 'Food Tax Rate').textContent).toContain('Same as sales tax (8.25%)');
   },
 };
 
@@ -122,6 +130,37 @@ export const PaymentsAreTenders: Story = {
     await expect(p.querySelector('[data-payment-type="house"]')!.textContent).toContain('Customer Charge');
     await expect(p.querySelector('[data-payment-type="check"]')!.textContent).toContain('Off');
     await expect(p.querySelector('[data-payment-type="cash"]')!.textContent).toContain('On');
+  },
+};
+
+/**
+ * **The manager switches.** Buck's "Allow refunds without manager pin" and "Order Cancels Require
+ * Manager" decide when the counter asks for a manager's PIN (Nov 26 decision). This club has them set
+ * so nobody is asked, as in October; neither says Shown only, because the counter follows them.
+ */
+export const TheManagerSwitches: Story = {
+  render: () => <Screen edition={CURRENT_EDITION.tablet} initialState={at({ settingsSection: 'payments' })} />,
+  play: async ({ canvasElement }) => {
+    const p = panel(canvasElement, 'payments');
+    await expect(row(p, 'Allow refunds without manager pin').textContent).toContain('On');
+    await expect(row(p, 'Order Cancels Require Manager').textContent).toContain('Off');
+    await expect(row(p, 'Allow refunds without manager pin').textContent).not.toContain('Shown only');
+    await expect(row(p, 'Tee Fee Edits Require Manager').textContent).toContain('Shown only');
+  },
+};
+
+/** **…as another club sets them.** Pushed the other way from Buck, the rows read so — and the counter asks. */
+export const TheManagerSwitchesTheOtherWay: Story = {
+  render: () => (
+    <Screen
+      edition={CURRENT_EDITION.tablet}
+      initialState={at({ settingsSection: 'payments', managerSwitches: { refundsWithoutManagerPin: false, orderCancelsRequireManager: true } })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const p = panel(canvasElement, 'payments');
+    await expect(row(p, 'Allow refunds without manager pin').textContent).toContain('Off');
+    await expect(row(p, 'Order Cancels Require Manager').textContent).toContain('On');
   },
 };
 

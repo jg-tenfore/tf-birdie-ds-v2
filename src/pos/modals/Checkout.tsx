@@ -255,7 +255,7 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
               </Box>
             ))}
             {totals.taxes ? (
-              // Buck's tax per line, by type: Sales Tax, Alcohol Tax, a tee time's reservation tax.
+              // Buck's tax per line, by type: Sales Tax, Alcohol Tax, Food Tax when it has a rate of its own.
               totals.taxes.length === 0 ? (
                 <Row label={totals.exempt ? 'Tax (exempt)' : 'Tax'} value={cart.money(0)} />
               ) : (

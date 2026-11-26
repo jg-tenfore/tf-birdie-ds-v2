@@ -4,6 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { money, orderTotals } from '../../../pos/logic/cart';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, loadedOrder, partlyPaidNamed } from '../mobile-scenarios';
+import { buckPricing } from '../../../pos/logic/pricing';
 
 /**
  * Prototypes / Mobile / Pro Shop / Register golf summary (Weston Edits, section 7)
@@ -144,8 +145,9 @@ export const BeforeWestonEdits: Story = {
 export const RetailIsTaxed: Story = {
   render: GolfSummary.render,
   play: async ({ canvasElement }) => {
-    const t = orderTotals(loadedOrder(adjustedParty(), { extras: true }).cart ?? []);
-    await expect(t.salesTax).toBeGreaterThan(0);
+    // The current edition prices by Buck (Nov 26): the golf and the retail alike, each by its kind.
+    const t = orderTotals(loadedOrder(adjustedParty(), { extras: true }).cart ?? [], buckPricing());
+    await expect(t.tax).toBeGreaterThan(0);
     const c = within(canvasElement);
     await expect((await c.findByText('Tax')).nextElementSibling?.textContent).toBe(money(t.tax));
     await expect(c.getByText('Total').nextElementSibling?.textContent).toBe(money(t.total));

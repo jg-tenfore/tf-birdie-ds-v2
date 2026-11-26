@@ -4,6 +4,7 @@ import {
   LESSON_CREDITS,
   LESSON_LINE_MINUTES,
   PUNCH_UNIT,
+  lessonInstructor,
   RAIN_CHECK_RULES,
   buckPunchCardStatus,
   creditBooksOf,
@@ -37,7 +38,8 @@ import { payableTotal, playerBreakdown } from './cart';
  *   90-minute bay on a 60-minute card takes two.
  * - **Credit book** — money, from a league's or an event's book, only for what the book applies to
  *   (Buck's Merchandise / Food & Beverage / Tee Fees / Alcohol switches). A book in the red pays nothing.
- * - **Lesson credit** — one lesson of the credit's length per credit.
+ * - **Lesson credit** — one lesson of the credit's length per credit, with the pack's own instructor
+ *   (Nov 26: the lesson line carries the instructor picked when it was rung up).
  *
  * Every amount here is a line's **total with its tax** (`lineTotals`), so a credit that pays a tee fee
  * pays the tee fee's tax with it, and what is left due is exactly the other lines.
@@ -100,7 +102,8 @@ export interface CreditOption {
     | { kind: 'raincheck' }
     | { kind: 'creditbook'; appliesTo: CreditBook['appliesTo'] }
     | { kind: 'punch'; item: BuckPunchItem }
-    | { kind: 'lesson'; minutes: number };
+    /** `instructorId` null: any instructor's lesson (Buck's academy-wide pack). */
+    | { kind: 'lesson'; minutes: number; instructorId: string | null; instructor: string };
 }
 
 /** How a balance reads: `$35.83`, `6 punches`, `3 credits`. */
@@ -221,7 +224,7 @@ export function creditOptions(kind: CreditKind, customer: Customer, ledger: Cred
           balance: left,
           usable: !expired && left > 0,
           reason: expired ? `Expired ${l.expires}` : left <= 0 ? 'Every credit used' : undefined,
-          rule: { kind: 'lesson' as const, minutes: l.minutes },
+          rule: { kind: 'lesson' as const, minutes: l.minutes, instructorId: l.instructorId, instructor: lessonInstructor(l.instructorId)?.name ?? l.instructor },
         };
       });
   }
@@ -324,6 +327,15 @@ export function creditCoverage(option: CreditOption, cart: CartItem[], ctx: Cove
         }
         if (minutes !== rule.minutes) {
           out.cannot.push({ index, name: line.name, reason: `a ${minutes}-minute lesson, not ${rule.minutes}` });
+          continue;
+        }
+        // Nov 26 decision: a pack pays only its own instructor's lessons.
+        if (rule.instructorId && line.lesson?.instructorId !== rule.instructorId) {
+          out.cannot.push({
+            index,
+            name: line.name,
+            reason: line.lesson ? `${line.lesson.instructor}’s lesson, not ${rule.instructor}’s` : `no instructor on the lesson — this pack is ${rule.instructor}’s`,
+          });
           continue;
         }
         const n = Math.min(line.qty, unitsLeft);

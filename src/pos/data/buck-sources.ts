@@ -46,21 +46,21 @@ export const BUCK_SOURCES: BuckSource[] = [
   },
   {
     birdieArea: 'Settings',
-    shows: 'The tax each kind of line is charged, and service charges',
+    shows: 'The tax each kind of line is charged, Food Tax’s own rate, service charges, and whether they are taxed',
     buckScreen: 'Buck › Course Settings › Taxes & Fees',
     buckFile: COURSE_SETTINGS,
     birdieFile: 'src/pos/data/buck-club.ts',
     status: 'aligned',
-    note: 'Since Nov 26 the register charges Buck’s tax per line (tee fee, transportation, food, liquor, each with its Tax Rate 2) and adds the F&B, Event and card service charges as their own lines. A tee time from the sheet keeps the tax its reservation was booked with rather than being recomputed.',
+    note: 'Since Nov 26 the register charges Buck’s tax per line (tee fee, transportation, food, liquor, each with its Tax Rate 2) and adds the F&B, Event and card service charges as their own lines. One tax model everywhere: a tee time from the sheet is taxed by its green fees and carts, not its flat tax per seat. Food Tax has its own rate (Same as sales tax here), and Tax service charges is a club switch, off here.',
   },
   {
     birdieArea: 'Settings',
-    shows: 'Which tenders checkout offers, as Buck payment types; payment options',
+    shows: 'Which tenders checkout offers, as Buck payment types; payment options, including the two manager switches',
     buckScreen: 'Buck › Course Settings › Payments',
     buckFile: COURSE_SETTINGS,
     birdieFile: 'src/pos/data/buck-club.ts',
     status: 'aligned',
-    note: 'Every checkout tender maps to one Buck payment type, and the on/off switch is the one checkout reads.',
+    note: 'Every checkout tender maps to one Buck payment type, and the on/off switch is the one checkout reads. Since Nov 26 the counter follows “Allow refunds without manager pin” and “Order Cancels Require Manager”: a refund or clearing an order asks for a manager’s PIN when the club sets them so. This club asks nobody, as in October.',
   },
   {
     birdieArea: 'Settings',
@@ -192,12 +192,12 @@ export const BUCK_SOURCES: BuckSource[] = [
   },
   {
     birdieArea: 'Pro Shop',
-    shows: 'Lesson credits: a pack’s credits left, one lesson of its length per credit, a year to use them',
+    shows: 'Lesson credits: a pack’s credits left, one lesson of its length with its own instructor per credit, a year to use them',
     buckScreen: 'Buck › Lessons › Lesson Packages (golfer credits)',
     buckFile: 'src/components/application/nov-17-2026/lesson-packages/data.ts',
     birdieFile: 'src/pos/data/credits.ts',
-    status: 'partial',
-    note: 'A checkout tender (Nov 26) for the register’s 30- and 60-minute lesson lines. The register does not know which instructor a lesson is with, so a credit pays any instructor’s lesson of its length.',
+    status: 'aligned',
+    note: 'A checkout tender (Nov 26) for the register’s 30- and 60-minute lesson lines. A lesson is rung up with its instructor, and a pack pays only its own instructor’s lessons, as Buck’s packs are bought per instructor (an academy-wide pack would pay any).',
   },
   {
     birdieArea: 'Customer Search',
@@ -206,7 +206,7 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckFile: CREDITS,
     birdieFile: 'src/pos/data/rain-checks.ts',
     status: 'aligned',
-    note: 'A checkout tender since Nov 26, by Buck’s two rules: tee times only, and 365 days from issue. The register’s Rain check now cuts one — keyed, never prorated, as Buck’s New rain check takes an amount — onto the seat’s customer.',
+    note: 'A checkout tender since Nov 26, by Buck’s two rules: tee times only, and 365 days from issue. The register’s Rain check now cuts one — keyed, never prorated, as Buck’s New rain check takes an amount — onto the seat’s customer. A seat with no record asks staff to find or add the guest first, and is linked to them.',
   },
 
   // ─── Bays and members ─────────────────────────────────────────────────────

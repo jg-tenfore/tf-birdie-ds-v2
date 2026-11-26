@@ -5,7 +5,8 @@ import type { AppliedDiscount } from '../logic/discounts';
 import { productSettings } from '../data/products';
 import { demoNow } from '../data/bookings';
 import { TIMES, toDateStr } from '../data/courses';
-import { RAIN_CHECK_RULES, mdyAfter } from '../data/credits';
+import { MANAGER_SWITCHES, type ManagerSwitches } from '../data/buck-club';
+import { RAIN_CHECK_RULES, lessonInstructor, mdyAfter } from '../data/credits';
 import { bookingName } from '../data/customers';
 import type { RainCheck } from '../data/rain-checks';
 import { liveCustomer } from '../data/roster';
@@ -14,6 +15,9 @@ import type { CartItem } from '../types';
 import type { VenueId } from '../data/venues';
 import type { CartServiceCharge } from '../logic/pricing';
 import type { PosState } from './pos-store';
+import { guestsLinked, withNewCustomer } from './new-customer';
+import { canManageStaff } from './settings';
+import { seatRecord } from '../logic/seat-pricing';
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -26,6 +30,8 @@ export interface CheckoutState {
   buckCheckout: boolean;
   /** Buck's club pricing — tax types, per-kind rates, service charges. Set in Buck; a story can push other values. */
   clubPricing: ClubPricing;
+  /** Buck › Payments' two manager switches: when a refund or an order cancel asks for a manager's PIN. Set in Buck. */
+  managerSwitches: ManagerSwitches;
   /** A split check in progress — each part paid on its own tender. */
   checkSplit: CheckSplit | null;
   /** Orders sent to another course's register, and arrived from one. */
@@ -63,6 +69,7 @@ export interface TransferredOrder {
 export const checkoutDefaults = (): CheckoutState => ({
   buckCheckout: false,
   clubPricing: clubPricingDefaults(),
+  managerSwitches: { ...MANAGER_SWITCHES },
   checkSplit: null,
   transferredOrders: [],
   checkoutSeq: { rainCheck: 0, transfer: 0 },
@@ -104,6 +111,22 @@ export function pricingOf(
   };
 }
 
+/**
+ * Whether this step needs a manager's PIN at the counter (Nov 26 decision: follow Buck's switches).
+ *
+ * - **refund** — unless Buck's "Allow refunds without manager pin" is on.
+ * - **cancel** — clearing an order, when Buck's "Order Cancels Require Manager" is on.
+ *
+ * A manager signed in approves by being signed in. The archived edition never asks: it predates both.
+ */
+export function managerNeededFor(
+  s: Pick<PosState, 'buckCheckout' | 'managerSwitches' | 'staffRoster' | 'operatorId'>,
+  step: 'refund' | 'cancel',
+): boolean {
+  if (!s.buckCheckout || canManageStaff(s)) return false;
+  return step === 'refund' ? !s.managerSwitches.refundsWithoutManagerPin : s.managerSwitches.orderCancelsRequireManager;
+}
+
 // ─── Dialogs ────────────────────────────────────────────────────────────────
 
 export type CheckoutModal =
@@ -120,9 +143,11 @@ export type CheckoutModal =
   /** A paid order's receipt, to print again. */
   | { kind: 'receipt'; orderNumber?: string }
   /** Move the order to another course's register. */
-  | { kind: 'transferOrder' };
+  | { kind: 'transferOrder' }
+  /** Which instructor a lesson being rung up is with (Nov 26). */
+  | { kind: 'pickInstructor'; name: string; price: number };
 
-const MODAL_KINDS = new Set<string>(['tenderCredit', 'lineDiscount', 'orderDiscount', 'splitCheck', 'serviceCharge', 'receipt', 'transferOrder']);
+const MODAL_KINDS = new Set<string>(['tenderCredit', 'lineDiscount', 'orderDiscount', 'splitCheck', 'serviceCharge', 'receipt', 'transferOrder', 'pickInstructor']);
 
 export const isCheckoutModal = (m: { kind: string }): m is CheckoutModal => MODAL_KINDS.has(m.kind);
 
@@ -147,9 +172,13 @@ export type CheckoutAction =
   | { type: 'receiveTransfer'; id: string }
   /**
    * A rain check cut at the register for one seat of a booking (Buck's Credits rain check): the amount
-   * keyed, Buck's 365-day expiry, onto the customer's record — spendable at checkout.
+   * keyed, Buck's 365-day expiry, onto a customer's record — spendable at checkout. The seat's own
+   * record, one found for it, or one made there and then (`newCustomer`, name and phone); a seat
+   * without a record is linked to the customer.
    */
-  | { type: 'issueRainCheck'; bookingId: string; seat: number; customerId: string; amount: number };
+  | { type: 'issueRainCheck'; bookingId: string; seat: number; amount: number; customerId?: string; newCustomer?: { firstName: string; lastName: string; phone: string } }
+  /** A lesson rung up with its instructor (Nov 26). The same lesson with the same instructor adds to its line. */
+  | { type: 'addLesson'; name: string; price: number; instructorId: string };
 
 const ACTION_TYPES = new Set<string>([
   'applyLineDiscount',
@@ -161,6 +190,7 @@ const ACTION_TYPES = new Set<string>([
   'transferOrder',
   'receiveTransfer',
   'issueRainCheck',
+  'addLesson',
 ]);
 
 export const isCheckoutAction = (a: { type: string }): a is CheckoutAction => ACTION_TYPES.has(a.type);
@@ -172,6 +202,14 @@ export function checkoutReducer(state: PosState, action: CheckoutAction): PosSta
   switch (action.type) {
     case 'issueRainCheck':
       return issueRainCheck(state, action);
+    case 'addLesson': {
+      const who = lessonInstructor(action.instructorId);
+      if (!who) return state;
+      const at = state.cart.findIndex((l) => l.name === action.name && l.lesson?.instructorId === who.id && !l.lineDiscount && !l.priceOverride);
+      if (at >= 0) return { ...state, cart: state.cart.map((l, i) => (i === at ? { ...l, qty: l.qty + 1 } : l)) };
+      const line: CartItem = { name: action.name, price: action.price, qty: 1, lesson: { instructorId: who.id, instructor: who.name } };
+      return { ...state, cart: [...state.cart, line] };
+    }
     case 'receiveTransfer': {
       const t = state.transferredOrders.find((x) => x.id === action.id);
       if (!t || t.receivedAt || t.toVenue !== state.venueId || (state.cart.length > 0 && !state.lastPayment)) return state;
@@ -265,12 +303,23 @@ export function checkoutReducer(state: PosState, action: CheckoutAction): PosSta
 
 const clock = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-/** Cut a rain check for one seat — Buck's shape, its expiry from Main Info, onto the customer's record. */
-function issueRainCheck(state: PosState, a: Extract<CheckoutAction, { type: 'issueRainCheck' }>): PosState {
-  const b = state.bookings.find((x) => x.id === a.bookingId);
-  const customer = liveCustomer(a.customerId, state.customerEdits);
+/**
+ * Cut a rain check for one seat — Buck's shape, its expiry from Main Info, onto the customer's record.
+ *
+ * Nov 26 decision: a rain check always belongs to someone. A seat with no record takes the customer
+ * staff found for it, or the one they added (name and phone), and is linked to them, so the next visit
+ * finds the credit on the seat as well as on the record.
+ */
+function issueRainCheck(state0: PosState, a: Extract<CheckoutAction, { type: 'issueRainCheck' }>): PosState {
   const amount = cents(a.amount);
-  if (!b || !customer || !(amount > 0)) return state;
+  const b = state0.bookings.find((x) => x.id === a.bookingId);
+  if (!b || !(amount > 0)) return state0;
+  const fresh = a.newCustomer && a.newCustomer.firstName.trim() && a.newCustomer.phone.trim() ? withNewCustomer(state0, { ...a.newCustomer, firstName: a.newCustomer.firstName.trim(), lastName: a.newCustomer.lastName.trim() }) : null;
+  const state = fresh?.state ?? state0;
+  const customer = fresh?.customer ?? liveCustomer(a.customerId, state.customerEdits);
+  if (!customer) return state0;
+  // The seat's own record wins; otherwise the seat is linked to whoever the rain check is for.
+  const link = !seatRecord(b, a.seat, state.customerEdits);
   const now = demoNow();
   const n = state.checkoutSeq.rainCheck + 1;
   const id = String(61000 + n);
@@ -307,6 +356,7 @@ function issueRainCheck(state: PosState, a: Extract<CheckoutAction, { type: 'iss
       x.id === b.id
         ? {
             ...x,
+            ...(link && { guests: guestsLinked(x.guests, a.seat, customer.id, bookingName(customer), customer.phone) }),
             pay: 'rain_chk',
             financialActions: [
               ...(x.financialActions ?? []),

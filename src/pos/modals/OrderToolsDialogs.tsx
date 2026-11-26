@@ -179,7 +179,8 @@ export function SplitCheckDialog({ m }: { m: Extract<CheckoutModal, { kind: 'spl
 
 /**
  * A service charge added by hand — Buck's F&B or Event Service Charge at Buck's rate, or one typed in
- * (a percentage or a flat amount, with a name). It goes on the order as its own line, untaxed.
+ * (a percentage or a flat amount, with a name). It goes on the order as its own line — untaxed, unless the
+ * club turns on Buck's Tax service charges.
  */
 export function ServiceChargeDialog({ m }: { m: Extract<CheckoutModal, { kind: 'serviceCharge' }> }) {
   const { state, dispatch, toast } = usePos();
@@ -195,7 +196,7 @@ export function ServiceChargeDialog({ m }: { m: Extract<CheckoutModal, { kind: '
   };
   const buck = SERVICE_CHARGES.filter((c) => c.id !== 'card' && club[c.id] > 0);
   return (
-    <ModalFrame width={520} title="Add a service charge" subtitle="Its own line on the order, untaxed" icon="add_circle" onClose={back} actions={<OutlineButton onClick={back}>Back to checkout</OutlineButton>}>
+    <ModalFrame width={520} title="Add a service charge" subtitle={state.clubPricing.taxServiceCharges ? 'Its own line on the order, taxed as the club sets' : 'Its own line on the order, untaxed'} icon="add_circle" onClose={back} actions={<OutlineButton onClick={back}>Back to checkout</OutlineButton>}>
       <SectionLabel color={md3.outline} sx={{ mb: 0.75 }}>
         Buck’s service charges
       </SectionLabel>

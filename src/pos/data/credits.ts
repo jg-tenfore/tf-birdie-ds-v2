@@ -220,15 +220,36 @@ export function buckPunchCardStatus(card: BuckPunchCard, today: Date = DEMO_TODA
 
 // ─── Lesson credits ─────────────────────────────────────────────────────────
 
+/** A teaching pro the counter rings lessons up for. Invented; Buck's Academy roster has the same shape. */
+export interface LessonInstructor {
+  id: string;
+  name: string;
+  title: string;
+}
+
+/** This club's instructors, in the order the lesson picker lists them. */
+export const LESSON_INSTRUCTORS: LessonInstructor[] = [
+  { id: 'jordan-pike', name: 'Jordan Pike', title: 'Head Pro' },
+  { id: 'sam-ortega', name: 'Sam Ortega', title: 'Teaching Pro' },
+  { id: 'casey-whitfield', name: 'Casey Whitfield', title: 'Assistant Pro' },
+];
+
+export const lessonInstructor = (id: string | null | undefined): LessonInstructor | undefined => LESSON_INSTRUCTORS.find((i) => i.id === id);
+
 /**
  * A pack of lesson credits on a golfer — Buck's `CreditBalance` (`nov-17-2026/lesson-packages/data.ts`):
  * "5 × 45-Minute Private", bought for a price per lesson, good for a year after purchase. One credit
- * pays one lesson of its length. Instructors and holders are invented.
+ * pays one lesson of its length **with its own instructor** (Nov 26 decision: Buck's packs are bought
+ * per instructor). `instructorId: null` is Buck's academy-wide pack, good with any instructor; none of
+ * this club's are. Instructors and holders are invented.
  */
 export interface LessonCredit {
   id: string;
   /** "5 × 30-Minute Tune-Up". */
   label: string;
+  /** Whose lessons it pays for (`LESSON_INSTRUCTORS`), or `null` for any instructor's. */
+  instructorId: string | null;
+  /** How the pack names its instructor: "Jordan Pike · Head Pro". */
   instructor: string;
   /** The length a credit pays for — the register's lesson lines are by length. */
   minutes: number;
@@ -243,8 +264,8 @@ export interface LessonCredit {
 
 export const LESSON_CREDITS: Record<string, LessonCredit[]> = {
   '458347': [
-    { id: 'bal-jp-5', label: '5 × 30-Minute Tune-Up', instructor: 'Jordan Pike · Head Pro', minutes: 30, creditsTotal: 5, creditsRemaining: 3, perLesson: 50, purchased: '02/10/2026', expires: '02/10/2027' },
-    { id: 'bal-so-3', label: '3 × 60-Minute Private', instructor: 'Sam Ortega', minutes: 60, creditsTotal: 3, creditsRemaining: 1, perLesson: 88, purchased: '06/12/2025', expires: '06/12/2026' },
+    { id: 'bal-jp-5', label: '5 × 30-Minute Tune-Up', instructorId: 'jordan-pike', instructor: 'Jordan Pike · Head Pro', minutes: 30, creditsTotal: 5, creditsRemaining: 3, perLesson: 50, purchased: '02/10/2026', expires: '02/10/2027' },
+    { id: 'bal-so-3', label: '3 × 60-Minute Private', instructorId: 'sam-ortega', instructor: 'Sam Ortega · Teaching Pro', minutes: 60, creditsTotal: 3, creditsRemaining: 1, perLesson: 88, purchased: '06/12/2025', expires: '06/12/2026' },
   ],
 };
 

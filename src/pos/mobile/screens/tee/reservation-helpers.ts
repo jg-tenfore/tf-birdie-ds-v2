@@ -1,5 +1,6 @@
 import { buildTeeTimeCart } from '../../../logic/cart';
 import { maxPlayers, playerHoles, playerTransport } from '../../../logic/reservation';
+import { pricingOf } from '../../../state/checkout';
 import { rateContext } from '../../../state/pos-store';
 import type { PosState } from '../../../state/pos-store';
 import { usePos } from '../../../state/PosProvider';
@@ -14,10 +15,12 @@ import { orderMoney } from '../register/parts';
 /**
  * What "Check in & pay" will charge: the booking as the register will load it, priced by
  * the register's own money helper. Reading the same two functions the order screen reads
- * is what keeps the button's amount and the order's total from ever disagreeing.
+ * is what keeps the button's amount and the order's total from ever disagreeing — and, since
+ * Nov 26, the same pricing (`pricingOf`): in V1 → V2 the seats' green fees and carts are taxed by
+ * Buck's rates, not by the booking's flat tax per seat.
  */
-export function reservationCharge(b: Booking, state: Pick<PosState, 'courses' | 'timePrices' | 'addedGolfers'>) {
-  return orderMoney(buildTeeTimeCart(b, state.courses, rateContext(state)));
+export function reservationCharge(b: Booking, state: PosState) {
+  return orderMoney(buildTeeTimeCart(b, state.courses, rateContext(state)), pricingOf(state, { tab: null }));
 }
 
 /** The rate context (per-row price overrides and the roster) for `playerFee` / `holesFee` on the phone. */

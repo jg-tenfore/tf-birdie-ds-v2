@@ -1,6 +1,7 @@
 import type { CheckoutModal } from '../state/checkout';
 import { TenderCreditDialog } from './TenderCreditDialog';
 import { LineDiscountDialog, OrderDiscountDialog } from './DiscountDialogs';
+import { PickInstructorDialog } from './PickInstructorDialog';
 import { ReceiptDialog, ServiceChargeDialog, SplitCheckDialog, TransferOrderDialog } from './OrderToolsDialogs';
 
 /**
@@ -23,5 +24,7 @@ export function CheckoutDialogs({ m }: { m: CheckoutModal }) {
       return <ReceiptDialog m={m} />;
     case 'transferOrder':
       return <TransferOrderDialog />;
+    case 'pickInstructor':
+      return <PickInstructorDialog m={m} />;
   }
 }

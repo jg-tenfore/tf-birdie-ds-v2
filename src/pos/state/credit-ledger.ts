@@ -1,4 +1,6 @@
 import { demoNow } from '../data/bookings';
+import { LESSON_INSTRUCTORS, LESSON_LINE_MINUTES, type LessonInstructor } from '../data/credits';
+import { orderCustomerId } from '../logic/customer-search';
 import { toDateStr } from '../data/courses';
 import { liveCustomer } from '../data/roster';
 import { rainChecks as SEED_RAIN_CHECKS, type RainCheck } from '../data/rain-checks';
@@ -86,6 +88,21 @@ export function creditOptionsFor(s: PosState, kind: CreditKind, customerId: stri
   const customer = customerId ? liveCustomer(customerId, s.customerEdits) : null;
   if (!customer) return [];
   return creditOptions(kind, customer, { spend: s.creditSpend, rainChecks: liveRainChecks(s) });
+}
+
+/**
+ * Who a lesson can be rung up with (Nov 26 decision), and how many of the order customer's credits of
+ * its length each instructor's packs hold — so the picker can say "Jordan Pike · 3 credits" before the
+ * golfer pays, and staff pick the instructor the credit will actually pay for.
+ */
+export function lessonChoices(s: PosState, lessonName: string): { instructor: LessonInstructor; credits: number }[] {
+  const minutes = LESSON_LINE_MINUTES[lessonName];
+  const packs =
+    minutes == null ? [] : creditOptionsFor(s, 'lessoncredit', orderCustomerId(s)).filter((o) => o.usable && o.rule.kind === 'lesson' && o.rule.minutes === minutes);
+  return LESSON_INSTRUCTORS.map((instructor) => ({
+    instructor,
+    credits: packs.reduce((n, o) => (o.rule.kind === 'lesson' && (o.rule.instructorId === null || o.rule.instructorId === instructor.id) ? n + o.balance : n), 0),
+  }));
 }
 
 /**

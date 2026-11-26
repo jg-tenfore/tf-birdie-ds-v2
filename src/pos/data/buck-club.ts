@@ -72,12 +72,20 @@ export interface TaxType {
   /** A fraction: 0.08 is 8%. */
   rate: number;
   isDefault?: boolean;
+  /**
+   * **Same as sales tax**: charged at the default type's rate, as one line with it, until Buck gives
+   * the type a rate of its own (`rate`, with this off).
+   */
+  sameAsDefault?: boolean;
 }
 
 export const TAX_TYPES: TaxType[] = [
   { id: 'sales', name: 'Sales Tax', rate: 0.08, isDefault: true },
   // Buck's own name for a liquor tax (Products › Tax types), charged as Open Liquor's Tax Rate 2.
   { id: 'alcohol', name: 'Alcohol Tax', rate: 0.067 },
+  // Food's own rate (Nov 26 decision), for clubs where prepared food is taxed differently. This club
+  // taxes food at its sales tax, so it is Same as sales tax and prints as one Sales Tax line.
+  { id: 'food', name: 'Food Tax', rate: 0.08, sameAsDefault: true },
   { id: 'exempt', name: 'Tax Exempt', rate: 0 },
 ];
 
@@ -94,14 +102,23 @@ export type TaxField = 'teeFee' | 'transportation' | 'food' | 'liquor';
  * charges them **per line** (`logic/pricing.ts`, V1 → V2): a green fee by the tee-fee rate, a cart by
  * transportation, food by open food, a beer by open liquor plus its Tax Rate 2. A line that is none of
  * the four — a shirt, a sleeve of balls — takes the default tax type, as a Buck product does. A tee
- * time from the sheet keeps the tax its reservation was booked with.
+ * time from the sheet is taxed the same way (its green fees and carts), not by a flat tax per seat.
+ *
+ * Open food takes the **Food Tax** type, which is Same as sales tax at this club.
  */
 export const TAX_RATE_FIELDS: { field: TaxField; label: string; appliesTo: string; tax: string; tax2: string | null }[] = [
   { field: 'teeFee', label: 'General Tee Fee Tax Rate', appliesTo: 'Green fees', tax: 'sales', tax2: null },
   { field: 'transportation', label: 'Transportation Tax Rate', appliesTo: 'Carts and walking fees', tax: 'sales', tax2: null },
-  { field: 'food', label: 'Open Food Tax Rate', appliesTo: 'Food from the menus', tax: 'sales', tax2: null },
+  { field: 'food', label: 'Open Food Tax Rate', appliesTo: 'Food from the menus', tax: 'food', tax2: null },
   { field: 'liquor', label: 'Open Liquor Tax Rate', appliesTo: 'Beer, wine and liquor', tax: 'sales', tax2: 'alcohol' },
 ];
+
+/**
+ * Buck › Taxes & Fees › **Tax service charges** (Nov 26 decision). Some states tax a mandatory service
+ * charge on food; each club follows its own state's rule. Off here. On, a food-and-drink charge is
+ * taxed at the Food Tax rate and any other at the sales tax.
+ */
+export const TAX_SERVICE_CHARGES = false;
 
 /** Buck's service charges, by what they are for. */
 export type ServiceChargeId = 'card' | 'fnb' | 'event';
@@ -111,7 +128,8 @@ export type ServiceChargeId = 'card' | 'fnb' | 'event';
  * own line on the order, checkout and the receipt, untaxed — Buck's product total is price, tax, tax 2
  * and fees, the fee untaxed:
  *
- * - **F&B Service Charge** on the food and drink of a **table's** tab — table service, not the counter.
+ * - **F&B Service Charge** on the food and drink of a **table's** tab — table service, not the counter,
+ *   with the tip prompt still on top (Nov 26 decision).
  * - **Event Service Charge** on an event's bill.
  * - **Credit Card Surcharge** on a card payment — 0% at this club, so nothing is added unless Buck
  *   pushes a rate.
@@ -154,15 +172,31 @@ export const PAYMENT_TYPES: { tender: TenderKey; buckName: string; note?: string
 export const BUCK_ONLY_PAYMENT_TYPES = ['ACH', 'Tab', 'Internet Sales', 'Management', 'Bad Debt'];
 
 /**
- * Buck › Payments › **Other Settings** — the switches a counter feels. `followed` says whether the
- * prototype honours it today; the rest are shown so the team can see they exist.
+ * Buck › Payments › Other Settings: the two switches that decide when the counter asks for a
+ * **manager's PIN** (Nov 26 decision). In October the counter went to PIN sign-in with no manager
+ * approvals, so this club has them set that way: refunds need no PIN, and cancelling an order needs no
+ * manager. A club that turns either the other way gets the PIN pad at that step (`managerNeededFor`).
  */
-export const PAYMENT_OPTIONS: { label: string; on: boolean; followed: boolean }[] = [
-  { label: 'Order Cancels Require Manager', on: true, followed: false },
+export interface ManagerSwitches {
+  /** "Allow refunds without manager pin". Off: a refund asks for a manager's PIN. */
+  refundsWithoutManagerPin: boolean;
+  /** "Order Cancels Require Manager". On: clearing an order asks for a manager's PIN. */
+  orderCancelsRequireManager: boolean;
+}
+
+export const MANAGER_SWITCHES: ManagerSwitches = { refundsWithoutManagerPin: true, orderCancelsRequireManager: false };
+
+/**
+ * Buck › Payments › **Other Settings** — the switches a counter feels. `followed` says whether the
+ * prototype honours it today; the rest are shown so the team can see they exist. `managerSwitch` names
+ * the two read from the club's live values (`ManagerSwitches`), so Settings shows what the counter does.
+ */
+export const PAYMENT_OPTIONS: { label: string; on: boolean; followed: boolean; managerSwitch?: keyof ManagerSwitches }[] = [
+  { label: 'Order Cancels Require Manager', on: MANAGER_SWITCHES.orderCancelsRequireManager, followed: true, managerSwitch: 'orderCancelsRequireManager' },
   { label: 'Tee Fee Edits Require Manager', on: false, followed: false },
   { label: 'Pro Shop Accepts Tips', on: true, followed: true },
   { label: 'Paperless Tipping in Restaurant', on: true, followed: true },
-  { label: 'Allow refunds without manager pin', on: false, followed: false },
+  { label: 'Allow refunds without manager pin', on: MANAGER_SWITCHES.refundsWithoutManagerPin, followed: true, managerSwitch: 'refundsWithoutManagerPin' },
   { label: 'Credit Card Tips As Cash', on: false, followed: false },
 ];
 

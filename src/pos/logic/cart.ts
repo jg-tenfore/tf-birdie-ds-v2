@@ -238,8 +238,8 @@ export interface OrderTotals {
   /** `goods + tax` — the one number the Pay button, checkout and every reader charge. */
   total: number;
   /**
-   * Buck's per-line pricing (V1 → V2, Nov 26): the tax by type — "Sales Tax 8%", "Alcohol Tax 6.7%",
-   * a tee time's reservation tax — and the service charges, each a line of its own. Absent at a flat rate.
+   * Buck's per-line pricing (V1 → V2, Nov 26): the tax by type — "Sales Tax 8%", "Alcohol Tax 6.7%" —
+   * and the service charges, each a line of its own. Absent at a flat rate.
    */
   taxes?: { id: string; label: string; amount: number }[];
   serviceCharges?: { id: string; label: string; amount: number }[];
@@ -254,6 +254,8 @@ export interface OrderTotals {
  * checkout, the tip screen, the payment reader and change due, on the terminal and the
  * phone alike. Nothing else adds tax to an order.
  *
+ * At a flat rate (the archived edition):
+ *
  *  - **Golf** is taxed by the booking's own `Taxes` line — the sum of each chargeable seat's
  *    own green-fee tax, by that seat's rate class (`seatCharges`, from `buildTeeTimeCart`). A round rung up at the counter has no such
  *    line, so it's taxed like everything else.
@@ -265,6 +267,9 @@ export interface OrderTotals {
  *
  * With nothing left to charge (every seat settled, or the round removed), a stray tax row
  * charges nothing.
+ *
+ * With Buck's pricing (`Pricing`, V1 → V2) every line is taxed by its kind — a tee time's green fees
+ * and carts included — and the booking's `Taxes` line charges nothing (`logic/pricing.ts`).
  */
 export function orderTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RATE): OrderTotals {
   if (isPricing(taxRate)) return buckTotals(cart, taxRate);
@@ -311,13 +316,14 @@ function buckTotals(cart: CartItem[], p: Pricing): OrderTotals {
   const nets = lineNets(cart);
   const priced = priceOrder(cart, p, (_, i) => nets[i]);
   const subtotal = cents(cartTotals(cart.filter((i) => !isTaxRow(i) && !i.serviceCharge && !i.orderDiscount)).subtotal);
-  const golfTax = priced.taxes.find((t) => t.id === 'reservation')?.amount ?? 0;
+  // One tax model (Nov 26): a tee time's rounds are taxed by type like every other line, so there is no
+  // separate booked golf tax in V1 → V2.
   return {
     subtotal,
     discount: cents(priced.goods - subtotal),
     goods: priced.goods,
-    golfTax,
-    salesTax: cents(priced.tax - golfTax),
+    golfTax: 0,
+    salesTax: priced.tax,
     tax: priced.tax,
     exempt: priced.exempt,
     total: priced.total,

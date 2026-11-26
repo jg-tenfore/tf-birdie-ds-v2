@@ -4,10 +4,13 @@ import { md3, payBadges, radius } from '../../theme/tokens';
 import { money } from '../logic/cart';
 import { allRefundable, refundAmount, refundableQty } from '../logic/orders';
 import { orderItems, tenderLabel } from '../logic/order-lookup';
+import { staffById } from '../data/staff';
+import { managerNeededFor } from '../state/checkout';
 import { eventById, lookupOrder, refundPlan, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon } from '../components/primitives';
 import { Stack } from '../components/Stack';
+import { ManagerPin } from './DiscountDialogs';
 import { Callout, Field, FilledButton, ModalFrame, ModalSection, OutlineButton, PillGroup } from './ModalFrame';
 
 /**
@@ -31,7 +34,10 @@ export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: '
   const [mode, setMode] = useState<'whole' | 'lines'>('whole');
   const [qty, setQty] = useState<Record<number, number>>({});
   const [reason, setReason] = useState('');
+  // Buck's "Allow refunds without manager pin": off, and a refund waits for a manager's PIN.
+  const [asking, setAsking] = useState(false);
   if (!order) return null;
+  const needsManager = managerNeededFor(state, 'refund');
 
   const close = () => dispatch({ type: 'closeModal' });
   const all = allRefundable(order);
@@ -49,11 +55,12 @@ export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: '
   const to =
     plan.length > 1 ? plan.map((p) => `${label(p.tender)} ${money(p.amount)}`).join(' and ') : plan[0] ? label(plan[0].tender) : '';
 
-  const refund = () => {
+  const refund = (approvedBy?: string) => {
     if (amount <= 0) return;
     dispatch({ type: 'refundOrder', orderNumber: order.orderNumber, picks: mode === 'whole' ? undefined : picks, reason: reason || undefined });
     close();
-    toast(`Refunded ${money(amount)} to ${to}`);
+    const who = approvedBy ? staffById(approvedBy, state.staffRoster)?.short : null;
+    toast(`Refunded ${money(amount)} to ${to}${who ? ` · approved by ${who}` : ''}`);
   };
 
   const set = (index: number, n: number) => setQty((q) => ({ ...q, [index]: Math.max(0, Math.min(refundableQty(order, index), n)) }));
@@ -69,7 +76,7 @@ export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: '
         <>
           <OutlineButton onClick={close}>Cancel</OutlineButton>
           <Box sx={{ flex: 1 }} />
-          <FilledButton onClick={refund} disabled={amount <= 0}>
+          <FilledButton onClick={() => (needsManager ? setAsking(true) : refund())} disabled={amount <= 0 || asking}>
             {amount > 0 ? `Refund ${money(amount)}` : 'Pick what to refund'}
           </FilledButton>
         </>
@@ -165,6 +172,7 @@ export function RefundOrderDialog({ m }: { m: Extract<OperationsModal, { kind: '
           <span data-refund-tender>Goes back to {to}</span> — {plan.length > 1 ? 'the tenders that paid for it.' : 'the tender that paid for it.'}
         </Callout>
       )}
+      {asking && <ManagerPin what={`a ${money(amount)} refund`} onApproved={(id) => refund(id)} onCancel={() => setAsking(false)} />}
     </ModalFrame>
   );
 }

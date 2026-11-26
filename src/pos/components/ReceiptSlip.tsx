@@ -74,7 +74,7 @@ export function ReceiptSlip({
       </Typography>
       <Box sx={{ borderTop: `1px dashed ${md3.outlineVariant}`, pt: 0.75, mb: 0.75 }}>
         {items.map((l, i) => (
-          <Box key={i}>{row(`${l.isCheckIn ? '' : `${l.qty}× `}${l.name}`, money(lineAmount(l)))}</Box>
+          <Box key={i}>{row(`${l.isCheckIn ? '' : `${l.qty}× `}${l.name}${l.lesson ? ` · ${l.lesson.instructor}` : ''}`, money(lineAmount(l)))}</Box>
         ))}
       </Box>
       <Box sx={{ borderTop: `1px dashed ${md3.outlineVariant}`, pt: 0.75 }}>

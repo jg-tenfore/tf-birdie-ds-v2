@@ -1,4 +1,4 @@
-import { SERVICE_CHARGES, TAX_RATE_FIELDS, TAX_TYPES, type ServiceChargeId, type TaxField } from '../data/buck-club';
+import { SERVICE_CHARGES, TAX_RATE_FIELDS, TAX_SERVICE_CHARGES, TAX_TYPES, type ServiceChargeId, type TaxField, type TaxType } from '../data/buck-club';
 import { CATALOG } from '../data/catalog';
 import { menuItem } from '../data/menu';
 import { productSettings } from '../data/products';
@@ -19,11 +19,15 @@ import type { CartItem } from '../types';
  * 2. **The rate** is that kind's Tax Rate plus its Tax Rate 2 (`TAX_RATE_FIELDS`). A line of no kind
  *    takes the default tax type — the rate Settings shows as the terminal's sales tax.
  * 3. **Service charges** (`SERVICE_CHARGES`): the F&B charge on a table's tab, the event charge on an
- *    event's bill, and any added by hand — untaxed, each its own line.
+ *    event's bill, and any added by hand — each its own line. Untaxed unless the club turns on Buck's
+ *    **Tax service charges** (`ClubPricing.taxServiceCharges`): then a food-and-drink charge is taxed
+ *    at the Food Tax rate and any other at the sales tax.
  *
- * A tee time from the sheet still arrives with its reservation's tax line (`Taxes`), the tax it was
- * booked with; that line is kept as it is rather than recomputed. A gift card, a payment onto a house
- * account and an event's already-taxed charges carry no tax, as before. A Tax Exempt line zeroes tax.
+ * **One tax model everywhere** (Nov 26 decision): a tee time from the sheet is taxed like a round rung
+ * up at the counter — its green fees at the tee-fee rate, its carts at transportation. The booking's
+ * flat per-seat `Taxes` line still rides along (the archived edition charges it), but here it charges
+ * nothing. A gift card, a payment onto a house account and an event's already-taxed charges carry no
+ * tax, as before. A Tax Exempt line zeroes tax.
  *
  * Everything is computed **per line** first and summed, so a credit, a split by item or a refund can
  * take any line's exact share (`priceOrder(...).lines`) and the parts always add up to the total.
@@ -31,9 +35,11 @@ import type { CartItem } from '../types';
 
 /** Buck's club pricing: tax types, the per-kind fields, the service-charge percentages. */
 export interface ClubPricing {
-  taxTypes: { id: string; name: string; rate: number; isDefault?: boolean }[];
+  taxTypes: TaxType[];
   fields: Record<TaxField, { tax: string; tax2: string | null }>;
   serviceCharges: Record<ServiceChargeId, number>;
+  /** Buck › Taxes & Fees › **Tax service charges**. Off by default: each club follows its state's rule. */
+  taxServiceCharges: boolean;
 }
 
 /** The club as Buck configures it (`buck-club.ts`). A story can push other values, as Buck would. */
@@ -41,6 +47,7 @@ export const clubPricingDefaults = (): ClubPricing => ({
   taxTypes: TAX_TYPES.map((t) => ({ ...t })),
   fields: Object.fromEntries(TAX_RATE_FIELDS.map((f) => [f.field, { tax: f.tax, tax2: f.tax2 }])) as ClubPricing['fields'],
   serviceCharges: Object.fromEntries(SERVICE_CHARGES.map((c) => [c.id, c.percent])) as Record<ServiceChargeId, number>,
+  taxServiceCharges: TAX_SERVICE_CHARGES,
 });
 
 /** How an order is priced in V1 → V2: Buck's club pricing, the terminal's sales tax, and what kind of order it is. */
@@ -158,24 +165,36 @@ export function taxPartsOf(line: CartItem, net: number): TaxPart[] {
   return [{ field: fieldOfName(line), amount: net, own: ownTax }];
 }
 
+const defaultType = (p: Pricing) => p.club.taxTypes.find((t) => t.isDefault)?.id ?? 'sales';
+
+/**
+ * The type a line is charged under. A type set to **Same as sales tax** (Food Tax, until Buck gives it
+ * a rate of its own) is charged as the default type — one Sales Tax line, not two at the same rate.
+ */
+export function chargedType(id: string, p: Pricing): string {
+  const t = p.club.taxTypes.find((x) => x.id === id);
+  return t?.sameAsDefault ? defaultType(p) : id;
+}
+
 /** The tax types a part is charged — its kind's Tax Rate and Tax Rate 2, or the product's own. */
 function typesFor(part: TaxPart, p: Pricing): string[] {
-  const def = p.club.taxTypes.find((t) => t.isDefault)?.id ?? 'sales';
+  const def = defaultType(p);
+  const charged = (ids: (string | null | undefined)[]) => [...new Set(ids.filter((x): x is string => Boolean(x)).map((x) => chargedType(x, p)))];
   if (part.own) {
     const base = part.own.tax ?? (part.field ? p.club.fields[part.field].tax : def);
     const second = part.own.tax2 !== undefined ? part.own.tax2 : part.field ? p.club.fields[part.field].tax2 : null;
-    return [base, second].filter((x): x is string => Boolean(x));
+    return charged([base, second]);
   }
   if (!part.field) return [def];
   const f = p.club.fields[part.field];
-  return [f.tax, f.tax2].filter((x): x is string => Boolean(x));
+  return charged([f.tax, f.tax2]);
 }
 
-/** A tax type's rate: the default type is the terminal's sales tax (Settings). */
+/** A tax type's rate: the default type is the terminal's sales tax (Settings), and so is one set Same as sales tax. */
 export function taxRateOfType(id: string, p: Pricing): number {
   const t = p.club.taxTypes.find((x) => x.id === id);
   if (!t) return 0;
-  return t.isDefault ? p.salesRate : t.rate;
+  return t.isDefault || t.sameAsDefault ? p.salesRate : t.rate;
 }
 
 /** "Sales Tax 8%", "Alcohol Tax 6.7%" — how a tax line reads on the order and the receipt. */
@@ -199,7 +218,7 @@ export interface PricedLine {
 
 export interface PricedOrder {
   lines: PricedLine[];
-  /** Tax by type, rounded per type. `reservation` is a tee time's booked tax line. */
+  /** Tax by type, rounded per type. */
   taxes: { id: string; label: string; amount: number }[];
   service: { id: string; label: string; amount: number }[];
   /** Sum of the lines' charges before tax. */
@@ -223,26 +242,55 @@ export function priceOrder(cart: CartItem[], p: Pricing, netOf: NetOf): PricedOr
   const net = cart.map((l, i) => (isTaxRow(l) || l.serviceCharge || l.orderDiscount || l.name === 'Tax Exempt' ? 0 : cents(netOf(l, i))));
   const goods = cents(net.reduce((s, n) => s + n, 0));
 
-  // A tee time from the sheet carries its reservation's tax line; its rounds are taxed by that.
-  const chargeable = cart.some((l) => !isTaxRow(l) && (l.isCheckIn ? (l.players ?? []).some((x) => !x.paid && !x.noShow) || !(l.players ?? []).length : true));
-  const golfTaxed = chargeable && cart.some(isTaxRow);
+  // ── Service charges — first, because the club may tax them ──
+  const isFnb = (l: CartItem) => {
+    const f = fieldOfName(l);
+    return Boolean(l.dish) || f === 'food' || f === 'liquor' || Boolean(l.combo && taxPartsOf(l, 1).some((x) => x.field === 'food' || x.field === 'liquor'));
+  };
+  const charges: { id: string; label: string; weights: number[]; amount: number; fnb: boolean }[] = [];
+  const pct = (base: number[], percent: number) => cents((base.reduce((s, x) => s + x, 0) * percent) / 100);
+  const fnbBase = cart.map((l, i) => (isFnb(l) ? net[i] : 0));
+  const allBase = net.map((n, i) => (cart[i].giftCard || cart[i].accountPayment ? 0 : n));
+  if (p.dineIn && p.club.serviceCharges.fnb > 0 && !cart.some((l) => l.serviceCharge?.id === 'fnb')) {
+    const amount = pct(fnbBase, p.club.serviceCharges.fnb);
+    if (amount) charges.push({ id: 'fnb', label: `F&B Service Charge ${p.club.serviceCharges.fnb}%`, weights: fnbBase, amount, fnb: true });
+  }
+  if (p.eventBill && p.club.serviceCharges.event > 0 && !cart.some((l) => l.serviceCharge?.id === 'event')) {
+    const amount = pct(allBase, p.club.serviceCharges.event);
+    if (amount) charges.push({ id: 'event', label: `Event Service Charge ${p.club.serviceCharges.event}%`, weights: allBase, amount, fnb: false });
+  }
+  cart.forEach((l, i) => {
+    const sc = l.serviceCharge;
+    if (!sc) return;
+    const base = sc.appliesTo === 'fnb' ? fnbBase : allBase;
+    const amount = sc.amount != null ? cents(sc.amount) : pct(base, sc.percent ?? 0);
+    if (!amount) return;
+    // A flat charge with nothing to hang off sits on its own line.
+    const weights = base.some((x) => x) ? base : cart.map((_, j) => (j === i ? 1 : 0));
+    charges.push({ id: `${sc.id}-${i}`, label: sc.percent != null ? `${sc.label} ${sc.percent}%` : sc.label, weights, amount, fnb: sc.appliesTo === 'fnb' });
+  });
+  const lineService = cart.map(() => 0);
+  const shares = charges.map((c) => allocate(c.amount, c.weights));
+  shares.forEach((share) => share.forEach((a, i) => (lineService[i] = cents(lineService[i] + a))));
 
   // ── Tax, per line and type ──
+  // Every line by its parts — a tee time from the sheet too: its green fees at the tee-fee rate, its
+  // carts at transportation. The booking's own flat `Taxes` line charges nothing here.
   const raw: Record<string, number[]> = {};
+  const add = (id: string, i: number, amount: number) => {
+    const rate = taxRateOfType(id, p);
+    if (rate) (raw[id] ??= cart.map(() => 0))[i] += amount * rate;
+  };
   if (!exempt) {
     cart.forEach((l, i) => {
-      if (golfTaxed && l.isCheckIn) return;
-      for (const part of taxPartsOf(l, net[i])) {
-        for (const id of typesFor(part, p)) {
-          const rate = taxRateOfType(id, p);
-          if (!rate) continue;
-          (raw[id] ??= cart.map(() => 0))[i] += part.amount * rate;
-        }
-      }
+      for (const part of taxPartsOf(l, net[i])) for (const id of typesFor(part, p)) add(id, i, part.amount);
     });
+    // Buck's Tax service charges: a food-and-drink charge at the Food Tax rate, any other at sales tax.
+    if (p.club.taxServiceCharges) {
+      const foodType = chargedType(p.club.fields.food.tax, p);
+      charges.forEach((c, k) => shares[k].forEach((a, i) => a && add(c.fnb ? foodType : defaultType(p), i, a)));
+    }
   }
-  // The reservation's tax line, as booked, on its rounds.
-  const reservationTax = !exempt && golfTaxed ? cents(cart.filter(isTaxRow).reduce((s, l) => s + l.price, 0)) : 0;
   const taxes: PricedOrder['taxes'] = [];
   const lineTax: Record<string, number>[] = cart.map(() => ({}));
   for (const t of p.club.taxTypes) {
@@ -253,43 +301,6 @@ export function priceOrder(cart: CartItem[], p: Pricing, netOf: NetOf): PricedOr
     taxes.push({ id: t.id, label: taxTypeName(t.id, p), amount: total });
     allocate(total, r).forEach((a, i) => a && (lineTax[i][t.id] = a));
   }
-  if (reservationTax) {
-    taxes.unshift({ id: 'reservation', label: 'Tee time tax (reservation)', amount: reservationTax });
-    allocate(
-      reservationTax,
-      cart.map((l, i) => (l.isCheckIn ? net[i] : 0)),
-    ).forEach((a, i) => a && (lineTax[i].reservation = a));
-  }
-
-  // ── Service charges ──
-  const isFnb = (l: CartItem) => {
-    const f = fieldOfName(l);
-    return Boolean(l.dish) || f === 'food' || f === 'liquor' || Boolean(l.combo && taxPartsOf(l, 1).some((x) => x.field === 'food' || x.field === 'liquor'));
-  };
-  const charges: { id: string; label: string; weights: number[]; amount: number }[] = [];
-  const pct = (base: number[], percent: number) => cents((base.reduce((s, x) => s + x, 0) * percent) / 100);
-  const fnbBase = cart.map((l, i) => (isFnb(l) ? net[i] : 0));
-  const allBase = net.map((n, i) => (cart[i].giftCard || cart[i].accountPayment ? 0 : n));
-  if (p.dineIn && p.club.serviceCharges.fnb > 0 && !cart.some((l) => l.serviceCharge?.id === 'fnb')) {
-    const amount = pct(fnbBase, p.club.serviceCharges.fnb);
-    if (amount) charges.push({ id: 'fnb', label: `F&B Service Charge ${p.club.serviceCharges.fnb}%`, weights: fnbBase, amount });
-  }
-  if (p.eventBill && p.club.serviceCharges.event > 0 && !cart.some((l) => l.serviceCharge?.id === 'event')) {
-    const amount = pct(allBase, p.club.serviceCharges.event);
-    if (amount) charges.push({ id: 'event', label: `Event Service Charge ${p.club.serviceCharges.event}%`, weights: allBase, amount });
-  }
-  cart.forEach((l, i) => {
-    const sc = l.serviceCharge;
-    if (!sc) return;
-    const base = sc.appliesTo === 'fnb' ? fnbBase : allBase;
-    const amount = sc.amount != null ? cents(sc.amount) : pct(base, sc.percent ?? 0);
-    if (!amount) return;
-    // A flat charge with nothing to hang off sits on its own line.
-    const weights = base.some((x) => x) ? base : cart.map((_, j) => (j === i ? 1 : 0));
-    charges.push({ id: `${sc.id}-${i}`, label: sc.percent != null ? `${sc.label} ${sc.percent}%` : sc.label, weights, amount });
-  });
-  const lineService = cart.map(() => 0);
-  for (const c of charges) allocate(c.amount, c.weights).forEach((a, i) => (lineService[i] = cents(lineService[i] + a)));
 
   const tax = cents(taxes.reduce((s, t) => s + t.amount, 0));
   const serviceTotal = cents(charges.reduce((s, c) => s + c.amount, 0));

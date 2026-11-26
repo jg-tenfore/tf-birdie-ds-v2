@@ -1,6 +1,6 @@
 import { demoNow } from '../data/bookings';
 import { toDateStr } from '../data/courses';
-import { newCustomer, type Customer, type CustomerGiftCard } from '../data/customers';
+import type { CustomerGiftCard } from '../data/customers';
 import { SEED_EVENTS, eventGolf, eventSpend, type EventCharge, type GolfEvent } from '../data/events';
 import { SEED_ORDERS } from '../data/orders-seed';
 import { liveCustomer, liveRoster } from '../data/roster';
@@ -20,6 +20,7 @@ import { rateContext } from './rate-context';
 import type { PosState } from './pos-store';
 import { applyCredit } from './credit-ledger';
 import { currentPart, pricingOf } from './checkout';
+import { withNewCustomer } from './new-customer';
 import { isCreditMethod } from '../logic/credit-tenders';
 import type { DrawerEvent } from './register-extras';
 
@@ -579,17 +580,8 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
       };
 
     case 'createCustomer': {
-      const n = seq.customer + 1;
-      // No type baked into the name: v1 printed "Weston Farnsworth - Senior", which read as another
-      // person. `newCustomer` still does that for the other editions; here the type stays a type.
-      const base = newCustomer({ ...action.input, types: action.input.types }, 9000 + n);
-      const record: Customer & { created: true } = { ...base, displayName: `${action.input.firstName} ${action.input.lastName}`.trim(), created: true };
-      return {
-        ...state,
-        customerEdits: { ...state.customerEdits, [record.id]: record },
-        selectedCustomerId: record.id,
-        opsSeq: { ...seq, customer: n },
-      };
+      const made = withNewCustomer(state, action.input);
+      return { ...made.state, selectedCustomerId: made.customer.id };
     }
     case 'payAccount': {
       const c = liveCustomer(action.customerId, state.customerEdits);

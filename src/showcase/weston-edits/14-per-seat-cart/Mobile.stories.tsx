@@ -3,6 +3,10 @@ import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, openParty, partlyPaidNamed, seatOrder, seatsTotal, withBookings } from '../mobile-scenarios';
+import { buckPricing } from '../../../pos/logic/pricing';
+
+/** The current edition prices the order by Buck: the seats' green fees and carts taxed at its rates (Nov 26). */
+const NOW = buckPricing();
 
 /**
  * Prototypes / Mobile / Pro Shop / Per-seat cart (Weston Edits, section 14)
@@ -234,8 +238,8 @@ export const TheOrderTheySplit: Story = {
     const b = openParty();
     const c = within(canvasElement);
     // Two seats is what the operator chose, and two is what the register charges.
-    await expect(seatsTotal(b, [0, 2])).not.toBe(seatsTotal(b));
-    await expect(await c.findByRole('button', { name: `Charge ${seatsTotal(b, [0, 2])}` })).toBeTruthy();
+    await expect(seatsTotal(b, [0, 2], NOW)).not.toBe(seatsTotal(b, undefined, NOW));
+    await expect(await c.findByRole('button', { name: `Charge ${seatsTotal(b, [0, 2], NOW)}` })).toBeTruthy();
   },
 };
 
@@ -266,7 +270,7 @@ export const CheckInAndPayTopsUp: Story = {
     const b = openParty();
     const c = within(canvasElement);
     await userEvent.click(await c.findByRole('button', { name: /^Check in & pay/ }));
-    await expect(await c.findByRole('button', { name: `Charge ${seatsTotal(b)}` })).toBeTruthy();
+    await expect(await c.findByRole('button', { name: `Charge ${seatsTotal(b, undefined, NOW)}` })).toBeTruthy();
   },
 };
 
@@ -296,9 +300,9 @@ export const AdjustmentsSurviveTheTopUp: Story = {
     const b = adjustedParty();
     const c = within(canvasElement);
     await userEvent.click(await c.findByRole('button', { name: /^Check in & pay/ }));
-    await expect(await c.findByRole('button', { name: `Charge ${seatsTotal(b)}` })).toBeTruthy();
+    await expect(await c.findByRole('button', { name: `Charge ${seatsTotal(b, undefined, NOW)}` })).toBeTruthy();
     // The adjusted party is not the booking as booked — so this is a real assertion.
-    await expect(seatsTotal(b)).not.toBe(seatsTotal(openParty()));
+    await expect(seatsTotal(b, undefined, NOW)).not.toBe(seatsTotal(openParty(), undefined, NOW));
   },
 };
 

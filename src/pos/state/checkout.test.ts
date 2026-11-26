@@ -4,7 +4,8 @@ import { buckPricing } from '../logic/pricing';
 import { creditOptions } from '../logic/credit-tenders';
 import { liveCustomer } from '../data/roster';
 import type { CartItem } from '../types';
-import { evenParts } from './checkout';
+import { seatRecord } from '../logic/seat-pricing';
+import { evenParts, managerNeededFor } from './checkout';
 import { liveRainChecks, liveRainChecksFor } from './credit-ledger';
 import { amountDue, dueNow, orderByNumber, registerLineTotals } from './operations';
 import { createInitialState, reducer, type PosState } from './pos-store';
@@ -131,5 +132,79 @@ describe('service charges and transfers', () => {
     there = reducer(there, { type: 'receiveTransfer', id: t.id });
     expect(there.cart).toEqual(order);
     expect(there.transferredOrders[0].receivedAt).toBeTruthy();
+  });
+});
+
+describe('manager PIN follows Buck’s switches (Nov 26 decision)', () => {
+  const proShop = (extra: Partial<PosState> = {}) => s0({ operatorId: 's-6', ...extra });
+
+  it('this club asks nobody: refunds without a PIN, cancels without a manager', () => {
+    expect(managerNeededFor(proShop(), 'refund')).toBe(false);
+    expect(managerNeededFor(proShop(), 'cancel')).toBe(false);
+  });
+
+  it('a club with the switches the other way asks anyone but a manager', () => {
+    const strict = { managerSwitches: { refundsWithoutManagerPin: false, orderCancelsRequireManager: true } };
+    expect(managerNeededFor(proShop(strict), 'refund')).toBe(true);
+    expect(managerNeededFor(proShop(strict), 'cancel')).toBe(true);
+    // A manager signed in approves by being signed in.
+    expect(managerNeededFor(s0({ operatorId: 's-1', ...strict }), 'refund')).toBe(false);
+    // The archived edition predates both.
+    expect(managerNeededFor(createInitialState({ operatorId: 's-6', ...strict }), 'cancel')).toBe(false);
+  });
+});
+
+describe('a register rain check for a seat with no customer (Nov 26 decision)', () => {
+  const seatWithoutRecord = (s: PosState) => {
+    for (const b of s.bookings.filter((x) => x.date === '2026-05-21' && x.players > 1 && x.pay !== 'block' && x.pay !== 'event')) {
+      for (let i = 1; i < b.players; i++) if (!seatRecord(b, i, s.customerEdits)) return { b, i };
+    }
+    throw new Error('no seat without a record');
+  };
+
+  it('adds the guest as a customer, puts the rain check on them, and links the seat', () => {
+    let s = s0();
+    const { b, i } = seatWithoutRecord(s);
+    s = reducer(s, { type: 'issueRainCheck', bookingId: b.id, seat: i, amount: 30, newCustomer: { firstName: 'Rowan', lastName: 'Ashby', phone: '(555) 010-7788' } });
+    const linked = seatRecord(s.bookings.find((x) => x.id === b.id)!, i, s.customerEdits)!;
+    expect(linked.firstName).toBe('Rowan');
+    expect(linked.phone).toBe('(555) 010-7788');
+    expect(liveRainChecksFor(s, linked.id).at(-1)!.awarded).toBe(30);
+    // Made at the counter, not picked onto the register.
+    expect(s.selectedCustomerId).toBeNull();
+  });
+
+  it('links the seat to a customer found for it', () => {
+    let s = s0();
+    const { b, i } = seatWithoutRecord(s);
+    s = reducer(s, { type: 'issueRainCheck', bookingId: b.id, seat: i, amount: 12, customerId: '458346' });
+    expect(seatRecord(s.bookings.find((x) => x.id === b.id)!, i, s.customerEdits)!.id).toBe('458346');
+  });
+
+  it('issues nothing without a name and a phone', () => {
+    const s = s0();
+    const { b, i } = seatWithoutRecord(s);
+    expect(reducer(s, { type: 'issueRainCheck', bookingId: b.id, seat: i, amount: 12, newCustomer: { firstName: 'Rowan', lastName: '', phone: '' } })).toBe(s);
+  });
+});
+
+describe('a lesson rung up with its instructor (Nov 26 decision)', () => {
+  it('carries the instructor, and the same lesson with the same instructor adds to its line', () => {
+    let s = s0();
+    s = reducer(s, { type: 'addLesson', name: 'Lesson 30 Min', price: 55, instructorId: 'jordan-pike' });
+    s = reducer(s, { type: 'addLesson', name: 'Lesson 30 Min', price: 55, instructorId: 'sam-ortega' });
+    s = reducer(s, { type: 'addLesson', name: 'Lesson 30 Min', price: 55, instructorId: 'jordan-pike' });
+    expect(s.cart.map((l) => [l.lesson?.instructor, l.qty])).toEqual([
+      ['Jordan Pike', 2],
+      ['Sam Ortega', 1],
+    ]);
+  });
+
+  it('starts the next order after a payment, like any tile', () => {
+    let s = withCart(s0(), [{ name: 'Golf Glove Mens', price: 18, qty: 1 }]);
+    s = card(s);
+    s = reducer(s, { type: 'addLesson', name: 'Lesson 60 Min', price: 95, instructorId: 'sam-ortega' });
+    expect(s.lastPayment).toBeNull();
+    expect(s.cart).toHaveLength(1);
   });
 });

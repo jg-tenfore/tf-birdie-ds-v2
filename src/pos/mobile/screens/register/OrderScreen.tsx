@@ -1,4 +1,6 @@
-import { pricingOf } from '../../../state/checkout';
+import { managerNeededFor, pricingOf } from '../../../state/checkout';
+import { staffById } from '../../../data/staff';
+import { ManagerPin } from '../../../modals/DiscountDialogs';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Button, ButtonBase, IconButton, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
@@ -64,6 +66,9 @@ export function OrderScreen() {
   const nav = useMobileNav();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  // Buck's "Order Cancels Require Manager": on, and clearing waits for a manager's PIN.
+  const needsManager = managerNeededFor(state, 'cancel');
+  const [asking, setAsking] = useState(false);
 
   const booking = selectedBooking(state);
   const checkInIdx = state.cart.findIndex((i) => i.isCheckIn && !i.is18HBack);
@@ -122,10 +127,13 @@ export function OrderScreen() {
     fn();
   };
 
-  const clearOrder = () => {
+  const clearOrder = (approvedBy?: string) => {
+    if (needsManager && !approvedBy) return setAsking(true);
     dispatch({ type: 'clearOrder' });
-    toast('Order cleared');
+    const approver = approvedBy ? staffById(approvedBy, state.staffRoster)?.short : null;
+    toast(approver ? `Order cleared · approved by ${approver}` : 'Order cleared');
     setConfirmClear(false);
+    setAsking(false);
     nav.popToRoot();
   };
 
@@ -318,17 +326,31 @@ export function OrderScreen() {
         </MenuItem>
       </Menu>
 
-      <BottomSheet open={confirmClear} onClose={() => setConfirmClear(false)} title="Clear this order?">
+      <BottomSheet
+        open={confirmClear}
+        onClose={() => {
+          setConfirmClear(false);
+          setAsking(false);
+        }}
+        title="Clear this order?"
+      >
         <Typography variant="body2" sx={{ px: 3, color: md3.onSurfaceVariant }}>
           Removes {lines.length} line{lines.length === 1 ? '' : 's'} and the customer.
           {booking ? ' The booking stays on the tee sheet.' : ''} This can't be undone.
+          {needsManager ? ' This club asks a manager to approve it.' : ''}
         </Typography>
-        <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 3, pt: 3 }}>
-          <Button onClick={() => setConfirmClear(false)}>Keep order</Button>
-          <Button variant="contained" color="error" onClick={clearOrder}>
-            Clear order
-          </Button>
-        </Stack>
+        {asking ? (
+          <Box sx={{ px: 2 }}>
+            <ManagerPin what="cancelling this order" onApproved={(id) => clearOrder(id)} onCancel={() => setAsking(false)} />
+          </Box>
+        ) : (
+          <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 3, pt: 3 }}>
+            <Button onClick={() => setConfirmClear(false)}>Keep order</Button>
+            <Button variant="contained" color="error" onClick={() => clearOrder()}>
+              Clear order
+            </Button>
+          </Stack>
+        )}
       </BottomSheet>
     </MobileScreen>
   );
@@ -642,6 +664,7 @@ function RetailRow({ item, index }: { item: CartItem; index: number }) {
         <Typography variant="body2" sx={{ color: total < 0 ? md3.error : md3.onSurfaceVariant }}>
           {cartLogic.money(total)}
           {item.qty > 1 ? ` · ${cartLogic.money(item.price)} each` : ''}
+          {item.lesson ? ` · with ${item.lesson.instructor}` : ''}
         </Typography>
       </Box>
       <Stack

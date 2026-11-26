@@ -108,16 +108,41 @@ describe('credits as tenders', () => {
     expect(c.amount).toBeCloseTo(lineTotals(cart)[0], 2);
   });
 
+  const withPike = { instructorId: 'jordan-pike', instructor: 'Jordan Pike' };
+  const withOrtega = { instructorId: 'sam-ortega', instructor: 'Sam Ortega' };
+
   it('a lesson credit pays a lesson of its own length only', () => {
     const thirty = option('lessoncredit', '458347', (o) => o.id === 'bal-jp-5');
     const cart: CartItem[] = [
-      { name: 'Lesson 30 Min', price: 55, qty: 1 },
-      { name: 'Lesson 60 Min', price: 95, qty: 1 },
+      { name: 'Lesson 30 Min', price: 55, qty: 1, lesson: withPike },
+      { name: 'Lesson 60 Min', price: 95, qty: 1, lesson: withPike },
     ];
     const c = creditCoverage(thirty, cart, ctx(cart));
     expect(c.units).toBe(1);
     expect(c.lines.map((l) => l.index)).toEqual([0]);
     expect(c.cannot[0].reason).toMatch(/60-minute/);
+  });
+
+  it('a lesson credit pays only its own instructor’s lessons (Nov 26 decision)', () => {
+    const pike = option('lessoncredit', '458347', (o) => o.id === 'bal-jp-5');
+    const cart: CartItem[] = [
+      { name: 'Lesson 30 Min', price: 55, qty: 1, lesson: withOrtega },
+      { name: 'Lesson 30 Min', price: 55, qty: 1, lesson: withPike },
+      { name: 'Lesson 30 Min', price: 55, qty: 1 },
+    ];
+    const c = creditCoverage(pike, cart, ctx(cart));
+    expect(c.lines.map((l) => l.index)).toEqual([1]);
+    expect(c.cannot.map((x) => [x.index, x.reason])).toEqual([
+      [0, 'Sam Ortega’s lesson, not Jordan Pike’s'],
+      [2, 'no instructor on the lesson — this pack is Jordan Pike’s'],
+    ]);
+  });
+
+  it('an academy-wide pack (no instructor) pays any instructor’s lesson', () => {
+    const pike = option('lessoncredit', '458347', (o) => o.id === 'bal-jp-5');
+    const any = { ...pike, rule: { kind: 'lesson' as const, minutes: 30, instructorId: null, instructor: 'Any instructor' } };
+    const cart: CartItem[] = [{ name: 'Lesson 30 Min', price: 55, qty: 1, lesson: withOrtega }];
+    expect(creditCoverage(any, cart, ctx(cart)).units).toBe(1);
   });
 
   it('a second credit on a split does not pay a line the first already paid', () => {

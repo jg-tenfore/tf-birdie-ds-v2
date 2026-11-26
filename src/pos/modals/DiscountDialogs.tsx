@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { productSettings } from '../data/products';
@@ -24,11 +24,17 @@ import { Callout, Field, FilledButton, ModalFrame, OutlineButton, PillGroup } fr
  * person at the counter keeps the order rather than signing out.
  */
 
-/** The four-digit pad a manager approves on, from the PIN sign-in's staff and roles. */
+/**
+ * The four-digit pad a manager approves on, from the PIN sign-in's staff and roles. A discount type
+ * Buck flags for approval asks here, and so do a refund and an order cancel when the club's manager
+ * switches say so (`managerNeededFor`). It opens at the foot of its dialog, so it scrolls itself into view.
+ */
 export function ManagerPin({ what, onApproved, onCancel }: { what: string; onApproved: (staffId: string) => void; onCancel: () => void }) {
   const { state } = usePos();
   const [pin, setPin] = useState('');
   const [refused, setRefused] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => ref.current?.scrollIntoView?.({ block: 'nearest' }), []);
   const press = (k: string) => {
     setRefused(null);
     if (k === 'clear') return setPin('');
@@ -43,7 +49,7 @@ export function ManagerPin({ what, onApproved, onCancel }: { what: string; onApp
     onApproved(who.id);
   };
   return (
-    <Box data-manager-pin sx={{ border: `1.5px solid ${md3.primary}`, borderRadius: `${radius.md}px`, p: '12px 14px', mt: 1.5 }}>
+    <Box ref={ref} data-manager-pin sx={{ border: `1.5px solid ${md3.primary}`, borderRadius: `${radius.md}px`, p: '12px 14px', mt: 1.5 }}>
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
         <Icon name="lock" size={18} color={md3.primary} />
         <Typography sx={{ fontSize: 13, fontWeight: 700, flex: 1 }}>A manager’s PIN to approve {what}</Typography>

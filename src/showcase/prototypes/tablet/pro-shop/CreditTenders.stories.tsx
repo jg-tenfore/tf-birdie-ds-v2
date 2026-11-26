@@ -3,7 +3,7 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { CURRENT_EDITION } from '../../../../pos/edition';
 import { withEdition } from '../../../edition-decorator';
 import { Screen } from '../../../pos/screen-helpers';
-import { HOLDERS, chooseCredit, counterOrder, counterRound, dialog, done, find, item, payOnReader, q } from './checkout-kit';
+import { HOLDERS, chooseCredit, counterOrder, counterRound, dialog, done, find, item, lesson, payOnReader, q } from './checkout-kit';
 
 /**
  * Pro Shop — **credits as tenders** (Nov 26, "checkout that's right").
@@ -16,7 +16,9 @@ import { HOLDERS, chooseCredit, counterOrder, counterRound, dialog, done, find, 
  * - **Punch card** — one punch per eligible item: a seat's green fee (the ride is still billed), a cart,
  *   a product; an activity takes minutes per punch.
  * - **Credit book** — a league's or an event's account, only for what Buck says it applies to.
- * - **Lesson credit** — one lesson of its length per credit.
+ * - **Lesson credit** — one lesson of its length per credit, **with its own instructor** (Nov 26
+ *   decision): a lesson is rung up with the instructor it is with, and a pack pays only that
+ *   instructor's lessons, as Buck's packs are bought per instructor.
  *
  * What a credit cannot pay is named and stays due on another tender, as a gift card's categories
  * already work. Every credit shows its balance before and after, and the payment says which credit paid.
@@ -117,7 +119,12 @@ export const ARainCheckIsKeyedAndPaysTeeTimes: Story = {
 /** **A lesson credit pays a lesson of its own length.** Priya's 30-minute pack pays the tune-up, not the hour. */
 export const ALessonCreditPaysItsLength: Story = {
   render: () => (
-    <Screen edition={T} initialState={counterOrder([item('Lesson 30 Min', 55), item('Lesson 60 Min', 95)], HOLDERS.priya, { modal: { kind: 'tenderCredit', credit: 'lessoncredit' } })} />
+    <Screen
+      edition={T}
+      initialState={counterOrder([lesson('Lesson 30 Min', 55, 'jordan-pike'), lesson('Lesson 60 Min', 95, 'jordan-pike')], HOLDERS.priya, {
+        modal: { kind: 'tenderCredit', credit: 'lessoncredit' },
+      })}
+    />
   ),
   play: async () => {
     await dialog();
@@ -125,6 +132,50 @@ export const ALessonCreditPaysItsLength: Story = {
     await expect(q('[data-credit-before]')!.textContent).toBe('3 credits');
     await expect(q('[data-credit-after]')!.textContent).toBe('2 credits');
     await expect(q('[data-credit-cannot-line="Lesson 60 Min"]')!.textContent).toMatch(/60-minute lesson, not 30/);
+  },
+};
+
+/**
+ * **A lesson is rung up with its instructor.** Tapping *Lesson 30 Min* asks who it is with. Priya is on
+ * the order, so Jordan Pike shows her three credits with him; picking him puts the lesson on the rail
+ * with his name, and a second tap with him adds to that line.
+ */
+export const ALessonIsRungUpWithItsInstructor: Story = {
+  render: () => <Screen edition={T} initialState={counterOrder([], HOLDERS.priya, { currentCategory: 'SERVICES' })} />,
+  play: async ({ canvasElement }) => {
+    const tile = () => within(canvasElement).getByRole('button', { name: /Lesson 30 Min/ });
+    await userEvent.click(tile());
+    const d = await dialog();
+    await expect(d.getByText('Who is the lesson with?')).toBeTruthy();
+    await expect(q('[data-instructor-option="jordan-pike"]')!.dataset.instructorCredits).toBe('3');
+    await expect(q('[data-instructor-option="sam-ortega"]')!.dataset.instructorCredits).toBe('0');
+    await userEvent.click(q('[data-instructor-option="jordan-pike"]')!.firstElementChild as HTMLElement);
+    await waitFor(() => expect(q('[data-lesson-instructor="jordan-pike"]')!.textContent).toBe('With Jordan Pike'));
+    await userEvent.click(tile());
+    await userEvent.click((await find('[data-instructor-option="jordan-pike"]')).firstElementChild as HTMLElement);
+    await waitFor(() => expect(canvasElement.querySelectorAll('[data-lesson-instructor]').length).toBe(1));
+  },
+};
+
+/**
+ * **A pack pays only its own instructor's lessons.** Priya has a tune-up with Sam Ortega and one with
+ * Jordan Pike on the order. Her 30-minute pack is Jordan's: it pays his, and names Sam's as one it
+ * cannot pay, which stays due on another tender.
+ */
+export const APackPaysOnlyItsInstructor: Story = {
+  render: () => (
+    <Screen
+      edition={T}
+      initialState={counterOrder([lesson('Lesson 30 Min', 55, 'sam-ortega'), lesson('Lesson 30 Min', 55, 'jordan-pike')], HOLDERS.priya, {
+        modal: { kind: 'tenderCredit', credit: 'lessoncredit' },
+      })}
+    />
+  ),
+  play: async () => {
+    await dialog();
+    await userEvent.click(q('[data-credit-option="lesson:bal-jp-5"]')!);
+    await expect(q('[data-credit-after]')!.textContent).toBe('2 credits');
+    await expect(q('[data-credit-cannot-line="Lesson 30 Min"]')!.textContent).toMatch(/Sam Ortega’s lesson, not Jordan Pike’s/);
   },
 };
 

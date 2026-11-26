@@ -402,6 +402,11 @@ export interface CartItem {
   /** A Buck discount on this line (Nov 26) — percent, dollars off each, or cost plus. See `logic/discounts.ts`. */
   lineDiscount?: import('./logic/discounts').AppliedDiscount;
   /**
+   * A lesson's instructor, picked when it is rung up (Nov 26 decision). A lesson credit pays only its own
+   * instructor's lessons, as Buck's lesson packs are bought per instructor.
+   */
+  lesson?: { instructorId: string; instructor: string };
+  /**
    * A discount on the whole order (Nov 26) — a Buck type or a promo code — as a line of its own with its
    * name, priced from the lines in its categories and shown negative. Its own `price` is 0.
    */

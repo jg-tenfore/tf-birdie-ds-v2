@@ -1,4 +1,5 @@
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import { lessonInstructor } from '../../../../pos/data/credits';
 import { golferOf } from '../../../../pos/data/customers';
 import { liveCustomer } from '../../../../pos/data/roster';
 import type { PosState } from '../../../../pos/state/pos-store';
@@ -43,6 +44,12 @@ export function counterRound(players = 1, transport: Transport = 'cart', name = 
 }
 
 export const item = (name: string, price: number, qty = 1): CartItem => ({ name, price, qty });
+
+/** A lesson rung up with its instructor (Nov 26): `lesson('Lesson 30 Min', 55, 'jordan-pike')`. */
+export function lesson(name: string, price: number, instructorId: string): CartItem {
+  const who = lessonInstructor(instructorId)!;
+  return { name, price, qty: 1, lesson: { instructorId: who.id, instructor: who.name } };
+}
 
 /** The register at the 18-hole club with `cart` on the order, `customerId` attached. */
 export function counterOrder(cart: CartItem[], customerId?: string, extra: Partial<PosState> = {}): Partial<PosState> {

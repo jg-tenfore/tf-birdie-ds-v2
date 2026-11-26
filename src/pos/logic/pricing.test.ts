@@ -33,12 +33,31 @@ describe("Buck's tax per line", () => {
     expect(orderTotals(cart, 0.08).total).toBe(105 + 8.4);
   });
 
-  it("keeps a tee time's reservation tax line as booked, and never taxes the round twice", () => {
+  it("re-taxes a tee time from the sheet at the tee-fee and transportation rates; its booked Taxes line charges nothing", () => {
     const cart: CartItem[] = [round(2), { name: 'Taxes', price: 6, qty: 1, isTax: true, isSubItem: true }, { name: 'Beer Craft', price: 7, qty: 1 }];
     const t = orderTotals(cart, buck());
-    expect(t.golfTax).toBe(6);
-    expect(t.taxes?.map((x) => x.id)).toEqual(['reservation', 'sales', 'alcohol']);
-    expect(t.total).toBe(158 + 6 + 7 + 0.56 + 0.47);
+    // Two seats of $59 + $20 cart at 8% = $12.64, the beer's $0.56 with it; the beer's alcohol tax on top.
+    expect(t.golfTax).toBe(0);
+    expect(t.taxes).toEqual([
+      { id: 'sales', label: 'Sales Tax 8%', amount: 13.2 },
+      { id: 'alcohol', label: 'Alcohol Tax 6.7%', amount: 0.47 },
+    ]);
+    expect(t.total).toBe(158 + 7 + 13.2 + 0.47);
+    // The same round rung up at the counter, with no Taxes line, charges the same.
+    expect(orderTotals([round(2), cart[2]], buck()).total).toBe(t.total);
+    // The archived edition still charges the booked $3 a seat.
+    expect(orderTotals(cart, 0.08).golfTax).toBe(6);
+  });
+
+  it('a green fee and a cart follow their own rates when Buck sets them apart', () => {
+    const club = clubPricingDefaults();
+    club.taxTypes.push({ id: 'golf', name: 'Golf Tax', rate: 0.05 });
+    club.fields.teeFee = { tax: 'golf', tax2: null };
+    const t = orderTotals([round(1)], buck({ club }));
+    expect(t.taxes).toEqual([
+      { id: 'sales', label: 'Sales Tax 8%', amount: 1.6 },
+      { id: 'golf', label: 'Golf Tax 5%', amount: 2.95 },
+    ]);
   });
 
   it("follows a product's own tax type over its kind's — lessons are sold exempt", () => {
@@ -126,5 +145,66 @@ describe('per-line totals', () => {
     const order = { lines: cart, lineTotals: lineTotals(cart, p), refunds: [], subtotal: 28, tax: 0, total: orderTotals(cart, p).total } as unknown as OrderRecord;
     expect(refundAmount(order, [{ index: 0, qty: 1 }])).toBe(5.74);
     expect(refundAmount(order, [{ index: 0, qty: 2 }, { index: 1, qty: 1 }])).toBe(order.total);
+  });
+});
+
+describe('Food Tax (Nov 26 decision: its own rate, Same as sales tax by default)', () => {
+  const lunch: CartItem[] = [
+    { name: 'Hamburger', price: 8, qty: 1 },
+    { name: 'Golf Glove Mens', price: 18, qty: 1 },
+  ];
+
+  it('at this club food is taxed at the sales tax, on one Sales Tax line', () => {
+    const t = orderTotals(lunch, buck());
+    expect(t.taxes).toEqual([{ id: 'sales', label: 'Sales Tax 8%', amount: 2.08 }]);
+  });
+
+  it('follows the terminal’s sales tax while it is Same as sales tax', () => {
+    expect(orderTotals([lunch[0]], buck({ salesRate: 0.0825 })).tax).toBe(0.66);
+  });
+
+  it('a rate of its own prints as its own line', () => {
+    const club = clubPricingDefaults();
+    club.taxTypes = club.taxTypes.map((x) => (x.id === 'food' ? { ...x, rate: 0.07, sameAsDefault: false } : x));
+    const t = orderTotals(lunch, buck({ club }));
+    expect(t.taxes).toEqual([
+      { id: 'sales', label: 'Sales Tax 8%', amount: 1.44 },
+      { id: 'food', label: 'Food Tax 7%', amount: 0.56 },
+    ]);
+  });
+});
+
+describe('Tax service charges (Nov 26 decision: a club setting, off by default)', () => {
+  const tab: CartItem[] = [
+    { name: 'Hamburger', price: 8, qty: 2 },
+    { name: 'Beer Domestic', price: 5, qty: 2 },
+  ];
+
+  it('is off at this club: the F&B charge is untaxed', () => {
+    expect(clubPricingDefaults().taxServiceCharges).toBe(false);
+    const t = orderTotals(tab, buck({ dineIn: true }));
+    expect(t.service).toBe(4.68);
+    expect(t.taxes?.find((x) => x.id === 'sales')?.amount).toBe(2.08);
+  });
+
+  it('on, the F&B charge is taxed at the Food Tax rate and the parts still add up', () => {
+    const club = { ...clubPricingDefaults(), taxServiceCharges: true };
+    const t = orderTotals(tab, buck({ club, dineIn: true }));
+    // $26 of food and drink and the $4.68 charge on it, both at 8%.
+    expect(t.taxes?.find((x) => x.id === 'sales')?.amount).toBe(2.45);
+    expect(t.taxes?.find((x) => x.id === 'alcohol')?.amount).toBe(0.67);
+    expect(t.total).toBe(33.8);
+    expect(sum(lineTotals(tab, buck({ club, dineIn: true })))).toBe(t.total);
+  });
+
+  it('on, a charge on the whole order is taxed at the sales tax even when food has its own rate', () => {
+    const club = { ...clubPricingDefaults(), taxServiceCharges: true };
+    club.taxTypes = club.taxTypes.map((x) => (x.id === 'food' ? { ...x, rate: 0.05, sameAsDefault: false } : x));
+    const cart: CartItem[] = [{ name: 'Hamburger', price: 10, qty: 1 }, { name: 'Setup fee', price: 0, qty: 1, serviceCharge: { id: 'custom', label: 'Setup fee', amount: 10, appliesTo: 'all' } }];
+    const t = orderTotals(cart, buck({ club }));
+    expect(t.taxes).toEqual([
+      { id: 'sales', label: 'Sales Tax 8%', amount: 0.8 },
+      { id: 'food', label: 'Food Tax 5%', amount: 0.5 },
+    ]);
   });
 });
