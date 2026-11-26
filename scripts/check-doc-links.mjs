@@ -39,6 +39,8 @@ const files = [
   path.join(ROOT, 'src/showcase/weston-edits/0-overview.mdx'),
   path.join(ROOT, 'src/showcase/v1-v2/100126/0-overview.mdx'),
   path.join(ROOT, 'src/showcase/v1-v2/100226/0-overview.mdx'),
+  // Design System page content: In Birdie links and Related pages.
+  ...walk(path.join(ROOT, 'src/showcase/ds-docs/content')),
 ];
 
 // `to=` / `to:` (DocLink, NavCard, ScreenCard links), `route:` (a phone screen, which the phone
@@ -46,6 +48,10 @@ const files = [
 const LINK = /\b(?:to|route)(?:=|:\s*)(?:\{\s*)?(["'`])([^"'`]+?)\1|mobilePrototype\((["'`])([^"'`]+?)\3\)/g;
 // Generated rows: every story id and phone route the Screen index links to.
 const GENERATED = /"(?:id|route|docs|firstId)":"([^"]+)"/g;
+// Design System content: `storyId:` and `handheldRoute:` are story ids; a Related entry's `id:` is a
+// meta id, and the page links its docs page (`<id>--overview`).
+const DS_STORY = /\b(?:storyId|handheldRoute):\s*(["'`])([^"'`]+?)\1/g;
+const DS_RELATED = /\{\s*name:\s*(["'`])[^"'`]+\1,\s*id:\s*(["'`])([^"'`]+?)\2\s*\}/g;
 
 const missing = [];
 let checked = 0;
@@ -54,6 +60,10 @@ for (const file of files) {
   const rel = path.relative(ROOT, file);
   const ids = [...src.matchAll(LINK)].map((m) => m[2] ?? m[4]).filter((id) => /--/.test(id));
   if (rel.endsWith('screen-index-data.ts')) ids.push(...[...src.matchAll(GENERATED)].map((m) => m[1]));
+  if (rel.includes('ds-docs/content')) {
+    ids.push(...[...src.matchAll(DS_STORY)].map((m) => m[2]));
+    ids.push(...[...src.matchAll(DS_RELATED)].map((m) => `${m[3]}--overview`));
+  }
   for (const id of ids) {
     checked++;
     if (!known.has(id)) missing.push(`${rel}: ${id}`);
