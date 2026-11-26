@@ -159,6 +159,10 @@ export function MobileScreen({
       {topBar}
       <Box onScroll={onBodyScroll} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', ...bodySx }}>
         {children}
+        {/* With a FAB, the body ends in room for it (56 tall + 16 off the edge + 16 clear), so the
+            last row — a list's last name, a tab's total — can scroll out from under the button
+            instead of sitting behind it at the bottom of the list. */}
+        {fab && <Box aria-hidden sx={{ height: 88, flexShrink: 0 }} />}
       </Box>
       {fab && (
         <Box sx={{ position: 'absolute', right: 16, bottom: 16 + (bottomBar ? 80 : 0), zIndex: 2 }}>

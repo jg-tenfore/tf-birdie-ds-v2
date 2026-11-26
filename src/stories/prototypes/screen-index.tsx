@@ -207,8 +207,8 @@ const TABLET_AREAS: Record<string, AreaCopy> = {
 const MOBILE_AREAS: Record<string, AreaCopy> = {
   'Global Nav': {
     shot: 'mobile-more',
-    title: 'Four destinations, one level down',
-    blurb: 'Tee Sheet, Register, People and More on the navigation bar. Everything else is a pushed page, a full-screen dialog or a payment takeover.',
+    title: 'A bottom bar for each role',
+    blurb: 'Pro shop and managers get Tee Sheet, Register, People and More; servers and bartenders Tables, Tabs and Quick Order; hosts Tables and Reservations. Everything else is a pushed page, a full-screen dialog or a payment takeover.',
     lookAt: 'whether each tab keeps its place, and the Register tab’s badge.',
     route: '',
   },
@@ -225,6 +225,39 @@ const MOBILE_AREAS: Record<string, AreaCopy> = {
     blurb: 'The week strip and calendar sheet, then a tee time opens its reservation: players, rates and carts, then Check in & pay.',
     lookAt: 'the player rows at 360 wide, the rate dialog, the pinned Check in & pay.',
     route: '',
+  },
+  'Quick Order': {
+    shot: 'mobile-quick-order',
+    title: 'Counter orders on the handheld',
+    blurb: 'The menu running now, photo tiles, search across both menus, then review, send to the kitchen or charge.',
+    lookAt: 'the menu that opens by time of day, and the dish screen’s Choose one / Choose any.',
+    route: 'prototypes-mobile-quick-order-counter-on-the-handheld--the-counter',
+  },
+  Tabs: {
+    shot: 'mobile-tab',
+    title: 'A tab, seat by seat',
+    blurb: 'Open tabs with the tables that need attention first, a tab by seat with a Shared band, send to kitchen, then pay with the phone’s checkout.',
+    lookAt: 'a sent line locking (void to change it), and Move, Split and Discount still working.',
+    route: 'prototypes-mobile-tabs-tabs-on-the-handheld--a-tab-by-seat',
+  },
+  Tables: {
+    shot: 'mobile-tables',
+    title: 'The floor, one room at a time',
+    blurb: 'Every table as a status tile, using the tablet’s rules and colours; tap one to seat a walk-in or a reservation, or open its tab.',
+    lookAt: 'the statuses at a glance, and seating a party in two taps.',
+    route: 'prototypes-mobile-tables-floor-on-the-handheld--the-dining-room',
+  },
+  Reservations: {
+    shot: 'mobile-reservations',
+    title: 'Today’s book',
+    blurb: 'Today’s dining reservations by time: seat a party at a table, or mark a no-show.',
+    route: 'prototypes-mobile-reservations-today-on-the-handheld--todays-book',
+  },
+  'Orders & Tips': {
+    shot: 'mobile-orders-tips',
+    title: 'The day so far',
+    blurb: 'Every paid order with its tip kept apart, read-only on the handheld, with a Mine filter.',
+    route: 'prototypes-mobile-orders-tips-today-on-the-handheld--the-day-so-far',
   },
   'Customer Search': {
     shot: 'mobile-people',

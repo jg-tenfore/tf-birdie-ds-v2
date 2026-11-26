@@ -30,7 +30,7 @@ import { CURRENT_EDITION, ARCHIVED_EDITION } from '../../pos/edition';
 <Section title="Current and archive" intro="Two words this Storybook uses everywhere.">
 <Grid cols={2}>
   <NavCard eyebrow="Current" title="Weston Edits, on both apps" href={tabletPrototype('#/tee-sheet')} cta="Open the current tablet">
-    The design the team works from. On the tablet that is the <Code>{CURRENT_EDITION.tablet}</Code> edition (V1 → V2): Weston's edits plus every other nav destination. The phone has no V1 → V2 build, so its current design is the <Code>{CURRENT_EDITION.mobile}</Code> edition. Both live under <strong>Prototypes</strong>, and at <Code>/prototype/</Code> and <Code>/mobile/</Code>.
+    The design the team works from: the <Code>{CURRENT_EDITION.tablet}</Code> edition (V1 → V2) on the tablet and <Code>{CURRENT_EDITION.mobile}</Code> on the phone — Weston's edits plus the other nav destinations. The tablet has all eighteen; the handheld has the golf screens and, since Nov 26, the restaurant (Tables, Tabs, Quick Order, Reservations, Orders & Tips), with its bottom bar set by the signed-in role. Both live under <strong>Prototypes</strong>, and at <Code>/prototype/</Code> and <Code>/mobile/</Code>.
   </NavCard>
   <NavCard eyebrow="Archive" title="The original port, and what it was built on" href={archivePrototype('tablet')} cta="Open the archived tablet">
     The <Code>{ARCHIVED_EDITION}</Code> edition: the port of the HTML prototype before Weston's rounds, plus the work built on it. Still rendered, still linkable, at <Code>/archive/prototype/</Code> and <Code>/archive/mobile/</Code>, and under <strong>Archive</strong> in the sidebar.
@@ -93,10 +93,11 @@ An edition is a setting, not a copy. Components ask which edition they're in and
       link: { label: 'Devices', to: 'start-here-devices--overview' },
     },
     {
-      date: 'Now',
+      date: 'Nov 26',
       status: 'now',
       title: 'The restaurant on the handheld',
-      body: 'Restaurant screens for the Quest handheld are being built now, for servers on the floor and the patio. They will appear in the phone screen index as they land.',
+      body: 'Tables, Tabs, Quick Order, Reservations and Orders & Tips on the Quest handheld, on the tablet\'s own rules and store. The bottom bar follows the signed-in role: servers and bartenders get Tables · Tabs · Quick Order, hosts Tables · Reservations, managers reach the restaurant from More. Next for the handheld: the operations screens (Customer Search, Gift Cards, Time Clock, Shift).',
+      link: { label: 'Phone screen index', to: 'prototypes-mobile-screen-index--overview' },
     },
     {
       date: 'By end of 2026',

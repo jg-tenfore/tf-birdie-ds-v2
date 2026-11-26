@@ -110,6 +110,13 @@ const SHOTS = [
   { name: 'mobile-card-reader', route: 'mobile-screens-5-·-payment--reader-card' },
   { name: 'mobile-people', route: 'mobile-screens-7-·-people--people-list' },
   { name: 'mobile-more', route: 'mobile-screens-6-·-operations--more-root' },
+  // The restaurant on the handheld (V1 → V2 phone, Nov 26).
+  { name: 'mobile-tables', route: 'prototypes-mobile-tables-floor-on-the-handheld--the-dining-room' },
+  { name: 'mobile-tab', route: 'prototypes-mobile-tabs-tabs-on-the-handheld--a-tab-by-seat' },
+  { name: 'mobile-menu', route: 'prototypes-mobile-tabs-tabs-on-the-handheld--the-menu' },
+  { name: 'mobile-quick-order', route: 'prototypes-mobile-quick-order-counter-on-the-handheld--the-counter' },
+  { name: 'mobile-reservations', route: 'prototypes-mobile-reservations-today-on-the-handheld--todays-book' },
+  { name: 'mobile-orders-tips', route: 'prototypes-mobile-orders-tips-today-on-the-handheld--the-day-so-far' },
   // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
   { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
   { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },
