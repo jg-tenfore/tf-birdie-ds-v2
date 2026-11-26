@@ -1,5 +1,6 @@
 import type { CheckoutModal } from '../state/checkout';
 import { TenderCreditDialog } from './TenderCreditDialog';
+import { LineDiscountDialog, OrderDiscountDialog } from './DiscountDialogs';
 
 /**
  * Checkout's dialogs (Nov 26), routed from `ModalHost`'s default branch — one file per dialog, and
@@ -9,5 +10,9 @@ export function CheckoutDialogs({ m }: { m: CheckoutModal }) {
   switch (m.kind) {
     case 'tenderCredit':
       return <TenderCreditDialog m={m} />;
+    case 'lineDiscount':
+      return <LineDiscountDialog m={m} />;
+    case 'orderDiscount':
+      return <OrderDiscountDialog m={m} />;
   }
 }

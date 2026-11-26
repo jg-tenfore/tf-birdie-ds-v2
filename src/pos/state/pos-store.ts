@@ -47,7 +47,7 @@ import {
 } from './settings';
 import { isLeagueAction, leagueDefaults, leagueReducer, type LeagueAction, type LeagueState } from './league';
 import { creditLedgerDefaults, type CreditLedgerState } from './credit-ledger';
-import { checkoutDefaults, type CheckoutModal, type CheckoutState } from './checkout';
+import { checkoutDefaults, checkoutReducer, isCheckoutAction, type CheckoutAction, type CheckoutModal, type CheckoutState } from './checkout';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -683,7 +683,9 @@ export type Action =
   // Settings (V1 → V2): the terminal, checkout and receipts, staff and PINs.
   | SettingsAction
   // The League view (V1 → V2, 100226): a league's tee times, check-in and placement — `state/league.ts`.
-  | LeagueAction;
+  | LeagueAction
+  // Checkout that's right (Nov 26): discounts, price overrides, splits, service charges — `state/checkout.ts`.
+  | CheckoutAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -1352,6 +1354,7 @@ export function reducer(state: PosState, action: Action): PosState {
       if (isRestaurantAction(action)) return restaurantReducer(state, action);
       if (isOperationsAction(action)) return operationsReducer(state, action);
       if (isLeagueAction(action)) return leagueReducer(state, action, reducer);
+      if (isCheckoutAction(action)) return checkoutReducer(state, action);
       if (isSettingsAction(action))
         return settingsReducer(state, action, demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
       return isRegisterExtrasAction(action)

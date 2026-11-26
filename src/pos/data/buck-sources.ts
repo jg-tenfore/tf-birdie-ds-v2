@@ -136,6 +136,15 @@ export const BUCK_SOURCES: BuckSource[] = [
   },
   {
     birdieArea: 'Pro Shop',
+    shows: 'Discount types on any register line and on the whole order: percent, dollars off each, cost plus where the cost is known; manager PIN for approval types; price override; promo codes',
+    buckScreen: 'Buck › Products › Discount Types · Products › List (Cost, Price override)',
+    buckFile: PRODUCTS,
+    birdieFile: 'src/pos/logic/discounts.ts',
+    status: 'partial',
+    note: 'All three of Buck’s kinds, each limited to its categories (Nov 26). Cost plus is offered only on the products whose cost Birdie knows. A plate on a tab still takes percent types only, from its own Adjust. Promo codes are an invented table — Buck has no promo-code screen to follow.',
+  },
+  {
+    birdieArea: 'Pro Shop',
     shows: 'Combos with Buck’s department; Turn Special and 6 Pack Combo by Buck’s titles',
     buckScreen: 'Buck › Products › Combos',
     buckFile: PRODUCTS,

@@ -96,7 +96,7 @@ export interface TaxPart {
 
 /** Whether a line carries tax at all. */
 export function isTaxable(line: CartItem): boolean {
-  return !(isTaxRow(line) || line.giftCard || line.accountPayment || line.eventBill || line.serviceCharge || line.name === 'Tax Exempt');
+  return !(isTaxRow(line) || line.giftCard || line.accountPayment || line.eventBill || line.serviceCharge || line.orderDiscount || line.name === 'Tax Exempt');
 }
 
 /** The kind of a catalog or menu line by name, when it is one of Buck's four. */
@@ -220,7 +220,7 @@ export type NetOf = (line: CartItem, index: number) => number;
  */
 export function priceOrder(cart: CartItem[], p: Pricing, netOf: NetOf): PricedOrder {
   const exempt = cart.some((l) => l.name === 'Tax Exempt');
-  const net = cart.map((l, i) => (isTaxRow(l) || l.serviceCharge || l.name === 'Tax Exempt' ? 0 : cents(netOf(l, i))));
+  const net = cart.map((l, i) => (isTaxRow(l) || l.serviceCharge || l.orderDiscount || l.name === 'Tax Exempt' ? 0 : cents(netOf(l, i))));
   const goods = cents(net.reduce((s, n) => s + n, 0));
 
   // A tee time from the sheet carries its reservation's tax line; its rounds are taxed by that.

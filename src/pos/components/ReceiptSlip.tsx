@@ -45,8 +45,9 @@ export function ReceiptSlip({
       <span>{value}</span>
     </Stack>
   );
+  const otherDiscount = Math.round((totals.discount - (totals.discountLines ?? []).reduce((sum, d) => sum + d.amount, 0)) * 100) / 100;
   // Service charges print under the subtotal, from `totals`, not as items.
-  const items = lines.filter((l) => !l.isTax && l.name !== 'Taxes' && !l.serviceCharge);
+  const items = lines.filter((l) => !l.isTax && l.name !== 'Taxes' && !l.serviceCharge && !(l.orderDiscount && totals.discountLines));
   return (
     <Box
       data-receipt
@@ -78,7 +79,13 @@ export function ReceiptSlip({
       </Box>
       <Box sx={{ borderTop: `1px dashed ${md3.outlineVariant}`, pt: 0.75 }}>
         {row('Subtotal', money(totals.subtotal))}
-        {totals.discount < 0 && row('Discounts', money(totals.discount))}
+        {(totals.discountLines ?? []).map((d) => (
+          <Box key={d.id} data-receipt-discount={d.id}>
+            {row(d.label, money(d.amount))}
+          </Box>
+        ))}
+        {/* Seat rates and comps on a round: the rest of the discount, so the receipt adds up. */}
+        {otherDiscount < -0.004 && row(totals.discountLines?.length ? 'Other discounts' : 'Discounts', money(otherDiscount))}
         {/* Buck's service charges and tax by type (V1 → V2, Nov 26), each its own line. */}
         {(totals.serviceCharges ?? []).map((c) => (
           <Box key={c.id} data-receipt-service-charge={c.id}>

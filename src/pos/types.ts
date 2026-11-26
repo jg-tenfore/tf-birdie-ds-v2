@@ -399,6 +399,15 @@ export interface CartItem {
    * priced from the lines it applies to (`logic/pricing.ts`). Its own `price` is 0.
    */
   serviceCharge?: import('./logic/pricing').CartServiceCharge;
+  /** A Buck discount on this line (Nov 26) — percent, dollars off each, or cost plus. See `logic/discounts.ts`. */
+  lineDiscount?: import('./logic/discounts').AppliedDiscount;
+  /**
+   * A discount on the whole order (Nov 26) — a Buck type or a promo code — as a line of its own with its
+   * name, priced from the lines in its categories and shown negative. Its own `price` is 0.
+   */
+  orderDiscount?: import('./logic/discounts').AppliedDiscount;
+  /** The price was changed at the register (Buck's Price override option): what it was, and who changed it. */
+  priceOverride?: { from: number; by: string };
 }
 
 // ─── Register extras (V1 → V2) ──────────────────────────────────────────────

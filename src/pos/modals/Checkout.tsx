@@ -96,7 +96,9 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
     setDigits((digits + key).replace(/^0+(?=\d)/, ''));
   };
 
-  const lines = state.cart.filter((i) => !i.isTax && i.name !== 'Taxes');
+  // Service charges are totals rows, not lines (V1 → V2); index kept so a line's discount can be found.
+  const lines = state.cart.map((item, index) => ({ item, index })).filter(({ item: i }) => !i.isTax && i.name !== 'Taxes' && !i.serviceCharge);
+  const discountOf = (id: string) => totals.discountLines?.find((d) => d.id === id);
 
   return (
     <ModalFrame
@@ -135,8 +137,12 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
               mb: 2,
             }}
           >
-            {lines.map((item, i) => {
-              const lineTotal = item.isCheckIn
+            {lines.map(({ item, index }, i) => {
+              const lineOff = discountOf(`line-${index}`);
+              const orderOff = item.orderDiscount ? discountOf(`order-${index}`) : undefined;
+              const lineTotal = item.orderDiscount
+                ? (orderOff?.amount ?? 0)
+                : item.isCheckIn
                 ? (item.players ?? []).reduce(
                     (s, p) => s + cart.playerPrice(item.unitPrice ?? 0, p),
                     0,
@@ -144,14 +150,28 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
                 : item.price * item.qty;
               return (
                 <Box key={i} sx={{ p: '10px 12px', borderBottom: `1px solid ${md3.surfaceContainer}`, '&:last-of-type': { borderBottom: 'none' } }}>
-                  <Stack direction="row" alignItems="baseline" justifyContent="space-between" gap={1}>
+                  <Stack direction="row" alignItems="baseline" justifyContent="space-between" gap={1} data-checkout-line={index}>
                     <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>
-                      {item.isCheckIn ? item.name : `${item.qty}× ${item.name}`}
+                      {item.isCheckIn || item.orderDiscount ? item.name : `${item.qty}× ${item.name}`}
                     </Typography>
-                    <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>
+                    <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: lineTotal < 0 ? md3.error : undefined }}>
                       {cart.money(lineTotal)}
                     </Typography>
                   </Stack>
+                  {/* A Buck discount on the line (V1 → V2), negative, by name. */}
+                  {lineOff && (
+                    <Stack direction="row" justifyContent="space-between" sx={{ pl: 1.5, fontSize: 11, color: md3.onSurfaceVariant, mt: '2px' }} data-checkout-line-discount={index}>
+                      <span>{item.lineDiscount?.label}</span>
+                      <Box component="span" sx={{ color: md3.error, fontWeight: 700 }}>
+                        {cart.money(lineOff.amount)}
+                      </Box>
+                    </Stack>
+                  )}
+                  {item.priceOverride && (
+                    <Box sx={{ pl: 1.5, fontSize: 11, color: md3.onSurfaceVariant }}>
+                      Price override · was {cart.money(item.priceOverride.from)} each
+                    </Box>
+                  )}
                   {item.isCheckIn &&
                     (item.players ?? []).map((p, pi) => {
                       const b = cart.playerBreakdown(item.unitPrice ?? 0, p);

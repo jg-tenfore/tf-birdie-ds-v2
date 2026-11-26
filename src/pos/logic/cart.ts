@@ -8,6 +8,7 @@ import { seatIsMember } from './rates';
 import { seatNetGreenFee, seatTransportFee, seatTransportOverride } from './seat-pricing';
 import type { RateContext } from './rates';
 import { isPricing, priceOrder, type Pricing } from './pricing';
+import { discountLines, discountedNets } from './discounts';
 
 /**
  * Cart construction and pricing.
@@ -244,6 +245,8 @@ export interface OrderTotals {
   serviceCharges?: { id: string; label: string; amount: number }[];
   /** The service charges' sum; `total` includes it. 0 or absent at a flat rate. */
   service?: number;
+  /** The register's discounts by name (Buck's types, promo codes), negative — what the receipt prints. */
+  discountLines?: { id: string; label: string; amount: number }[];
 }
 
 /**
@@ -294,13 +297,20 @@ export function orderTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RA
   };
 }
 
-/** What a line charges before tax: its price, its seats', its discounts. */
-export const lineNet = (line: CartItem): number => (isTaxRow(line) || line.serviceCharge ? 0 : payableTotal([line]));
+/** What one line charges before tax and before any register discount: its price, or its seats'. */
+export const linePayable = (line: CartItem): number => (isTaxRow(line) || line.serviceCharge || line.orderDiscount ? 0 : payableTotal([line]));
+
+/**
+ * What each line charges before tax, index for index — its price or its seats', less the register's
+ * discounts on it (Buck's types and promo codes, `logic/discounts.ts`, V1 → V2).
+ */
+export const lineNets = (cart: CartItem[]): number[] => discountedNets(cart, linePayable).nets;
 
 /** `orderTotals` by Buck's per-line pricing (`logic/pricing.ts`, V1 → V2). */
 function buckTotals(cart: CartItem[], p: Pricing): OrderTotals {
-  const priced = priceOrder(cart, p, lineNet);
-  const subtotal = cents(cartTotals(cart.filter((i) => !isTaxRow(i) && !i.serviceCharge)).subtotal);
+  const nets = lineNets(cart);
+  const priced = priceOrder(cart, p, (_, i) => nets[i]);
+  const subtotal = cents(cartTotals(cart.filter((i) => !isTaxRow(i) && !i.serviceCharge && !i.orderDiscount)).subtotal);
   const golfTax = priced.taxes.find((t) => t.id === 'reservation')?.amount ?? 0;
   return {
     subtotal,
@@ -314,6 +324,7 @@ function buckTotals(cart: CartItem[], p: Pricing): OrderTotals {
     taxes: priced.taxes,
     serviceCharges: priced.service,
     service: priced.serviceTotal,
+    discountLines: discountLines(cart, linePayable),
   };
 }
 
@@ -347,7 +358,10 @@ export function allocateCents(amount: number, weights: number[]): number[] {
  * per-line pricing (`Pricing`, V1 → V2) each line's own tax and service charges are used instead.
  */
 export function lineTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RATE): number[] {
-  if (isPricing(taxRate)) return priceOrder(cart, taxRate, lineNet).lines.map((l) => l.total);
+  if (isPricing(taxRate)) {
+    const nets = lineNets(cart);
+    return priceOrder(cart, taxRate, (_, i) => nets[i]).lines.map((l) => l.total);
+  }
   const t = orderTotals(cart, taxRate);
   const goods = cart.map((l) => (isTaxRow(l) ? 0 : payableTotal([l])));
   const untaxed = (l: CartItem) => isTaxRow(l) || Boolean(l.giftCard || l.accountPayment || l.eventBill);

@@ -1,6 +1,9 @@
 import type { CreditKind } from '../logic/credit-tenders';
 import { clubPricingDefaults, type ClubPricing, type Pricing } from '../logic/pricing';
 import type { Tab } from '../logic/restaurant';
+import type { AppliedDiscount } from '../logic/discounts';
+import { productSettings } from '../data/products';
+import type { CartItem } from '../types';
 import type { PosState } from './pos-store';
 
 // ─── State ──────────────────────────────────────────────────────────────────
@@ -46,15 +49,64 @@ export function pricingOf(
 
 // ─── Dialogs ────────────────────────────────────────────────────────────────
 
-/**
- * Checkout's dialogs (Nov 26, "checkout that's right" — V1 → V2): the credit tenders, and the order
- * tools around them. Merged into `Modal` by `pos-store.ts`, routed by `modals/CheckoutDialogs.tsx`.
- * None is linkable — a tender half-chosen is not a place, as Wave 3 decided for its own.
- */
 export type CheckoutModal =
   /** Pay with a rain check, punch card, credit book or lesson credit. `tip`: what checkout recalculated in. */
-  { kind: 'tenderCredit'; credit: CreditKind; tip?: number };
+  | { kind: 'tenderCredit'; credit: CreditKind; tip?: number }
+  /** A Buck discount, or a price override, on one line of the order. */
+  | { kind: 'lineDiscount'; index: number }
+  /** A Buck discount or a promo code on the whole order. */
+  | { kind: 'orderDiscount'; tab?: 'types' | 'promo' };
 
-const MODAL_KINDS = new Set<string>(['tenderCredit']);
+const MODAL_KINDS = new Set<string>(['tenderCredit', 'lineDiscount', 'orderDiscount']);
 
 export const isCheckoutModal = (m: { kind: string }): m is CheckoutModal => MODAL_KINDS.has(m.kind);
+
+// ─── Actions ────────────────────────────────────────────────────────────────
+
+export type CheckoutAction =
+  /** A Buck discount on a line, or `null` to take it off. */
+  | { type: 'applyLineDiscount'; index: number; discount: AppliedDiscount | null }
+  /** A Buck discount or promo code on the whole order — a line of its own. */
+  | { type: 'applyOrderDiscount'; discount: AppliedDiscount }
+  /** Buck's Price override: a new unit price on a line whose product allows it. */
+  | { type: 'overridePrice'; index: number; price: number };
+
+const ACTION_TYPES = new Set<string>(['applyLineDiscount', 'applyOrderDiscount', 'overridePrice']);
+
+export const isCheckoutAction = (a: { type: string }): a is CheckoutAction => ACTION_TYPES.has(a.type);
+
+const cents = (n: number) => Math.round(n * 100) / 100;
+
+export function checkoutReducer(state: PosState, action: CheckoutAction): PosState {
+  // A paid order is finished: nothing changes its price.
+  if (state.lastPayment || state.splitTender) return state;
+  switch (action.type) {
+    case 'applyLineDiscount': {
+      const line = state.cart[action.index];
+      if (!line) return state;
+      const cart = state.cart.map((l, i) => {
+        if (i !== action.index) return l;
+        const { lineDiscount: _drop, ...rest } = l;
+        return action.discount ? { ...rest, lineDiscount: action.discount } : rest;
+      });
+      return { ...state, cart };
+    }
+    case 'applyOrderDiscount': {
+      const d = action.discount;
+      // The same type or code twice is one discount: the new one replaces it.
+      const same = (l: CartItem) => Boolean(l.orderDiscount && ((d.code && l.orderDiscount.code === d.code) || (d.typeId != null && l.orderDiscount.typeId === d.typeId)));
+      const line: CartItem = { name: d.label, price: 0, qty: 1, orderDiscount: d };
+      return { ...state, cart: [...state.cart.filter((l) => !same(l)), line] };
+    }
+    case 'overridePrice': {
+      const line = state.cart[action.index];
+      const price = cents(action.price);
+      if (!line || line.isCheckIn || !productSettings(line.name)?.priceOverride || !(price >= 0)) return state;
+      const from = line.priceOverride?.from ?? line.price;
+      const cart = state.cart.map((l, i) =>
+        i !== action.index ? l : price === from ? (({ priceOverride: _p, ...rest }) => ({ ...rest, price }))(l) : { ...l, price, priceOverride: { from, by: state.operatorId } },
+      );
+      return { ...state, cart };
+    }
+  }
+}
