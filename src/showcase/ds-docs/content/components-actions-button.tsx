@@ -81,7 +81,11 @@ const doc: DsDoc = {
     { part: 'Container', description: 'A pill (radius xl). Filled, outlined (1.5px), or none for text buttons.' },
     { part: 'Leading icon (optional)', description: "18–20px, before the label. Use one only when it helps scanning, such as Send's paper plane." },
     { part: 'Label', description: 'A verb, in sentence case. It can carry the amount ("Pay $123.12") or a count ("Send 2").' },
-    { part: 'Focus ring', description: "MUI's focus-visible ring in the brand colour, shown for keyboard focus only." },
+    {
+      part: 'Focus indicator (missing)',
+      description:
+        "There isn't one yet. The theme defines no focus style. The MUI Button shows only a faint pulse on keyboard focus, and Birdie's own buttons (built on ButtonBase) show nothing. See Decisions.",
+    },
   ],
   variants: [
     {
@@ -101,7 +105,11 @@ const doc: DsDoc = {
   states: [
     { state: 'Default', tablet: 'Pill at 34–40px. A filled button is dark (onSurface) or brand green.', handheld: 'Pill at 48–56px, full width in pinned bars.' },
     { state: 'Hover', tablet: 'A darker fill, or a surface wash on outlined buttons. The tablet is mouse-first, so hover matters.', handheld: 'No hover. The ripple confirms the press.' },
-    { state: 'Focus', tablet: 'Focus-visible ring. Tab order follows reading order.', handheld: 'Same, for external keyboards.' },
+    {
+      state: 'Focus',
+      tablet: "Not visible today: no ring on FilledButton, ToolbarButton or HostButton. Tab order follows reading order. Needs a ring (see Decisions).",
+      handheld: 'The MUI Button pulses faintly; nothing else marks focus. This matters for external keyboards and switch access.',
+    },
     { state: 'Disabled', tablet: 'Greyed, with the reason said nearby ("Another order is on the register…"). Never disabled without a reason.', handheld: 'Same. The reason sits above the bar.' },
     { state: 'Busy', tablet: 'Payments hand over to the card reader screen, not a spinner in the button.', handheld: 'The reader takes over the screen.' },
   ],
@@ -151,10 +159,14 @@ const doc: DsDoc = {
     { decision: 'The tablet has its own button components', why: 'Dialog footers, toolbars and floor panels each need a different density. Small components with one job (FilledButton, ToolbarButton, HostButton) stop every screen re-deciding padding.' },
     { decision: 'Dark, not green, for the main dialog action', why: 'Green is the pay colour on the tee sheet. A dark FilledButton keeps "do it" separate from "it\'s paid". The green Pay button is the exception that proves the rule.' },
     { decision: 'Amounts in the label', why: 'At a busy counter the number on the button is the last check before money moves: the operator confirms it by pressing it.' },
+    {
+      decision: 'Open: a visible focus ring',
+      why: "No Birdie button shows keyboard focus. Proposal: one theme rule for MuiButtonBase's .Mui-focusVisible, a 2px md3.primary outline offset 2px, so every button built on ButtonBase, MUI or Birdie's own, gets it at once.",
+    },
   ],
   tokens: [
     { token: 'radius.xl', value: '28px', role: 'Pill shape: past half the height, so any button is a full pill' },
-    { token: 'md3.primary', value: '#17a34a', role: 'Green filled buttons, focus ring' },
+    { token: 'md3.primary', value: '#17a34a', role: 'Green filled buttons. The proposed focus ring colour.' },
     { token: 'md3.onSurface', value: '#191d19', role: 'FilledButton fill, the dark main action' },
     { token: 'md3.outlineVariant', value: '#c0c9c1', role: '1.5px outline' },
     { token: 'md3.error', value: '#ba1a1a', role: 'Destructive fill' },
