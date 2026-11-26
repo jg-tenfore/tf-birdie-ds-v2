@@ -32,7 +32,7 @@ import { usePrototypeDevice } from '../presenter/use-prototype-device';
 import type { VenueId } from '../pos/data/venues';
 import { md3 } from '../theme/tokens';
 import { PhoneStage } from './PhoneStage';
-import { HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
+import { CURRENT, HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
 import type { ScreenEntry } from './screen-index';
 
 /**
@@ -237,7 +237,7 @@ function SidebarHeader() {
       </Typography>
       <Typography variant="body2" sx={{ color: md3.onSurfaceVariant, mb: 1 }}>
         {WESTON
-          ? `${SCREENS.length} screens — Weston Edits first, then the phone screens`
+          ? `${SCREENS.length} screens — Weston Edits first${CURRENT ? ', then the restaurant' : ''}, then the phone screens`
           : `${SCREENS.length} screens — the original port, before Weston's rounds`}
       </Typography>
       <Stack direction="row" gap={2} flexWrap="wrap">

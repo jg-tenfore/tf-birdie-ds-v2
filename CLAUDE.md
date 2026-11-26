@@ -196,13 +196,17 @@ all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the st
 
 - **Same reducer, data and logic as the terminal; different presentation.** Mobile screens use
   `usePos()` and `src/pos/logic`, never the terminal's dense components or modals.
-- **`src/pos/mobile/navigation.tsx` is the whole IA.** Four destinations on an MD3
-  navigation bar; every other route declares its presentation — `push` (back arrow),
+- **`src/pos/mobile/navigation.tsx` is the whole IA.** Destinations on an MD3 navigation bar —
+  which ones is the operator's role (`bar-by-role.ts`, V1 → V2; the golf four otherwise); every
+  other route declares its presentation — `push` (back arrow),
   `dialog` (full-screen, ✕ + confirm), `takeover` (no exit; payment only). No centred
   dialogs on the phone. Short contextual choices use `BottomSheet` from `chrome.tsx`
   (never MUI `Drawer`/`Dialog`, which portal outside the frame).
 - **MD3 touch density** via `src/theme/mobile-theme.ts` and the `mobile` token block, designed
   at 402×797 and run on 360px-wide handhelds (the Quest is the priority device).
+- **The handheld restaurant** (`screens/restaurant/`) dispatches the tablet's restaurant actions
+  and reads its logic; its stories are `src/showcase/prototypes/mobile/<area>/`, which the mobile
+  prototype indexes in V1 → V2 builds only.
 - **Story metas must write `parameters` inline** (`parameters: { ...mobileMeta.parameters }`).
   Storybook's docs plugin injects its own `parameters` key and silently overwrites one that
   arrives by spread or by variable, dropping `layout: 'fullscreen'`.

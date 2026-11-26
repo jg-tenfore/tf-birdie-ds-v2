@@ -91,7 +91,17 @@ Flex's 360×720, or the 402×797 canvas it was designed on — as a native Mater
 Android app with touch sizing: 16px text and 48px tap targets.
 
 - **Four destinations** on a bottom navigation bar: **Tee Sheet** (home), **Register**,
-  **People** and **More**.
+  **People** and **More** — for the pro shop and managers. The bar is the menu **by role**
+  (Weston's *Menu by role*, `src/pos/mobile/bar-by-role.ts`): a server or bartender gets
+  **Tables · Tabs · Quick Order · More**, a host **Tables · Reservations · More**, and a manager
+  finds the restaurant in **More › Restaurant**. **Switch operator** in More changes who is
+  signed in, and the bar with them.
+- **The restaurant** (V1 → V2, Nov 26): the live floor room by room, seating walk-ins and
+  reservations; tabs seat by seat, with the menu (Buck's menus by time, both menus searchable,
+  photo tiles), the dish dialog's *Choose one* / *Choose any*, Send to kitchen, sent dishes
+  locked (void to change), move / split / discount, and Pay through the phone's checkout; the
+  counter; today's reservations; today's orders and tips, read-only. Same store and rules as the
+  tablet's — `src/pos/mobile/screens/restaurant/`, stories under **Prototypes › Mobile**.
 - **One level down** for everything else:
   - Drill-down pages slide in with a back arrow.
   - Create and edit forms open as full-screen dialogs with ✕ and Save.
