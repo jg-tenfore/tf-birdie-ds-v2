@@ -13,8 +13,8 @@ import type { VenueId } from './data/venues';
  *              `/weston-edits-mobile/`, and documented in Storybook's **Weston Edits**.
  * - `v1v2`   — **V1 → V2**: Weston's edits, plus the rest of the application migrated from
  *              v1 — every destination the shipping app's nav reaches, rebuilt rather than
- *              reproduced. Tablet only for now, published at `/v1-v2/`, documented in
- *              Storybook's **V1 → V2 Migration**.
+ *              reproduced. The current Birdie on both surfaces: the tablet at `/prototype/`,
+ *              and since Nov 26 the handheld at `/mobile/`, where it adds the restaurant.
  *
  * ## Why `v1v2` is a superset rather than a sibling
  *
@@ -35,12 +35,19 @@ export const isEdition = (v: string): v is Edition => v === 'base' || v === 'wes
 /**
  * The **current** Birdie, per surface (decided Nov 26, 2026).
  *
- * Weston Edits is the version the team works from. On the tablet that is `v1v2`, because V1 → V2
- * is Weston's edits *plus* every other nav destination; the phone has no V1 → V2 build, so its
- * current design is `weston`. `base` — the original port of the HTML prototype — is archived:
- * still rendered, but only under Storybook's Archive and the prototype's archive builds.
+ * Weston Edits is the version the team works from, and V1 → V2 is Weston's edits *plus* every
+ * other nav destination, so the current edition is `v1v2` on **both** surfaces. `base` — the
+ * original port of the HTML prototype — is archived: still rendered, but only under Storybook's
+ * Archive and the prototype's archive builds.
+ *
+ * The phone was `weston` until the handheld restaurant arrived (Nov 26). Moving it to `v1v2` was
+ * checked rather than assumed: the phone's screens branch only on `useWestonEdits()`, which is true
+ * in both, and all 181 phone prototype screens were rendered under each edition on the Quest and
+ * compared pixel for pixel — none differed beyond what also differs between two renders of the same
+ * edition. What `v1v2` adds on the phone is gated on `useV1V2()`: the restaurant (Tables, Tabs,
+ * Quick Order, Reservations, Orders & Tips), the role-aware navigation bar and the operator in More.
  */
-export const CURRENT_EDITION = { tablet: 'v1v2', mobile: 'weston' } as const satisfies Record<
+export const CURRENT_EDITION = { tablet: 'v1v2', mobile: 'v1v2' } as const satisfies Record<
   'tablet' | 'mobile',
   Edition
 >;

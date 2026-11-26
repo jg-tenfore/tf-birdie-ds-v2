@@ -32,7 +32,7 @@ import { usePrototypeDevice } from '../presenter/use-prototype-device';
 import type { VenueId } from '../pos/data/venues';
 import { md3 } from '../theme/tokens';
 import { PhoneStage } from './PhoneStage';
-import { HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
+import { CURRENT, HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
 import type { ScreenEntry } from './screen-index';
 
 /**
@@ -135,11 +135,19 @@ const tabletHref = () =>
     dev: DEV,
   });
 
-/** Which Birdie this is: the current phone is Weston Edits (the archive is the original port). */
+/**
+ * Which Birdie this is: the current phone is V1 → V2 — Weston's edits plus the restaurant — and
+ * the archive is the original port. A page opened with `?edition=weston` says so.
+ */
 function EditionLabel() {
   return (
     <Stack direction="row" gap={0.75} sx={{ mt: 1.25 }}>
-      <Chip label="Current · Weston Edits" size="small" color="primary" variant="filled" />
+      <Chip
+        label={buildEdition() === 'weston' ? 'Weston Edits' : 'Current · V1 → V2'}
+        size="small"
+        color="primary"
+        variant="filled"
+      />
     </Stack>
   );
 }
@@ -229,7 +237,7 @@ function SidebarHeader() {
       </Typography>
       <Typography variant="body2" sx={{ color: md3.onSurfaceVariant, mb: 1 }}>
         {WESTON
-          ? `${SCREENS.length} screens — Weston Edits first, then the phone screens`
+          ? `${SCREENS.length} screens — Weston Edits first${CURRENT ? ', then the restaurant' : ''}, then the phone screens`
           : `${SCREENS.length} screens — the original port, before Weston's rounds`}
       </Typography>
       <Stack direction="row" gap={2} flexWrap="wrap">

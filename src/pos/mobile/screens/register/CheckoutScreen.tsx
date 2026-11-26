@@ -10,6 +10,7 @@ import { md3, memberTypes, mobile, radius } from '../../../../theme/tokens';
 import { findMemberByName, findMemberByPhone } from '../../../data/golfers';
 import * as cartLogic from '../../../logic/cart';
 import { selectedBooking } from '../../../state/pos-store';
+import { tabById } from '../../../state/restaurant';
 import { useGolferRoster, usePos } from '../../../state/PosProvider';
 import { Stack } from '../../../components/Stack';
 import { MobileScreen, TopAppBar } from '../../chrome';
@@ -36,6 +37,8 @@ export function CheckoutScreen() {
   const booking = selectedBooking(state);
   const roster = useGolferRoster();
   const { total } = orderMoney(state.cart);
+  // V1 → V2: a tab loaded to be paid (`payTab`) — say whose it is.
+  const payingTab = tabById(state, state.payingTabId);
 
   // A house account needs a member on the order: the looked-up golfer, or the booking's.
   const member =
@@ -50,7 +53,15 @@ export function CheckoutScreen() {
       topBar={
         <TopAppBar
           title="Checkout"
-          subtitle={booking ? `${booking.name} · ${booking.conf}` : state.flowMode === 'reserve' ? 'Reservation · pay now' : 'Walk-in order'}
+          subtitle={
+            payingTab
+              ? `Tab · ${payingTab.name}`
+              : booking
+                ? `${booking.name} · ${booking.conf}`
+                : state.flowMode === 'reserve'
+                  ? 'Reservation · pay now'
+                  : 'Walk-in order'
+          }
         />
       }
     >

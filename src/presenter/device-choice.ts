@@ -65,8 +65,8 @@ export function currentVenue(search: string, hash: string, fallback: VenueId, is
 
 /**
  * The edition the other app should open in. The archive stays the archive; anything current
- * becomes the other app's current edition — the tablet's is V1 → V2, which has no phone build,
- * so the phone's is Weston Edits (see `CURRENT_EDITION`).
+ * becomes the other app's current edition — V1 → V2 on both since Nov 26 (see `CURRENT_EDITION`),
+ * so a Weston Edits link opens the current Birdie on the other device.
  */
 export function pairedEdition(edition: Edition, target: DeviceForm): Edition {
   if (edition === ARCHIVED_EDITION) return ARCHIVED_EDITION;

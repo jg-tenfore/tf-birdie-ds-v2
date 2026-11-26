@@ -12,7 +12,7 @@ Everything is published to GitHub Pages from `main`, as one site:
 |---|---|---|
 | 📚 | [**Design system (Storybook)**](https://jg-tenfore.github.io/tf-birdie-ds-v2/) | Start Here, the prototypes as stories, the design system, reviews and the archive |
 | 🖥️ | [**Tablet**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) | The current Birdie on the counter terminal: Weston Edits plus every nav destination (V1 → V2), 18-hole club, opens on the Clover Mini |
-| 📱 | [**Phone**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) | The current Birdie on the handheld: Weston Edits, 18-hole club, opens on the Quest handheld |
+| 📱 | [**Phone**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) | The current Birdie on the handheld: Weston Edits plus the restaurant (V1 → V2), 18-hole club, opens on the Quest handheld |
 | 🗄️ | [**Archive · Tablet**](https://jg-tenfore.github.io/tf-birdie-ds-v2/archive/prototype/) | The original port, before Weston's rounds, three nines |
 | 🗄️ | [**Archive · Phone**](https://jg-tenfore.github.io/tf-birdie-ds-v2/archive/mobile/) | The original phone screens, three nines |
 | 📄 | [**The original**](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/) | The single-file HTML prototype this was ported from, read-only |
@@ -38,8 +38,9 @@ TF Crane's is (regrouped Nov 26, 2026):
   [How to review](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-how-to-review--overview) and the
   [deep-link scheme](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/start-here-deep-links--overview).
 - **Prototypes**: the current Birdie (`CURRENT_EDITION` in `src/pos/edition.tsx`), area by area
-  in the nav's own order. **Tablet** is the V1 → V2 edition (Weston's edits plus every nav
-  destination); **Mobile** is the Weston Edits edition. Each opens on a **Screen index**
+  in the nav's own order. Both are the V1 → V2 edition (Weston's edits plus every nav
+  destination the surface has built: all of them on the tablet, the golf screens and the
+  restaurant on the phone). Each opens on a **Screen index**
   ([tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/prototypes-tablet-screen-index--overview),
   [phone](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/prototypes-mobile-screen-index--overview)): every story, area by area, with a
   link into the prototype.
@@ -108,7 +109,17 @@ Flex's 360×720, or the 402×797 canvas it was designed on — as a native Mater
 Android app with touch sizing: 16px text and 48px tap targets.
 
 - **Four destinations** on a bottom navigation bar: **Tee Sheet** (home), **Register**,
-  **People** and **More**.
+  **People** and **More** — for the pro shop and managers. The bar is the menu **by role**
+  (Weston's *Menu by role*, `src/pos/mobile/bar-by-role.ts`): a server or bartender gets
+  **Tables · Tabs · Quick Order · More**, a host **Tables · Reservations · More**, and a manager
+  finds the restaurant in **More › Restaurant**. **Switch operator** in More changes who is
+  signed in, and the bar with them.
+- **The restaurant** (V1 → V2, Nov 26): the live floor room by room, seating walk-ins and
+  reservations; tabs seat by seat, with the menu (Buck's menus by time, both menus searchable,
+  photo tiles), the dish dialog's *Choose one* / *Choose any*, Send to kitchen, sent dishes
+  locked (void to change), move / split / discount, and Pay through the phone's checkout; the
+  counter; today's reservations; today's orders and tips, read-only. Same store and rules as the
+  tablet's — `src/pos/mobile/screens/restaurant/`, stories under **Prototypes › Mobile**.
 - **One level down** for everything else:
   - Drill-down pages slide in with a back arrow.
   - Create and edit forms open as full-screen dialogs with ✕ and Save.
@@ -184,8 +195,8 @@ three icon names that were rendering as dots.
 
 It's an *edition* of the same app, not a copy: components branch on `useEdition()`
 ([`src/pos/edition.tsx`](src/pos/edition.tsx)), and a build picks one with `VITE_EDITION`. Since
-Nov 26, 2026 Weston Edits **is** the current Birdie (`CURRENT_EDITION`): V1 → V2 on the tablet,
-which is Weston's edits plus every other nav destination, and Weston Edits itself on the phone.
+Nov 26, 2026 Weston Edits **is** the current Birdie (`CURRENT_EDITION`): V1 → V2 on both the
+tablet and the phone, which is Weston's edits plus every other nav destination built so far.
 The original port (`base`) is the archive.
 
 ### 📄 The original
@@ -203,7 +214,7 @@ The single-file HTML prototype this port came from, published unmodified. It's t
 |---|---|
 | `/` | Storybook: the design system |
 | `/prototype/` | Tablet, current: V1 → V2 (`v1v2`), 18 holes |
-| `/mobile/` | Phone, current: Weston Edits (`weston`), 18 holes |
+| `/mobile/` | Phone, current: V1 → V2 (`v1v2`), 18 holes |
 | `/archive/prototype/` | Tablet, archive: the original port (`base`), three nines |
 | `/archive/mobile/` | Phone, archive: the original port (`base`), three nines |
 | `/reference/` | The original single-file HTML prototype |
@@ -254,10 +265,10 @@ npm run dev         # tablet, current → http://localhost:5173/
                     # another device  → ?device=large-display | clover-flex | … (see Devices)
 ```
 
-With no `?edition=` the dev server opens the **current** Birdie — V1 → V2 on the tablet,
-Weston Edits on the phone, both at the 18-hole club — exactly what `/prototype/` and `/mobile/`
-publish. `?edition=base` is the archive (at the three nines), and `?edition=weston` still shows
-Weston Edits without the V1 → V2 destinations on the tablet.
+With no `?edition=` the dev server opens the **current** Birdie — V1 → V2 on the tablet and the
+phone, both at the 18-hole club — exactly what `/prototype/` and `/mobile/` publish.
+`?edition=base` is the archive (at the three nines), and `?edition=weston` still shows Weston Edits
+without the V1 → V2 destinations (on the phone, without the restaurant).
 
 ## Devices
 

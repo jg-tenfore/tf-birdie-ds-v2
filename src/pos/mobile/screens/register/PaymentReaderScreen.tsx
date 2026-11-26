@@ -39,7 +39,7 @@ export function PaymentReaderScreen({ route }: ScreenProps<'paymentReader'>) {
   const cfg = PR_CONFIG[route.method] ?? PR_CONFIG.card;
 
   const approve = () => {
-    complete(route.method, route.amount);
+    complete(route.method, route.amount, route.tip);
     nav.replace({ name: 'paymentComplete' });
   };
 

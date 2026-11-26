@@ -7,7 +7,7 @@ import * as Archived from '../../pos-mobile/4-tee-selection/TeeSelection.stories
  * Prototypes / Mobile / Pro Shop / Tee time selection
  *
  * The stories of **Archive › Original port › Mobile › Tee Time Selection**, rendered in the
- * current edition: Weston Edits (`CURRENT_EDITION.mobile`). Each one is that story, unchanged
+ * current edition: V1 → V2, Weston’s edits plus the restaurant (`CURRENT_EDITION.mobile`). Each one is that story, unchanged
  * (same state, same `play`); only the edition differs, so the two pages are a before and after of
  * the same screen. The notes under each story were written for the original port, so where this
  * edition behaves differently, the screen wins.

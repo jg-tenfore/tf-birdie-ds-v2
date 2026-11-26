@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { NAV_GROUPS } from '../pos/data/nav';
 import { ARCHIVED_EDITION, buildEdition } from '../pos/edition';
 import { parseStoryExports, storyId, storyNameFromExport } from './story-meta';
 
@@ -69,6 +70,35 @@ const westonSources = import.meta.glob<string>('../showcase/weston-edits/*/Mobil
   eager: true,
 });
 
+/**
+ * The current phone's own story files (V1 → V2, Nov 26): `src/showcase/prototypes/mobile/<area>/`,
+ * titled `Prototypes/Mobile/<Area>/<Topic>` — the handheld restaurant, and the bar by role. Indexed
+ * only when the build is V1 → V2, because what they show is gated on it; Weston Edits' and the
+ * archive's phone prototypes list exactly what they did before.
+ */
+const currentModules = import.meta.glob<StoryModule>('../showcase/prototypes/mobile/*/*.stories.tsx', { eager: true });
+const currentSources = import.meta.glob<string>('../showcase/prototypes/mobile/*/*.stories.tsx', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+/** Storybook's sidebar order for Prototypes › Mobile: Global Nav, then the nav's destinations. */
+const AREA_ORDER = ['Global Nav', ...NAV_GROUPS.flatMap((g) => g.items.map((i) => i.label))];
+
+/** `Prototypes/Mobile/Tables/Floor on the handheld` → `Tables · Floor on the handheld`. */
+const currentSection = (title: string) => title.split('/').slice(2).join(' · ');
+
+/** The current phone's files in the sidebar's order — by area as the nav orders them, then by title. */
+const byArea = (mods: Record<string, StoryModule>) => {
+  const rank = (path: string) => {
+    const area = mods[path].default?.title?.split('/')[2] ?? '';
+    const i = AREA_ORDER.indexOf(area);
+    return i === -1 ? AREA_ORDER.length : i;
+  };
+  return (a: string, b: string) => rank(a) - rank(b) || (mods[a].default?.title ?? '').localeCompare(mods[b].default?.title ?? '');
+};
+
 /** `…/2-tee-sheet/TeeSheet.stories.tsx` → `2`: the folder's number, which orders the sections. */
 const folderNumber = (path: string) => /\/(\d+)-[^/]+\/[^/]+$/.exec(path)?.[1] ?? '';
 
@@ -89,10 +119,12 @@ function buildIndex(
   mods: Record<string, StoryModule>,
   srcs: Record<string, string>,
   sectionOf: (title: string, path: string) => string,
+  order: (a: string, b: string) => number = (a, b) => a.localeCompare(b, 'en', { numeric: true }),
 ): ScreenEntry[] {
   // Paths start with the numbered section folder (`0-navigation`, `1-register` …), so a
-  // path sort is Storybook's sidebar order too.
-  const paths = Object.keys(mods).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+  // path sort is Storybook's sidebar order too. The current phone's folders are named for their
+  // area instead, and pass the nav's order.
+  const paths = Object.keys(mods).sort(order);
   const entries: ScreenEntry[] = [];
   for (const path of paths) {
     const mod = mods[path];
@@ -120,16 +152,25 @@ function buildIndex(
 }
 
 /**
- * True when the phone prototype renders Weston's edits — the current phone (`weston`, see
- * `CURRENT_EDITION`), or any edition built on them — and false only in the archive (`base`).
+ * True when the phone prototype renders Weston's edits — the current phone (`v1v2` since Nov 26,
+ * see `CURRENT_EDITION`), Weston Edits itself, or any edition built on them — and false only in the
+ * archive (`base`).
  */
 export const WESTON = buildEdition() !== ARCHIVED_EDITION;
 
 const MOBILE_SCREENS = buildIndex(modules, sources, mobileSection);
 
-/** The Weston Edits screens come first in their prototype, then every Mobile Screens story. */
+/** True when the phone prototype is the current Birdie, V1 → V2 — the restaurant included. */
+export const CURRENT = buildEdition() === 'v1v2';
+
+const CURRENT_SCREENS = CURRENT ? buildIndex(currentModules, currentSources, currentSection, byArea(currentModules)) : [];
+
+/**
+ * The Weston Edits screens come first in their prototype, then (in V1 → V2) the handheld
+ * restaurant and the bar by role, then every Mobile Screens story.
+ */
 export const SCREENS: ScreenEntry[] = WESTON
-  ? [...buildIndex(westonModules, westonSources, westonSection), ...MOBILE_SCREENS]
+  ? [...buildIndex(westonModules, westonSources, westonSection), ...CURRENT_SCREENS, ...MOBILE_SCREENS]
   : MOBILE_SCREENS;
 
 export const SECTIONS: ScreenSection[] = SCREENS.reduce<ScreenSection[]>((acc, entry) => {

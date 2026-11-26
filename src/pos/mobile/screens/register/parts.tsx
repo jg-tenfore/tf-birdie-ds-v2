@@ -493,11 +493,13 @@ export function categoryColors(category: string) {
  */
 export function useCompletePayment() {
   const { state, dispatch } = usePos();
-  return (method: string, amount: number) => {
+  // `amount` includes `tip`. The tip is passed apart so the payment ledger keeps it apart, as the
+  // terminal's checkout does — Orders & Tips adjusts and tips out from it.
+  return (method: string, amount: number, tip?: number) => {
     if (state.flowMode === 'reserve') {
       const { booking } = reservationFor(state, true);
       if (booking) dispatch({ type: 'addBookings', bookings: [booking] });
     }
-    dispatch({ type: 'recordPayment', method, amount });
+    dispatch({ type: 'recordPayment', method, amount, tip: tip || undefined });
   };
 }
