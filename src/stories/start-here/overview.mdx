@@ -1,125 +1,130 @@
 import { Meta } from '@storybook/addon-docs/blocks';
-import { SiteLink, PrototypeLinks, PrototypeLaunchpad } from './SiteLink';
+import { Code, DocButton, DocPage, Grid, Hero, HeroScreen, NavCard, P, Pill, Section, art, archivePrototype, mobilePrototype, referencePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { AreaCards, countOf } from '../prototypes/screen-index';
+import { DEVICES } from '../../pos/devices';
 
 <Meta title="Start Here/Overview" />
 
-# ⛳ Birdie POS — Design System
+<DocPage>
 
-A **React + MUI (Material UI) + Emotion** component library for the TenFore golf-course
-point of sale, plus working prototypes built from it — three counter-terminal clubs, the same
-three clubs on a phone, and two editions that carry the design forward: **Weston Edits** and
-**V1 → V2**.
+<Hero
+  eyebrow="TenFore Birdie design system"
+  title="Birdie, at the counter and in the hand."
+  art={art('hero-overview')}
+  pills={<><Pill>{countOf('tablet')} on the tablet</Pill><Pill>{countOf('mobile')} on the phone</Pill><Pill>{DEVICES.length} devices</Pill><Pill>Sample data only</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet')}>Open the tablet prototype</DocButton><DocButton variant="secondary" to="start-here-how-to-review--overview">How to review</DocButton></>}
+  screens={<>
+    <HeroScreen src={screen('tablet-reservation')} label="Tablet · a reservation over the tee sheet" href={tabletPrototype('#/tee-sheet?res=p04_m6')} />
+    <HeroScreen src={screen('mobile-reservation')} frame="handheld" label="Handheld · the same reservation flow" href={mobilePrototype('weston-edits-1-·-reservation-panel-mobile--reservation')} />
+    <HeroScreen src={screen('tablet-register-order')} label="Tablet · the register" href={tabletPrototype('#/register?order=retail')} />
+  </>}
+  footnote="Live screens from the prototypes, on the Clover Mini and the Quest handheld. The Dunes of Delgado is a sample club: every golfer, order and price is sample data."
+>
+  Birdie is TenFore's point of sale for golf courses: the pro shop, the tee sheet, the restaurant and the back office jobs, on a counter terminal and on a handheld. This Storybook is where its screens and interactions are designed and reviewed, before they're built.
+</Hero>
 
-<PrototypeLaunchpad />
+<P>
+  <strong>The tablet</strong> is the counter terminal: dense, mouse-and-touch, built for a pro shop counter, with every destination in v1's main nav (register, tee sheet, courts and bays, the restaurant, customers, refunds, gift cards, events, stock, the drawer and settings). <strong>The phone</strong> is the handheld staff carry: the same POS as a native Material Design 3 app, at touch size, with the tee sheet, the register, people and payment. Both run on the same state, data and pricing, so an order totals the same on either.
+</P>
+<P>
+  <strong>Current is Weston Edits.</strong> The design the team works from is Weston's edits, made over five rounds in September: golf first, order second. On the tablet that is the <em>V1 → V2</em> edition, which is Weston's edits plus every other nav destination; on the phone it is the Weston Edits edition. Everything older, including the original port of the HTML prototype, is in <strong>Archive</strong>. The sample club is The Dunes of Delgado (the same name Buck uses), and "today" is always Thursday, May 21, 2026, at noon.
+</P>
 
-## Everything this repo publishes
+<div style={{ marginTop: 24 }}>
+<Grid cols={3}>
+  <NavCard eyebrow="The rules" title="Style guide" to="start-here-style-guide--overview" cta="Read the style guide">
+    Colour roles, density on each device, the slide-over, tee-sheet status, money, the nav, imagery and sample data, each with a real screen.
+  </NavCard>
+  <NavCard eyebrow="The hardware" title="Devices" to="start-here-devices--overview" cta="See the devices">
+    The Clover Mini, the large display, the Quest and Clover Flex handhelds, and how to show any screen on any of them.
+  </NavCard>
+  <NavCard eyebrow="The plan" title="Process & roadmap" to="start-here-process-roadmap--overview" cta="See the roadmap">
+    Where Birdie came from, what "current" and "archive" mean, the decisions still open, and what comes next.
+  </NavCard>
+  <NavCard eyebrow="Your turn" title="How to review" to="start-here-how-to-review--overview" cta="Start reviewing">
+    Open the prototype beside Storybook, pick a device, and go through the screens that matter most, in order.
+  </NavCard>
+  <NavCard eyebrow="The back office" title="Buck and Birdie" to="start-here-buck-and-birdie--overview" cta="See what Buck sets up">
+    Buck is where the club sets things up; Birdie is the counter that uses them. Which Buck screen feeds which Birdie area.
+  </NavCard>
+  <NavCard eyebrow="The latest review" title="Oct 2 · Proposal review" to="reviews-oct-2-proposal-review-summary--overview" cta="Open the latest">
+    Weston's review of the twelve Sep 30 proposals: ten approved and built, two more rounds, both now built.
+  </NavCard>
+</Grid>
+</div>
 
-This Storybook is the front door. Every other surface is a directory beside it:
+<Section title="Open the tablet, area by area" intro="Every destination in the main nav, in its order and under its heading. Each card opens the area in the prototype, or its stories here.">
+<AreaCards app="tablet" cols={4} />
+</Section>
 
-| Directory | What |
-|---|---|
-| `/` | **This Storybook** — foundations, components, and every POS screen as a story |
-| `/prototype/` | <SiteLink to="prototype">Three nines</SiteLink> the original club: Ponds, Valley and Rolling as independent nine-hole tracks |
-| `/prototype-18/` | <SiteLink to="prototype-18">18-hole course</SiteLink> one championship course, split into front and back nines |
-| `/prototype-9/` | <SiteLink to="prototype-9">Single nine</SiteLink> one nine-hole course |
-| `/mobile/` | <SiteLink to="mobile">Mobile · Three nines</SiteLink> the phone app: every Mobile Screens story as a live screen, plus a free-running app from the Tee Sheet |
-| `/mobile-18/` | <SiteLink to="mobile-18">Mobile · 18-hole course</SiteLink> the same phone screens at the 18-hole club |
-| `/mobile-9/` | <SiteLink to="mobile-9">Mobile · Single nine</SiteLink> the same phone screens at the single nine |
-| `/weston-edits/` | <SiteLink to="weston-edits">Weston Edits · Tablet</SiteLink> the 18-hole terminal with Weston's golf-first reservation edits (see **Weston Edits** in the sidebar) |
-| `/weston-edits-mobile/` | <SiteLink to="weston-edits-mobile">Weston Edits · Mobile</SiteLink> the same edits on the phone |
-| `/v1-v2/` | <SiteLink to="v1-v2" path="#/register">V1 → V2 · Tablet</SiteLink> Weston Edits plus the rest of the application, migrated from v1 — every destination in the nav opens a working screen (see **V1 → V2 Migration** in the sidebar) |
-| `/reference/` | <SiteLink to="reference">The original</SiteLink> the single-file HTML prototype this port came from. Read-only |
+<Section title="Open the handheld, area by area" intro="The phone keeps four destinations on its navigation bar (Tee Sheet, Register, People, More) and puts everything else one level down.">
+<AreaCards app="mobile" cols={4} />
+</Section>
 
-## The three prototypes are one app
+<Section title="Where things are" intro="Five folders in the sidebar, in this order.">
+<Grid cols={3}>
+  <NavCard eyebrow="1 · You are here" title="Start Here">
+    This page, the style guide, devices, process and roadmap, how to review, Buck and Birdie, and the deep-link scheme.
+  </NavCard>
+  <NavCard eyebrow="2" title="Prototypes" to="prototypes-tablet-screen-index--overview" cta="Tablet screen index">
+    The current Birdie, one story per screen and state: <strong>Tablet</strong> and <strong>Mobile</strong>, each by nav area, each opening on a Screen index.
+  </NavCard>
+  <NavCard eyebrow="3" title="Design System" to="foundations-colors--overview" cta="See the colours">
+    Styles (colour roles, type, spacing, radius, elevation, icons, logos, images) and the MUI components, grouped by purpose.
+  </NavCard>
+  <NavCard eyebrow="4" title="Reviews" to="reviews-oct-2-proposal-review-summary--overview" cta="Open the latest">
+    One folder per review with Weston, newest first. Each opens on a summary of what was decided and left open.
+  </NavCard>
+  <NavCard eyebrow="5" title="Archive" to="archive-about-the-archive--overview" cta="About the archive">
+    The original port in its own edition, the tee sheet action showcase, the scaffold's account screens and the V1 → V2 coverage table.
+  </NavCard>
+</Grid>
+</Section>
 
-They are **not** three codebases. The only thing that differs is the course layout: the tee
-sheet renders one column group per course, so a club's shape *is* its `courses` array. Each is
-the same build run with a different `VITE_VENUE` — see `src/pos/data/venues.ts`.
+<Section title="Try the prototypes" intro="Separate Vite apps, built from the same components as these stories, so the two can't drift.">
+<Grid cols={3}>
+  <NavCard eyebrow="Tablet" title="The counter terminal" href={tabletPrototype('#/tee-sheet')} cta="Open the tablet prototype">
+    <Code>npm run dev</Code>, then localhost:5173. Live on GitHub Pages at <Code>/prototype/</Code>. Every screen and dialog has a deep link (for example <Code>#/tee-sheet?res=p04_m6</Code>), and Back and Forward step through them.
+  </NavCard>
+  <NavCard eyebrow="Phone" title="The handheld" href={mobilePrototype()} cta="Open the phone prototype">
+    The same dev server at localhost:5173/mobile/. Live at <Code>/mobile/</Code>. The home route is the free-running app; <Code>#/&lt;story id&gt;</Code> starts on any phone story, still fully clickable.
+  </NavCard>
+  <NavCard eyebrow="Devices" title="Pick the hardware">
+    A floating <strong>Device</strong> panel in both prototypes switches between the counter terminals, the handhelds and the two design canvases, with Fit to window. <Code>?device=quest-handheld</Code> picks one in the URL; <Code>?presenter=0</Code> hides the panel.
+  </NavCard>
+  <NavCard eyebrow="Archive" title="The original port" href={archivePrototype('tablet')} cta="Open the archived tablet">
+    Before Weston's rounds, at the original three-nines club: <Code>/archive/prototype/</Code> and <Code>/archive/mobile/</Code>. Old links to <Code>/v1-v2/</Code> or <Code>/weston-edits/</Code> redirect to the current Birdie.
+  </NavCard>
+  <NavCard eyebrow="Reference" title="The original HTML" href={referencePrototype()} cta="Open the original">
+    The single-file HTML prototype Birdie was ported from, read-only at <Code>/reference/</Code>: the answer to "is this what the original did".
+  </NavCard>
+  <NavCard eyebrow="Storybook" title="Run this locally">
+    <Code>npm run storybook</Code>, then localhost:6006. Set <Code>VITE_PROTOTYPE_ORIGIN</Code> in <Code>.env.local</Code> if the prototype runs on another port, so these links find it.
+  </NavCard>
+</Grid>
+</Section>
 
-<PrototypeLinks />
+<Section title="Using this Storybook">
+<Grid cols={3}>
+  <NavCard eyebrow="Toolbar" title="Device" to="start-here-devices--overview" cta="Devices">
+    Renders any story on a device: the frame takes that device's size. <strong>Auto</strong> keeps each story on its design canvas. A device only resizes stories of its own form.
+  </NavCard>
+  <NavCard eyebrow="Toolbar" title="Weston's four switches" to="reviews-sep-22-weston-edits-rounds-1-5-summary--overview" cta="Why they exist">
+    <strong>Panel width</strong> (640, 820, cover), <strong>Row density</strong>, <strong>Transport</strong> (toggle or named rate) and <strong>Rate catalog</strong> (standard or 26 rates). They feed every story; a story that pins one keeps it.
+  </NavCard>
+  <NavCard eyebrow="Links" title="Every story has a link" to="start-here-deep-links--overview" cta="The deep-link scheme">
+    Copy a story's URL from the address bar to point someone at an exact screen and state. The prototypes have their own deep links too.
+  </NavCard>
+  <NavCard eyebrow="For engineering" title="A screen is plain state" href="https://github.com/jg-tenfore/tf-birdie-ds-v2/blob/main/CLAUDE.md" cta="CLAUDE.md">
+    One reducer drives the app, so a story describes the state it wants, <Code>&lt;Screen initialState=…/&gt;</Code>, and gets that screen. The prototypes and stories import the same components from <Code>src/pos</Code>.
+  </NavCard>
+  <NavCard eyebrow="For engineering" title="Tokens and theme" to="foundations-colors--overview" cta="Colors">
+    <Code>src/theme/tokens.ts</Code> holds the MD3 roles, ported from the original's <Code>:root</Code>; <Code>theme.ts</Code> maps them onto MUI; <Code>mobile-theme.ts</Code> is the same tokens at touch density.
+  </NavCard>
+  <NavCard eyebrow="Archive" title="Something older?" to="archive-about-the-archive--overview" cta="About the archive">
+    Every story that moved on Nov 26 kept its address, so a link shared before then still opens the same screen.
+  </NavCard>
+</Grid>
+</Section>
 
-That matters because it is the same rule the prototype and this Storybook already follow: they
-import the *same* components from `src/pos`, so refining a component changes all of them at
-once. The original HTML is kept alongside so any drift from the source design is visible
-rather than assumed.
-
-Any prototype can also show another club without rebuilding — append `?venue=eighteen`,
-`?venue=nine`, or `?venue=three-nines` to a deep link. See **Getting Started → Deep Links**.
-
-## Design language
-
-Ported from a prototype that follows **Material Design 3** role naming, so the token set is
-MD3 — `primary` / `primary-container` / `on-surface` / `outline-variant` / `surface-container` —
-and maps onto MUI's palette rather than living beside it. See **Foundations → Colors**.
-
-Two things shape everything else:
-
-- **Light mode only.** The POS runs on a lit pro-shop counter terminal. The tokens are
-  semantic, so adding a dark scheme later means adding tones, not touching components.
-- **Dense, not touch-first.** Controls sit at 12–14px with 1.5px outlines and ~32–38px hit
-  targets, because an operator works this with a mouse across a fixed 1366×840 frame. (That's
-  the opposite of the Goose KDS system this repo was scaffolded from, where gloved kitchen use
-  forced everything large.)
-
-**Mobile Screens are the exception.** A phone is a thumb, not a mouse, so they render in
-their own theme (`src/theme/mobile-theme.ts`) — MD3's touch-first type scale, 48dp targets —
-over the same tokens, so a pay badge or member dot reads identically on both.
-
-## Structure
-
-- **Foundations** — Colors, Typography, Spacing, Radius, Border, Effect Styles, Icons, Logos
-- **Components** — grouped by purpose: **Actions**, **Navigation**, **Forms**,
-  **Feedback & Status**, **Layout & Structure**, **Media & Visuals**, **Typography & Content**
-- **Account** — Log in, Sign up, Forgot password, Verification
-- **POS Screens** — the application itself, in seven sections:
-  1. **Register & Order** — the catalog and the persistent order panel
-  2. **Tee Sheet** — the courses × time grid, and its list view
-  3. **Booking & Check-in** — the booking record and its five tabs
-  4. **Tee Time Selection** — picking a slot, including 18-hole crossovers
-  5. **Payment** — checkout, tips and change, the card reader
-  6. **Operations** — blocks, notes, price overrides, leagues, moves
-  7. **People** — member validation, golfer search, guest details
-- **Mobile Screens** — the phone companion, at a fixed 402×797, in MD3 native style: four
-  destinations on a navigation bar (Tee Sheet, Register, People, More) and everything else
-  one level down — pushed pages with a back arrow, full-screen dialogs with a ✕, and
-  no-exit takeovers for taking payment. Numbered to match POS Screens, with
-  **0 · Navigation** as a click-through. The same stories run as the
-  <SiteLink to="mobile">mobile prototype</SiteLink>.
-- **Tee Sheet Actions** — every action that *writes* to the tee sheet, one story each:
-  the sheet before with the action's dialog over it, the sheet after, and the difference
-  between them derived from the reducer rather than described. Start at
-  **0 · Action Map** for the full inventory of all 59 actions and which ones write.
-- **Weston Edits** — Weston's feedback rounds on the 18-hole terminal and phone, one numbered
-  change each, with Tablet and Mobile stories. Runs as the
-  <SiteLink to="weston-edits">Weston Edits prototype</SiteLink>.
-- **V1 → V2 Migration** — every destination in v1's nav, rebuilt on top of Weston Edits: what v1
-  did, what was wrong with it, and what this does instead. Numbered by nav order, with an
-  **Overview** coverage table. Runs as the <SiteLink to="v1-v2" path="#/register">V1 → V2 prototype</SiteLink>.
-
-## How a screen story works
-
-The whole app is driven by one reducer, so a screen is reproducible from a plain state
-object. A story describes the state it wants and gets that screen — no clicking, no effects:
-
-```tsx
-<Screen initialState={withLoadedBooking(paidFoursome(), {
-  modal: { kind: 'checkout' },
-})} />
-```
-
-Pass `venueId` to render any of the three clubs the same way.
-
-## Customizing
-
-Everything renders inside `<ThemeProvider theme={theme}>`, so customization lives in two files:
-
-- **`src/theme/tokens.ts`** — the token layer, ported 1:1 from the prototype's `:root` block.
-  Nothing here imports MUI, so stories and plain CSS read the same values.
-- **`src/theme/theme.ts`** — how those tokens map onto MUI's `palette`, `typography`, `shape`,
-  and per-component `defaultProps` / `styleOverrides`.
-
-Domain token groups hang off the palette: `palette.pay.*` (payment-state badges),
-`palette.shifts.*` (time-of-day bands), `palette.memberTypes.*`, `palette.playerAccents`.
-
-> Uses **core Material UI** plus **MUI X** — Data Grid and Date Pickers.
-> `LocalizationProvider` (dayjs) is wired globally.
+</DocPage>
