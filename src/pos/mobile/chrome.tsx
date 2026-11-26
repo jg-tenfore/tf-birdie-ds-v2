@@ -19,6 +19,7 @@ import Wifi from '@mui/icons-material/Wifi';
 import BatteryFull from '@mui/icons-material/BatteryFull';
 import { md3, mobile } from '../../theme/tokens';
 import { Stack } from '../components/Stack';
+import { useMobileFrame } from '../device-context';
 import type { MobileTab } from './navigation';
 import { TABS, useMobileNav } from './navigation';
 
@@ -77,8 +78,9 @@ function GestureBar({ tone = 'light' }: { tone?: 'light' | 'dark' }) {
 }
 
 /**
- * The 402×797 phone. Fixed-size for the same reason the terminal is: these are drafts of
- * specific screens at a specific size, not a responsive layout.
+ * The phone. Fixed-size for the same reason the terminal is: these are drafts of specific
+ * screens at a specific size — the 402×797 design canvas, or the handheld a device picker
+ * chose (360×800 on the Quest, 360×720 on the Clover Flex) — not a fluid layout.
  */
 export function MobileFrame({
   children,
@@ -90,11 +92,14 @@ export function MobileFrame({
   statusBg?: string;
 }) {
   const [sheetHost, setSheetHost] = useState<HTMLElement | null>(null);
+  // 402×797 — the design canvas — unless a handheld is chosen (see `device-context.tsx`).
+  const frame = useMobileFrame();
   return (
     <Box
+      data-mobile-frame={`${frame.width}x${frame.height}`}
       sx={{
-        width: mobile.frame.width,
-        height: mobile.frame.height,
+        width: frame.width,
+        height: frame.height,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',

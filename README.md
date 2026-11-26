@@ -10,16 +10,18 @@ Everything is published to GitHub Pages from `main`, as one site:
 
 | | Link | What it is |
 |---|---|---|
-| 📚 | [**Design system (Storybook)**](https://jg-tenfore.github.io/tf-birdie-ds-v2/) | Foundations, components, and every terminal and mobile screen as a story |
-| 🖥️ | [**Tablet · Three nines**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) | Counter-terminal POS, the original club |
-| 🖥️ | [**Tablet · 18-hole course**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-18/) | Counter-terminal POS, a championship course |
-| 🖥️ | [**Tablet · Single nine**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/) | Counter-terminal POS, one nine-hole course |
-| 📱 | [**Mobile · Three nines**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) | Phone POS, the original club |
-| 📱 | [**Mobile · 18-hole course**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-18/) | Phone POS, a championship course |
-| 📱 | [**Mobile · Single nine**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-9/) | Phone POS, one nine-hole course |
-| ✏️ | [**Weston Edits · Tablet**](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits/) | The 18-hole terminal with Weston's golf-first reservation edits |
-| ✏️ | [**Weston Edits · Mobile**](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits-mobile/) | The same edits on the phone |
+| 📚 | [**Design system (Storybook)**](https://jg-tenfore.github.io/tf-birdie-ds-v2/) | Start Here, the prototypes as stories, the design system, reviews and the archive |
+| 🖥️ | [**Tablet**](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) | The current Birdie on the counter terminal: Weston Edits plus every nav destination (V1 → V2), 18-hole club, opens on the Clover Mini |
+| 📱 | [**Phone**](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) | The current Birdie on the handheld: Weston Edits, 18-hole club, opens on the Quest handheld |
+| 🗄️ | [**Archive · Tablet**](https://jg-tenfore.github.io/tf-birdie-ds-v2/archive/prototype/) | The original port, before Weston's rounds, three nines |
+| 🗄️ | [**Archive · Phone**](https://jg-tenfore.github.io/tf-birdie-ds-v2/archive/mobile/) | The original phone screens, three nines |
 | 📄 | [**The original**](https://jg-tenfore.github.io/tf-birdie-ds-v2/reference/) | The single-file HTML prototype this was ported from, read-only |
+
+Every prototype runs at any club — add `?venue=eighteen`, `?venue=nine` or
+`?venue=three-nines` — and on any device (see [Devices](#devices)). The paths published before
+Nov 26, 2026 (`/prototype-18/`, `/prototype-9/`, `/mobile-18/`, `/mobile-9/`, `/weston-edits/`,
+`/weston-edits-mobile/`, `/v1-v2/`) still work: they redirect to the current prototype, keeping
+the screen in the link and the club the old path was for.
 
 ### 📚 Design system: Storybook
 
@@ -55,18 +57,19 @@ Storybook **toolbar** — panel width, row density, transport style and rate cat
 every story in the library, so you can flip one while looking at any screen; a story that pins
 a switch itself keeps it.
 
-### 🖥️ Tablet prototypes: the counter terminal
+### 🖥️ Tablet prototype: the counter terminal
 
-[Three nines](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) ·
-[18-hole course](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-18/) ·
-[Single nine](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype-9/)
+[Tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) · [three nines](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/?venue=three-nines) ·
+[single nine](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/?venue=nine) · [archive](https://jg-tenfore.github.io/tf-birdie-ds-v2/archive/prototype/)
 
-The full pro-shop POS as a running app on a fixed **1366×840** landscape terminal, built for a
-mouse, with dense 12–14px controls. A persistent order panel sits on the left, with the
-register catalog or the tee sheet beside it. You can ring up a walk-in, load a booking from the
-sheet, check players in, block times, run a league and take a payment.
+The full pro-shop POS as a running app on a landscape counter terminal — the Clover Mini's
+1280×800 by default, or the 21.5″ display's 1920×1080 — built for a mouse, with dense 12–14px
+controls. A persistent order panel sits on the left, with the register catalog or the tee
+sheet beside it. You can ring up a walk-in, load a booking from the sheet, check players in,
+block times, run a league and take a payment, and every destination in the main nav opens a
+working screen.
 
-The three are the same app with a different course layout:
+The clubs are the same app with a different course layout:
 
 - **Three nines**: Ponds, Front Valley and Rolling as independent nine-hole tracks, twelve
   cells a row. The original club.
@@ -77,14 +80,14 @@ The three are the same app with a different course layout:
 Every screen and dialog has its own URL (see [Deep links](#deep-links)), so you can send someone
 the exact state you want reviewed.
 
-### 📱 Mobile prototypes: the phone
+### 📱 Phone prototype: the handheld
 
-[Three nines](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) ·
-[18-hole course](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-18/) ·
-[Single nine](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile-9/)
+[Phone](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) · [three nines](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/?venue=three-nines) ·
+[single nine](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/?venue=nine) · [archive](https://jg-tenfore.github.io/tf-birdie-ds-v2/archive/mobile/)
 
-The same POS on a **402×797** phone, designed as a native Material Design 3 Android app with
-touch sizing: 16px text and 48px tap targets.
+The same POS on a handheld — the Quest's 360×800 by default (the priority device), the Clover
+Flex's 360×720, or the 402×797 canvas it was designed on — as a native Material Design 3
+Android app with touch sizing: 16px text and 48px tap targets.
 
 - **Four destinations** on a bottom navigation bar: **Tee Sheet** (home), **Register**,
   **People** and **More**.
@@ -96,19 +99,19 @@ touch sizing: 16px text and 48px tap targets.
 - **Its own back history per tab**, so a half-built order survives a trip to the tee sheet. The
   Register tab badge shows how many lines are on it.
 
-Each prototype has an index of every Mobile Screens story (84 screens), each with its own link
-and the story's description. Every screen stays fully clickable, and prev/next steps through
-them in Storybook's order. A sidebar switcher moves between the three clubs and keeps you on
-the same screen. The home link (`#/`) is the free-running app. The clubs differ the same way as
-the tablet ones.
+The prototype has an index of every phone story — Weston's first, then the rest — each with its
+own link and the story's description. Every screen stays fully clickable, and prev/next steps
+through them in Storybook's order. A sidebar switcher moves between the three clubs and keeps
+you on the same screen. The home link (`#/`) is the free-running app. The clubs differ the same
+way as the tablet ones.
 
 The phone uses the same state, data and pricing as the terminal. An order totals the same on
 both, and a customer added on one exists on the other.
 
 ### ✏️ Weston Edits: golf first, order second
 
-[Tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits/) ·
-[Mobile](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits-mobile/) ·
+[Tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/prototype/) ·
+[Phone](https://jg-tenfore.github.io/tf-birdie-ds-v2/mobile/) ·
 [What changed (Storybook)](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/reviews-sep-22-weston-edits-rounds-1-5-summary--overview)
 
 Weston's feedback on the tablet prototype
@@ -162,8 +165,10 @@ fixed in every prototype, not just this one — as are round 3's confirm-before-
 three icon names that were rendering as dots.
 
 It's an *edition* of the same app, not a copy: components branch on `useEdition()`
-([`src/pos/edition.tsx`](src/pos/edition.tsx)), and a build picks one with `VITE_EDITION=weston`.
-When the edits are approved, making them the default is a one-line change.
+([`src/pos/edition.tsx`](src/pos/edition.tsx)), and a build picks one with `VITE_EDITION`. Since
+Nov 26, 2026 Weston Edits **is** the current Birdie (`CURRENT_EDITION`): V1 → V2 on the tablet,
+which is Weston's edits plus every other nav destination, and Weston Edits itself on the phone.
+The original port (`base`) is the archive.
 
 ### 📄 The original
 
@@ -179,32 +184,36 @@ The single-file HTML prototype this port came from, published unmodified. It's t
 | Directory | Surface |
 |---|---|
 | `/` | Storybook: the design system |
-| `/prototype/` | Tablet: three nines (the original club) |
-| `/prototype-18/` | Tablet: one 18-hole course, front and back nines |
-| `/prototype-9/` | Tablet: a single nine-hole course |
-| `/mobile/` | Mobile: three nines |
-| `/mobile-18/` | Mobile: the 18-hole course |
-| `/mobile-9/` | Mobile: a single nine |
-| `/weston-edits/` | Weston Edits: tablet, 18 holes |
-| `/weston-edits-mobile/` | Weston Edits: mobile, 18 holes |
+| `/prototype/` | Tablet, current: V1 → V2 (`v1v2`), 18 holes |
+| `/mobile/` | Phone, current: Weston Edits (`weston`), 18 holes |
+| `/archive/prototype/` | Tablet, archive: the original port (`base`), three nines |
+| `/archive/mobile/` | Phone, archive: the original port (`base`), three nines |
 | `/reference/` | The original single-file HTML prototype |
+| `/prototype-18/`, `/prototype-9/` | Redirect → `/prototype/?venue=eighteen` / `?venue=nine` |
+| `/mobile-18/`, `/mobile-9/` | Redirect → `/mobile/?venue=eighteen` / `?venue=nine` |
+| `/weston-edits/`, `/v1-v2/` | Redirect → `/prototype/` |
+| `/weston-edits-mobile/` | Redirect → `/mobile/` |
+
+The redirects keep the hash and the query, so a deep link into an old path opens the same screen
+in the current prototype.
 
 GitHub Pages serves one site per repository, so they share one tree, with Storybook at the root
 and the rest in subdirectories. See [`scripts/build-site.mjs`](scripts/build-site.mjs).
 
 </details>
 
-## Why eight prototypes, and why they're one codebase
+## Why the prototypes are one codebase
 
-The tablet prototypes and Storybook import the *same* components from `src/pos`. Refining a
-component changes all of them, so the design system and the things it describes can't drift.
-The mobile prototypes go one step further: their screen list *is* the Mobile Screens story
-files, so a new story appears in them automatically.
+The prototypes and Storybook import the *same* components from `src/pos`. Refining a component
+changes all of them, so the design system and the things it describes can't drift. The phone
+prototype goes one step further: its screen list *is* the phone story files, so a new story
+appears in it automatically.
 
 The three clubs differ only in **course layout**. The tee sheet renders one column group per
 course, so a club's shape *is* its `courses` array — see
-[`src/pos/data/venues.ts`](src/pos/data/venues.ts). Each prototype is the same build run with a
-different `VITE_VENUE` (and the mobile ones with `VITE_APP=mobile` too); nothing is forked.
+[`src/pos/data/venues.ts`](src/pos/data/venues.ts). Each published prototype is the same build
+run with a different `VITE_EDITION` and `VITE_VENUE` (and the phone with `VITE_APP=mobile`);
+nothing is forked.
 
 Any prototype can show another club without a rebuild: append `?venue=eighteen`, `?venue=nine`
 or `?venue=three-nines` to a deep link. That's how you compare them side by side, and how the
@@ -218,12 +227,53 @@ design is visible rather than assumed.
 ```bash
 npm install
 npm run storybook   # design system  → http://localhost:6006
-npm run dev         # prototype      → http://localhost:5173
-                    # mobile         → http://localhost:5173/mobile/  (?venue=eighteen / nine)
-                    # Weston Edits   → add ?edition=weston, e.g.
-                    #   http://localhost:5173/?edition=weston#/tee-sheet?venue=eighteen
-                    #   http://localhost:5173/mobile/?edition=weston&venue=eighteen
+npm run dev         # tablet, current → http://localhost:5173/
+                    # phone, current  → http://localhost:5173/mobile/
+                    # the archive     → add ?edition=base, e.g.
+                    #   http://localhost:5173/?edition=base
+                    #   http://localhost:5173/mobile/?edition=base
+                    # another club    → ?venue=three-nines | eighteen | nine
+                    # another device  → ?device=large-display | clover-flex | … (see Devices)
 ```
+
+With no `?edition=` the dev server opens the **current** Birdie — V1 → V2 on the tablet,
+Weston Edits on the phone, both at the 18-hole club — exactly what `/prototype/` and `/mobile/`
+publish. `?edition=base` is the archive (at the three nines), and `?edition=weston` still shows
+Weston Edits without the V1 → V2 destinations on the tablet.
+
+## Devices
+
+Birdie runs on known hardware, so the prototypes and Storybook simulate it. Only the aspect
+ratio is taken from the device; the design keeps its own density — dense 12–14px controls on a
+terminal, MD3 touch sizing on a handheld. The list is
+[`src/pos/devices.ts`](src/pos/devices.ts):
+
+| Device | Form | Panel | Simulated viewport | Aspect |
+|---|---|---|---|---|
+| **Clover Mini** · 8″ | counter terminal | 1280×800 | 1280×800 (1×) | 16:10 |
+| **Large display** · 21.5″ (the outlier) | counter terminal | 1920×1080 | 1920×1080 (1×) | 16:9 |
+| **Quest handheld** · 6.5″ (the priority device) | handheld | 720×1600 | 360×800 (2×) | 9:20 |
+| **Clover Flex** · 5.99″ | handheld | 720×1440 XHDPI | 360×720 (2×) | 1:2 |
+| Design canvas · tablet | — | — | 1366×840 | ≈ 1.63:1 |
+| Design canvas · phone | — | — | 402×797 | ≈ 1:1.98 |
+
+- **In the prototypes**, a small floating panel in the corner picks the device (collapsed, it
+  is one pill naming it). It shows the hardware, aspect ratio and simulated viewport, and
+  **Fit to window** scales a device bigger than the window down — never up. Choosing a
+  handheld from the tablet (or a terminal from the phone) opens the other app at the same club
+  and edition. The choice is kept in `?device=` and local storage. The tablet opens on the
+  Clover Mini, the phone on the Quest. **`?presenter=0`** hides the panel for clean
+  screenshots.
+- **In Storybook**, the **Device** toolbar renders any story on any device of its form (`auto`
+  keeps each story on its own canvas). The **Viewport** list is the same devices; pick both to
+  see a device at exactly its size.
+- **In code**, frames come from `useTabletFrame()` / `useMobileFrame()`
+  ([`src/pos/device-context.tsx`](src/pos/device-context.tsx)), never from constants. With no
+  device chosen they are the design canvases, so stories and tests render as they always did.
+  Layout that depends on the room reads `useTabletFrameClass()` (`wide` on the large display,
+  `compact` on the Clover Mini) or `useMobileFrameClass()` (`narrow` on the 360px handhelds,
+  `short` on the Flex). On the large display the extra room goes to more register tiles, a
+  wider order rail and more rows on the sheets, not bigger controls.
 
 Other scripts:
 
@@ -294,7 +344,7 @@ only the downscaled 240px versions are (3.7MB).
 
 ## Deploying, and previewing a PR
 
-The three surfaces are built by [`scripts/build-site.mjs`](scripts/build-site.mjs) into
+Every surface is built by [`scripts/build-site.mjs`](scripts/build-site.mjs) into
 `site/`. Two hosts, two different builds — not one artifact deployed twice:
 
 | Host | Serves from | Build | When |
@@ -332,7 +382,8 @@ Two decisions shape everything:
   prototype has no dark tone set. The tokens are semantic, so adding a dark scheme later
   means adding tones, not touching components.
 - **Dense, not touch-first.** Controls sit at 12–14px with 1.5px outlines and ~32–38px hit
-  targets, for a mouse across a fixed **1366×840** frame. (The opposite of the Goose KDS
+  targets, for a mouse on a counter terminal (designed on a **1366×840** canvas, run on the
+  Clover Mini's 1280×800 and the 21.5″ display's 1920×1080 — see [Devices](#devices)). (The opposite of the Goose KDS
   system this repo was scaffolded from, where gloved kitchen use forced everything large.)
 
 ## Layout

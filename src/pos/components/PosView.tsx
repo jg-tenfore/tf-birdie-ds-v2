@@ -18,6 +18,7 @@ import { EmptyState, Icon, SectionLabel } from './primitives';
 import { Stack } from './Stack';
 import { useStartWalkIn } from './use-start-walk-in';
 import { useV1V2 } from '../edition';
+import { useTabletFrameClass, useTileColumns } from '../device-context';
 import { COMBOS_CATEGORY } from '../data/combos';
 import { ComboGrid, RegisterCategoryRow } from './RegisterExtras';
 import { CategoryButton } from './CategoryButton';
@@ -71,6 +72,23 @@ export function PosView() {
     toast(`Added: ${item.n}`);
   };
 
+  const { wide } = useTabletFrameClass();
+  const categoryButton = (catName: string) => {
+    const d = CATALOG[catName];
+    const active = state.currentCategory === catName;
+    return (
+      <CategoryButton
+        key={catName}
+        label={catName}
+        icon={CATEGORY_ICONS[catName] ?? 'sell'}
+        color={d.color}
+        tc={d.tc}
+        active={active}
+        onClick={() => dispatch({ type: 'setCategory', category: active ? null : catName })}
+      />
+    );
+  };
+
   return (
     <Stack sx={{ flex: 1, minWidth: 0, height: '100%' }}>
       <PosTopBar />
@@ -85,39 +103,38 @@ export function PosView() {
           borderBottom: `1px solid ${md3.outlineVariant}`,
         }}
       >
-        {CAT_ROWS.map((row, ri) => (
-          <Box
-            key={ri}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: `repeat(${Math.min(row.length, 5)},1fr)`,
-              gap: '7px',
-              mb: ri === CAT_ROWS.length - 1 ? 0 : '5px',
-            }}
-          >
-            {row.slice(0, 5).map((catName) => {
-              const d = CATALOG[catName];
-              const active = state.currentCategory === catName;
-              return (
-                <CategoryButton
-                  key={catName}
-                  label={catName}
-                  icon={CATEGORY_ICONS[catName] ?? 'sell'}
-                  color={d.color}
-                  tc={d.tc}
-                  active={active}
-                  onClick={() => dispatch({ type: 'setCategory', category: active ? null : catName })}
-                />
-              );
-            })}
-            {/* Keep the 5-column rhythm when a row is short. */}
-            {row.length < 5 &&
-              ri === 0 &&
-              Array.from({ length: 5 - row.length }, (_, i) => <Box key={`pad${i}`} />)}
+        {wide ? (
+          // The large display: the same buttons in the same order, six to a row instead of
+          // five — two rows rather than three, and buttons that stay button-sized instead of
+          // stretching to 300px. The rows' order is what staff learn, so it is kept; only the
+          // wrap point moves.
+          <Box data-category-grid="wide" sx={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '5px 7px' }}>
+            {CAT_ROWS.flatMap((row) => row.slice(0, 5)).map(categoryButton)}
+            {v1v2 && <RegisterCategoryRow inline />}
           </Box>
-        ))}
-        {/* V1 → V2: Combos and Gift card, a row of their own so the catalog's rows don't move. */}
-        {v1v2 && <RegisterCategoryRow />}
+        ) : (
+          <>
+            {CAT_ROWS.map((row, ri) => (
+              <Box
+                key={ri}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${Math.min(row.length, 5)},1fr)`,
+                  gap: '7px',
+                  mb: ri === CAT_ROWS.length - 1 ? 0 : '5px',
+                }}
+              >
+                {row.slice(0, 5).map(categoryButton)}
+                {/* Keep the 5-column rhythm when a row is short. */}
+                {row.length < 5 &&
+                  ri === 0 &&
+                  Array.from({ length: 5 - row.length }, (_, i) => <Box key={`pad${i}`} />)}
+              </Box>
+            ))}
+            {/* V1 → V2: Combos and Gift card, a row of their own so the catalog's rows don't move. */}
+            {v1v2 && <RegisterCategoryRow />}
+          </>
+        )}
       </Box>
 
       {/* ── Item grid ── */}
@@ -376,6 +393,8 @@ function ItemGrid({
   /** V1 → V2 only: the shelf, for the low-stock badge. Absent in the other editions. */
   stock?: Record<string, number>;
 }) {
+  // Five to a row; seven on the large display, where five would stretch each tile to 300px.
+  const columns = useTileColumns(5, 7);
   const d = CATALOG[categoryName];
   if (!d) return null;
 
@@ -394,7 +413,7 @@ function ItemGrid({
         </Box>
       </SectionLabel>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '7px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${columns},1fr)`, gap: '7px' }}>
         {d.items.map((item) => {
           // A round already on the order locks the hole count, so mixed 9/18
           // rates on one tee time are impossible rather than merely discouraged.

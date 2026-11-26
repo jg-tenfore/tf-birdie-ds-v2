@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import { md3, payBadges, radius, shell } from '../../../theme/tokens';
+import { md3, payBadges, radius } from '../../../theme/tokens';
+import { useTabletFrame } from '../../../pos/device-context';
 import { PosApp } from '../../../pos/PosApp';
 import { ROUND_STEPS } from '../../../pos/data/config';
 import { venue } from '../../../pos/data/venues';
@@ -43,6 +44,7 @@ export function Terminal({
   children?: ReactNode;
 }) {
   const scale = useFitScale();
+  const shell = useTabletFrame();
   const frame = (
     <Box sx={{ width: shell.width, height: shell.height, position: 'relative', borderRadius: `${radius.lg}px`, overflow: 'hidden', bgcolor: md3.surface }}>
       {backdrop && <PosApp key={backdropKey} initialState={backdrop} edition="v1v2" />}

@@ -1,6 +1,7 @@
 import { Suspense, lazy, useLayoutEffect } from 'react';
 import { Box, Snackbar } from '@mui/material';
-import { elevation, md3, radius, shell } from '../theme/tokens';
+import { elevation, md3, radius } from '../theme/tokens';
+import { useDevice, useTabletFrame } from './device-context';
 import { ContextMenus } from './components/ContextMenus';
 import { LeftPanel } from './components/LeftPanel';
 import { railBesidePanel } from './state/order-seats';
@@ -99,13 +100,20 @@ const RESTAURANT_VIEWS: Partial<Record<MainView, () => React.ReactNode>> = {
 };
 
 export function PosShell({ children }: { children: React.ReactNode }) {
+  // The frame is the chosen device's viewport, or the 1366×840 design canvas with no device
+  // (see `device-context.tsx`). With a device it never squeezes to the window: a device is a
+  // fixed size, and the stage around it scales it down whole instead (`DeviceStage`).
+  const frame = useTabletFrame();
+  const onDevice = Boolean(useDevice());
   return (
     <Box
       data-pos-shell
+      data-frame={`${frame.width}x${frame.height}`}
       sx={{
-        width: shell.width,
-        height: shell.height,
-        maxWidth: '100%',
+        width: frame.width,
+        height: frame.height,
+        maxWidth: onDevice ? undefined : '100%',
+        flexShrink: onDevice ? 0 : undefined,
         bgcolor: md3.surface,
         borderRadius: `${radius.lg}px`,
         display: 'flex',

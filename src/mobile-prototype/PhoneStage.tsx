@@ -1,33 +1,35 @@
 import { Box } from '@mui/material';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { mobile } from '../theme/tokens';
 import { MobileStoryEmbed } from '../showcase/pos-mobile/mobile-embed';
+import { useMobileFrame } from '../pos/device-context';
+import { fitScale } from '../pos/devices';
+import type { Size } from '../pos/devices';
 import type { ScreenEntry } from './screen-index';
-
-const { width: W, height: H } = mobile.frame;
 
 /**
  * Fit a W×H box into the element's content box. Scales down only — a phone blown up past
  * 1:1 stops reading as a phone, and its type sizes stop being the ones under review.
  */
-function useFitScale(padding: number) {
+function useFitScale(frame: Size, padding: number, fit: boolean) {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (!fit) {
+      setScale(1);
+      return;
+    }
     const measure = () => {
-      const w = el.clientWidth - padding * 2;
-      const h = el.clientHeight - padding * 2;
-      if (w <= 0 || h <= 0) return;
-      setScale(Math.min(1, w / W, h / H));
+      if (el.clientWidth <= 0 || el.clientHeight <= 0) return;
+      setScale(fitScale(frame, { width: el.clientWidth, height: el.clientHeight }, padding));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [padding]);
+  }, [frame, padding, fit]);
   return { ref, scale };
 }
 
@@ -52,50 +54,82 @@ function usePlay(entry: ScreenEntry, canvas: RefObject<HTMLDivElement | null>) {
   }, [entry, canvas]);
 }
 
-function Phone({ entry }: { entry: ScreenEntry }) {
+function Phone({ entry, frame }: { entry: ScreenEntry; frame: Size }) {
   const canvas = useRef<HTMLDivElement>(null);
   usePlay(entry, canvas);
   return (
-    <Box ref={canvas} sx={{ width: W, height: H }}>
+    <Box ref={canvas} sx={{ width: frame.width, height: frame.height }}>
       <MobileStoryEmbed.Provider value>{entry.render()}</MobileStoryEmbed.Provider>
     </Box>
   );
 }
 
 /**
- * The phone at exact 402×797 layout, scaled with a CSS transform to fit whatever space the
- * stage has. The outer box takes the *scaled* size so it centres and flows correctly; the
- * inner box keeps the real size, so nothing inside the app ever sees a different viewport.
+ * The phone at its exact layout size — the chosen handheld's viewport (360×800 on the Quest),
+ * or the 402×797 design canvas — scaled with a CSS transform to fit whatever space the stage
+ * has. The outer box takes the *scaled* size so it centres and flows correctly; the inner box
+ * keeps the real size, so nothing inside the app ever sees a different viewport.
  *
- * `runKey` remounts the whole app — a new route, or Restart.
+ * `fit` off shows the phone at 1:1 and lets the stage scroll instead — for checking type
+ * sizes on a window that can't hold the whole device.
+ *
+ * `runKey` remounts the whole app — a new route, a new device, or Restart.
  */
-export function PhoneStage({ entry, runKey, padding = 24 }: { entry: ScreenEntry; runKey: string; padding?: number }) {
-  const { ref, scale } = useFitScale(padding);
+export function PhoneStage({
+  entry,
+  runKey,
+  padding = 24,
+  fit = true,
+  onScale,
+}: {
+  entry: ScreenEntry;
+  runKey: string;
+  padding?: number;
+  fit?: boolean;
+  /** Hears the scale the phone is drawn at, for the device panel's readout. */
+  onScale?: (scale: number) => void;
+}) {
+  const frame = useMobileFrame();
+  const { ref, scale } = useFitScale(frame, padding, fit);
+  useEffect(() => {
+    onScale?.(scale);
+  }, [scale, onScale]);
   return (
     <Box
       ref={ref}
+      data-phone-stage
       sx={{
         flex: 1,
         minHeight: 0,
         minWidth: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
+        overflow: fit ? 'hidden' : 'auto',
       }}
     >
       <Box
         sx={{
-          width: W * scale,
-          height: H * scale,
+          // `margin: auto` rather than centring the flex row: a phone bigger than the stage
+          // (fit off) then scrolls from its top-left edge instead of being cut off on both sides.
+          m: 'auto',
+          width: frame.width * scale,
+          height: frame.height * scale,
           flexShrink: 0,
           borderRadius: `${Math.round(24 * scale)}px`,
           overflow: 'hidden',
           boxShadow: 12,
         }}
       >
-        <Box sx={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-          <Phone key={runKey} entry={entry} />
+        <Box
+          sx={{
+            width: frame.width,
+            height: frame.height,
+            // Always a transform, even at 1:1: it makes this box the containing block for
+            // anything fixed-position inside the app, which keeps it inside the phone.
+            transform: `scale(${scale})`,
+            transformOrigin: '0 0',
+          }}
+        >
+          <Phone key={`${runKey}:${frame.width}x${frame.height}`} entry={entry} frame={frame} />
         </Box>
       </Box>
     </Box>
