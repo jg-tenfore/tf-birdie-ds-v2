@@ -15,6 +15,8 @@ import OutdoorGrillIcon from '@mui/icons-material/OutdoorGrill';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
+import { withEdition } from '../edition-decorator';
+import { MobileStory } from '../pos-mobile/mobile-helpers';
 
 const meta = {
   title: 'Design System/Components/Layout & Structure/List',
@@ -213,4 +215,27 @@ export const Dense: Story = {
       </Paper>
     </Box>
   ),
+};
+
+/**
+ * **In Birdie: More, on the handheld.** Sectioned MUI List rows in the handheld theme: a green
+ * ListSubheader per section, then icon, label and a supporting line; a chevron only on rows that
+ * push a screen. The playground above renders in the tablet theme; this is what the product draws.
+ */
+export const InBirdieHandheldMore: Story = {
+  name: 'In Birdie · More (handheld)',
+  decorators: [withEdition('current-mobile')],
+  parameters: { layout: 'fullscreen' },
+  render: () => <MobileStory tab="more" />,
+};
+
+/**
+ * **In Birdie: People, on the handheld.** The contacts pattern: sticky letter subheaders, a
+ * two-line row per golfer with the tier's avatar and the handicap on the right.
+ */
+export const InBirdieHandheldPeople: Story = {
+  name: 'In Birdie · People (handheld)',
+  decorators: [withEdition('current-mobile')],
+  parameters: { layout: 'fullscreen' },
+  render: () => <MobileStory tab="people" />,
 };

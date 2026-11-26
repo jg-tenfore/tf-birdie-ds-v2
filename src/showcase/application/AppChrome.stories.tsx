@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withEdition } from '../edition-decorator';
 import { Box } from '@mui/material';
-import { md3, shell } from '../../theme/tokens';
+import { md3 } from '../../theme/tokens';
+import { useTabletFrame } from '../../pos/device-context';
+import { MobileStory } from '../pos-mobile/mobile-helpers';
 import { PosShell } from '../../pos/PosApp';
 import { PosProvider } from '../../pos/state/PosProvider';
 import { LeftPanel } from '../../pos/components/LeftPanel';
@@ -48,33 +50,42 @@ function Frame({ children, state }: { children: React.ReactNode; state?: object 
   );
 }
 
+/** The frame's size, read from the device context: the chosen device, or the design canvas. */
+function FrameSize() {
+  const frame = useTabletFrame();
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: md3.outline,
+        fontSize: 13,
+      }}
+    >
+      {frame.width} × {frame.height} — the frame, empty
+    </Box>
+  );
+}
+
 /**
- * The device frame. Fixed at 1366×840 rather than responsive — this is a counter terminal
- * with known hardware, and the prototype assumes those dimensions throughout. A fluid
- * layout would be a different design, not the same one scaled.
+ * The device frame. A fixed size per device rather than responsive — counter terminals are
+ * known hardware. With no device chosen it is the 1366×840 design canvas; pick the Clover Mini
+ * (1280×800) or the large display (1920×1080) on the **Device** toolbar and the frame follows.
+ * A fluid layout would be a different design, not the same one scaled.
  */
 export const DeviceFrame: Story = {
   render: () => (
     <Frame state={{ bookings: DEMO_BOOKINGS }}>
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: md3.outline,
-          fontSize: 13,
-        }}
-      >
-        {shell.width} × {shell.height} — the frame, empty
-      </Box>
+      <FrameSize />
     </Frame>
   ),
 };
 
 /**
- * The order panel, empty. 320px, always present, shared by both views. It collapses to
- * zero on the tee sheet to give the grid full width, then springs back on return.
+ * The order panel, empty. 320px (380 on the large display), always present, shared by every
+ * view. On the sheets an empty rail tucks into a 56px strip — see **Collapsed Rail** below.
  */
 export const OrderPanelEmpty: Story = {
   render: () => (
@@ -124,4 +135,35 @@ export const TeeSheetBody: Story = {
       <TeeSheetView />
     </Frame>
   ),
+};
+
+/**
+ * The rail collapsed beside the tee sheet: a 56px strip with the hamburger (opens the main nav),
+ * the strip itself (expands the rail) and the cart with its count. One control, one job.
+ */
+export const CollapsedRail: Story = {
+  render: () => (
+    <Frame state={{ bookings: DEMO_BOOKINGS, view: 'tee', leftPanelCollapsed: true }}>
+      <LeftPanel />
+      <TeeSheetView />
+    </Frame>
+  ),
+};
+
+/**
+ * The handheld's chrome on a root screen: status bar, a top app bar with no back arrow, the
+ * scrolling body, and the navigation bar with the active destination in its pill.
+ */
+export const HandheldRootScreen: Story = {
+  decorators: [withEdition('current-mobile')],
+  render: () => <MobileStory tab="people" />,
+};
+
+/**
+ * The handheld's chrome on a pushed screen: a back arrow in the top app bar and no navigation
+ * bar — one step from where it came from.
+ */
+export const HandheldPushedScreen: Story = {
+  decorators: [withEdition('current-mobile')],
+  render: () => <MobileStory tab="people" stack={[{ name: 'golferDetail', golferId: 'G001' }]} />,
 };
