@@ -7,12 +7,35 @@ import { SPEND_CATEGORIES, type SpendCategory } from '../../data/spend';
 import { staffById } from '../../data/staff';
 import { usePos } from '../../state/PosProvider';
 import {
+  BIRDIE_DEFAULTS,
+  BUCK_ONLY_PAYMENT_TYPES,
+  CART_SIGN_OUT_DISCLAIMER,
+  CREDIT_EXPIRATIONS,
+  MAIN_INFO,
+  PAYMENT_OPTIONS,
+  PAYMENT_TYPES,
+  POS_OPTIONS,
+  PRINTERS,
+  RESTAURANT_RECEIPT_TAG,
+  SERVICE_CHARGES,
+  TABLETS,
+  TAX_RATE_FIELDS,
+  THIS_TABLET,
+  TRANSPORTATION_TYPES,
+  buckPath,
+  taxTypeLabel,
+  type BuckSection,
+} from '../../data/buck-club';
+import { TRANSPORT_RATES } from '../../data/rate-catalog';
+import { money } from '../../logic/cart';
+import { taxRateOf } from '../../state/operations';
+import {
   HARDWARE_OPTIONS,
   ROLE_NAMES,
-  TENDER_KEYS,
   TENDER_NAMES,
   canManageStaff,
   checkoutProblem,
+  isBuckSection,
   type CheckoutSettings,
   type SettingsSection,
   type TerminalHardware,
@@ -25,7 +48,7 @@ import { DataTable, PanelHeading, Td } from './OpsParts';
 import { OpsScreen, OpsToolbar } from './OpsToolbar';
 
 /**
- * Settings (V1 → V2).
+ * Settings (V1 → V2; aligned with TF Buck on Nov 26).
  *
  * ## What v1 did
  *
@@ -35,48 +58,62 @@ import { OpsScreen, OpsToolbar } from './OpsToolbar';
  *
  * ## What this does
  *
- * Led by **Birdie's real sections**. The first cut opened on four sections the prototype invented,
- * and Weston said most of them are not settings Birdie has: *"We have device info. We have connecting
- * to a reader. Then we have Clover settings that I don't think we really use much anymore… This is a
- * good layout. We would just add those settings here."* So the list down the left starts with:
+ * Splits the list by **who owns the setting**, because the question a counter asks of a setting is
+ * "can I change this here, or do I call the office?".
  *
- * - **Device info** — the facility, account, app version and device, the register's name, its card
- *   reader and when it last synced; and a copy for support. Where Settings opens.
+ * **Editable here** — led by Birdie's real sections, as Weston laid them out: *"We have device info.
+ * We have connecting to a reader. Then we have Clover settings that I don't think we really use much
+ * anymore… This is a good layout. We would just add those settings here."*
+ *
+ * - **Device info** — the facility, account, app version and device, the register's name, its Buck
+ *   tablet number, its card reader and when it last synced; and a copy for support. Where Settings
+ *   opens.
  * - **Card reader** — the reader this register is connected to, its battery and firmware, Disconnect,
- *   and the readers nearby to connect instead. It is the same `hardware.cardReader` Terminal &
- *   hardware edits, so the two always agree.
+ *   and the readers nearby. It is the same `hardware.cardReader` Register & printers edits.
  * - **Clover** — flagged *Rarely used*: kept, with a few switches, until we decide to drop it.
  * - **Tee sheet** — the tee sheet's own display settings, given a second home. These are live.
- *
- * Then, under **Proposed — not in Birdie today**, the V1 → V2 sections — still working and still
- * wired, but each marked *Proposed* until Weston (or Buck) confirms the real list:
- *
- * - **Terminal & hardware** — the register's name, its receipt printer, card reader, cash drawer and
- *   kitchen printer, each with a test; and whether a receipt prints after a sale.
- * - **Checkout & receipts** — tax, the tip presets, which tenders checkout offers, the receipt's
- *   header and footer, and what a new gift card is good for.
+ * - **Register & printers** — the register's name, which of the **club's printers** (Buck's Printers,
+ *   by Buck's uses: Pro Shop Printer, Service Printer) it prints to, its cash drawer, and whether a
+ *   receipt prints after a sale.
+ * - **Tips & gift cards** — the tip suggestions and what a new gift card is good for. Buck has no field
+ *   for either yet, so they are marked *Not in Buck*.
  * - **Staff & PINs** — who can sign in, their role and PIN. **Managers only**: anyone else reads it.
  *
- * Each editable section saves as a whole — Save and Discard under it, and who saved it last — rather
- * than on every keystroke, because a half-typed tax rate is not a setting anyone meant.
+ * **Set in Buck** — read-only here, under Buck's own Course Settings section and group names, each
+ * saying where in Buck it is changed (`data/buck-club.ts`):
  *
- * **Wired** (Justin's call, after a first cut that only recorded them): once saved, checkout charges
- * the tax rate, offers the tenders switched on and the tip presets, prints the receipt text on the
- * reader's done step as "Receipts after a sale" says, and starts new gift cards from the default;
- * the register header shows the register's name; and the PIN pad, Time Clock and server pickers read
- * the staff list. The hardware stays simulated — a test, a connect, a copy is a toast — and Clover's
- * switches are the screen's own: nothing reads them.
+ * - **Birdie** — Defaults, Point of Sale Options, Receipt Text.
+ * - **Taxes & Fees** — the tax rate each kind of line is charged, service charges.
+ * - **Payments** — the payment types checkout offers as tenders, and payment options.
+ * - **Transportation Types**, **Printers & Tablets**, **Main Info** (receipt header, credit expiries).
+ *
+ * **Still wired** (Justin's call): checkout charges the tax rate, offers the tenders that are on and
+ * the tip suggestions, prints the receipt text on the reader's done step as "Receipts after a sale"
+ * says, and starts new gift cards from the default; the register header shows the register's name;
+ * and the PIN pad, Time Clock and server pickers read the staff list. What moved is *where they are
+ * changed*: tax, tenders and receipt text are Buck's now, so the counter shows them rather than edits
+ * them. A Buck option the prototype does not act on says "Shown only", so nobody reads it as a
+ * promise. The hardware stays simulated — a test, a connect, a copy is a toast.
+ *
+ * Each editable section saves as a whole — Save and Discard under it, and who saved it last — rather
+ * than on every keystroke, because a half-typed setting is not a setting anyone meant.
  */
-const SECTIONS: { key: SettingsSection; label: string; icon: string; blurb: string; proposed?: true }[] = [
+const SECTIONS: { key: SettingsSection; label: string; icon: string; blurb: string; tag?: string }[] = [
   { key: 'device', label: 'Device info', icon: 'info', blurb: 'This tablet, the app, the account' },
   { key: 'reader', label: 'Card reader', icon: 'contactless', blurb: 'Connect and test the reader' },
   { key: 'clover', label: 'Clover', icon: 'point_of_sale', blurb: 'Rarely used' },
   { key: 'teesheet', label: 'Tee sheet', icon: 'golf_course', blurb: 'Density, grid, behaviour' },
-  { key: 'hardware', label: 'Terminal & hardware', icon: 'point_of_sale', blurb: 'Printers, card reader, cash drawer', proposed: true },
-  { key: 'checkout', label: 'Checkout & receipts', icon: 'receipt_long', blurb: 'Tax, tips, tenders, receipt text', proposed: true },
-  { key: 'staff', label: 'Staff & PINs', icon: 'badge', blurb: 'Who signs in, and how', proposed: true },
+  { key: 'hardware', label: 'Register & printers', icon: 'point_of_sale', blurb: 'Name, printers, cash drawer' },
+  { key: 'checkout', label: 'Tips & gift cards', icon: 'redeem', blurb: 'Tip suggestions, new-card default', tag: 'Not in Buck' },
+  { key: 'staff', label: 'Staff & PINs', icon: 'badge', blurb: 'Who signs in — managers edit' },
+  { key: 'birdie', label: 'Birdie', icon: 'tune', blurb: 'Defaults, POS options, receipt text' },
+  { key: 'taxes', label: 'Taxes & Fees', icon: 'paid', blurb: 'Tax rates, service charges' },
+  { key: 'payments', label: 'Payments', icon: 'payments', blurb: 'What checkout can take' },
+  { key: 'transport', label: 'Transportation Types', icon: 'directions_car', blurb: 'Cart, walk, push cart' },
+  { key: 'printers', label: 'Printers & Tablets', icon: 'print', blurb: "The club's printers and tablets" },
+  { key: 'maininfo', label: 'Main Info', icon: 'storefront', blurb: 'Receipt header, credit expiries' },
 ];
-const FIRST_PROPOSED = SECTIONS.findIndex((s) => s.proposed);
+const FIRST_BUCK = SECTIONS.findIndex((s) => isBuckSection(s.key));
 
 export function SettingsView() {
   const { state, dispatch } = usePos();
@@ -86,28 +123,27 @@ export function SettingsView() {
       <OpsToolbar title="Settings" />
       <Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
         <Box component="nav" aria-label="Settings sections" sx={{ width: 250, flexShrink: 0, borderRight: `1px solid ${md3.outlineVariant}`, p: 1.25, bgcolor: '#fff', overflowY: 'auto' }}>
+          <NavHeading data-settings-local-heading>Editable here</NavHeading>
           {SECTIONS.map((s, i) => {
             const on = s.key === section;
+            const buck = isBuckSection(s.key);
             return (
               <Fragment key={s.key}>
-                {i === FIRST_PROPOSED && (
-                  <Typography
-                    data-settings-proposed-heading
-                    sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: md3.outline, m: '14px 12px 6px' }}
-                  >
-                    Proposed — not in Birdie today
-                  </Typography>
+                {i === FIRST_BUCK && (
+                  <NavHeading data-settings-buck-heading icon="lock">
+                    Set in Buck · read-only here
+                  </NavHeading>
                 )}
                 <ButtonBase
                   data-settings-section={s.key}
-                  data-proposed={s.proposed ? true : undefined}
+                  data-set-in-buck={buck ? true : undefined}
                   aria-current={on ? 'page' : undefined}
                   onClick={() => dispatch({ type: 'setSettingsSection', section: s.key })}
                   sx={{
                     width: '100%',
                     justifyContent: 'flex-start',
                     gap: 1.25,
-                    p: '10px 12px',
+                    p: buck ? '7px 12px' : '10px 12px',
                     mb: 0.5,
                     borderRadius: `${radius.md}px`,
                     textAlign: 'left',
@@ -120,10 +156,10 @@ export function SettingsView() {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography sx={{ fontSize: 13.5, fontWeight: 700 }}>{s.label}</Typography>
                     <Typography sx={{ fontSize: 11.5, color: on ? md3.onPrimaryContainer : md3.onSurfaceVariant }}>{s.blurb}</Typography>
-                    {/* Under the blurb, not beside the label: beside it, "Terminal & hardware" wraps. */}
-                    {s.proposed && (
+                    {/* Under the blurb, not beside the label: beside it, a long label wraps. */}
+                    {s.tag && (
                       <Box sx={{ mt: 0.5 }}>
-                        <ProposedChip />
+                        <StatusChip label={s.tag} tone="muted" icon="hourglass_empty" />
                       </Box>
                     )}
                   </Box>
@@ -141,9 +177,24 @@ export function SettingsView() {
           {section === 'hardware' && <HardwareSection key="hardware" />}
           {section === 'checkout' && <CheckoutSection key="checkout" />}
           {section === 'staff' && <StaffSection />}
+          {section === 'birdie' && <BuckBirdieSection />}
+          {section === 'taxes' && <BuckTaxesSection />}
+          {section === 'payments' && <BuckPaymentsSection />}
+          {section === 'transport' && <BuckTransportSection />}
+          {section === 'printers' && <BuckPrintersSection />}
+          {section === 'maininfo' && <BuckMainInfoSection />}
         </Box>
       </Stack>
     </OpsScreen>
+  );
+}
+
+function NavHeading({ children, icon, ...rest }: { children: ReactNode; icon?: string } & Record<`data-${string}`, boolean>) {
+  return (
+    <Stack direction="row" alignItems="center" gap={0.5} sx={{ m: '10px 12px 6px', color: md3.outline }} {...rest}>
+      {icon && <Icon name={icon} size={12} />}
+      <Typography sx={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase' }}>{children}</Typography>
+    </Stack>
   );
 }
 
@@ -166,6 +217,8 @@ function DeviceSection() {
     ['App', `${APP_IDENTITY.product} · ${APP_IDENTITY.version}`],
     ['Device', APP_IDENTITY.device],
     ['Register', hw.name],
+    // Buck › Course Settings › Tablets numbers every registered device; support asks for it.
+    ['Buck tablet', `${THIS_TABLET.id} · ${THIS_TABLET.identifier}`],
     ['Card reader', hw.cardReader === 'None' ? 'Not connected' : hw.cardReader],
     ['Last synced', syncedLabel(demoNow())],
   ];
@@ -339,37 +392,39 @@ function HardwareSection() {
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const set = <K extends keyof TerminalHardware>(k: K, v: TerminalHardware[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
-  const device = (k: keyof typeof TESTS, label: string) => (
-    <Stack direction="row" alignItems="flex-end" gap={1} data-device={k}>
-      <Box sx={{ flex: 1 }}>
-        <SelectField label={label} value={draft[k]} options={HARDWARE_OPTIONS[k].map((o) => ({ label: o, value: o }))} onChange={(v) => set(k, v)} />
-      </Box>
-      <OutlineButton onClick={() => toast(draft[k] === 'None' ? `No ${label.toLowerCase()} set` : TESTS[k](draft[k]))}>Test</OutlineButton>
-    </Stack>
+  const device = (k: keyof typeof TESTS, label: string, hint?: string) => (
+    <Box data-device={k}>
+      <Stack direction="row" alignItems="flex-end" gap={1}>
+        <Box sx={{ flex: 1 }}>
+          <SelectField label={label} value={draft[k]} options={HARDWARE_OPTIONS[k].map((o) => ({ label: o, value: o }))} onChange={(v) => set(k, v)} />
+        </Box>
+        <OutlineButton onClick={() => toast(draft[k] === 'None' ? `No ${label.toLowerCase()} set` : TESTS[k](draft[k]))}>Test</OutlineButton>
+      </Stack>
+      {hint && <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mt: 0.5 }}>{hint}</Typography>}
+    </Box>
   );
 
   return (
     <SectionFrame
-      title="Terminal & hardware"
+      title="Register & printers"
       section="hardware"
-      proposed
       dirty={dirty}
       problem={draft.name.trim() ? null : 'Give the register a name.'}
       onSave={() => dispatch({ type: 'saveHardware', hardware: draft })}
       onDiscard={() => setDraft(saved)}
     >
       <Group title="This register">
-        <Field label="Register name" value={draft.name} onChange={(v) => set('name', v)} hint="Printed on receipts and shift reports" />
+        <Field label="Register name" value={draft.name} onChange={(v) => set('name', v)} hint={`Printed on receipts and shift reports · Buck tablet ${THIS_TABLET.id}`} />
       </Group>
       <Group title="Devices" hint="Simulated in the prototype — a test shows what the device would answer.">
         <Stack gap={1.5}>
-          {device('receiptPrinter', 'Receipt printer')}
+          {device('receiptPrinter', 'Pro Shop Printer', "Receipts. The club's printers that Buck lists for this use.")}
           {device('cardReader', 'Card reader')}
           {device('cashDrawer', 'Cash drawer')}
-          {device('kitchenPrinter', 'Kitchen printer')}
+          {device('kitchenPrinter', 'Service Printer', "Kitchen tickets. The club's printers that Buck lists for this use.")}
         </Stack>
       </Group>
-      <Group title="Receipts after a sale">
+      <Group title="Receipts after a sale" hint="Buck's Auto Print Pro Shop Receipts is off, so each register decides.">
         <PillGroup
           value={draft.printReceipts}
           options={[
@@ -386,20 +441,21 @@ function HardwareSection() {
 
 // ─── Checkout & receipts ────────────────────────────────────────────────────
 
+/**
+ * Tips & gift cards — the two checkout settings Buck has no field for. Tax, the tenders and the
+ * receipt text used to be edited here too; they are Buck's (Taxes & Fees, Payments, Birdie › Receipt
+ * Text) and show read-only under Set in Buck. Saved through `saveCheckoutSettings`, the rest of the
+ * checkout settings as they are.
+ */
 function CheckoutSection() {
   const { state, dispatch } = usePos();
   const saved = state.terminalSettings.checkout;
   const [draft, setDraft] = useState<CheckoutSettings>(saved);
-  // Typed as text, so "8." survives a keystroke; parsed into the draft as it goes.
-  const [taxText, setTaxText] = useState(String(Math.round(saved.taxRate * 10000) / 100));
+  // Typed as text, so "1" on its way to "18" survives a keystroke; parsed into the draft as it goes.
   const [tipText, setTipText] = useState(saved.tipPresets.map(String));
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const problem = checkoutProblem(draft);
 
-  const setTax = (v: string) => {
-    setTaxText(v);
-    setDraft((d) => ({ ...d, taxRate: Math.round((parseFloat(v) || 0) * 100) / 10000 }));
-  };
   const setTip = (i: number, v: string) => {
     const next = tipText.map((t, j) => (j === i ? v : t));
     setTipText(next);
@@ -410,49 +466,25 @@ function CheckoutSection() {
 
   return (
     <SectionFrame
-      title="Checkout & receipts"
+      title="Tips & gift cards"
       section="checkout"
-      proposed
+      tag="Not in Buck"
       dirty={dirty}
       problem={problem}
-      note="Checkout reads these as soon as they are saved. Tax here is sales tax on retail and food; a round's tax comes from its course's rates. An order already paid keeps the tax it was rung with."
+      note="Checkout reads these as soon as they are saved. Buck has no field for either yet — tax, tenders and receipt text are Buck's, under Set in Buck."
       onSave={() => dispatch({ type: 'saveCheckoutSettings', checkout: draft })}
       onDiscard={() => {
         setDraft(saved);
-        setTaxText(String(Math.round(saved.taxRate * 10000) / 100));
         setTipText(saved.tipPresets.map(String));
       }}
     >
-      <Group title="Tax and tips">
+      <Group title="Tip suggestions" hint="Buck › Birdie › Tip Suggestions on F&B Receipts is on.">
         <Stack direction="row" gap={1.5}>
-          <Box sx={{ width: 160 }}>
-            <Field label="Sales tax %" type="number" value={taxText} onChange={setTax} />
-          </Box>
           {tipText.map((t, i) => (
             <Box key={i} sx={{ width: 110 }} data-tip-preset={i}>
               <Field label={`Tip ${i + 1} %`} type="number" value={t} onChange={(v) => setTip(i, v)} />
             </Box>
           ))}
-        </Stack>
-      </Group>
-      <Group title="Tenders at checkout">
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', columnGap: 3 }}>
-          {TENDER_KEYS.map((k) => (
-            <Stack key={k} direction="row" alignItems="center" justifyContent="space-between" data-tender-setting={k} sx={{ py: 0.5 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{TENDER_NAMES[k]}</Typography>
-              <Switch
-                checked={draft.tenders[k]}
-                onChange={(e) => setDraft((d) => ({ ...d, tenders: { ...d.tenders, [k]: e.target.checked } }))}
-                slotProps={{ input: { 'aria-label': TENDER_NAMES[k] } }}
-              />
-            </Stack>
-          ))}
-        </Box>
-      </Group>
-      <Group title="Receipt">
-        <Stack gap={1.25}>
-          <Field label="Header" value={draft.receiptHeader} onChange={(v) => setDraft((d) => ({ ...d, receiptHeader: v }))} multiline />
-          <Field label="Footer" value={draft.receiptFooter} onChange={(v) => setDraft((d) => ({ ...d, receiptFooter: v }))} multiline />
         </Stack>
       </Group>
       <Group title="New gift cards are good for" hint="The default a sale starts from; each sale can still change it.">
@@ -498,7 +530,6 @@ function StaffSection() {
         <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800 }}>
           Staff & PINs
         </Typography>
-        <ProposedChip />
         <Box sx={{ flex: 1 }} />
         {manager && (
           <FilledButton onClick={() => dispatch({ type: 'openModal', modal: { kind: 'staffForm' } })}>
@@ -518,7 +549,7 @@ function StaffSection() {
       )}
       <Box sx={{ mb: 1.5 }}>
         <Callout tone="info" icon="info">
-          The PIN pad, Time Clock and the server pickers read this list: someone added here can sign in, and someone deactivated cannot.
+          The PIN pad, Time Clock and the server pickers read this list: someone added here can sign in, and someone deactivated cannot. Buck › Employees keeps the same people and PINs.
         </Callout>
       </Box>
       <DataTable
@@ -584,6 +615,247 @@ function TeeSheetSection() {
   );
 }
 
+// ─── Set in Buck ────────────────────────────────────────────────────────────
+
+/**
+ * Buck › Birdie: the section of Buck's Course Settings written for this app. Defaults, the Point of
+ * Sale Options switches, and the receipt text — the Pro Shop tag is the footer Checkout prints.
+ */
+function BuckBirdieSection() {
+  const { state } = usePos();
+  return (
+    <BuckFrame title="Birdie" section="birdie" buck="Birdie" intro="Birdie kiosk and tablet configuration.">
+      <BuckGroup title="Defaults" buck="Birdie" hint="What Birdie preselects when starting a new sale or event.">
+        {BIRDIE_DEFAULTS.map((d) => (
+          <ReadRow key={d.label} label={d.label} value={d.value} />
+        ))}
+      </BuckGroup>
+      <BuckGroup title="Point of Sale Options" buck="Birdie">
+        {POS_OPTIONS.map((o) => (
+          <ReadRow key={o.label} label={o.label} value={<OnOff on={o.on} />} followed={o.followed} note={o.note} />
+        ))}
+      </BuckGroup>
+      <BuckGroup title="Receipt Text" buck="Birdie">
+        <ReadRow label="Pro Shop Receipt Tag" value={state.terminalSettings.checkout.receiptFooter} note="The footer Checkout prints" />
+        <ReadRow label="Restaurant Receipt Tag" value={RESTAURANT_RECEIPT_TAG} followed={false} />
+        <ReadRow label="Cart Sign Out Disclaimer" value={CART_SIGN_OUT_DISCLAIMER} followed={false} />
+      </BuckGroup>
+    </BuckFrame>
+  );
+}
+
+/**
+ * Buck › Taxes & Fees. Buck names a tax for each kind of line; Birdie charges one sales-tax rate on
+ * all of them (a round's tax comes from its booking), so every row reads the rate Checkout charges.
+ */
+function BuckTaxesSection() {
+  const { state } = usePos();
+  const rate = taxRateOf(state);
+  const sales = taxTypeLabel({ name: 'Sales Tax', rate });
+  return (
+    <BuckFrame title="Taxes & Fees" section="taxes" buck="Taxes & Fees" intro="Tax rates and the fees applied to bookings and orders.">
+      <BuckGroup title="Tax Rates" buck="Taxes & Fees" hint="Which configured tax applies to each kind of line item.">
+        {TAX_RATE_FIELDS.map((f) => (
+          <ReadRow key={f.label} label={f.label} value={f.tax === 'sales' ? sales : f.tax === 'exempt' ? 'Tax Exempt (0.00%)' : 'No tax'} note={f.appliesTo} />
+        ))}
+      </BuckGroup>
+      <BuckGroup title="Service Charges" buck="Taxes & Fees">
+        {SERVICE_CHARGES.map((c) => (
+          <ReadRow key={c.label} label={c.label} value={`${c.percent}%`} followed={false} />
+        ))}
+      </BuckGroup>
+    </BuckFrame>
+  );
+}
+
+/**
+ * Buck › Payments. Each tender Checkout offers is one of Buck's Payment Types; whether it is on is the
+ * switch Checkout reads (`terminalSettings.checkout.tenders`).
+ */
+function BuckPaymentsSection() {
+  const { state } = usePos();
+  const tenders = state.terminalSettings.checkout.tenders;
+  return (
+    <BuckFrame title="Payments" section="payments" buck="Payments" intro="Processors, terminals and how payments are captured.">
+      <BuckGroup title="Payment Types" buck="Payments" hint="Each tender checkout offers, by the payment type Buck records it as.">
+        <DataTable data-buck-payment-types columns={[{ label: 'Checkout tender' }, { label: 'Buck payment type' }, { label: 'At checkout', align: 'right' }]}>
+          {PAYMENT_TYPES.map((p) => (
+            <Box component="tr" key={p.tender} data-payment-type={p.tender}>
+              <Td>
+                <Box sx={{ fontWeight: 700 }}>{TENDER_NAMES[p.tender]}</Box>
+              </Td>
+              <Td>
+                {p.buckName}
+                {p.note && <Box sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>{p.note}</Box>}
+              </Td>
+              <Td align="right">
+                <OnOff on={tenders[p.tender] !== false} />
+              </Td>
+            </Box>
+          ))}
+        </DataTable>
+        <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mt: 1 }}>
+          Also on in Buck, not tenders at this counter: {BUCK_ONLY_PAYMENT_TYPES.join(', ')}.
+        </Typography>
+      </BuckGroup>
+      <BuckGroup title="Other Settings" buck="Payments">
+        {PAYMENT_OPTIONS.map((o) => (
+          <ReadRow key={o.label} label={o.label} value={<OnOff on={o.on} />} followed={o.followed} />
+        ))}
+      </BuckGroup>
+    </BuckFrame>
+  );
+}
+
+/** Buck › Transportation Types, with the transport rows the register prices for each. */
+function BuckTransportSection() {
+  return (
+    <BuckFrame title="Transportation Types" section="transport" buck="Transportation Types" intro="Carts and other transport offered at checkout.">
+      <BuckGroup title="Types" buck="Transportation Types">
+        <DataTable columns={[{ label: 'Type' }, { label: 'Booking' }, { label: 'Default' }, { label: 'Priced at the register as' }]}>
+          {TRANSPORTATION_TYPES.map((t) => (
+            <Box component="tr" key={t.type} data-transport-type={t.type}>
+              <Td>
+                <Box sx={{ fontWeight: 700 }}>{t.type}</Box>
+              </Td>
+              <Td>{t.booking ? 'Yes' : 'No'}</Td>
+              <Td>{t.isDefault ? 'Yes' : 'No'}</Td>
+              <Td>
+                {TRANSPORT_RATES.filter((r) => r.mode === t.mode)
+                  .map((r) => `${r.name} ${money(r.price)}`)
+                  .join(' · ')}
+              </Td>
+            </Box>
+          ))}
+        </DataTable>
+      </BuckGroup>
+    </BuckFrame>
+  );
+}
+
+/** Buck › Printers and Buck › Tablets: the club's printers by use, and this terminal's row. */
+function BuckPrintersSection() {
+  const { state } = usePos();
+  const hw = state.terminalSettings.hardware;
+  return (
+    <BuckFrame title="Printers & Tablets" section="printers" buck="Printers" intro="Receipt and ticket printers for this course, and the tablets registered to it.">
+      <BuckGroup title="Printers" buck="Printers">
+        <DataTable data-buck-printers columns={[{ label: 'Printer' }, { label: 'Uses' }, { label: 'Pops drawer on cash' }, { label: 'This register', align: 'right' }]}>
+          {PRINTERS.map((p) => {
+            const mine = [p.name === hw.receiptPrinter && 'Receipts', p.name === hw.kitchenPrinter && 'Kitchen'].filter(Boolean).join(', ');
+            return (
+              <Box component="tr" key={p.name} data-printer={p.name}>
+                <Td>
+                  <Box sx={{ fontWeight: 700 }}>{p.name}</Box>
+                  <Box sx={{ fontSize: 11, color: md3.onSurfaceVariant, fontFamily: 'monospace' }}>{p.mac}</Box>
+                </Td>
+                <Td>{p.uses.join(', ')}</Td>
+                <Td>{p.popOnCash ? 'Yes' : 'No'}</Td>
+                <Td align="right">{mine ? <StatusChip label={mine} tone="success" /> : '—'}</Td>
+              </Box>
+            );
+          })}
+        </DataTable>
+      </BuckGroup>
+      <BuckGroup title="Tablets" buck="Tablets">
+        <DataTable data-buck-tablets columns={[{ label: '#' }, { label: 'Description' }, { label: 'Identifier' }, { label: 'Printer' }]}>
+          {TABLETS.map((t) => (
+            <Box component="tr" key={t.id} data-tablet={t.id} sx={{ bgcolor: t.id === THIS_TABLET.id ? md3.primaryContainer : undefined }}>
+              <Td sx={{ fontFamily: 'monospace' }}>{t.id}</Td>
+              <Td>
+                <Box sx={{ fontWeight: 700 }}>{t.description}</Box>
+                {t.id === THIS_TABLET.id && <Box sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>This tablet</Box>}
+              </Td>
+              <Td sx={{ fontFamily: 'monospace' }}>{t.identifier}</Td>
+              <Td>{t.printer || '—'}</Td>
+            </Box>
+          ))}
+        </DataTable>
+      </BuckGroup>
+    </BuckFrame>
+  );
+}
+
+/** Buck › Main Info: what a receipt's header and an issued credit read from the course record. */
+function BuckMainInfoSection() {
+  const { state } = usePos();
+  return (
+    <BuckFrame title="Main Info" section="maininfo" buck="Main Info" intro="Name, address, contact details and time zone.">
+      <BuckGroup title="Identity" buck="Main Info">
+        <ReadRow label="Course Name" value={MAIN_INFO.courseName} />
+        <ReadRow label="Phone" value={MAIN_INFO.phone} />
+        <ReadRow label="Time Zone" value={MAIN_INFO.timeZone} />
+        <ReadRow label="Receipt header" value={state.terminalSettings.checkout.receiptHeader} note="Built from the name and phone" />
+      </BuckGroup>
+      <BuckGroup title="Credits and Expirations" buck="Main Info" hint="How long issued credits stay valid, in days.">
+        {CREDIT_EXPIRATIONS.map((c) => (
+          <ReadRow key={c.label} label={c.label} value={`${c.days} days`} />
+        ))}
+      </BuckGroup>
+      <BuckGroup title="Reporting" buck="Main Info">
+        <ReadRow label="Reporting End Time" value={MAIN_INFO.reportingEndTime} followed={false} note="When a business day closes for reports" />
+      </BuckGroup>
+    </BuckFrame>
+  );
+}
+
+/** A Set in Buck section: its title and marker, and where in Buck it changes. Nothing here saves. */
+function BuckFrame({ title, section, buck, intro, children }: { title: string; section: SettingsSection; buck: BuckSection; intro: string; children: ReactNode }) {
+  return (
+    <Box data-settings-panel={section} data-read-only sx={{ maxWidth: 760 }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+        <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800 }}>
+          {title}
+        </Typography>
+        <SetInBuckChip />
+      </Stack>
+      <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant, mb: 1.5 }}>{intro}</Typography>
+      <Box sx={{ mb: 2 }} data-buck-where>
+        <Callout tone="info" icon="lock">
+          Read-only here. Change it in {buckPath(buck)}; this terminal picks it up on its next sync.
+        </Callout>
+      </Box>
+      {children}
+    </Box>
+  );
+}
+
+function BuckGroup({ title, buck, hint, children }: { title: string; buck: BuckSection; hint?: string; children: ReactNode }) {
+  return (
+    <Box sx={{ mb: 2.5 }} data-buck-group={title}>
+      <PanelHeading aside={buckPath(buck, title)}>{title}</PanelHeading>
+      {hint && <Typography sx={{ fontSize: 12, color: md3.onSurfaceVariant, mt: -0.5, mb: 0.75 }}>{hint}</Typography>}
+      {children}
+    </Box>
+  );
+}
+
+/**
+ * One read-only value. `followed: false` marks a Buck setting this prototype does not act on yet —
+ * shown so the team sees it exists, labelled so nobody takes it for a working switch.
+ */
+function ReadRow({ label, value, note, followed = true }: { label: string; value: ReactNode; note?: string; followed?: boolean }) {
+  return (
+    <Stack direction="row" alignItems="flex-start" gap={1.5} data-read-row={label} sx={{ py: 0.875, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+      <Box sx={{ width: 260, flexShrink: 0 }}>
+        <Typography sx={{ fontSize: 13, color: md3.onSurfaceVariant }}>{label}</Typography>
+        {note && <Typography sx={{ fontSize: 11, color: md3.outline }}>{note}</Typography>}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, whiteSpace: 'pre-line' }}>{value}</Box>
+      {!followed && <StatusChip label="Shown only" tone="muted" />}
+    </Stack>
+  );
+}
+
+function OnOff({ on }: { on: boolean }) {
+  return <StatusChip label={on ? 'On' : 'Off'} tone={on ? 'success' : 'muted'} />;
+}
+
+/** The marker on everything Buck owns. */
+function SetInBuckChip() {
+  return <StatusChip label="Set in Buck" tone="buck" icon="lock" />;
+}
+
 // ─── Parts ──────────────────────────────────────────────────────────────────
 
 /** A section that saves as a whole: its fields, then Save and Discard, and who saved it last. */
@@ -593,7 +865,7 @@ function SectionFrame({
   dirty,
   problem,
   note,
-  proposed,
+  tag,
   onSave,
   onDiscard,
   children,
@@ -603,8 +875,8 @@ function SectionFrame({
   dirty: boolean;
   problem: string | null;
   note?: string;
-  /** One of the V1 → V2 sections Birdie does not have today: says so beside the title. */
-  proposed?: boolean;
+  /** A marker beside the title — "Not in Buck" for a setting Buck has no field for. */
+  tag?: string;
   onSave: () => void;
   onDiscard: () => void;
   children: ReactNode;
@@ -617,7 +889,7 @@ function SectionFrame({
         <Typography component="h2" sx={{ fontSize: 20, fontWeight: 800 }}>
           {title}
         </Typography>
-        {proposed && <ProposedChip />}
+        {tag && <StatusChip label={tag} tone="muted" icon="hourglass_empty" />}
       </Stack>
       {note && (
         <Box sx={{ mb: 1.5 }}>
@@ -677,6 +949,8 @@ function Group({ title, hint, children }: { title: string; hint?: string; childr
 /** The fills match `Callout`'s tones, so a chip and a callout of one tone read as one colour. */
 const CHIP_TONES = {
   muted: { bg: md3.surfaceHigh, text: md3.onSurfaceVariant },
+  // Set in Buck: a hue of its own, so "owned elsewhere" never reads as a status.
+  buck: { bg: '#e0e7ff', text: '#3730a3' },
   warning: { bg: '#fef3c7', text: '#92400e' },
   success: { bg: '#f0fdf4', text: '#166534' },
 } as const;
@@ -693,12 +967,4 @@ function StatusChip({ label, tone, icon }: { label: string; tone: keyof typeof C
       {label}
     </Box>
   );
-}
-
-/**
- * Marks a V1 → V2 section Birdie does not have today. It still works — and is still wired — but
- * stays marked until Weston (or Buck) confirms the real list.
- */
-function ProposedChip() {
-  return <StatusChip label="Proposed" tone="muted" icon="hourglass_empty" />;
 }
