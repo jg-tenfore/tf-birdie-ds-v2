@@ -21,7 +21,19 @@ import { ALL_ITEMS } from './catalog';
  * and on the order line (`comboSavings`).
  *
  * Fixed data: no clock, no randomness, so every story and screenshot shows the same six.
+ *
+ * ## Buck's combos (Nov 26)
+ *
+ * Buck › Products › Combos gives each combo a title, a description and a **department** — Pro Shop,
+ * Restaurant or Bev Carts — over a list of products with quantities. Birdie's combos now carry the
+ * department, and two take Buck's titles where they are the same bundle: the turn's hot dog, chips
+ * and drink is Buck's **Turn Special** (Restaurant), and the six beers is Buck's **6 Pack Combo** —
+ * three domestic and three craft, as Buck mixes a lager and an IPA. The rest are Birdie's own, and
+ * `buck-sources.ts` says so.
  */
+
+/** Buck's combo departments (Products › Combos › Department). */
+export type ComboDepartment = 'Pro Shop' | 'Restaurant' | 'Bev Carts';
 
 export interface ComboComponentDef {
   /** A `CATALOG` item name — resolved to its list price by `comboComponents`. */
@@ -35,8 +47,10 @@ export interface Combo {
   /** What the combo charges, in dollars. */
   price: number;
   components: ComboComponentDef[];
-  /** One line for the tile — who it is for. */
+  /** One line for the tile — who it is for. Buck's "Description". */
   desc: string;
+  /** Where it is sold, as Buck files it. */
+  department: ComboDepartment;
 }
 
 export const COMBOS: Combo[] = [
@@ -45,6 +59,7 @@ export const COMBOS: Combo[] = [
     name: 'Range & a Cold One',
     price: 17.5,
     desc: 'Large bucket and a craft beer',
+    department: 'Pro Shop',
     components: [
       { item: 'Range Bucket Large', qty: 1 },
       { item: 'Beer Craft', qty: 1 },
@@ -55,6 +70,7 @@ export const COMBOS: Combo[] = [
     name: 'Sleeve & Glove',
     price: 29,
     desc: 'Pro V1 sleeve and a men’s glove',
+    department: 'Pro Shop',
     components: [
       { item: 'Titleist Pro V1 Sleeve', qty: 1 },
       { item: 'Golf Glove Mens', qty: 1 },
@@ -62,9 +78,10 @@ export const COMBOS: Combo[] = [
   },
   {
     id: 'combo-turn-dog',
-    name: 'Turn Dog',
+    name: 'Turn Special',
     price: 8,
-    desc: 'Hot dog, chips and a soda at the turn',
+    desc: 'Hot dog, chips and a drink at the turn',
+    department: 'Restaurant',
     components: [
       { item: 'Hot Dog', qty: 1 },
       { item: 'Chips', qty: 1 },
@@ -76,6 +93,7 @@ export const COMBOS: Combo[] = [
     name: 'Clubhouse Burger Lunch',
     price: 11,
     desc: 'Burger, chips and an iced tea',
+    department: 'Restaurant',
     components: [
       { item: 'Hamburger', qty: 1 },
       { item: 'Chips', qty: 1 },
@@ -84,16 +102,21 @@ export const COMBOS: Combo[] = [
   },
   {
     id: 'combo-cart-bucket',
-    name: 'Cart Bucket',
-    price: 24,
-    desc: 'Six domestic beers on ice for the cart',
-    components: [{ item: 'Beer Domestic', qty: 6 }],
+    name: '6 Pack Combo',
+    price: 30,
+    desc: 'Three domestic and three craft beers on ice for the cart',
+    department: 'Bev Carts',
+    components: [
+      { item: 'Beer Domestic', qty: 3 },
+      { item: 'Beer Craft', qty: 3 },
+    ],
   },
   {
     id: 'combo-first-tee',
     name: 'First Tee Starter',
     price: 39,
     desc: 'TruFeel box, tees, marker and a divot tool',
+    department: 'Pro Shop',
     components: [
       { item: 'Titleist TruFeel Box', qty: 1 },
       { item: 'Tee Pack 50ct', qty: 1 },

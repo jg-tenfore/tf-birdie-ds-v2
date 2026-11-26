@@ -149,8 +149,8 @@ export type RestaurantAction =
   | { type: 'moveDish'; target: DishTarget; lineId: string; seat: number | null }
   /** Split one unit off a line of two or more onto another seat. */
   | { type: 'splitDish'; target: DishTarget; lineId: string; seat: number | null }
-  /** Percent off a dish, sent or not. 0 removes it. */
-  | { type: 'discountDish'; target: DishTarget; lineId: string; pct: number }
+  /** Percent off a dish, sent or not, and the Buck discount type it came from. 0 removes it. */
+  | { type: 'discountDish'; target: DishTarget; lineId: string; pct: number; discountTypeId?: number }
   | { type: 'sendToKitchen'; target: DishTarget }
   /** Load a tab onto the register to be paid. Refused while a different order is on the rail. */
   | { type: 'payTab'; tabId: string }
@@ -328,7 +328,7 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
     }
 
     case 'discountDish':
-      return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? discountDishLine(l, action.pct) : l)));
+      return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? discountDishLine(l, action.pct, action.discountTypeId) : l)));
 
     case 'sendToKitchen': {
       const tab = action.target === 'cart' ? undefined : tabById(state, action.target.tabId);

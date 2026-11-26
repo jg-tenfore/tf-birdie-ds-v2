@@ -189,7 +189,7 @@ export const ASingleChoiceAndASet: Story = {
   render: () => <Screen edition="v1v2" initialState={burgerOnP2} />,
   play: async () => {
     const dialog = within(await screen.findByRole('dialog'));
-    const temperature = dialog.getByRole('radiogroup', { name: 'Temperature' });
+    const temperature = dialog.getByRole('radiogroup', { name: 'Temp' });
     const t = within(temperature);
     await userEvent.click(t.getByRole('radio', { name: 'Rare' }));
     await userEvent.click(t.getByRole('radio', { name: 'Medium' }));
@@ -197,7 +197,7 @@ export const ASingleChoiceAndASet: Story = {
     await expect(t.getByRole('radio', { name: 'Medium' })).toHaveAttribute('aria-checked', 'true');
     await expect(t.getAllByRole('radio').filter((r) => r.getAttribute('aria-checked') === 'true')).toHaveLength(1);
 
-    const addons = within(dialog.getByRole('group', { name: 'Add-ons' }));
+    const addons = within(dialog.getByRole('group', { name: 'Burger Add-ons' }));
     await userEvent.click(addons.getByRole('checkbox', { name: /Bacon/ }));
     await userEvent.click(addons.getByRole('checkbox', { name: /Avocado/ }));
     await expect(addons.getByRole('checkbox', { name: /Bacon/ })).toHaveAttribute('aria-checked', 'true');
@@ -216,9 +216,9 @@ export const ARequiredGroupBlocks: Story = {
     const dialog = within(await screen.findByRole('dialog'));
     const add = dialog.getByRole('button', { name: 'Add to Seat 1' });
     await expect(add).toBeDisabled();
-    await expect(dialog.getByText('Choose temperature and side')).toBeTruthy();
+    await expect(dialog.getByText('Choose temp and sides')).toBeTruthy();
     await userEvent.click(dialog.getByRole('radio', { name: 'Medium' }));
-    await expect(dialog.getByText('Choose side')).toBeTruthy();
+    await expect(dialog.getByText('Choose sides')).toBeTruthy();
     await expect(add).toBeDisabled();
     await userEvent.click(dialog.getByRole('radio', { name: 'Fries' }));
     await expect(add).toBeEnabled();
@@ -421,7 +421,8 @@ export const ANewBarTab: Story = {
  * control, open on sent plates too, because none of them touches the food: moving a fired plate from
  * seat 4 to seat 2 changes who pays, not what the cook makes.
  *
- * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other.
+ * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other with Buck's
+ * Shift Drink discount type.
  */
 export const AdjustingASentPlate: Story = {
   render: () => <Screen edition="v1v2" initialState={onTab('T-1001')} />,
@@ -453,7 +454,8 @@ export const AdjustingASentPlate: Story = {
     const left = both.find((el) => band(canvasElement, 4).contains(el))!;
     const leftPanel = q(left, '[data-dish-adjust]');
     if (!leftPanel) throw new Error('the seat-4 line should still have its Adjust panel open after the split');
-    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Comp' }));
+    // Since Nov 26 the Discount row offers Buck's discount types; a beer takes Shift Drink (100%).
+    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Shift Drink · 100%' }));
     await waitFor(() => expect(left.textContent).toContain('$0.00'));
     await expect(canvas.queryByText(/Voided/)).toBeNull();
   },

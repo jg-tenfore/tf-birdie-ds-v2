@@ -173,12 +173,15 @@ export function moveDish(line: CartItem, seat: number | null): CartItem {
   return { ...line, dish: { ...line.dish, seat: seat ?? undefined } };
 }
 
-/** Take a percentage off a dish, sent or not. 0 removes the discount. */
-export function discountDish(line: CartItem, pct: number): CartItem {
+/**
+ * Take a percentage off a dish, sent or not. 0 removes the discount. `discountTypeId` names the Buck
+ * discount type it came from, so the line can say why; a bare percentage carries none.
+ */
+export function discountDish(line: CartItem, pct: number, discountTypeId?: number): CartItem {
   if (!line.dish || line.dish.voided) return line;
   const discountPct = Math.max(0, Math.min(100, Math.round(pct))) || undefined;
   const unit = dishUnitPrice({ ...line.dish, discountPct });
-  return { ...line, price: unit, unitPrice: unit, dish: { ...line.dish, discountPct } };
+  return { ...line, price: unit, unitPrice: unit, dish: { ...line.dish, discountPct, discountTypeId: discountPct ? discountTypeId : undefined } };
 }
 
 /**

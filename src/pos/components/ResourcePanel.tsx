@@ -1,17 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { keyframes } from '@emotion/react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { elevation, md3, payBadges, radius, reservationPanel } from '../../theme/tokens';
 import { formatTimeLabel } from '../data/courses';
-import { SHEETS, resourceById, resourcesOf, type ResourceBooking } from '../data/resources';
+import { ribbonOf } from '../data/memberships';
+import { SHEETS, capacityOf, resourceById, resourcesOf, type ResourceBooking } from '../data/resources';
+import { liveCustomer } from '../data/roster';
 import { money } from '../logic/cart';
 import {
   canStartAt,
   clampDuration,
+  dailyLimitProblem,
   endMin,
   formatDuration,
   maxDurationAt,
-  resourcePrice,
+  resourceFee,
 } from '../logic/resource-booking';
 import { Field, FilledButton, OutlineButton } from '../modals/ModalFrame';
 import { usePos } from '../state/PosProvider';
@@ -40,16 +43,27 @@ import { Stack } from './Stack';
  * or closing time, and **Move to** lists only resources that are free for the whole slot. The
  * panel cannot produce a collision, so it never has to report one.
  *
- * 520px rather than the reservation panel's 820: there is no player grid here, and a panel twice
- * the width of its content reads as unfinished.
+ * 560px — TF Buck's slide-over width for a bay booking (Nov 24) — rather than the reservation
+ * panel's 820: there is no player grid here, and a panel twice the width of its content reads as
+ * unfinished.
+ *
+ * ## From Buck (Nov 26)
+ *
+ * The charge is **Buck's fee** by name ("Sim Hour Evening · $75/hr × 1 hr"), the party stepper stops
+ * at the **bay's capacity**, **+30m** and **+1h** extend in one tap, and the golfer's **membership
+ * ribbon** heads the Booked-for card. Buck's **daily limit** (two bookings a golfer a day) is
+ * checked when a booking is confirmed: the panel says which two they already have and offers *Book
+ * anyway* — Buck lets staff override it.
  */
-const WIDTH = 520;
+const WIDTH = 560;
 
 const slideIn = keyframes`from { transform: translateX(100%) } to { transform: translateX(0) }`;
 const fadeIn = keyframes`from { opacity: 0 } to { opacity: 1 }`;
 
 export function ResourcePanel() {
   const { state, dispatch, toast } = usePos();
+  const [limitAsk, setLimitAsk] = useState<null | (() => void)>(null);
+  const [overridden, setOverridden] = useState(false);
   const id = state.resourcePanel?.bookingId;
   const b = id ? state.resourceBookings.find((x) => x.id === id) : undefined;
 
@@ -79,7 +93,20 @@ export function ResourcePanel() {
   const patch = (p: Partial<ResourceBooking>) => dispatch({ type: 'patchResourceBooking', id: b.id, patch: p });
 
   const room = maxDurationAt(b.kind, b.resourceId, b.date, b.startMin, all, b.id);
-  const price = resourcePrice(b);
+  const fee = resourceFee(b);
+  const price = fee.amount;
+  const capacity = resource ? capacityOf(resource) : cfg.maxParty;
+  const ribbon = ribbonOf(liveCustomer(b.crmId));
+  const limit = dailyLimitProblem(b, all);
+  // Buck: staff can override the daily limit. Once overridden, the panel stops asking.
+  const confirmOrWarn = (go: () => void) => {
+    // Only a new booking is checked: one already on the sheet was checked when it was made.
+    if (limit && b.draft && !overridden) {
+      setLimitAsk(() => go);
+      return;
+    }
+    go();
+  };
 
   // The start can move while the booking still fits where it would land.
   const fitsAt = (start: number) => {
@@ -99,6 +126,7 @@ export function ResourcePanel() {
   const movable = resourcesOf(b.kind).filter(
     (r) =>
       r.id !== b.resourceId &&
+      capacityOf(r) >= b.players &&
       maxDurationAt(b.kind, r.id, b.date, b.startMin, all.filter((x) => x.id !== b.id), b.id) >= b.durationMin &&
       canStartAt(b.kind, r.id, b.date, b.startMin, all.filter((x) => x.id !== b.id)),
   );
@@ -171,13 +199,14 @@ export function ResourcePanel() {
               textAlign: 'left',
             }}
           >
+            <Box data-panel-ribbon={ribbon.name} title={ribbon.name} sx={{ alignSelf: 'stretch', width: 5, my: 1, borderRadius: 2, bgcolor: ribbon.color, flexShrink: 0 }} />
             <Icon name={b.crmId ? 'person' : 'person_search'} size={20} color={b.crmId ? md3.primary : md3.outline} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: 14.5, fontWeight: 700 }} noWrap>
                 {b.name}
               </Typography>
               <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
-                {b.crmId ? (b.phone ?? 'On file') : 'Not in the system — tap to find or add them'}
+                {b.crmId ? `${b.phone ?? 'On file'} · ${ribbon.name}` : 'Not in the system — tap to find or add them'}
               </Typography>
             </Box>
             <Typography sx={{ fontSize: 12, fontWeight: 700, color: md3.primary }}>{b.crmId ? 'Change' : 'Find'}</Typography>
@@ -208,6 +237,13 @@ export function ResourcePanel() {
               />
             </Box>
           </Box>
+          <Stack direction="row" gap={0.75} sx={{ mt: 1 }} data-extend>
+            {[30, 60].map((m) => (
+              <OutlineButton key={m} disabled={b.durationMin + m > room} onClick={() => patch({ durationMin: b.durationMin + m })}>
+                {m === 30 ? '+30m' : '+1h'}
+              </OutlineButton>
+            ))}
+          </Stack>
           {b.durationMin + cfg.stepMin > room && room < cfg.maxDurationMin && (
             <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, mt: 0.75 }}>
               {room + b.startMin >= cfg.closeMin ? 'Runs to closing time.' : 'The next booking starts right after this.'}
@@ -215,13 +251,13 @@ export function ResourcePanel() {
           )}
 
           <Box sx={{ mt: 2 }}>
-            <Label>{cfg.partyNoun[0].toUpperCase() + cfg.partyNoun.slice(1)}</Label>
+            <Label>{`${cfg.partyNoun[0].toUpperCase() + cfg.partyNoun.slice(1)} · ${resource?.name ?? ''} holds ${capacity}`}</Label>
             <Box sx={{ maxWidth: 220 }}>
               <Stepper
                 ariaLabel={cfg.partyNoun}
                 value={String(b.players)}
                 canDown={b.players > 1}
-                canUp={b.players < cfg.maxParty}
+                canUp={b.players < capacity}
                 onDown={() => patch({ players: b.players - 1 })}
                 onUp={() => patch({ players: b.players + 1 })}
               />
@@ -273,14 +309,38 @@ export function ResourcePanel() {
             alignItems="baseline"
             sx={{ mt: 2, p: '12px 14px', bgcolor: md3.surfaceContainer, borderRadius: `${radius.md}px` }}
           >
-            <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant }}>
-              ${resource?.hourly}/hr × {formatDuration(b.durationMin)}
+            <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant }} data-resource-fee={fee.name}>
+              {fee.name} · ${fee.hourly}/hr × {formatDuration(b.durationMin)}
             </Typography>
             <Typography sx={{ fontSize: 18, fontWeight: 800, color: b.paid ? md3.primary : md3.onSurface }} data-resource-price>
               {b.paid ? 'Paid' : money(price)}
             </Typography>
           </Stack>
         </Box>
+
+        {/* ── Buck's daily limit: said before the action, overridable by staff. ── */}
+        {limit && b.draft && !overridden && (
+          <Box data-daily-limit sx={{ mx: 2.5, mb: 1, p: '10px 12px', borderRadius: `${radius.md}px`, bgcolor: '#fef3c7', color: '#92400e' }}>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{limit}</Typography>
+            {limitAsk && (
+              <Stack direction="row" gap={0.75} sx={{ mt: 1 }}>
+                <OutlineButton
+                  onClick={() => {
+                    setOverridden(true);
+                    const go = limitAsk;
+                    setLimitAsk(null);
+                    // After this click has finished: it removes the panel it was made in, and the
+                    // toast's click-away would otherwise read it as a click elsewhere and close it.
+                    window.setTimeout(go, 0);
+                  }}
+                >
+                  Book anyway
+                </OutlineButton>
+                <OutlineButton onClick={() => setLimitAsk(null)}>Not now</OutlineButton>
+              </Stack>
+            )}
+          </Box>
+        )}
 
         {/* ── One primary action, as on a tee time. ── */}
         <Stack direction="row" gap={0.75} alignItems="center" sx={{ p: '12px 20px 14px', borderTop: `1px solid ${md3.outlineVariant}` }}>
@@ -308,11 +368,13 @@ export function ResourcePanel() {
             <>
               <OutlineButton onClick={close}>Discard</OutlineButton>
               <OutlineButton
-                onClick={() => {
-                  patch({ draft: false });
-                  dispatch({ type: 'closeResourcePanel' });
-                  toast(`${resource?.name} booked`);
-                }}
+                onClick={() =>
+                  confirmOrWarn(() => {
+                    patch({ draft: false });
+                    dispatch({ type: 'closeResourcePanel' });
+                    toast(`${resource?.name} booked${limit ? ' · daily limit overridden' : ''}`);
+                  })
+                }
               >
                 Book
               </OutlineButton>
@@ -322,10 +384,12 @@ export function ResourcePanel() {
           )}
           {!b.paid && (
             <FilledButton
-              onClick={() => {
-                patch({ draft: false });
-                dispatch({ type: 'checkInResource', id: b.id });
-              }}
+              onClick={() =>
+                confirmOrWarn(() => {
+                  patch({ draft: false });
+                  dispatch({ type: 'checkInResource', id: b.id });
+                })
+              }
             >
               {onOrder ? `Update order · ${money(price)}` : `Check in & pay · ${money(price)}`}
             </FilledButton>

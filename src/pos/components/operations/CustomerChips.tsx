@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import type { Customer, CustomerGiftCard } from '../../data/customers';
+import { planColor } from '../../data/memberships';
 import { categoryLabels, customerChips } from '../../logic/customer-search';
 import { md3, radius } from '../../../theme/tokens';
 import { Stack } from '../Stack';
@@ -12,7 +13,7 @@ import { Stack } from '../Stack';
 /** Amber, as the customer record's membership chips are — the rate-deciding thing. */
 const MEMBER = { bg: '#fef3c7', fg: '#92400e' };
 
-function Pill({ label, bg, fg, ...rest }: { label: string; bg: string; fg: string } & Record<`data-${string}`, string | undefined>) {
+function Pill({ label, bg, fg, dot, ...rest }: { label: string; bg: string; fg: string; dot?: string } & Record<`data-${string}`, string | undefined>) {
   return (
     <Box
       component="span"
@@ -29,8 +30,10 @@ function Pill({ label, bg, fg, ...rest }: { label: string; bg: string; fg: strin
         fontWeight: 700,
         whiteSpace: 'nowrap',
         lineHeight: 1.5,
+        gap: '5px',
       }}
     >
+      {dot && <Box component="span" data-plan-color={dot} sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: dot, flexShrink: 0 }} />}
       {label}
     </Box>
   );
@@ -50,7 +53,9 @@ export function CustomerChipRow({ customer, max = 3 }: { customer: Pick<Customer
     <Stack direction="row" gap={0.5} alignItems="center" sx={{ flexWrap: 'wrap' }} data-customer-chips>
       {shown.map((c) =>
         c.tone === 'member' ? (
-          <Pill key={`m-${c.label}`} label={c.label} bg={MEMBER.bg} fg={MEMBER.fg} data-membership-chip={c.label} />
+          // The plan's own colour as a dot (Buck: "picked on the plan and drawn as given") — the same
+          // colour as the tee sheet's member dot and the bay sheet's ribbon.
+          <Pill key={`m-${c.label}`} label={c.label} bg={MEMBER.bg} fg={MEMBER.fg} dot={planColor(c.label)} data-membership-chip={c.label} />
         ) : (
           <Pill key={`t-${c.label}`} label={c.label} bg={md3.surfaceContainer} fg={md3.onSurfaceVariant} />
         ),
