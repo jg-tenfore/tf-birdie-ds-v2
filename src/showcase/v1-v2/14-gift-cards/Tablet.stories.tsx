@@ -3,6 +3,7 @@ import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { customers } from '../../../pos/data/customers';
 import { orderTotals } from '../../../pos/logic/cart';
+import { buckPricing } from '../../../pos/logic/pricing';
 import { giftCardCanPay } from '../../../pos/logic/customer-search';
 import { allGiftCards } from '../../../pos/state/operations';
 import type { PosState } from '../../../pos/state/pos-store';
@@ -137,8 +138,9 @@ export const APartPaymentWithABeerOnIt: Story = {
     await userEvent.type(d.getByRole('textbox'), '261902');
     await userEvent.click(await option('261902'));
 
-    const total = orderTotals(burgersAndBeers).total;
-    const pays = giftCardCanPay({ balance: 200 }, burgersAndBeers, total, null);
+    // At Buck's per-line pricing (Nov 26): the beers carry their alcohol tax.
+    const total = orderTotals(burgersAndBeers, buckPricing()).total;
+    const pays = giftCardCanPay({ balance: 200 }, burgersAndBeers, total, null, buckPricing());
     const left = Math.round((total - pays) * 100) / 100;
     await expect(document.querySelector('[data-card-pays]')!.getAttribute('data-card-pays')).toBe(pays.toFixed(2));
     await expect(document.querySelector('[data-cannot-line="Beer Domestic"]')!.textContent).toContain('alcohol');
@@ -219,8 +221,8 @@ export const APartPaymentKeepsTheTip: Story = {
     await userEvent.click(d.getByRole('button', { name: /^Pay \$[\d.]+ · / }));
     await waitFor(() => expect(document.querySelector('[data-split-tender]')).not.toBeNull());
     // The reader charges what the card left, plus the tip.
-    const total = orderTotals(burgersAndBeers).total;
-    const cardPaid = giftCardCanPay({ balance: 200 }, burgersAndBeers, total, null);
+    const total = orderTotals(burgersAndBeers, buckPricing()).total;
+    const cardPaid = giftCardCanPay({ balance: 200 }, burgersAndBeers, total, null, buckPricing());
     const checkout = within(await screen.findByRole('dialog'));
     await userEvent.click(checkout.getByRole('button', { name: /^card$/i }));
     const reader = within(await screen.findByRole('dialog'));

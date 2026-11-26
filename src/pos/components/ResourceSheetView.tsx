@@ -171,7 +171,7 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
       {shown.length === 0 ? (
         <AllSwitchedOff kind={kind} />
       ) : (
-      <Box sx={{ flex: 1, overflow: 'auto', bgcolor: md3.surfaceContainer, position: 'relative' }}>
+      <Box data-resource-scroll sx={{ flex: 1, overflow: 'auto', bgcolor: md3.surfaceContainer, position: 'relative' }}>
         {/* Column headers, pinned while the day scrolls under them. */}
         <Box
           sx={{
@@ -249,6 +249,8 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
                 // The 30-minute grid, drawn rather than rendered as elements, so a day of six
                 // columns is not a thousand boxes.
                 backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${cfg.stepMin * PPM - 1}px, ${md3.outlineVariant}66 ${cfg.stepMin * PPM - 1}px, ${md3.outlineVariant}66 ${cfg.stepMin * PPM}px)`,
+                // The column a dragged booking will land in (set by BookingBlock while dragging).
+                '&[data-drop-target]': { bgcolor: `${md3.primary}14`, boxShadow: `inset 0 0 0 2px ${md3.primary}` },
               }}
             >
               {bookings
@@ -472,27 +474,173 @@ function BookingBlock({
   const cfg = SHEETS[b.kind];
   // The tee sheet's palette: owed is white with a green edge, paid is solid green.
   const tone = b.paid
-    ? { bg: md3.primary, border: md3.primary, name: '#fff', meta: 'rgba(255,255,255,.8)' }
-    : { bg: '#fff', border: md3.primary, name: md3.onSurface, meta: md3.onSurfaceVariant };
+    ? {
+        bg: md3.primary,
+        border: md3.primary,
+        name: '#fff',
+        meta: 'rgba(255,255,255,.8)',
+      }
+    : {
+        bg: '#fff',
+        border: md3.primary,
+        name: md3.onSurface,
+        meta: md3.onSurfaceVariant,
+      };
 
-  // A drag in progress: where it started, what it is doing, and how far it has gone.
-  const drag = useRef<{ mode: 'move' | 'resize'; x: number; y: number; moved: boolean } | null>(null);
+  // A drag in progress: where it started, where the pointer is now, and the sheet it scrolls.
+  const drag = useRef<{
+    mode: 'move' | 'resize';
+    x: number;
+    y: number;
+    px: number;
+    py: number;
+    moved: boolean;
+    scroller: HTMLElement | null;
+    scrollTop0: number;
+    raf: number;
+  } | null>(null);
   // When a drag ended: the click the browser fires after it is the drag's, not a tap.
   const draggedAt = useRef(0);
-  const [preview, setPreview] = useState<{ dy: number; dh: number } | null>(null);
+  const blockRef = useRef<HTMLButtonElement>(null);
+  const dropColumn = useRef<HTMLElement | null>(null);
+  // Pressed and held: the booking lifts right away, before it has moved.
+  const [held, setHeld] = useState(false);
+  // Where the dragged booking would land, drawn as it follows the pointer.
+  const [preview, setPreview] = useState<{
+    dx: number;
+    dy: number;
+    dh: number;
+    label: string;
+    problem: string | null;
+  } | null>(null);
 
   const snapMinutes = (px: number) => Math.round(px / PPM / cfg.stepMin) * cfg.stepMin;
-  const columnAt = (x: number, y: number): string | null => {
-    const hit = (typeof document.elementsFromPoint === 'function' ? document.elementsFromPoint(x, y) : []).find((el) =>
+  const columnAt = (x: number, y: number): HTMLElement | null =>
+    ((typeof document.elementsFromPoint === 'function' ? document.elementsFromPoint(x, y) : []).find((el) =>
       el.hasAttribute('data-resource-column'),
-    );
-    return hit?.getAttribute('data-resource-column') ?? null;
+    ) as HTMLElement | undefined) ?? null;
+
+  /** Lights up the column the booking would land in (and only that one). */
+  const markDrop = (el: HTMLElement | null) => {
+    if (dropColumn.current === el) return;
+    dropColumn.current?.removeAttribute('data-drop-target');
+    el?.setAttribute('data-drop-target', '');
+    dropColumn.current = el;
+  };
+
+  /** Where the booking goes if it is let go now: the column under the pointer, the half hour it snaps to. */
+  const landing = () => {
+    const d = drag.current!;
+    // The sheet may have scrolled under the pointer since the drag began.
+    const scrolled = d.scroller ? d.scroller.scrollTop - d.scrollTop0 : 0;
+    const delta = snapMinutes(d.py - d.y + scrolled);
+    if (d.mode === 'resize') {
+      return {
+        to: {
+          resourceId: b.resourceId,
+          startMin: b.startMin,
+          durationMin: b.durationMin + delta,
+        },
+        dx: 0,
+        dy: 0,
+        dh: delta * PPM,
+        column: null,
+      };
+    }
+    const own = blockRef.current?.closest('[data-resource-column]') as HTMLElement | null;
+    const column = columnAt(d.px, d.py) ?? own;
+    const dx = column && own ? column.getBoundingClientRect().left - own.getBoundingClientRect().left : 0;
+    const resourceId = column?.getAttribute('data-resource-column') ?? b.resourceId;
+    return {
+      to: {
+        resourceId,
+        startMin: b.startMin + delta,
+        durationMin: b.durationMin,
+      },
+      dx,
+      dy: delta * PPM,
+      dh: 0,
+      column,
+    };
+  };
+
+  const unchanged = (to: { resourceId: string; startMin: number; durationMin: number }) =>
+    to.resourceId === b.resourceId && to.startMin === b.startMin && to.durationMin === b.durationMin;
+
+  const redraw = () => {
+    const d = drag.current;
+    if (!d?.moved) return;
+    const { to, dx, dy, dh, column } = landing();
+    markDrop(d.mode === 'move' ? column : null);
+    const label =
+      d.mode === 'move'
+        ? `${resourceById(to.resourceId)?.name ?? ''} · ${formatTimeLabel(to.startMin)}`
+        : `Until ${formatTimeLabel(to.startMin + to.durationMin)} · ${formatDuration(to.durationMin)}`;
+    setPreview({
+      dx,
+      dy,
+      dh,
+      label,
+      problem: unchanged(to) ? null : moveProblem(b, to, state.resourceBookings),
+    });
+  };
+
+  /** Near an edge of the sheet, it scrolls by itself, so far bays and later hours are in reach. */
+  const autoScroll = () => {
+    const d = drag.current;
+    if (!d) return;
+    const s = d.scroller;
+    if (s && d.moved) {
+      const r = s.getBoundingClientRect();
+      const EDGE = 48;
+      const speed = (gap: number) => Math.ceil(((EDGE - Math.max(0, gap)) / EDGE) * 16);
+      const vy =
+        d.py < r.top + HEADER + EDGE
+          ? -speed(d.py - r.top - HEADER)
+          : d.py > r.bottom - EDGE
+            ? speed(r.bottom - d.py)
+            : 0;
+      const vx =
+        d.mode === 'move'
+          ? d.px < r.left + GUTTER + EDGE
+            ? -speed(d.px - r.left - GUTTER)
+            : d.px > r.right - EDGE
+              ? speed(r.right - d.px)
+              : 0
+          : 0;
+      if (vx || vy) {
+        s.scrollBy(vx, vy);
+        redraw();
+      }
+    }
+    d.raf = requestAnimationFrame(autoScroll);
+  };
+
+  const finish = () => {
+    if (drag.current) cancelAnimationFrame(drag.current.raf);
+    drag.current = null;
+    markDrop(null);
+    setPreview(null);
+    setHeld(false);
   };
 
   const begin = (mode: 'move' | 'resize') => (e: ReactPointerEvent) => {
     if (b.paid || e.button !== 0) return;
     e.stopPropagation();
-    drag.current = { mode, x: e.clientX, y: e.clientY, moved: false };
+    const scroller = blockRef.current?.closest('[data-resource-scroll]') as HTMLElement | null;
+    drag.current = {
+      mode,
+      x: e.clientX,
+      y: e.clientY,
+      px: e.clientX,
+      py: e.clientY,
+      moved: false,
+      scroller,
+      scrollTop0: scroller?.scrollTop ?? 0,
+      raf: 0,
+    };
+    drag.current.raf = requestAnimationFrame(autoScroll);
+    setHeld(true);
     // Captured so the drag follows the pointer across columns; a synthetic event has no live pointer.
     try {
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -503,23 +651,25 @@ function BookingBlock({
   const move = (e: ReactPointerEvent) => {
     const d = drag.current;
     if (!d) return;
-    const dy = e.clientY - d.y;
-    if (!d.moved && Math.abs(dy) < 6 && Math.abs(e.clientX - d.x) < 6) return;
+    d.px = e.clientX;
+    d.py = e.clientY;
+    if (!d.moved && Math.abs(e.clientY - d.y) < 4 && Math.abs(e.clientX - d.x) < 4) return;
     d.moved = true;
-    setPreview(d.mode === 'move' ? { dy: snapMinutes(dy) * PPM, dh: 0 } : { dy: 0, dh: snapMinutes(dy) * PPM });
+    redraw();
   };
   const end = (e: ReactPointerEvent) => {
     const d = drag.current;
-    drag.current = null;
-    setPreview(null);
-    if (!d?.moved) return;
+    if (!d?.moved) {
+      finish();
+      return;
+    }
+    d.px = e.clientX;
+    d.py = e.clientY;
+    const { to } = landing();
+    const mode = d.mode;
+    finish();
     draggedAt.current = performance.now();
-    const delta = snapMinutes(e.clientY - d.y);
-    const to =
-      d.mode === 'move'
-        ? { resourceId: columnAt(e.clientX, e.clientY) ?? b.resourceId, startMin: b.startMin + delta, durationMin: b.durationMin }
-        : { resourceId: b.resourceId, startMin: b.startMin, durationMin: b.durationMin + delta };
-    if (to.resourceId === b.resourceId && to.startMin === b.startMin && to.durationMin === b.durationMin) return;
+    if (unchanged(to)) return;
     const problem = moveProblem(b, to, state.resourceBookings);
     if (problem) {
       onRefused(problem);
@@ -529,76 +679,151 @@ function BookingBlock({
     const where = resourceById(to.resourceId)?.name ?? '';
     onMoved(
       b,
-      d.mode === 'move'
+      mode === 'move'
         ? `Move · ${b.name} to ${where} at ${formatTimeLabel(to.startMin)}`
         : `Resize · ${b.name} to ${formatDuration(to.durationMin)}`,
     );
   };
 
+  // A booking that unmounts mid-drag (the day changed) stops its scroll loop and its highlight.
+  useEffect(
+    () => () => {
+      if (drag.current) cancelAnimationFrame(drag.current.raf);
+      dropColumn.current?.removeAttribute('data-drop-target');
+    },
+    [],
+  );
+
+  const lifted = held || preview !== null;
+  const blocked = Boolean(preview?.problem);
+
   return (
-    <ButtonBase
-      data-resource-booking={b.id}
-      data-ribbon={ribbon.name}
-      aria-label={`${b.name}, ${formatTimeLabel(b.startMin)}, ${formatDuration(b.durationMin)}${b.paid ? ', paid' : ''}`}
-      onClick={() => {
-        if (performance.now() - draggedAt.current < 400) return;
-        dispatch({ type: 'openResourceBooking', bookingId: b.id });
-      }}
-      onPointerDown={begin('move')}
-      onPointerMove={move}
-      onPointerUp={end}
-      onPointerCancel={() => {
-        drag.current = null;
-        setPreview(null);
-      }}
-      sx={{
-        position: 'absolute',
-        top: (b.startMin - openMin) * PPM + 2,
-        left: 4,
-        right: 4,
-        height: b.durationMin * PPM - 4 + (preview?.dh ?? 0),
-        transform: preview?.dy ? `translateY(${preview.dy}px)` : undefined,
-        borderRadius: `${radius.sm}px`,
-        border: `1.5px solid ${tone.border}`,
-        // The membership ribbon, inside the edge so the paid/owed outline still reads.
-        boxShadow: `inset 5px 0 0 ${ribbon.color}${open ? `, 0 0 0 3px ${md3.primary}55` : ''}${preview ? ', 0 6px 16px rgba(0,0,0,.22)' : ''}`,
-        bgcolor: tone.bg,
-        pl: 1.5,
-        pr: 1,
-        py: 0.5,
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
-        textAlign: 'left',
-        overflow: 'hidden',
-        zIndex: preview ? 4 : 1,
-        cursor: b.paid ? 'pointer' : preview ? 'grabbing' : 'grab',
-        touchAction: 'none',
-        opacity: preview ? 0.92 : 1,
-      }}
-    >
-      <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: tone.name, lineHeight: 1.25 }} noWrap>
-        {b.name}
-      </Typography>
-      {tall && (
-        <Typography sx={{ fontSize: 11, color: tone.meta, lineHeight: 1.3 }} noWrap>
-          {formatTimeLabel(b.startMin)} · {formatDuration(b.durationMin)} · {b.players}
+    <>
+      <ButtonBase
+        ref={blockRef}
+        disableRipple={!b.paid}
+        data-resource-booking={b.id}
+        data-ribbon={ribbon.name}
+        aria-label={`${b.name}, ${formatTimeLabel(b.startMin)}, ${formatDuration(b.durationMin)}${b.paid ? ', paid' : ''}`}
+        onClick={() => {
+          if (performance.now() - draggedAt.current < 400) return;
+          dispatch({ type: 'openResourceBooking', bookingId: b.id });
+        }}
+        onPointerDown={begin('move')}
+        onPointerMove={move}
+        onPointerUp={end}
+        onPointerCancel={finish}
+        sx={{
+          position: 'absolute',
+          top: (b.startMin - openMin) * PPM + 2,
+          left: 4,
+          right: 4,
+          height: b.durationMin * PPM - 4 + (preview?.dh ?? 0),
+          transform: preview ? `translate(${preview.dx}px, ${preview.dy}px)` : undefined,
+          borderRadius: `${radius.sm}px`,
+          border: `1.5px solid ${blocked ? '#dc2626' : tone.border}`,
+          // The membership ribbon, inside the edge so the paid/owed outline still reads.
+          boxShadow: `inset 5px 0 0 ${ribbon.color}${open ? `, 0 0 0 3px ${md3.primary}55` : ''}${lifted ? ', 0 8px 20px rgba(0,0,0,.24)' : ''}`,
+          bgcolor: tone.bg,
+          pl: 1.5,
+          pr: 1,
+          py: 0.5,
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          justifyContent: 'flex-start',
+          textAlign: 'left',
+          overflow: 'hidden',
+          zIndex: lifted ? 4 : 1,
+          cursor: b.paid ? 'pointer' : lifted ? 'grabbing' : 'grab',
+          touchAction: 'none',
+          userSelect: 'none',
+          transition: preview ? 'box-shadow 100ms linear' : 'box-shadow 100ms linear, transform 120ms ease-out',
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: 12.5,
+            fontWeight: 800,
+            color: tone.name,
+            lineHeight: 1.25,
+          }}
+          noWrap
+        >
+          {b.name}
         </Typography>
-      )}
-      {tall && (b.checkedIn || b.paid) && (
-        <Typography sx={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.04em', color: tone.meta, mt: 'auto' }}>
-          {b.paid ? 'PAID' : 'CHECKED IN'}
-        </Typography>
-      )}
-      {!b.paid && (
+        {tall && (
+          <Typography sx={{ fontSize: 11, color: tone.meta, lineHeight: 1.3 }} noWrap>
+            {formatTimeLabel(b.startMin)} · {formatDuration(b.durationMin)} · {b.players}
+          </Typography>
+        )}
+        {tall && (b.checkedIn || b.paid) && (
+          <Typography
+            sx={{
+              fontSize: 9.5,
+              fontWeight: 800,
+              letterSpacing: '.04em',
+              color: tone.meta,
+              mt: 'auto',
+            }}
+          >
+            {b.paid ? 'PAID' : 'CHECKED IN'}
+          </Typography>
+        )}
+        {!b.paid && (
+          <Box
+            data-resize-handle
+            aria-hidden
+            onPointerDown={begin('resize')}
+            sx={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 10,
+              cursor: 'ns-resize',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                left: '40%',
+                right: '40%',
+                bottom: 3,
+                height: 2,
+                borderRadius: 1,
+                bgcolor: md3.outlineVariant,
+              },
+            }}
+          />
+        )}
+      </ButtonBase>
+      {preview && (
+        // Where it lands, riding just above the dragged booking; red with the reason when it can't.
         <Box
-          data-resize-handle
-          aria-hidden
-          onPointerDown={begin('resize')}
-          sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 10, cursor: 'ns-resize', '&::after': { content: '""', position: 'absolute', left: '40%', right: '40%', bottom: 3, height: 2, borderRadius: 1, bgcolor: md3.outlineVariant } }}
-        />
+          data-drop-label
+          aria-live="polite"
+          sx={{
+            position: 'absolute',
+            top: (b.startMin - openMin) * PPM - 24,
+            left: 4,
+            transform: `translate(${preview.dx}px, ${preview.dy}px)`,
+            zIndex: 5,
+            pointerEvents: 'none',
+            px: 1,
+            height: 20,
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: 10,
+            whiteSpace: 'nowrap',
+            fontSize: 11.5,
+            fontWeight: 800,
+            color: '#fff',
+            bgcolor: preview.problem ? '#dc2626' : md3.primary,
+            boxShadow: '0 2px 6px rgba(0,0,0,.2)',
+          }}
+        >
+          {preview.problem ?? preview.label}
+        </Box>
       )}
-    </ButtonBase>
+    </>
   );
 }
 

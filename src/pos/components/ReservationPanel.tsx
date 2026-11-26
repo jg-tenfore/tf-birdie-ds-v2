@@ -1,4 +1,4 @@
-import { taxRateOf } from '../state/operations';
+import { pricingOf } from '../state/checkout';
 import { useEffect } from 'react';
 import { Box, ButtonBase, Dialog, Tab, Tabs, Typography } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
@@ -318,7 +318,7 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   // checkout and the reader use — green fees, transport and tax, with settled seats at $0.
   const rates = rateContext(state);
   const order = buildTeeTimeCart(b, state.courses, rates);
-  const { total: due, tax } = orderTotals(order, taxRateOf(state));
+  const { total: due, tax } = orderTotals(order, pricingOf(state, { tab: null }));
   const fees = reservationDue(b, rates);
   const extras = +(due - fees - tax).toFixed(2);
   const settled = reservationSettled(b);
@@ -334,7 +334,7 @@ export function CheckInFooter({ booking: b }: { booking: Booking }) {
   // V1 → V2, 100226 (Player rows v2): Add, Add, **Pay**. The footer totals what is on the order;
   // with nothing on it yet, it totals the party and offers Check in & pay all.
   const seats = orderSeatsOf(state.selectedBookingId, state.orderSeats, b);
-  const seatsTotals = seats.length ? orderTotals(buildTeeTimeCart(b, state.courses, rates, seats), taxRateOf(state)) : null;
+  const seatsTotals = seats.length ? orderTotals(buildTeeTimeCart(b, state.courses, rates, seats), pricingOf(state, { tab: null })) : null;
   const seatsBeforeTax = seatsTotals ? +(seatsTotals.total - seatsTotals.tax).toFixed(2) : 0;
   const stillToAdd = b.playerStates.filter((p, i) => !p.paid && !p.noShow && !seats.includes(i)).length;
   const v2Paying = v1v2 && !settled && !allNoShow;

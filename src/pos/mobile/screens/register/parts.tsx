@@ -1,3 +1,5 @@
+import { pricingOf } from '../../../state/checkout';
+import type { Pricing } from '../../../logic/pricing';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Button, ButtonBase, Typography } from '@mui/material';
@@ -8,6 +10,8 @@ import VerifiedUserOutlined from '@mui/icons-material/VerifiedUserOutlined';
 import { md3, memberTypes, mobile, noteColors, playerAccents, radius } from '../../../../theme/tokens';
 import type { MemberTypeKey } from '../../../../theme/tokens';
 import { CATALOG, CHECK_IN_ITEMS, MEMBER_ITEM_TYPES } from '../../../data/catalog';
+import { LESSON_LINE_MINUTES } from '../../../data/credits';
+import { lessonChoices } from '../../../state/credit-ledger';
 import * as cartLogic from '../../../logic/cart';
 import { runsAt } from '../../../logic/bookings';
 import { formatTimeLabel, toDateStr } from '../../../data/courses';
@@ -41,9 +45,22 @@ import { useMobileNav } from '../../navigation';
  * or with the terminal. Golf is taxed by its booking's tax line, everything else at the
  * sales-tax rate; Tax Exempt zeroes both.
  */
-export function orderMoney(cart: CartItem[]) {
-  const t = cartLogic.orderTotals(cart);
-  return { subtotal: t.subtotal, discount: t.discount, goods: t.goods, tax: t.tax, exempt: t.exempt, total: t.total };
+/**
+ * The order's money, by the register's own pricing — pass `pricingOf(state)` so the phone charges what
+ * the terminal does (Buck's tax per line and service charges in V1 → V2, Nov 26).
+ */
+export function orderMoney(cart: CartItem[], pricing?: number | Pricing) {
+  const t = cartLogic.orderTotals(cart, pricing);
+  return {
+    subtotal: t.subtotal,
+    discount: t.discount,
+    goods: t.goods,
+    tax: t.tax,
+    exempt: t.exempt,
+    total: t.total,
+    taxes: t.taxes,
+    serviceCharges: t.serviceCharges ?? [],
+  };
 }
 
 /** Lines the operator thinks of as "on the order" — tax rows hang off others. */
@@ -156,14 +173,21 @@ export function MoneyRow({
 
 /** The totals block used on the order and at checkout. */
 export function TotalsBlock({ cart, tip = 0 }: { cart: CartItem[]; tip?: number }) {
-  const m = orderMoney(cart);
+  const { state } = usePos();
+  const m = orderMoney(cart, pricingOf(state));
   return (
     <Box sx={{ px: 2, py: 1 }}>
       <MoneyRow label="Subtotal" value={cartLogic.money(m.subtotal)} />
       {m.discount < 0 && (
         <MoneyRow label="Discounts" value={cartLogic.creditMoney(m.discount)} color={md3.error} />
       )}
+      {/* Buck's service charges and tax by type (V1 → V2), as the terminal shows them. */}
+      {m.serviceCharges.map((c) => (
+        <MoneyRow key={c.id} label={c.label} value={cartLogic.money(c.amount)} />
+      ))}
       <MoneyRow label={m.exempt ? 'Tax (exempt)' : 'Tax'} value={cartLogic.money(m.tax)} />
+      {/* More than one tax type (Buck's per line, Nov 26): each beneath the total, as the terminal shows them. */}
+      {m.taxes && m.taxes.length > 1 && m.taxes.map((t) => <MoneyRow key={t.id} label={<Box component="span" sx={{ pl: 2 }}>{t.label}</Box>} value={cartLogic.money(t.amount)} />)}
       {tip > 0 && <MoneyRow label="Tip" value={cartLogic.money(tip)} />}
       <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, mt: 1, pt: 1 }}>
         <MoneyRow label="Total" value={cartLogic.money(m.total + tip)} strong />
@@ -213,7 +237,7 @@ export function ViewOrderBar() {
   const nav = useMobileNav();
   const count = orderLines(state.cart).length;
   if (count === 0) return null;
-  const { total } = orderMoney(state.cart);
+  const { total } = orderMoney(state.cart, pricingOf(state));
 
   return (
     <Box sx={{ px: 2, pt: 1, pb: 1.5, flexShrink: 0, bgcolor: md3.surface }}>
@@ -310,6 +334,7 @@ export function useAddItem() {
   const { state, dispatch, toast } = usePos();
   const [memberItem, setMemberItem] = useState<CatalogItem | null>(null);
   const [modifier, setModifier] = useState<CatalogItem | null>(null);
+  const [lesson, setLesson] = useState<CatalogItem | null>(null);
   const lock = cartLogic.cartHolesLock(state.cart);
   const walkIn = useMobileWalkIn();
 
@@ -322,6 +347,8 @@ export function useAddItem() {
     if (MEMBER_ITEM_TYPES[item.n]) return setMemberItem(item);
     // Weston Edits: a round rung with nothing on the order is a walk-in reservation.
     if (walkIn.routes && CHECK_IN_ITEMS.has(item.n)) return void walkIn.start({ rate: { name: item.n, price: item.p } });
+    // V1 → V2 (Nov 26): a lesson is rung up with its instructor, whose credits pay for it.
+    if (state.buckCheckout && LESSON_LINE_MINUTES[item.n] != null) return setLesson(item);
     dispatch({ type: 'addItem', name: item.n, price: item.p });
     toast(`Added · ${item.n}`);
   };
@@ -330,6 +357,7 @@ export function useAddItem() {
     <>
       <MemberSheet item={memberItem} onClose={() => setMemberItem(null)} />
       <ModifierSheet item={modifier} onClose={() => setModifier(null)} />
+      <InstructorSheet item={lesson} onClose={() => setLesson(null)} />
     </>
   );
 
@@ -379,6 +407,53 @@ function MemberSheet({ item, onClose }: { item: CatalogItem | null; onClose: () 
             </ButtonBase>
           ))}
         </>
+      )}
+    </BottomSheet>
+  );
+}
+
+/**
+ * Which instructor a lesson is with (Nov 26 decision) — the phone's form of the tablet's picker. Each
+ * instructor shows the order customer's credits of this length with them, as the credit pays only its
+ * own instructor's lessons.
+ */
+function InstructorSheet({ item, onClose }: { item: CatalogItem | null; onClose: () => void }) {
+  const { state, dispatch, toast } = usePos();
+  const choices = item ? lessonChoices(state, item.n) : [];
+  return (
+    <BottomSheet open={Boolean(item)} onClose={onClose} title={item ? `${item.n} · who is it with?` : ''}>
+      {item && (
+        <Box data-instructor-sheet>
+          <Typography variant="body2" sx={{ px: 3, pb: 1.5, color: md3.onSurfaceVariant }}>
+            A lesson credit pays only its own instructor’s lessons.
+          </Typography>
+          {choices.map(({ instructor, credits }) => (
+            <ButtonBase
+              key={instructor.id}
+              data-instructor-option={instructor.id}
+              onClick={() => {
+                dispatch({ type: 'addLesson', name: item.n, price: item.p, instructorId: instructor.id });
+                toast(`Added · ${item.n} · ${instructor.name}`);
+                onClose();
+              }}
+              sx={{ width: '100%', justifyContent: 'flex-start', gap: 2, px: 3, minHeight: mobile.listItem.two }}
+            >
+              <Box sx={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+                <Typography variant="body1" noWrap>
+                  {instructor.name}
+                </Typography>
+                <Typography variant="body2" noWrap sx={{ color: md3.onSurfaceVariant }}>
+                  {instructor.title}
+                </Typography>
+              </Box>
+              {credits > 0 && (
+                <Typography variant="body2" data-instructor-credits={credits} sx={{ color: md3.primary, fontWeight: 700 }}>
+                  {credits} credit{credits === 1 ? '' : 's'}
+                </Typography>
+              )}
+            </ButtonBase>
+          ))}
+        </Box>
       )}
     </BottomSheet>
   );

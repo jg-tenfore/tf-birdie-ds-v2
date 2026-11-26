@@ -8,6 +8,7 @@ import { planWalkIn } from '../../../pos/logic/walk-in';
 import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 import { adjustedParty, openParty, paidTwilight, registerWith } from '../tablet-scenarios';
+import { buckPricing } from '../../../pos/logic/pricing';
 
 /**
  * Prototypes / Tablet / Pro Shop / Register golf summary (Weston Edits, section 7)
@@ -56,7 +57,7 @@ import { adjustedParty, openParty, paidTwilight, registerWith } from '../tablet-
  * | Settled seat | a `payBadges` pill — **PAID** or **NO SHOW**; a no-show row drops to `opacity: 0.6` |
  * | Footer | **Edit reservation** — a 1.5px `md3.primary` outline pill, `edit` glyph — and `Golf $x`, or `Golf paid` at zero |
  * | Group note | `b.note` printed beneath with a `sticky_note_2` glyph, when there is one |
- * | Tax | `orderTotals`: `golfTax` from the booking's `Taxes` line, `salesTax` at `TAX_RATE` (**8%**) on everything else |
+ * | Tax | `orderTotals` with the edition's pricing. Current (Nov 26): Buck's rate per kind of line, the golf included — 8% here. Weston's and the archive: `golfTax` from the booking's `Taxes` line, `salesTax` at `TAX_RATE` (**8%**) on everything else |
  * | Round label | `roundLabel(b)` — `Tee Time 9 holes`, `Tee Time 9/18 holes` for a mixed party, `Member Check-in` |
  *
  * ## Scope
@@ -152,9 +153,10 @@ const RETAIL: CartItem[] = [
 ];
 
 /**
- * **Retail on a tee-time order is taxed.** The golf keeps its booking's tax line; the $21 of
- * retail adds sales tax on top, so Tax = golf tax + 8% of the retail, and Pay is the
- * checkout total. The play test reads the Tax and Pay rows.
+ * **Retail on a tee-time order is taxed.** Since Nov 26 the current edition taxes the golf the way it
+ * taxes the retail — Buck's rates by kind, 8% at this club — so Tax is 8% of the whole order and Pay
+ * is the checkout total. (The archive still taxes the golf by its booking's tax line.) The play test
+ * reads the Tax and Pay rows.
  */
 export const RetailIsTaxed: Story = {
   render: () => {
@@ -164,10 +166,10 @@ export const RetailIsTaxed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const cart = [...buildTeeTimeCart(openParty(), venue('eighteen').courses), ...RETAIL];
-    const t = orderTotals(cart);
-    await expect(t.salesTax).toBe(salesTax(21));
+    const t = orderTotals(cart, buckPricing());
+    await expect(t.tax).toBe(salesTax(t.goods));
     const tax = canvas.getByText('Tax').nextElementSibling as HTMLElement;
-    await expect(tax.textContent).toBe(money(t.golfTax + t.salesTax));
+    await expect(tax.textContent).toBe(money(t.tax));
     await expect(canvas.getByRole('button', { name: `Pay ${money(t.total)}` })).toBeTruthy();
   },
 };

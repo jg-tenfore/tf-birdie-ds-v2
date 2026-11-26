@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useState } from 'react';
 import { Box, Button, ButtonBase, InputAdornment, TextField, Typography } from '@mui/material';
 import { md3, mobile, radius } from '../../../../theme/tokens';
@@ -28,7 +29,7 @@ const PRESETS = [
 export function TipScreen({ route }: ScreenProps<'tip'>) {
   const { state } = usePos();
   const nav = useMobileNav();
-  const { total, goods } = orderMoney(state.cart);
+  const { total, goods } = orderMoney(state.cart, pricingOf(state));
   const [choice, setChoice] = useState<string>('none');
   const [custom, setCustom] = useState('');
 

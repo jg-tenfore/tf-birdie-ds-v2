@@ -1,4 +1,5 @@
-import { registerTotals, taxRateOf } from '../state/operations';
+import { pricingOf } from '../state/checkout';
+import { registerTotals } from '../state/operations';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
@@ -186,7 +187,7 @@ function HeldOrdersDialog() {
       ) : (
         <Stack gap={1}>
           {state.heldOrders.map((h) => {
-            const total = orderTotals(h.order.cart, taxRateOf(state)).total;
+            const total = orderTotals(h.order.cart, pricingOf(state)).total;
             const booked = Boolean(h.order.selectedBookingId);
             return (
               <Stack

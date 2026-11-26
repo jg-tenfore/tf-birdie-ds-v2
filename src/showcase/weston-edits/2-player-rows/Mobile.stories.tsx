@@ -7,6 +7,7 @@ import { rateCardFee } from '../../../pos/logic/rates';
 import { bookingHoles, playerFee } from '../../../pos/logic/reservation';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, growableParty, mixedGroup, openParty, partlyPaidNamed, withBookings } from '../mobile-scenarios';
+import { buckPricing } from '../../../pos/logic/pricing';
 
 /**
  * Prototypes / Mobile / Tee Sheet / Player rows (Weston Edits, section 2)
@@ -186,11 +187,12 @@ export const MixedMemberGuestGroup: Story = {
     const chips = await c.findAllByLabelText(/^Tee fee \$/);
     await expect(chips.map((x) => x.getAttribute('aria-label'))).toEqual(b.playerStates.map((_, i) => `Tee fee ${money(playerFee(b, i))}`));
     await expect(chips[1].getAttribute('aria-label')).toBe(`Tee fee ${money(0)}`);
-    const { total, golfTax } = orderTotals(buildTeeTimeCart(b, venue('eighteen').courses));
-    await expect(c.getByRole('button', { name: `Check in & pay · ${money(total)}` })).toBeTruthy();
-    // Tax is per seat, by the seat's class: the member's $0 seat carries none.
+    // The current edition taxes the seats by Buck's rates (Nov 26): 8% of what they charge, so the
+    // member's $0 seat carries none.
+    const t = orderTotals(buildTeeTimeCart(b, venue('eighteen').courses), buckPricing());
+    await expect(c.getByRole('button', { name: `Check in & pay · ${money(t.total)}` })).toBeTruthy();
+    await expect(t.tax).toBe(Math.round(t.goods * 8) / 100);
     await expect(seatCharges(b, 1).tax).toBe(0);
-    await expect(golfTax).toBe(b.playerStates.reduce((s, _, i) => s + seatCharges(b, i).tax, 0));
     const toggles = await c.findAllByRole('group', { name: 'Holes' });
     await userEvent.click(within(toggles[1]).getByRole('button', { name: String(bookingHoles(b) === 18 ? 9 : 18) }));
     await waitFor(() => expect(c.getAllByLabelText(/^Tee fee \$/)[1].getAttribute('aria-label')).toBe(`Tee fee ${money(0)}`));

@@ -1,4 +1,4 @@
-import { taxRateOf } from '../../state/operations';
+import { pricingOf } from '../../state/checkout';
 import { useState } from 'react';
 import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { grid as gridTokens, md3, radius } from '../../../theme/tokens';
@@ -65,7 +65,7 @@ export function TabList() {
   const [grouping, setGrouping] = useState<TabGrouping>('none');
   const [query, setQuery] = useState('');
 
-  const all = tabRows(state.tabs, state.floor, DEMO_NOW_MIN, state.staffRoster, taxRateOf(state));
+  const all = tabRows(state.tabs, state.floor, DEMO_NOW_MIN, state.staffRoster, pricingOf(state));
   const shown = sortTabRows(
     all.filter((r) => matchesQuery(r, query)),
     sort.key,

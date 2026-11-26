@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useState } from 'react';
 import { Box, Button, ButtonBase, Typography } from '@mui/material';
 import EventAvailable from '@mui/icons-material/EventAvailable';
@@ -31,7 +32,7 @@ export function ReserveConfirmScreen({ route }: ScreenProps<'reserveConfirm'>) {
   const [payMode, setPayMode] = useState(route.payMode);
   const checkIn = state.cart.find((i) => i.isCheckIn && i.teeTime && !i.is18HBack);
   const back9 = state.cart.find((i) => i.is18HBack);
-  const { total } = orderMoney(state.cart);
+  const { total } = orderMoney(state.cart, pricingOf(state));
 
   if (!checkIn?.teeTime) {
     return (

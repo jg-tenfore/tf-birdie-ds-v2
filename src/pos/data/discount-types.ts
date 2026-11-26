@@ -77,8 +77,25 @@ export const DISCOUNT_TYPES: DiscountType[] = [
 
 export const discountTypeById = (id: number | undefined): DiscountType | undefined => DISCOUNT_TYPES.find((d) => d.id === id);
 
+/** Register lines Buck files under a category of their own rather than Merchandise (Nov 26). */
+const OWN_CATEGORY: Record<string, AccountingCategory> = {
+  'Range Bucket Small': 'Driving Range',
+  'Range Bucket Large': 'Driving Range',
+  'Lesson 30 Min': 'Lessons',
+  'Lesson 60 Min': 'Lessons',
+  'Club Cleaning': 'Club Repair',
+  'Club Regrip Each': 'Club Repair',
+  'Club Fitting': 'Club Repair',
+  'Club Rental Full Set': 'Rentals',
+  'Club Rental Half Set': 'Rentals',
+  'Pull Cart': 'Rentals',
+  'GPS Unit': 'Rentals',
+  'Shoe Rental': 'Rentals',
+};
+
 /** The Buck accounting category a register line reports under, from Birdie's spend category. */
 export function accountingCategoryOf(line: CartItem): AccountingCategory | null {
+  if (!line.dish && OWN_CATEGORY[line.name]) return OWN_CATEGORY[line.name];
   const spend = spendCategoryOf(line);
   if (spend === 'fnb') return 'Food and Beverage';
   if (spend === 'alcohol') return 'Alcohol';

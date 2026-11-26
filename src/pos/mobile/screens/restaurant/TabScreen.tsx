@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useEffect, useState } from 'react';
 import { Box, Button, Fab, IconButton, Switch, Typography } from '@mui/material';
 import Add from '@mui/icons-material/Add';
@@ -12,7 +13,6 @@ import { serversOf, staffById } from '../../../data/staff';
 import { money, orderTotals } from '../../../logic/cart';
 import { bySeat, tabTotal, tableLabel, unsent } from '../../../logic/restaurant';
 import { minGuests } from '../../../logic/tab-list';
-import { taxRateOf } from '../../../state/operations';
 import { canPayTab, tabById, tableOf } from '../../../state/restaurant';
 import { usePos } from '../../../state/PosProvider';
 import type { CartItem } from '../../../types';
@@ -72,7 +72,7 @@ export function TabScreen({ route }: ScreenProps<'tab'>) {
   const server = staffById(tab.serverId, state.staffRoster);
   const bands = bySeat(tab);
   if (!bands.some((b) => b.seat === null)) bands.push({ seat: null, lines: [] });
-  const taxRate = taxRateOf(state);
+  const taxRate = pricingOf(state, { tab });
   const totals = orderTotals(tab.lines, taxRate);
   const total = tabTotal(tab, taxRate);
   const toSend = unsent(tab.lines).length;

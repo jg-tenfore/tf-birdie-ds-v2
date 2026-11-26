@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { money } from '../logic/cart';
-import { amountDue, type OperationsModal } from '../state/operations';
+import { dueNow, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon } from '../components/primitives';
 import { Stack } from '../components/Stack';
@@ -20,7 +20,8 @@ export function TenderCheckDialog({ m }: { m: Extract<OperationsModal, { kind: '
   const { state, dispatch, toast } = usePos();
   const [number, setNumber] = useState('');
   const tip = m.tip ?? 0;
-  const due = Math.round((amountDue(state) + tip) * 100) / 100;
+  // The part being paid, on a split check (Nov 26); otherwise everything still due.
+  const due = Math.round((dueNow(state) + tip) * 100) / 100;
   const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout', ...(tip > 0 && { tip }) } });
   const checkNumber = number.replace(/\D/g, '');
 

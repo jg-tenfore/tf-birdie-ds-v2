@@ -28,6 +28,8 @@ import { Stack } from '../components/Stack';
 import { checkInPlayer } from '../logic/bookings';
 import type { GiftCardRecipientTarget } from '../state/register-extras';
 import { demoNow } from '../data/bookings';
+import { useV1V2 } from '../edition';
+import { SeatRefundOrRainCheck } from './RegisterRefundRainCheck';
 
 /**
  * People-facing dialogs: member validation, golfer search, guest details, new
@@ -769,6 +771,12 @@ export function PlayerModifierPicker({ itemIdx, playerIdx }: { itemIdx: number; 
  * needs a rain check" without hunting the grid first.
  */
 export function ActionPanel({ action }: { action: 'checkin' | 'refund' | 'raincheck' }) {
+  // V1 → V2 (Nov 26): a refund gives the money back and a rain check cuts a real credit.
+  const v1v2 = useV1V2();
+  return v1v2 && action !== 'checkin' ? <SeatRefundOrRainCheck action={action} /> : <ActionPanelBase action={action} />;
+}
+
+function ActionPanelBase({ action }: { action: 'checkin' | 'refund' | 'raincheck' }) {
   const { state, dispatch, toast } = usePos();
   const cfg = AP_CONFIGS[action];
   const booking = selectedBooking(state);

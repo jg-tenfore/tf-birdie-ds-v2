@@ -1,6 +1,6 @@
 import { Box, Snackbar, ThemeProvider } from '@mui/material';
 import { keyframes } from '@emotion/react';
-import { Component, useEffect, useState } from 'react';
+import { Component, useEffect, useLayoutEffect, useState } from 'react';
 import type { ComponentType, ReactNode } from 'react';
 import { mobileTheme } from '../../theme/mobile-theme';
 import { md3, mobile } from '../../theme/tokens';
@@ -143,6 +143,12 @@ function RouteView({ route }: { route: MobileRoute }) {
 function Router() {
   const nav = useMobileNav();
   const { state, dispatch } = usePos();
+  // V1 → V2 (Nov 26): the phone prices by Buck too — per-line tax and service charges — so it charges
+  // exactly what the terminal does for the same order.
+  const v1v2 = useV1V2();
+  useLayoutEffect(() => {
+    dispatch({ type: 'setBuckCheckout', on: v1v2 });
+  }, [v1v2, dispatch]);
   const orderLines = state.cart.filter((i) => !i.isSubItem).length;
   // The bar is the signed-in operator's (V1 → V2, menu by role); the golf bar everywhere else.
   const bar = barFor(staffById(state.operatorId, state.staffRoster)?.role, useV1V2());

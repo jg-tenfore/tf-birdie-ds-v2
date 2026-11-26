@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { Box, Button, Typography } from '@mui/material';
 import Send from '@mui/icons-material/Send';
 import ShoppingCartOutlined from '@mui/icons-material/ShoppingCartOutlined';
@@ -5,7 +6,6 @@ import { md3 } from '../../../../theme/tokens';
 import { money, orderTotals, playerPrice } from '../../../logic/cart';
 import type { CartItem } from '../../../types';
 import { unsent } from '../../../logic/restaurant';
-import { taxRateOf } from '../../../state/operations';
 import { tabById } from '../../../state/restaurant';
 import { usePos } from '../../../state/PosProvider';
 import { Stack } from '../../../components/Stack';
@@ -29,7 +29,7 @@ export function CounterOrderScreen() {
   const { state, dispatch } = usePos();
   const nav = useMobileNav();
   const lines = state.cart.filter((l) => !l.isSubItem);
-  const totals = orderTotals(state.cart, taxRateOf(state));
+  const totals = orderTotals(state.cart, pricingOf(state));
   const toSend = unsent(state.cart).length;
   const paying = tabById(state, state.payingTabId);
 

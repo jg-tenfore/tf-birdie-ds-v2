@@ -6,6 +6,7 @@ import { buildTeeTimeCart } from '../../pos/logic/cart';
 import { assignPlayer, bookingHoles, maxPlayers, setPlayer, setPlayerFee, setPlayerHoles } from '../../pos/logic/reservation';
 import { findBooking } from '../../pos/state/scenarios';
 import type { PosState } from '../../pos/state/pos-store';
+import type { Pricing } from '../../pos/logic/pricing';
 import type { Booking, CartItem } from '../../pos/types';
 import { TODAY_STR } from '../pos/screen-helpers';
 
@@ -369,5 +370,9 @@ export const seatOrder = (b: Booking, seats: number[], extra: Partial<PosState> 
   });
 
 /** What the order asks for a set of seats — omit `seats` for the whole booking. */
-export const seatsTotal = (b: Booking, seats?: number[]): string =>
-  money(orderTotals(buildTeeTimeCart(b, COURSES, undefined, seats)).total);
+/**
+ * What the order charges for these seats. `pricing` is the edition's: the flat sales tax by default
+ * (Weston's editions), `buckPricing()` for the current one, which taxes the seats by Buck's rates.
+ */
+export const seatsTotal = (b: Booking, seats?: number[], pricing?: number | Pricing): string =>
+  money(orderTotals(buildTeeTimeCart(b, COURSES, undefined, seats), pricing).total);

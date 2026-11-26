@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import type { ReactNode } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import AccountBalanceWalletOutlined from '@mui/icons-material/AccountBalanceWalletOutlined';
@@ -36,7 +37,7 @@ export function CheckoutScreen() {
   const complete = useCompletePayment();
   const booking = selectedBooking(state);
   const roster = useGolferRoster();
-  const { total } = orderMoney(state.cart);
+  const { total } = orderMoney(state.cart, pricingOf(state));
   // V1 → V2: a tab loaded to be paid (`payTab`) — say whose it is.
   const payingTab = tabById(state, state.payingTabId);
 

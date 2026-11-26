@@ -3,7 +3,7 @@ import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
 import { DEMO_TODAY } from '../../data/bookings';
 import { formatPhone, type Customer } from '../../data/customers';
-import { rainCheckBalance } from '../../data/rain-checks';
+import { liveRainCheckBalance } from '../../state/credit-ledger';
 import { liveCustomer, liveRoster } from '../../data/roster';
 import { staffById } from '../../data/staff';
 import { money } from '../../logic/cart';
@@ -234,7 +234,7 @@ function CustomerDetail({ c }: { c: Customer }) {
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
         <Stat label="House account" value={money(c.balance)} alert={c.balance > 0} sub={c.balance > 0 ? 'owed to the course' : 'nothing owed'} />
         <Stat label="Gift cards" value={money(giftBalance)} sub={`${c.giftCards.length} card${c.giftCards.length === 1 ? '' : 's'}`} />
-        <Stat label="Rain checks" value={money(rainCheckBalance(c.id))} />
+        <Stat label="Rain checks" value={money(liveRainCheckBalance(state, c.id))} />
         <Stat label="Rounds" value={String(c.teeTimes.length)} />
       </Box>
 

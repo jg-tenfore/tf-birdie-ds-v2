@@ -9,6 +9,7 @@ import {
   CHECK_IN_ITEMS,
   MEMBER_ITEM_TYPES,
 } from '../data/catalog';
+import { LESSON_LINE_MINUTES } from '../data/credits';
 import { itemImage } from '../data/item-images';
 import * as cart from '../logic/cart';
 import { usePos } from '../state/PosProvider';
@@ -68,6 +69,10 @@ export function PosView() {
     // Weston Edits: a round rung with nothing on the order is a walk-in — it goes to the
     // tee sheet as a reservation at that rate, not onto the order as a line.
     if (walkIn.routes && cart.isCheckInItem(item.n)) return void walkIn.start({ rate: { name: item.n, price: item.p } });
+    // V1 → V2 (Nov 26): a lesson is rung up with its instructor, whose credits pay for it.
+    if (state.buckCheckout && LESSON_LINE_MINUTES[item.n] != null) {
+      return dispatch({ type: 'openModal', modal: { kind: 'pickInstructor', name: item.n, price: item.p } });
+    }
     dispatch({ type: 'addItem', name: item.n, price: item.p });
     toast(`Added: ${item.n}`);
   };

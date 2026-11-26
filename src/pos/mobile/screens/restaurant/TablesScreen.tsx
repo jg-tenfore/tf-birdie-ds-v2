@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useState } from 'react';
 import { Box, Button, ButtonBase, Typography } from '@mui/material';
 import EventSeatOutlined from '@mui/icons-material/EventSeatOutlined';
@@ -10,7 +11,6 @@ import { staffById } from '../../../data/staff';
 import { money } from '../../../logic/cart';
 import { formatSeated, initials, minutesSeated, relativeTo, reservationsToSeatAt, statusCounts } from '../../../logic/dining';
 import { openTabOn, tabTotal, tableLabel, tableStatus, unsent, upcomingReservationFor, type TableStatus } from '../../../logic/restaurant';
-import { taxRateOf } from '../../../state/operations';
 import { usePos } from '../../../state/PosProvider';
 import { Stack } from '../../../components/Stack';
 import { TABLE_STATUS_STYLE } from '../../../components/restaurant/floor-style';
@@ -221,7 +221,7 @@ function TableSheet({ table, roomName, onClose }: { table: FloorElement | undefi
               {seated != null ? ` · ${formatSeated(seated)}` : ''}
             </Typography>
             <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
-              {money(tabTotal(tab, taxRateOf(state)))}
+              {money(tabTotal(tab, pricingOf(state)))}
               {unsent(tab.lines).length ? ` · ${unsent(tab.lines).length} not sent` : ''}
             </Typography>
           </Box>

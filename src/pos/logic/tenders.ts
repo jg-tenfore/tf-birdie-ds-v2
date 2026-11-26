@@ -1,7 +1,8 @@
 import type { CustomerGiftCard } from '../data/customers';
 import { DEFAULT_GIFT_CATEGORIES, spendCategoryOf, type SpendCategory } from '../data/spend';
 import type { CartItem } from '../types';
-import { orderTotals } from './cart';
+import { lineTotals, orderTotals } from './cart';
+import { isPricing, type Pricing } from './pricing';
 
 /**
  * The rules behind Wave 3's tenders (V1 → V2): what a gift card may pay, and what is still due.
@@ -29,7 +30,7 @@ export function giftCardCovers(
   cart: CartItem[],
   due: number,
   paidByCards = 0,
-  taxRate?: number,
+  taxRate?: number | Pricing,
 ): number {
   const allowed = new Set(cardCategories(card));
   const lines = cart.filter((l) => !l.isTax && l.name !== 'Taxes');
@@ -38,6 +39,13 @@ export function giftCardCovers(
     return c !== null && allowed.has(c);
   });
   if (eligible.length === 0) return 0;
+  // Buck's per-line pricing (V1 → V2, Nov 26): the eligible lines' own totals — their tax and service.
+  if (isPricing(taxRate)) {
+    const totals = lineTotals(cart, taxRate);
+    const okSet = new Set(eligible);
+    const share = cart.reduce((s, l, i) => (okSet.has(l) ? s + totals[i] : s), 0);
+    return Math.max(0, Math.round(Math.min(card.balance, Math.max(0, share - paidByCards), due) * 100) / 100);
+  }
   const all = orderTotals(cart, taxRate);
   const goodsAll = all.subtotal;
   const goodsOk = orderTotals(eligible, taxRate).subtotal;

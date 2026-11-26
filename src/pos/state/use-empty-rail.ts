@@ -21,7 +21,9 @@ const ORDER_VIEWS: MainView[] = ['pos', 'quickorder'];
 export function useEmptyRail(enabled: boolean) {
   const { state, dispatch } = usePos();
   // Held orders keep it out: they are waiting to come back, and Held · N lives on the rail.
-  const empty = state.cart.length === 0 && state.heldOrders.length === 0;
+  // An order another course sent here (Nov 26) waits on the rail too, under Arrived from another course.
+  const arrivals = state.transferredOrders.some((t) => t.toVenue === state.venueId && !t.receivedAt);
+  const empty = state.cart.length === 0 && state.heldOrders.length === 0 && !arrivals;
   const onOrderView = ORDER_VIEWS.includes(state.view);
   const prev = useRef<{ empty: boolean; onOrderView: boolean } | null>(null);
   useLayoutEffect(() => {

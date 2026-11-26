@@ -1,3 +1,4 @@
+import { pricingOf } from './checkout';
 import {
   LEAGUE_SEATS,
   leagueBooking,
@@ -12,7 +13,6 @@ import { buildTeeTimeCart, money, orderTotals } from '../logic/cart';
 import { playerFee, playerName } from '../logic/reservation';
 import { seatPrice } from '../logic/seat-pricing';
 import type { Booking, BookingGuest, PlayerState } from '../types';
-import { taxRateOf } from './operations';
 import type { Action, PosState } from './pos-store';
 import { rateContext } from './rate-context';
 
@@ -164,10 +164,10 @@ export function golferStatus(s: PosState, l: League, golferId: string): GolferSt
   const own = isOwnOrder(s, ref);
   const extras = own ? s.cart.filter((i) => !i.isCheckIn && !i.isTax && i.name !== 'Taxes').map((i) => (i.qty > 1 ? `${i.qty}× ${i.name}` : i.name)) : [];
   const due = own
-    ? orderTotals(s.cart, taxRateOf(s)).total
+    ? orderTotals(s.cart, pricingOf(s)).total
     : p?.paid
       ? 0
-      : orderTotals(buildTeeTimeCart(ref.booking, s.courses, rateContext(s), [ref.seat]), taxRateOf(s)).total;
+      : orderTotals(buildTeeTimeCart(ref.booking, s.courses, rateContext(s), [ref.seat]), pricingOf(s, { tab: null })).total;
   return { ref, in: (p?.step ?? -1) >= 0, paid: Boolean(p?.paid) && due === 0, due, extras };
 }
 
