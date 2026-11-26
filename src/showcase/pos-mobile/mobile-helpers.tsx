@@ -4,6 +4,7 @@ import { md3, mobile } from '../../theme/tokens';
 import { useDevice, useMobileFrame } from '../../pos/device-context';
 import { fitScale } from '../../pos/devices';
 import { MobileApp } from '../../pos/mobile/MobileApp';
+import { useEdition } from '../../pos/edition';
 import type { MobileAppProps } from '../../pos/mobile/MobileApp';
 import { MobileStoryEmbed } from './mobile-embed';
 
@@ -25,7 +26,11 @@ export * from '../pos/screen-helpers';
 export function MobileStory(props: MobileAppProps) {
   const embedded = useContext(MobileStoryEmbed);
   const onDevice = Boolean(useDevice());
-  if (embedded) return <MobileApp {...props} />;
+  // A story's own `edition` wins; otherwise the file's `withEdition` decorator, and outside
+  // Storybook (the mobile prototype) the build's own.
+  const fromDecorator = useEdition();
+  const edition = props.edition ?? fromDecorator;
+  if (embedded) return <MobileApp {...props} edition={edition} />;
   return (
     <Box
       sx={{
@@ -38,10 +43,10 @@ export function MobileStory(props: MobileAppProps) {
     >
       {onDevice ? (
         <FittedPhone>
-          <MobileApp {...props} />
+          <MobileApp {...props} edition={edition} />
         </FittedPhone>
       ) : (
-        <MobileApp {...props} />
+        <MobileApp {...props} edition={edition} />
       )}
     </Box>
   );

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Box, Typography } from '@mui/material';
 import { IdMeBadge } from '../../../pos/components/IdMeBadge';
 import { Stack } from '../../../pos/components/Stack';
@@ -9,7 +10,7 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { adjustedParty, idMeParty, sheetWithCustomer, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 3 · ID.me Badge / Tablet
+ * Prototypes / Tablet / Tee Sheet / ID.me badge (Weston Edits, section 3)
  *
  * The smallest section here, and — until round 4 — the one with the largest unanswered question
  * behind it. **That question is now answered**, and the answer made the feature smaller rather
@@ -146,7 +147,9 @@ import { adjustedParty, idMeParty, sheetWithCustomer, sheetWithPanel } from '../
  *   counter who they are looking at; the membership tells the register what to charge.
  */
 const meta = {
-  title: 'Weston Edits/3 · ID.me Badge/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/ID.me badge',
+  id: 'weston-edits-3-·-id-me-badge-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
@@ -159,7 +162,7 @@ type Story = StoryObj;
  * badge beside their name, where the counter already looks for the member dot.
  */
 export const OnThePlayerRow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(idMeParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(idMeParty())} />,
 };
 
 /**
@@ -168,12 +171,12 @@ export const OnThePlayerRow: Story = {
  * the seat is on the member rate.
  */
 export const OnALinkedGuest: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
 };
 
 /** On the Players tab, where the badge sits beside the name. */
 export const OnThePlayersTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(idMeParty(), 'players')} />,
+  render: () => <Screen initialState={sheetWithPanel(idMeParty(), 'players')} />,
 };
 
 /**
@@ -182,7 +185,7 @@ export const OnThePlayersTab: Story = {
  * that does the only thing it is there to do.
  */
 export const OnTheCustomerRecord: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await expect(await record.findByRole('button', { name: 'View ID' })).toBeTruthy();
@@ -200,7 +203,7 @@ export const OnTheCustomerRecord: Story = {
  * where the portrait goes.
  */
 export const TheIdOnFile: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await userEvent.click(await record.findByRole('button', { name: 'View ID' }));

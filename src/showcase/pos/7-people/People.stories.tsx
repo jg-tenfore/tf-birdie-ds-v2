@@ -1,16 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { screen, userEvent } from 'storybook/test';
 import type { Golfer } from '../../../pos/types';
 import { DEMO_BOOKINGS, Screen, onTeeSheet, screenParams, withWalkInOrder } from '../screen-helpers';
 
 /**
- * POS Screens / 7 · People
+ * Archive / Original port / Tablet / People (POS Screens, section 7)
  *
  * CRM-facing dialogs. The through-line: a member rate is never a price the operator can
  * simply type — it has to be attached to a named member of the right tier.
  */
 const meta = {
-  title: 'POS Screens/7 · People',
+  title: 'Archive/Original port/Tablet/People',
+  id: 'pos-screens-7-·-people',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

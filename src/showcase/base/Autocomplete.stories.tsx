@@ -26,7 +26,8 @@ const menu: MenuItem[] = [
 ];
 
 const meta = {
-  title: 'Components/Forms/Autocomplete',
+  title: 'Design System/Components/Forms/Autocomplete',
+  id: 'components-forms-autocomplete',
   component: Autocomplete,
   parameters: {
     layout: 'centered',

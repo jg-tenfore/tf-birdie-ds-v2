@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { venue } from '../../pos/data/venues';
 import { Exhibit, T0, actionParams, afterShows, mk, row } from './action-helpers';
 
 /**
- * Tee Sheet Actions / **6 · Course**
+ * Archive / Tee Sheet Actions / **Course** (Tee Sheet Actions, section 6)
  *
  * The per-column menu in each course header. These change the *columns*, not the bookings —
  * a locked or hidden course keeps every tee time it had, which is the whole point: closing
@@ -13,7 +14,9 @@ import { Exhibit, T0, actionParams, afterShows, mk, row } from './action-helpers
  * than tee times, and where the two panes differ in shape rather than in content.
  */
 const meta = {
-  title: 'Tee Sheet Actions/6 · Course',
+  title: 'Archive/Tee Sheet Actions/Course',
+  id: 'tee-sheet-actions-6-·-course',
+  decorators: [withEdition('archived')],
   parameters: actionParams,
 } satisfies Meta;
 

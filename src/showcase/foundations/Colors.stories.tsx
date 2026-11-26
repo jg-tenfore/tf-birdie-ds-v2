@@ -165,7 +165,8 @@ function Colors() {
 }
 
 const meta = {
-  title: 'Foundations/Colors',
+  title: 'Design System/Styles/Colors',
+  id: 'foundations-colors',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

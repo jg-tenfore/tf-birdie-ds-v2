@@ -13,7 +13,8 @@ import {
 const STEPS = ['Select device', 'Assign station', 'Configure routing', 'Review'];
 
 const meta = {
-  title: 'Components/Navigation/Stepper',
+  title: 'Design System/Components/Navigation/Stepper',
+  id: 'components-navigation-stepper',
   component: Stepper,
   parameters: {
     layout: 'centered',

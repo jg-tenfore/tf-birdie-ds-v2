@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { venueBookings } from '../../../../pos/data/venues';
 import { Screen } from '../../../pos/screen-helpers';
 import { king, panelOn } from '../../100126/scenarios';
 
 /**
- * V1 → V2 Migration / 100226 / 1 · Player rows v2 — **built** (approved Oct 3)
+ * Reviews / Oct 2 – Proposal review / 1 · Player rows v2 — **built** (approved Oct 3) (100226)
  *
  * **Weston, on 100126's compact rows:** *"this solves the problem, but I feel like we're losing a lot
  * of data."* The counter conversation is *"Walking or riding? 9 or 18? You're paying for yourself?
@@ -30,7 +31,9 @@ import { king, panelOn } from '../../100126/scenarios';
  * These stories render the live app.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100226/1 · Player rows v2',
+  title: 'Reviews/Oct 2 – Proposal review/1. Player rows v2',
+  id: 'v1-→-v2-migration-100226-1-·-player-rows-v2',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 import { NAV_GROUPS } from '../../../pos/data/nav';
 import { openParty, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 20 · Main Nav / Tablet
+ * Prototypes / Tablet / Global Nav / Main nav (Weston Edits, section 20)
  *
  * **The main navigation, and the hamburger that finally means one thing.**
  *
@@ -67,12 +68,22 @@ import { openParty, sheetWithPanel } from '../tablet-scenarios';
  * `nav.test.ts` fails if that list drifts from what actually opens.
  */
 const meta = {
-  title: 'Weston Edits/20 · Main Nav/Tablet',
+  title: 'Prototypes/Tablet/Global Nav/Main nav',
+  id: 'weston-edits-20-·-main-nav-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj;
+
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 makes every destination live and shows the menu by role (Reviews › Oct 1 –
+ * Proposals from the Sep 30 call › 7. Menu by role). These stories are about Weston Edits' nav,
+ * where four tiles are live and the rest are dimmed.
+ */
+const westonOnly = [withEdition('weston')];
 
 const LIVE = ['Pro Shop', 'Tee Sheet', 'Customer Search', 'Settings'];
 
@@ -86,7 +97,8 @@ const LIVE = ['Pro Shop', 'Tee Sheet', 'Customer Search', 'Settings'];
  * up here.
  */
 export const TheNavigation: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { navOpen: true })} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={atVenue('eighteen', { navOpen: true })} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const nav = canvasElement.querySelector('[data-nav-overlay]')!;
@@ -110,7 +122,7 @@ export const TheNavigation: Story = {
  * to, working: the strip's hamburger goes to the nav rather than expanding the rail.
  */
 export const OpenedFromTheStrip: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen')} />,
+  render: () => <Screen initialState={atVenue('eighteen')} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvasElement.querySelector('[data-nav-overlay]')).toBeNull();
@@ -125,7 +137,8 @@ export const OpenedFromTheStrip: Story = {
  * sitting there — nothing happened, which is the whole point.
  */
 export const ADimmedDestinationDoesNothing: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { navOpen: true })} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={atVenue('eighteen', { navOpen: true })} />,
   play: async ({ canvasElement }) => {
     const tile = canvasElement.querySelector<HTMLButtonElement>('[data-nav-key="tablechart"]')!;
     await expect(tile.disabled).toBe(true);
@@ -140,7 +153,8 @@ export const ADimmedDestinationDoesNothing: Story = {
  * gone afterwards rather than hanging over the screen it just navigated to.
  */
 export const ALiveDestinationNavigates: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { navOpen: true })} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={atVenue('eighteen', { navOpen: true })} />,
   play: async ({ canvasElement }) => {
     await userEvent.click(canvasElement.querySelector<HTMLButtonElement>('[data-nav-key="proshop"]')!);
     await waitFor(() => expect(canvasElement.querySelector('[data-nav-overlay]')).toBeNull());
@@ -154,7 +168,7 @@ export const ALiveDestinationNavigates: Story = {
  * handler — the same thing the day summary learned in round 4 when it stopped being a `Drawer`.
  */
 export const EscapeCloses: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { navOpen: true })} />,
+  render: () => <Screen initialState={atVenue('eighteen', { navOpen: true })} />,
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('[data-nav-overlay]')).not.toBeNull();
     await userEvent.keyboard('{Escape}');
@@ -169,7 +183,7 @@ export const EscapeCloses: Story = {
  */
 export const OverTheReservationPanel: Story = {
   render: () => (
-    <Screen edition="weston" initialState={{ ...sheetWithPanel(openParty()), navOpen: true }} />
+    <Screen initialState={{ ...sheetWithPanel(openParty()), navOpen: true }} />
   ),
   play: async ({ canvasElement }) => {
     const nav = canvasElement.querySelector<HTMLElement>('[data-nav-overlay]')!;

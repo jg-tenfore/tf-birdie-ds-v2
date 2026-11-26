@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, within } from 'storybook/test';
 import { MOBILE_FRAME, MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 10 · Panel Size / Mobile
+ * Reviews / Sep 22 – Weston Edits, rounds 1–5 / Panel size / Mobile (Weston Edits, section 10)
  *
  * **There is nothing here to compare, and that is the finding.**
  *
@@ -48,7 +49,9 @@ import { adjustedParty, at18, withBookings } from '../mobile-scenarios';
  * tap back to the group rather than one long scroll.
  */
 const meta = {
-  title: 'Weston Edits/10 · Panel Size/Mobile',
+  title: 'Reviews/Sep 22 – Weston Edits, rounds 1–5/Panel size/Mobile',
+  id: 'weston-edits-10-·-panel-size-mobile',
+  decorators: [withEdition('weston')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

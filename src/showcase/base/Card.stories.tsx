@@ -13,7 +13,8 @@ import {
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 
 const meta = {
-  title: 'Components/Layout & Structure/Card',
+  title: 'Design System/Components/Layout & Structure/Card',
+  id: 'components-layout-structure-card',
   component: Card,
   parameters: {
     layout: 'centered',

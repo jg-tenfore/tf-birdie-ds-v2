@@ -12,7 +12,8 @@ const RADII: [string, number | string][] = [
 ];
 
 const meta = {
-  title: 'Foundations/Radius',
+  title: 'Design System/Styles/Radius',
+  id: 'foundations-radius',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 export default meta;

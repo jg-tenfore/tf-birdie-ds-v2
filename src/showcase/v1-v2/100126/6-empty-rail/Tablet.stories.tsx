@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box, Typography } from '@mui/material';
 import { expect, waitFor } from 'storybook/test';
 import { md3, radius } from '../../../../theme/tokens';
@@ -8,7 +9,7 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
 import { ProposalTerminal } from '../mock-kit';
 
 /**
- * V1 → V2 Migration / 100126 / 6 · Empty rail collapsed by default
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 6. Empty rail collapsed by default (100126)
  *
  * **Weston:** *"It'll probably have to indicate, like, how you close it. Like, Click to collapse."* …
  * *"I just think by default… just collapsed if there's nothing in it. Unless you deliberately open it.
@@ -23,7 +24,9 @@ import { ProposalTerminal } from '../mock-kit';
  * than relying on someone knowing to tap "No items added yet".
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/6 · Empty rail collapsed by default',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/6. Empty rail collapsed by default',
+  id: 'v1-→-v2-migration-100126-6-·-empty-rail-collapsed-by-default',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

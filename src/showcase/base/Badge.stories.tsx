@@ -4,7 +4,8 @@ import Notifications from '@mui/icons-material/Notifications';
 import Restaurant from '@mui/icons-material/Restaurant';
 
 const meta = {
-  title: 'Components/Feedback & Status/Badge',
+  title: 'Design System/Components/Feedback & Status/Badge',
+  id: 'components-feedback-status-badge',
   component: Badge,
   tags: ['autodocs'],
 } satisfies Meta<typeof Badge>;

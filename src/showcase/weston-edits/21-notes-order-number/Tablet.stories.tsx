@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen } from '../../pos/screen-helpers';
 import { orderNumber } from '../../../pos/logic/reservation';
@@ -6,7 +7,7 @@ import { openParty, paidTwilight, registerWith, sheetWithPanel } from '../tablet
 import type { Booking } from '../../../pos/types';
 
 /**
- * Weston Edits / 21 · Notes & Order Number / Tablet
+ * Prototypes / Tablet / Tee Sheet / Notes & order number (Weston Edits, section 21)
  *
  * **Two small things from the fifth call, both about showing what is already known.**
  *
@@ -67,7 +68,9 @@ import type { Booking } from '../../../pos/types';
  * no order, and a number shown before one exists is a number someone will quote down the phone.
  */
 const meta = {
-  title: 'Weston Edits/21 · Notes & Order Number/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Notes & order number',
+  id: 'weston-edits-21-·-notes-order-number-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 
@@ -97,7 +100,7 @@ const withBothNotes = (): Booking => ({
  * about the party rather than any one of them. Tapping it opens the Notes tab.
  */
 export const AGroupNote: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(withGroupNote())} />,
+  render: () => <Screen initialState={sheetWithPanel(withGroupNote())} />,
   play: async ({ canvasElement }) => {
     const banner = canvasElement.querySelector<HTMLElement>('[data-group-note]')!;
     await expect(banner).toBeTruthy();
@@ -117,7 +120,7 @@ export const AGroupNote: Story = {
  * the wrong golfer is the failure that matters here.
  */
 export const APlayerNote: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(withPlayerNote())} />,
+  render: () => <Screen initialState={sheetWithPanel(withPlayerNote())} />,
   play: async ({ canvasElement }) => {
     const notes = [...canvasElement.querySelectorAll('[data-player-note]')];
     await expect(notes.length).toBe(1);
@@ -134,7 +137,7 @@ export const APlayerNote: Story = {
  * for the other, which was the whole reason for splitting them.
  */
 export const BothKindsTogether: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(withBothNotes())} />,
+  render: () => <Screen initialState={sheetWithPanel(withBothNotes())} />,
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('[data-group-note]')!.textContent).toContain(GROUP_NOTE);
     const row = canvasElement.querySelector('[data-player-row="1"]')!;
@@ -151,7 +154,7 @@ export const BothKindsTogether: Story = {
  * click on it, it takes you to the note"* — now reachable by touch rather than by hovering.
  */
 export const TappingANoteOpensTheNotesTab: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(withBothNotes())} />,
+  render: () => <Screen initialState={sheetWithPanel(withBothNotes())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvasElement.querySelector<HTMLElement>('[data-group-note]')!);
@@ -167,7 +170,7 @@ export const TappingANoteOpensTheNotesTab: Story = {
  * tab, but the footer is where the eye lands.
  */
 export const APaidReservationShowsItsOrder: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight())} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight())} />,
   play: async ({ canvasElement }) => {
     const expected = orderNumber(paidTwilight())!;
     const link = canvasElement.querySelector<HTMLElement>('[data-order-number]')!;
@@ -182,7 +185,7 @@ export const APaidReservationShowsItsOrder: Story = {
  * number to print — rather than a placeholder somebody reads out to a golfer on the phone.
  */
 export const AnUnpaidReservationShowsNone: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     await expect(orderNumber(openParty())).toBeNull();
     await expect(canvasElement.querySelector('[data-order-number]')).toBeNull();
@@ -194,7 +197,7 @@ export const AnUnpaidReservationShowsNone: Story = {
  * controls are — the number and the action it belongs to on one screen.
  */
 export const TheFinancialTabCarriesIt: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight(), 'financial')} />,
   play: async ({ canvasElement }) => {
     const link = canvasElement.querySelector<HTMLElement>('[data-order-number]')!;
     await expect(link.textContent).toContain(orderNumber(paidTwilight())!);
@@ -213,7 +216,7 @@ export const BackToTheReservation: Story = {
   render: () => {
     const b = paidTwilight();
     return (
-      <Screen edition="weston" initialState={{ ...registerWith(b), returnToBooking: b.id }} />
+      <Screen initialState={{ ...registerWith(b), returnToBooking: b.id }} />
     );
   },
   play: async ({ canvasElement }) => {
@@ -233,7 +236,7 @@ export const BackToTheReservation: Story = {
  * came *from*, and a back button to somewhere you have not been is worse than none.
  */
 export const AnOrdinaryOrderHasNoWayBack: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(paidTwilight())} />,
+  render: () => <Screen initialState={registerWith(paidTwilight())} />,
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('[data-return-to-reservation]')).toBeNull();
   },

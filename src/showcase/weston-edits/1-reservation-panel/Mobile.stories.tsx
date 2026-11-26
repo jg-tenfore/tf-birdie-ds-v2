@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, growableParty, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 1 · Reservation Panel / Mobile
+ * Prototypes / Mobile / Tee Sheet / Reservation panel (Weston Edits, section 1)
  *
  * The phone's equivalent of the tablet's slide-over — and the place the tablet's central
  * question doesn't arise. There is no panel on a phone, because the reservation **is** the
@@ -88,7 +89,9 @@ import { adjustedParty, at18, growableParty, withBookings } from '../mobile-scen
  *   tabs. Corrected: the screen renders four (`WESTON_TABS`), and the blurb now says so.
  */
 const meta = {
-  title: 'Weston Edits/1 · Reservation Panel/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Reservation panel',
+  id: 'weston-edits-1-·-reservation-panel-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -109,7 +112,6 @@ type Story = StoryObj;
 export const Reservation: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18()}
       tab="tee"
       stack={[{ name: 'bookingDetail', bookingId: growableParty().id }]}
@@ -122,7 +124,7 @@ export const Reservation: Story = {
  * an order. Nothing reaches the register until **Check in & pay**.
  */
 export const FromTheTeeSheet: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
 };
 
 /**
@@ -134,7 +136,7 @@ export const FromTheTeeSheet: Story = {
 export const AdjustedReservation: Story = {
   render: () => {
     const b = adjustedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 

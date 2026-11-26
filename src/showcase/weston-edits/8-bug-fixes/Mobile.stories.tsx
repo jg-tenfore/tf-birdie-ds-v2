@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { userEvent, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { at18, loadedOrder, memberParty, offRateParty, openParty, paidParty } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 8 · Bug Fixes / Mobile
+ * Reviews / Sep 22 – Weston Edits, rounds 1–5 / Bug fixes / Mobile (Weston Edits, section 8)
  *
  * The bugs from Weston's recording, checked on the phone. They were fixed in shared cart
  * logic, so they hold in **every edition** — which is why most stories here render the
@@ -90,7 +91,9 @@ import { at18, loadedOrder, memberParty, offRateParty, openParty, paidParty } fr
  * and still the order asking the reservation rather than the reservation telling the order.
  */
 const meta = {
-  title: 'Weston Edits/8 · Bug Fixes/Mobile',
+  title: 'Reviews/Sep 22 – Weston Edits, rounds 1–5/Bug fixes/Mobile',
+  id: 'weston-edits-8-·-bug-fixes-mobile',
+  decorators: [withEdition('weston')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

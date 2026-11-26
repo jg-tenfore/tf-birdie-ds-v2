@@ -4,7 +4,8 @@ import Whatshot from '@mui/icons-material/Whatshot';
 import WhatshotBorder from '@mui/icons-material/WhatshotOutlined';
 
 const meta = {
-  title: 'Components/Forms/Rating',
+  title: 'Design System/Components/Forms/Rating',
+  id: 'components-forms-rating',
   component: Rating,
   parameters: {
     layout: 'centered',

@@ -52,7 +52,8 @@ function BackdropMessageDemo() {
 }
 
 const meta = {
-  title: 'Components/Feedback & Status/Backdrop',
+  title: 'Design System/Components/Feedback & Status/Backdrop',
+  id: 'components-feedback-status-backdrop',
   component: BackdropDemo,
   parameters: {
     layout: 'centered',

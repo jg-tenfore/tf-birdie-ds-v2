@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { PPM } from '../../../pos/components/ResourceSheetView';
 import { SHEETS, resourcesOf, seedResourceDay } from '../../../pos/data/resources';
@@ -6,7 +7,7 @@ import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
 import { at, booking, panelOn, sheetWith, tapAt } from '../resource-scenarios';
 
 /**
- * V1 → V2 Migration / 3 · Court Sheet / Tablet
+ * Prototypes / Tablet / Court Sheet / Court bookings (V1 → V2 Migration, section 3)
  *
  * **Booking a court the way you book a tee time.**
  *
@@ -54,7 +55,9 @@ import { at, booking, panelOn, sheetWith, tapAt } from '../resource-scenarios';
  * has "Tennis Court 1" beside "Tennis 2" and "Basketball" beside "Basket Ball 2".
  */
 const meta = {
-  title: 'V1 → V2 Migration/3 · Court Sheet/Tablet',
+  title: 'Prototypes/Tablet/Court Sheet/Court bookings',
+  id: 'v1-→-v2-migration-3-·-court-sheet-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

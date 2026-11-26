@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * Weston Edits / 9 · Date Navigation / Tablet
+ * Prototypes / Tablet / Tee Sheet / Date navigation (Weston Edits, section 9)
  *
  * Round 2 was a 46-second Loom about the **phone**: *"If I'm on the tee sheet and I want to go
  * to, let's say, June — there's no way to select the month, so I just have to click."* The
@@ -79,7 +80,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * Weston whether the tee sheet should stop at a year or simply keep generating.
  */
 const meta = {
-  title: 'Weston Edits/9 · Date Navigation/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Date navigation',
+  id: 'weston-edits-9-·-date-navigation-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
@@ -106,7 +109,7 @@ const golferCount = (canvasElement: HTMLElement): number => {
  * there; there was just nothing to see.
  */
 export const GeneratedDay: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { currentDate: JUNE_12 })} />,
+  render: () => <Screen initialState={atVenue('eighteen', { currentDate: JUNE_12 })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await c.findByText(/Fri, Jun 12, 2026/);
@@ -124,7 +127,7 @@ export const GeneratedDay: Story = {
  * dead end.
  */
 export const CalendarRange: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { currentDate: new Date(2027, 4, 18) })} />,
+  render: () => <Screen initialState={atVenue('eighteen', { currentDate: new Date(2027, 4, 18) })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByText(/Tue, May 18, 2027/));
@@ -139,7 +142,7 @@ export const CalendarRange: Story = {
  * its generated tee sheet.
  */
 export const PickJuneFromCalendar: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen')} />,
+  render: () => <Screen initialState={atVenue('eighteen')} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByText(/Thu, May 21, 2026/));

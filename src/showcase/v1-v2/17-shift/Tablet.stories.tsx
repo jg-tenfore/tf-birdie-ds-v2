@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_PAYMENTS } from '../../../pos/data/restaurant-seed';
 import { SEED_OPEN_SHIFT, SEED_SHIFT_HISTORY } from '../../../pos/data/staff-seed';
@@ -8,7 +9,7 @@ import type { DrawerEvent } from '../../../pos/state/register-extras';
 import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 17 · Shift / Tablet
+ * Prototypes / Tablet / Shift / Drawer & close-out (V1 → V2 Migration, section 17)
  *
  * **The cash drawer: what it should hold and why, dropping cash to the safe, closing and opening.**
  *
@@ -39,7 +40,9 @@ import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
  * - **History that fits**: expected, counted, a coloured over / short variance, checks and the note.
  */
 const meta = {
-  title: 'V1 → V2 Migration/17 · Shift/Tablet',
+  title: 'Prototypes/Tablet/Shift/Drawer & close-out',
+  id: 'v1-→-v2-migration-17-·-shift-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

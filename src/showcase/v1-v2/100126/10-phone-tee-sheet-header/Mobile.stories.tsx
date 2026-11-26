@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box, Typography } from '@mui/material';
 import { expect, waitFor } from 'storybook/test';
 import { md3, payBadges, radius } from '../../../../theme/tokens';
@@ -12,7 +13,7 @@ import { at18 } from '../../../weston-edits/mobile-scenarios';
 import { ProposalPhone, WhatChanged } from '../mock-kit';
 
 /**
- * V1 → V2 Migration / 100126 / 10 · Phone: tee sheet header collapses on scroll
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 10 · Phone: tee sheet header collapses on scroll (100126)
  *
  * **Weston, on the phone:** *"it'd be nice if like once you start scrolling, if you could collapse…
  * at least these like 3 lines."* Justin: *"Do you want to just keep the time or like the day?"*
@@ -29,7 +30,9 @@ import { ProposalPhone, WhatChanged } from '../mock-kit';
  * and they return.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/10 · Phone tee sheet header',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/10. Phone tee sheet header',
+  id: 'v1-→-v2-migration-100126-10-·-phone-tee-sheet-header',
+  decorators: [withEdition('weston')],
   ...mobileMeta,
 } satisfies Meta;
 

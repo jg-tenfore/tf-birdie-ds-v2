@@ -31,7 +31,8 @@ function ToggleDemo() {
 }
 
 const meta = {
-  title: 'Components/Forms/Toggle Button',
+  title: 'Design System/Components/Forms/Toggle Button',
+  id: 'components-forms-toggle-button',
   component: ToggleDemo,
   tags: ['autodocs'],
   parameters: {

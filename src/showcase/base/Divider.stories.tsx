@@ -11,7 +11,8 @@ import {
 } from '@mui/material';
 
 const meta = {
-  title: 'Components/Layout & Structure/Divider',
+  title: 'Design System/Components/Layout & Structure/Divider',
+  id: 'components-layout-structure-divider',
   component: Divider,
   parameters: {
     layout: 'centered',
