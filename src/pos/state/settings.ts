@@ -35,7 +35,21 @@ export interface TerminalHardware {
 }
 
 /** The tenders Checkout can offer — a switch each. */
-export const TENDER_KEYS = ['card', 'cash', 'cashpay', 'giftcard', 'house', 'cardonfile', 'event', 'check'] as const;
+export const TENDER_KEYS = [
+  'card',
+  'cash',
+  'cashpay',
+  'giftcard',
+  'house',
+  'cardonfile',
+  'event',
+  'check',
+  // Credits as tenders (Nov 26): Buck's rain checks, punch cards, credit books and lesson credits.
+  'raincheck',
+  'punchcard',
+  'creditbook',
+  'lessoncredit',
+] as const;
 export type TenderKey = (typeof TENDER_KEYS)[number];
 
 export const TENDER_NAMES: Record<TenderKey, string> = {
@@ -47,6 +61,10 @@ export const TENDER_NAMES: Record<TenderKey, string> = {
   cardonfile: 'Card on file',
   event: 'Charge to event',
   check: 'Check',
+  raincheck: 'Rain check',
+  punchcard: 'Punch card',
+  creditbook: 'Credit book',
+  lessoncredit: 'Lesson credit',
 };
 
 export interface CheckoutSettings {

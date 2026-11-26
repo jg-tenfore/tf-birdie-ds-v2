@@ -1,3 +1,5 @@
+import { pricingOf } from '../../../state/checkout';
+import type { Pricing } from '../../../logic/pricing';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Button, ButtonBase, Typography } from '@mui/material';
@@ -41,9 +43,22 @@ import { useMobileNav } from '../../navigation';
  * or with the terminal. Golf is taxed by its booking's tax line, everything else at the
  * sales-tax rate; Tax Exempt zeroes both.
  */
-export function orderMoney(cart: CartItem[]) {
-  const t = cartLogic.orderTotals(cart);
-  return { subtotal: t.subtotal, discount: t.discount, goods: t.goods, tax: t.tax, exempt: t.exempt, total: t.total };
+/**
+ * The order's money, by the register's own pricing — pass `pricingOf(state)` so the phone charges what
+ * the terminal does (Buck's tax per line and service charges in V1 → V2, Nov 26).
+ */
+export function orderMoney(cart: CartItem[], pricing?: number | Pricing) {
+  const t = cartLogic.orderTotals(cart, pricing);
+  return {
+    subtotal: t.subtotal,
+    discount: t.discount,
+    goods: t.goods,
+    tax: t.tax,
+    exempt: t.exempt,
+    total: t.total,
+    taxes: t.taxes,
+    serviceCharges: t.serviceCharges ?? [],
+  };
 }
 
 /** Lines the operator thinks of as "on the order" — tax rows hang off others. */
@@ -156,14 +171,21 @@ export function MoneyRow({
 
 /** The totals block used on the order and at checkout. */
 export function TotalsBlock({ cart, tip = 0 }: { cart: CartItem[]; tip?: number }) {
-  const m = orderMoney(cart);
+  const { state } = usePos();
+  const m = orderMoney(cart, pricingOf(state));
   return (
     <Box sx={{ px: 2, py: 1 }}>
       <MoneyRow label="Subtotal" value={cartLogic.money(m.subtotal)} />
       {m.discount < 0 && (
         <MoneyRow label="Discounts" value={cartLogic.creditMoney(m.discount)} color={md3.error} />
       )}
+      {/* Buck's service charges and tax by type (V1 → V2), as the terminal shows them. */}
+      {m.serviceCharges.map((c) => (
+        <MoneyRow key={c.id} label={c.label} value={cartLogic.money(c.amount)} />
+      ))}
       <MoneyRow label={m.exempt ? 'Tax (exempt)' : 'Tax'} value={cartLogic.money(m.tax)} />
+      {/* More than one tax type (Buck's per line, Nov 26): each beneath the total, as the terminal shows them. */}
+      {m.taxes && m.taxes.length > 1 && m.taxes.map((t) => <MoneyRow key={t.id} label={<Box component="span" sx={{ pl: 2 }}>{t.label}</Box>} value={cartLogic.money(t.amount)} />)}
       {tip > 0 && <MoneyRow label="Tip" value={cartLogic.money(tip)} />}
       <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, mt: 1, pt: 1 }}>
         <MoneyRow label="Total" value={cartLogic.money(m.total + tip)} strong />
@@ -213,7 +235,7 @@ export function ViewOrderBar() {
   const nav = useMobileNav();
   const count = orderLines(state.cart).length;
   if (count === 0) return null;
-  const { total } = orderMoney(state.cart);
+  const { total } = orderMoney(state.cart, pricingOf(state));
 
   return (
     <Box sx={{ px: 2, pt: 1, pb: 1.5, flexShrink: 0, bgcolor: md3.surface }}>

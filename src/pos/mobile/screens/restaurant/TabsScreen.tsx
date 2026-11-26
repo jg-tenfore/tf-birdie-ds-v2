@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useState } from 'react';
 import { Box, ButtonBase, Fab, Typography } from '@mui/material';
 import Add from '@mui/icons-material/Add';
@@ -6,7 +7,6 @@ import { md3, mobile, radius } from '../../../../theme/tokens';
 import { DEMO_NOW_MIN } from '../../../data/bookings';
 import { money } from '../../../logic/cart';
 import { formatOpenFor, sortTabRows, tabRows, type TabRow } from '../../../logic/tab-list';
-import { taxRateOf } from '../../../state/operations';
 import { usePos } from '../../../state/PosProvider';
 import { Stack } from '../../../components/Stack';
 import { MobileScreen, TopAppBar } from '../../chrome';
@@ -32,7 +32,7 @@ export function TabsScreen({ route }: ScreenProps<'tabs'>) {
   const { state } = usePos();
   const nav = useMobileNav();
   const [mine, setMine] = useState(false);
-  const rows = sortTabRows(tabRows(state.tabs, state.floor, DEMO_NOW_MIN, state.staffRoster, taxRateOf(state)), 'status', 'desc');
+  const rows = sortTabRows(tabRows(state.tabs, state.floor, DEMO_NOW_MIN, state.staffRoster, pricingOf(state)), 'status', 'desc');
   const shown = mine ? rows.filter((r) => r.tab.serverId === state.operatorId) : rows;
   const myCount = rows.filter((r) => r.tab.serverId === state.operatorId).length;
   const root = isRootRoute(nav, route);

@@ -11,6 +11,8 @@ import { isOperationsModal } from '../state/operations';
 import { OperationsDialogs } from './OperationsDialogs';
 import { isSettingsModal } from '../state/settings';
 import { StaffFormDialog } from './StaffFormDialog';
+import { isCheckoutModal } from '../state/checkout';
+import { CheckoutDialogs } from './CheckoutDialogs';
 import {
   ActionPanel,
   GolferSearch,
@@ -112,6 +114,8 @@ export function ModalHost() {
       if (isOperationsModal(m)) return <OperationsDialogs m={m} />;
       // Settings (V1 → V2).
       if (isSettingsModal(m)) return <StaffFormDialog m={m} />;
+      // Checkout's credit tenders and order tools (Nov 26).
+      if (isCheckoutModal(m)) return <CheckoutDialogs m={m} />;
       // Hold, held orders, cash payout, gift card (V1 → V2).
       return isRegisterExtrasModal(m) ? <RegisterDialog modal={m} /> : null;
   }

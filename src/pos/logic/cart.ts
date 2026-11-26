@@ -7,6 +7,8 @@ import { playerFee, playerHoles, playerName, playerTransport, roundLabel } from 
 import { seatIsMember } from './rates';
 import { seatNetGreenFee, seatTransportFee, seatTransportOverride } from './seat-pricing';
 import type { RateContext } from './rates';
+import { isPricing, priceOrder, type Pricing } from './pricing';
+import { discountLines, discountedNets } from './discounts';
 
 /**
  * Cart construction and pricing.
@@ -235,6 +237,16 @@ export interface OrderTotals {
   exempt: boolean;
   /** `goods + tax` — the one number the Pay button, checkout and every reader charge. */
   total: number;
+  /**
+   * Buck's per-line pricing (V1 → V2, Nov 26): the tax by type — "Sales Tax 8%", "Alcohol Tax 6.7%",
+   * a tee time's reservation tax — and the service charges, each a line of its own. Absent at a flat rate.
+   */
+  taxes?: { id: string; label: string; amount: number }[];
+  serviceCharges?: { id: string; label: string; amount: number }[];
+  /** The service charges' sum; `total` includes it. 0 or absent at a flat rate. */
+  service?: number;
+  /** The register's discounts by name (Buck's types, promo codes), negative — what the receipt prints. */
+  discountLines?: { id: string; label: string; amount: number }[];
 }
 
 /**
@@ -254,7 +266,8 @@ export interface OrderTotals {
  * With nothing left to charge (every seat settled, or the round removed), a stray tax row
  * charges nothing.
  */
-export function orderTotals(cart: CartItem[], taxRate: number = TAX_RATE): OrderTotals {
+export function orderTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RATE): OrderTotals {
+  if (isPricing(taxRate)) return buckTotals(cart, taxRate);
   const lines = cart.filter((i) => !isTaxRow(i));
   const exempt = cart.some((i) => i.name === 'Tax Exempt');
   const goods = cents(payableTotal(lines));
@@ -282,6 +295,94 @@ export function orderTotals(cart: CartItem[], taxRate: number = TAX_RATE): Order
     exempt,
     total: cents(goods + tax),
   };
+}
+
+/** What one line charges before tax and before any register discount: its price, or its seats'. */
+export const linePayable = (line: CartItem): number => (isTaxRow(line) || line.serviceCharge || line.orderDiscount ? 0 : payableTotal([line]));
+
+/**
+ * What each line charges before tax, index for index — its price or its seats', less the register's
+ * discounts on it (Buck's types and promo codes, `logic/discounts.ts`, V1 → V2).
+ */
+export const lineNets = (cart: CartItem[]): number[] => discountedNets(cart, linePayable).nets;
+
+/** `orderTotals` by Buck's per-line pricing (`logic/pricing.ts`, V1 → V2). */
+function buckTotals(cart: CartItem[], p: Pricing): OrderTotals {
+  const nets = lineNets(cart);
+  const priced = priceOrder(cart, p, (_, i) => nets[i]);
+  const subtotal = cents(cartTotals(cart.filter((i) => !isTaxRow(i) && !i.serviceCharge && !i.orderDiscount)).subtotal);
+  const golfTax = priced.taxes.find((t) => t.id === 'reservation')?.amount ?? 0;
+  return {
+    subtotal,
+    discount: cents(priced.goods - subtotal),
+    goods: priced.goods,
+    golfTax,
+    salesTax: cents(priced.tax - golfTax),
+    tax: priced.tax,
+    exempt: priced.exempt,
+    total: priced.total,
+    taxes: priced.taxes,
+    serviceCharges: priced.service,
+    service: priced.serviceTotal,
+    discountLines: discountLines(cart, linePayable),
+  };
+}
+
+/**
+ * Split `amount` across `weights` to the cent, so the parts add up to it exactly: each part is its
+ * weight's share, rounded, and the cent the rounding leaves over goes to the heaviest weight.
+ */
+export function allocateCents(amount: number, weights: number[]): number[] {
+  const sum = weights.reduce((s, w) => s + w, 0);
+  if (!sum || !amount) return weights.map(() => 0);
+  const parts = weights.map((w) => cents((w / sum) * amount));
+  const left = cents(amount - parts.reduce((s, p) => s + p, 0));
+  if (left) {
+    let at = 0;
+    weights.forEach((w, i) => {
+      if (Math.abs(w) > Math.abs(weights[at])) at = i;
+    });
+    parts[at] = cents(parts[at] + left);
+  }
+  return parts;
+}
+
+/**
+ * What each line of the order charges **with its share of the tax** — index for index with `cart`,
+ * 0 on a tax row — adding up to `orderTotals(cart).total` exactly. A credit that may pay only some
+ * lines (a gift card, a rain check, a credit book, a punch) pays those lines' amounts from here, and
+ * a split by item bills each part from here, so the two cannot disagree with the total.
+ *
+ * At a flat rate the golf carries its booking's tax line and the rest share the sales tax by what
+ * they charge; a gift card, an account payment and an event's charges carry none. With Buck's
+ * per-line pricing (`Pricing`, V1 → V2) each line's own tax and service charges are used instead.
+ */
+export function lineTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RATE): number[] {
+  if (isPricing(taxRate)) {
+    const nets = lineNets(cart);
+    return priceOrder(cart, taxRate, (_, i) => nets[i]).lines.map((l) => l.total);
+  }
+  const t = orderTotals(cart, taxRate);
+  const goods = cart.map((l) => (isTaxRow(l) ? 0 : payableTotal([l])));
+  const untaxed = (l: CartItem) => isTaxRow(l) || Boolean(l.giftCard || l.accountPayment || l.eventBill);
+  const golf = cart.map((l, i) => (l.isCheckIn && t.golfTax > 0 ? goods[i] : 0));
+  const sales = cart.map((l, i) => (untaxed(l) || (l.isCheckIn && t.golfTax > 0) ? 0 : goods[i]));
+  const golfShare = allocateCents(t.golfTax, golf);
+  const salesShare = allocateCents(t.salesTax, sales);
+  const out = cart.map((_, i) => cents(goods[i] + golfShare[i] + salesShare[i]));
+  return allocateRemainder(out, t.total);
+}
+
+/** Nudge index-aligned amounts so they add to `total` — the cent rounding left, on the largest line. */
+function allocateRemainder(out: number[], total: number): number[] {
+  const left = cents(total - out.reduce((s, x) => s + x, 0));
+  if (!left || !out.length) return out;
+  let at = 0;
+  out.forEach((x, i) => {
+    if (Math.abs(x) > Math.abs(out[at])) at = i;
+  });
+  out[at] = cents(out[at] + left);
+  return out;
 }
 
 /** Total players across the check-in lines — drives the guest chip row. */

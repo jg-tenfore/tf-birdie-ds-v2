@@ -5,7 +5,7 @@ import { liveCustomer } from '../data/roster';
 import { money } from '../logic/cart';
 import { houseAccountProblem, houseAccountRefusal, orderCustomerId, plainName } from '../logic/customer-search';
 import { DEMO_TODAY } from '../data/bookings';
-import { amountDue, type OperationsModal } from '../state/operations';
+import { dueNow, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Stack } from '../components/Stack';
 import { Callout, FilledButton, ModalFrame, ModalSection, OutlineButton } from './ModalFrame';
@@ -32,7 +32,8 @@ export function TenderHouseAccountDialog({ m }: { m: Extract<OperationsModal, { 
   const customer = liveCustomer(customerId ?? undefined, state.customerEdits);
   // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
   const tip = m.tip ?? 0;
-  const orderDue = amountDue(state);
+  // The part being paid, on a split check (Nov 26); otherwise everything still due.
+  const orderDue = dueNow(state);
   const due = Math.round((orderDue + tip) * 100) / 100;
   const blocked = houseAccountProblem(state.cart);
   // Members only: someone without a current membership has no account to charge.

@@ -50,8 +50,8 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckScreen: 'Buck › Course Settings › Taxes & Fees',
     buckFile: COURSE_SETTINGS,
     birdieFile: 'src/pos/data/buck-club.ts',
-    status: 'partial',
-    note: 'Buck sets a tax per line type (tee fee, transportation, food, liquor); Birdie charges one sales-tax rate on all of them. Service charges are shown, not added.',
+    status: 'aligned',
+    note: 'Since Nov 26 the register charges Buck’s tax per line (tee fee, transportation, food, liquor, each with its Tax Rate 2) and adds the F&B, Event and card service charges as their own lines. A tee time from the sheet keeps the tax its reservation was booked with rather than being recomputed.',
   },
   {
     birdieArea: 'Settings',
@@ -136,6 +136,15 @@ export const BUCK_SOURCES: BuckSource[] = [
   },
   {
     birdieArea: 'Pro Shop',
+    shows: 'Discount types on any register line and on the whole order: percent, dollars off each, cost plus where the cost is known; manager PIN for approval types; price override; promo codes',
+    buckScreen: 'Buck › Products › Discount Types · Products › List (Cost, Price override)',
+    buckFile: PRODUCTS,
+    birdieFile: 'src/pos/logic/discounts.ts',
+    status: 'partial',
+    note: 'All three of Buck’s kinds, each limited to its categories (Nov 26). Cost plus is offered only on the products whose cost Birdie knows. A plate on a tab still takes percent types only, from its own Adjust. Promo codes are an invented table — Buck has no promo-code screen to follow.',
+  },
+  {
+    birdieArea: 'Pro Shop',
     shows: 'Combos with Buck’s department; Turn Special and 6 Pack Combo by Buck’s titles',
     buckScreen: 'Buck › Products › Combos',
     buckFile: PRODUCTS,
@@ -149,8 +158,8 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckScreen: 'Buck › Products › List · Product Groups · Price Stickers · Rewards',
     buckFile: PRODUCTS,
     birdieFile: 'src/pos/data/catalog.ts',
-    status: 'not yet',
-    note: 'The register still sells Birdie’s ported catalog; SKUs, groups and departments are not wired.',
+    status: 'partial',
+    note: 'The register still sells Birdie’s ported catalog; SKUs, groups and departments are not wired. Since Nov 26 a product can carry Buck’s own Tax and Tax 2 type, a cost and the Price override option (src/pos/data/products.ts); the rest take their kind’s tax.',
   },
 
   // ─── Credits ──────────────────────────────────────────────────────────────
@@ -170,7 +179,7 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckFile: CREDITS,
     birdieFile: 'src/pos/data/credits.ts',
     status: 'partial',
-    note: 'Read-only at the counter; a book is never a tender. Which book paid a card is derived, not recorded.',
+    note: 'A book is a checkout tender (Nov 26) for the customers in it, for only what it applies to; a book in the red pays nothing. Which book a customer is in is still derived from the Winnings cards it paid, not recorded.',
   },
   {
     birdieArea: 'Customer Search',
@@ -179,15 +188,25 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckFile: 'src/components/application/punch-cards-table/data.ts',
     birdieFile: 'src/pos/data/credits.ts',
     status: 'partial',
-    note: 'Buck cards can hold carts, products, activities, clinics and lessons; Birdie’s hold rounds only (Weston: a punch pays the green fee, the ride is still billed). Expired cards no longer pay.',
+    note: 'A checkout tender (Nov 26): one punch per green fee, cart or product, minutes per punch for a bay — Buck’s items and rules. A green-fee punch pays the seat, not the ride (Weston). Buck’s clinic and lesson items are not redeemed at the counter; lesson packs are their own tender.',
+  },
+  {
+    birdieArea: 'Pro Shop',
+    shows: 'Lesson credits: a pack’s credits left, one lesson of its length per credit, a year to use them',
+    buckScreen: 'Buck › Lessons › Lesson Packages (golfer credits)',
+    buckFile: 'src/components/application/nov-17-2026/lesson-packages/data.ts',
+    birdieFile: 'src/pos/data/credits.ts',
+    status: 'partial',
+    note: 'A checkout tender (Nov 26) for the register’s 30- and 60-minute lesson lines. The register does not know which instructor a lesson is with, so a credit pays any instructor’s lesson of its length.',
   },
   {
     birdieArea: 'Customer Search',
-    shows: 'Rain checks: the round, awarded, used, balance, a year to spend it',
-    buckScreen: 'Buck › Reports › Credits › Rain Checks',
+    shows: 'Rain checks: the round, awarded, used, balance, a year to spend it; spent at checkout on tee times only, the amount keyed',
+    buckScreen: 'Buck › Reports › Credits › Rain Checks · Course Settings › Booking Engine (Rainchecks Only on Tee Times)',
     buckFile: CREDITS,
     birdieFile: 'src/pos/data/rain-checks.ts',
     status: 'aligned',
+    note: 'A checkout tender since Nov 26, by Buck’s two rules: tee times only, and 365 days from issue. The register’s Rain check now cuts one — keyed, never prorated, as Buck’s New rain check takes an amount — onto the seat’s customer.',
   },
 
   // ─── Bays and members ─────────────────────────────────────────────────────

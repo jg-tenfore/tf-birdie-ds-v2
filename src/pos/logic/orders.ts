@@ -20,6 +20,10 @@ export interface PaymentRef {
   cardLast4?: string;
   /** A check's number, when the operator keyed it. */
   checkNumber?: string;
+  /** The card was typed in at the reader (Key in, Nov 26), not tapped or swiped. */
+  entry?: 'keyed';
+  /** A credit that paid — a rain check, a punch card, a credit book, a lesson credit (Nov 26). */
+  credit?: import('./credit-tenders').CreditRef;
 }
 
 export interface OrderTender {
@@ -79,6 +83,18 @@ export interface OrderRecord {
   bookingId?: string;
   customerId?: string;
   eventId?: string;
+  /**
+   * Buck's per-line pricing (V1 → V2, Nov 26): what each line charged with its own tax and its share of
+   * the service charges, index for index with `lines`. A refund gives back exactly a line's share — a
+   * beer's alcohol tax with the beer — and a whole refund adds up to `total` to the cent.
+   */
+  lineTotals?: number[];
+  /** The order's tax by type and its service charges, as the receipt printed them. */
+  taxes?: { id: string; label: string; amount: number }[];
+  serviceCharges?: { id: string; label: string; amount: number }[];
+  service?: number;
+  /** A split check (Nov 26): how it was split, and each part's amount. Each part's payments are in `tenders`. */
+  split?: { mode: 'even' | 'items'; parts: { label: string; amount: number }[] };
 }
 
 const cents = (n: number) => Math.round(n * 100) / 100;
@@ -110,6 +126,16 @@ const unitOf = (l: CartItem) => (l.isCheckIn ? (l.qty > 0 ? payableTotal([l]) / 
  * a whole-order refund would — to the cent.
  */
 export function refundAmount(order: OrderRecord, picks: { index: number; qty: number }[]): number {
+  // Priced per line (V1 → V2): each line's own total, its tax and service charges with it.
+  if (order.lineTotals) {
+    return cents(
+      picks.reduce((s, p) => {
+        const l = order.lines[p.index];
+        const qty = Math.min(p.qty, refundableQty(order, p.index));
+        return l && l.qty > 0 ? s + ((order.lineTotals![p.index] ?? 0) * qty) / l.qty : s;
+      }, 0),
+    );
+  }
   const goods = picks.reduce((s, p) => {
     const l = order.lines[p.index];
     const qty = Math.min(p.qty, refundableQty(order, p.index));
@@ -163,12 +189,26 @@ function refundedByTender(order: OrderRecord): number[] {
  *
  * Refunding a whole order therefore returns exactly what each tender paid.
  */
-export function refundSplit(order: OrderRecord, amount: number, cardShare = 0): { tender: number; amount: number }[] {
+export function refundSplit(
+  order: OrderRecord,
+  amount: number,
+  cardShare = 0,
+  creditShare: Record<number, number> = {},
+): { tender: number; amount: number }[] {
   const back = refundedByTender(order);
   const room = order.tenders.map((t, i) => cents(Math.max(0, t.amount - back[i])));
   const out = order.tenders.map(() => 0);
   let left = cents(amount);
-  let cardLeft = cents(Math.min(cardShare, amount));
+  // A credit (Nov 26) takes back what it paid of the lines going back, and no more — a rain check that
+  // paid the tee fee is not handed the beer.
+  order.tenders.forEach((_, i) => {
+    if (!(i in creditShare) || left <= 0) return;
+    const give = cents(Math.min(room[i], creditShare[i], left));
+    out[i] += give;
+    room[i] = cents(room[i] - give);
+    left = cents(left - give);
+  });
+  let cardLeft = cents(Math.min(cardShare, left));
   order.tenders.forEach((t, i) => {
     if (t.method !== 'giftcard' || left <= 0) return;
     const give = cents(Math.min(room[i], cardLeft, left));
@@ -178,7 +218,7 @@ export function refundSplit(order: OrderRecord, amount: number, cardShare = 0): 
     left = cents(left - give);
   });
   for (let i = order.tenders.length - 1; i >= 0 && left > 0; i--) {
-    if (order.tenders[i].method === 'giftcard') continue;
+    if (order.tenders[i].method === 'giftcard' || i in creditShare) continue;
     const give = cents(Math.min(room[i], left));
     out[i] += give;
     left = cents(left - give);

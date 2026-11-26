@@ -6,6 +6,12 @@ import { COURSES, TIMES } from '../data/courses';
 import { useV1V2, useWestonEdits } from '../edition';
 import { useLeftPanelWidth } from '../device-context';
 import { CASH_PAYOUT_MENU_ITEM } from '../data/register-extras';
+import { productSettings } from '../data/products';
+import { VENUES } from '../data/venues';
+import { lineDiscountAmount, lineDiscountOffers } from '../logic/discounts';
+
+/** V1 → V2 (Nov 26): Buck's discount types on the whole order, from the cog. */
+const ORDER_DISCOUNT_MENU_ITEM: (typeof SETTINGS_MENU_ITEMS)[number] = { label: 'Discount Order', icon: 'sell', action: 'orderDiscount', chevron: true };
 import { ComboLine, GiftCardLine, HeldOrdersBar, HoldButton } from './RegisterExtras';
 import { RailDishLine } from './restaurant/DishLine';
 import { roundLabel } from '../logic/reservation';
@@ -51,7 +57,8 @@ export function LeftPanel() {
   const v1v2 = useV1V2();
   const railW = useLeftPanelWidth();
   // V1 → V2 adds Cash payout to the cog — a drawer action, not part of any order.
-  const menuItems = v1v2 ? [...SETTINGS_MENU_ITEMS, CASH_PAYOUT_MENU_ITEM] : SETTINGS_MENU_ITEMS;
+  // Nov 26: Buck's discounts on the whole order sit beside the promo code.
+  const menuItems = v1v2 ? [...SETTINGS_MENU_ITEMS.flatMap((i) => (i.action === 'promoCode' ? [ORDER_DISCOUNT_MENU_ITEM, i] : [i])), CASH_PAYOUT_MENU_ITEM] : SETTINGS_MENU_ITEMS;
   const orderCount = orderItemCount(state.cart);
   const hasOrder = orderCount > 0;
   const runQuickAction = useQuickAction();
@@ -81,7 +88,11 @@ export function LeftPanel() {
       case 'changeCustomer':
         return dispatch({ type: 'openModal', modal: { kind: 'golferSearch', target: 'primary' } });
       case 'promoCode':
+        // V1 → V2 (Nov 26): a real code table, applied as an order discount.
+        if (v1v2) return hasOrder ? dispatch({ type: 'openModal', modal: { kind: 'orderDiscount', tab: 'promo' } }) : toast('Add something to the order first');
         return toast('Promo code — enter at checkout');
+      case 'orderDiscount':
+        return hasOrder ? dispatch({ type: 'openModal', modal: { kind: 'orderDiscount', tab: 'types' } }) : toast('Add something to the order first');
       case 'taxExempt': {
         const has = state.cart.some((i) => i.name === 'Tax Exempt');
         if (has) {
@@ -109,6 +120,18 @@ export function LeftPanel() {
         return dispatch({ type: 'openModal', modal: { kind: 'actionPanel', action: 'raincheck' } });
       case 'cashPayout':
         return dispatch({ type: 'openModal', modal: { kind: 'cashPayout' } });
+      // V1 → V2 (Nov 26): the order tools that used to toast "coming soon".
+      case 'split':
+      case 'transferCourse':
+      case 'serviceCharge':
+        if (!v1v2) return toast(`${action} — coming soon`);
+        if (!hasOrder || state.lastPayment) return toast('Add something to the order first');
+        return dispatch({
+          type: 'openModal',
+          modal: { kind: action === 'split' ? 'splitCheck' : action === 'transferCourse' ? 'transferOrder' : 'serviceCharge' },
+        });
+      case 'reprintReceipt':
+        return v1v2 ? dispatch({ type: 'openModal', modal: { kind: 'receipt' } }) : toast(`${action} — coming soon`);
       default:
         return toast(`${action} — coming soon`);
     }
@@ -147,6 +170,8 @@ export function LeftPanel() {
 
       {/* ── Held orders (V1 → V2) ── only while something is held. */}
       {v1v2 && <HeldOrdersBar />}
+      {/* ── Orders sent here from another course (Nov 26) ── */}
+      {v1v2 && <ArrivedOrdersBar />}
 
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
@@ -387,6 +412,10 @@ export function LeftPanel() {
                 <ComboLine key={`${item.name}-${i}`} item={item} index={i} />
               ) : item.giftCard ? (
                 <GiftCardLine key={`${item.name}-${i}`} item={item} index={i} />
+              ) : item.serviceCharge ? (
+                <ServiceChargeLine key={`${item.name}-${i}`} item={item} index={i} amount={totals.serviceCharges?.find((c) => c.id === `${item.serviceCharge!.id}-${i}`)?.amount ?? 0} />
+              ) : item.orderDiscount ? (
+                <OrderDiscountLine key={`${item.name}-${i}`} item={item} index={i} amount={-(totals.discountLines?.find((d) => d.id === `order-${i}`)?.amount ?? 0)} />
               ) : (
                 <StandardLine key={`${item.name}-${i}`} item={item} index={i} />
               ),
@@ -468,10 +497,27 @@ export function LeftPanel() {
           <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>
             {cart.money(totals.subtotal)}
           </Box>
+          {/* Buck's service charges (V1 → V2, Nov 26): each its own line on the order. */}
+          {(totals.serviceCharges ?? []).map((c) => (
+            <Box key={c.id} data-rail-service-charge={c.id} sx={{ display: 'contents' }}>
+              <span>{c.label}</span>
+              <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>{cart.money(c.amount)}</Box>
+            </Box>
+          ))}
           <span>Tax</span>
           <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>
             {cart.money(totals.tax)}
           </Box>
+          {/* More than one tax type on the order (Buck's per line, Nov 26): each beneath, as the receipt prints them. */}
+          {totals.taxes && totals.taxes.length > 1 &&
+            totals.taxes.map((t) => (
+              <Box key={t.id} data-rail-tax-line={t.id} sx={{ display: 'contents', fontSize: 11 }}>
+                <Box component="span" sx={{ pl: 1, fontSize: 11 }}>
+                  {t.label}
+                </Box>
+                <Box sx={{ textAlign: 'right', fontSize: 11 }}>{cart.money(t.amount)}</Box>
+              </Box>
+            ))}
         </Box>
 
         {/* What is left to pay: a part already paid by gift card comes off (V1 → V2, Wave 3). */}
@@ -810,6 +856,26 @@ function CheckInLines({ item, index }: { item: CartItem; index: number }) {
           </Box>
         );
       })}
+      {/* V1 → V2 (Nov 26): a Buck discount on the round rung at the counter — League Pass, Memberships, Senior. */}
+      {state.buckCheckout && !booking && !state.splitTender && lineDiscountOffers(item, true).length > 0 && (
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1} sx={{ mt: -0.5, mb: 0.75, px: 0.5 }}>
+          {item.lineDiscount ? (
+            <Typography data-line-discount={index} sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, flex: 1 }}>
+              {item.lineDiscount.label}{' '}
+              <Box component="span" sx={{ color: md3.error, fontWeight: 700 }}>
+                {cart.creditMoney(lineDiscountAmount(item, cart.payableTotal([item])))}
+              </Box>
+            </Typography>
+          ) : (
+            <Box sx={{ flex: 1 }} />
+          )}
+          <Box data-line-discount-button={index}>
+            <MicroButton dashed onClick={() => dispatch({ type: 'openModal', modal: { kind: 'lineDiscount', index } })}>
+              {item.lineDiscount ? 'Edit discount' : 'Discount round'}
+            </MicroButton>
+          </Box>
+        </Stack>
+      )}
     </>
   );
 }
@@ -880,8 +946,11 @@ function MicroButton({
 
 /** Merchandise line: name, quantity stepper, line total, remove. */
 function StandardLine({ item, index }: { item: CartItem; index: number }) {
-  const { dispatch } = usePos();
+  const { state, dispatch } = usePos();
   const total = item.price * item.qty;
+  // V1 → V2 (Nov 26): Buck's discount types and the price override, from the line.
+  const discountable = state.buckCheckout && !state.splitTender && (lineDiscountOffers(item, true).length > 0 || Boolean(productSettings(item.name)?.priceOverride));
+  const off = item.lineDiscount ? lineDiscountAmount(item, total) : 0;
 
   return (
     <Stack
@@ -897,6 +966,20 @@ function StandardLine({ item, index }: { item: CartItem; index: number }) {
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{item.name}</Typography>
+        {item.priceOverride && (
+          <Typography data-price-was sx={{ fontSize: 11, color: md3.onSurfaceVariant, mt: 0.25 }}>
+            {cart.money(item.price)} each · was {cart.money(item.priceOverride.from)}
+          </Typography>
+        )}
+        {item.lineDiscount && off > 0 && (
+          <Stack data-line-discount={index} direction="row" justifyContent="space-between" sx={{ mt: 0.25 }}>
+            <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
+              {item.lineDiscount.label}
+              {item.lineDiscount.approvedBy ? ' · approved' : ''}
+            </Typography>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: md3.error }}>{cart.creditMoney(off)}</Typography>
+          </Stack>
+        )}
         <Stack direction="row" alignItems="center" gap={0.375} sx={{ mt: 0.625 }}>
           {[-1, 1].map((d) => (
             <ButtonBase
@@ -922,6 +1005,13 @@ function StandardLine({ item, index }: { item: CartItem; index: number }) {
           >
             {item.qty}
           </Box>
+          {discountable && (
+            <Box sx={{ order: 3, ml: 1 }} data-line-discount-button={index}>
+              <MicroButton dashed onClick={() => dispatch({ type: 'openModal', modal: { kind: 'lineDiscount', index } })}>
+                {item.lineDiscount || item.priceOverride ? 'Edit discount' : 'Discount'}
+              </MicroButton>
+            </Box>
+          )}
         </Stack>
       </Box>
       <Typography
@@ -941,6 +1031,79 @@ function StandardLine({ item, index }: { item: CartItem; index: number }) {
       >
         <Icon name="close" size={16} />
       </ButtonBase>
+    </Stack>
+  );
+}
+
+/** A service charge added by hand (Nov 26), as its own line: its name, what it comes to, remove. */
+function ServiceChargeLine({ item, index, amount }: { item: CartItem; index: number; amount: number }) {
+  const { state, dispatch } = usePos();
+  const c = item.serviceCharge!;
+  return (
+    <Stack data-service-charge-line={c.id} direction="row" gap={1} sx={{ alignItems: 'center', p: '9px 10px', borderRadius: `${radius.md}px`, bgcolor: md3.surfaceContainer, mb: 0.75 }}>
+      <Icon name="add_circle" size={16} color={md3.onSurfaceVariant} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{c.percent != null ? `${c.label} ${c.percent}%` : c.label}</Typography>
+        <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{c.appliesTo === 'fnb' ? 'On the food and drink' : 'On the order'} · untaxed</Typography>
+      </Box>
+      <Typography sx={{ fontSize: 12, fontWeight: 700, color: md3.primary }}>{cart.money(amount)}</Typography>
+      {!state.splitTender && (
+        <ButtonBase aria-label={`Remove ${c.label}`} onClick={() => dispatch({ type: 'removeItem', index })} sx={{ color: md3.outline, p: '1px', '&:hover': { color: md3.error } }}>
+          <Icon name="close" size={16} />
+        </ButtonBase>
+      )}
+    </Stack>
+  );
+}
+
+/** Orders another course sent this register (Nov 26, Transfer to course): open one to ring it up here. */
+function ArrivedOrdersBar() {
+  const { state, dispatch } = usePos();
+  const arrived = state.transferredOrders.filter((t) => t.toVenue === state.venueId && !t.receivedAt);
+  if (!arrived.length) return null;
+  const busy = state.cart.length > 0 && !state.lastPayment;
+  return (
+    <Box data-arrived-orders sx={{ p: '8px 14px', bgcolor: md3.primaryContainer, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+      <SectionLabel color={md3.onPrimaryContainer}>Arrived from another course</SectionLabel>
+      {arrived.map((t) => (
+        <Stack key={t.id} direction="row" alignItems="center" gap={1} sx={{ mt: 0.5 }}>
+          <Typography sx={{ fontSize: 12, flex: 1, color: md3.onPrimaryContainer }}>
+            {VENUES[t.fromVenue].name} · {t.customer ?? `${t.cart.length} lines`} · {cart.money(t.total)}
+          </Typography>
+          <Button size="small" disabled={busy} data-receive-transfer={t.id} onClick={() => dispatch({ type: 'receiveTransfer', id: t.id })}>
+            Open
+          </Button>
+        </Stack>
+      ))}
+    </Box>
+  );
+}
+
+/**
+ * An order discount (Nov 26) — a Buck type or a promo code — as its own line, by name, negative.
+ * What it comes to is worked out from the lines it applies to (`discountedNets`).
+ */
+function OrderDiscountLine({ item, index, amount }: { item: CartItem; index: number; amount: number }) {
+  const { state, dispatch } = usePos();
+  const d = item.orderDiscount!;
+  return (
+    <Stack
+      data-order-discount={d.code ?? d.typeId}
+      direction="row"
+      gap={1}
+      sx={{ alignItems: 'center', p: '9px 10px', borderRadius: `${radius.md}px`, bgcolor: '#fff1f0', mb: 0.75 }}
+    >
+      <Icon name="sell" size={16} color={md3.error} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{d.label}</Typography>
+        {d.approvedBy && <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>Approved by a manager</Typography>}
+      </Box>
+      <Typography sx={{ fontSize: 12, fontWeight: 700, color: md3.error }}>{cart.creditMoney(amount)}</Typography>
+      {!state.splitTender && (
+        <ButtonBase aria-label={`Remove ${d.label}`} onClick={() => dispatch({ type: 'removeItem', index })} sx={{ color: md3.outline, p: '1px', '&:hover': { color: md3.error } }}>
+          <Icon name="close" size={16} />
+        </ButtonBase>
+      )}
     </Stack>
   );
 }

@@ -28,6 +28,7 @@ import {
   type RestaurantState,
 } from './restaurant';
 import {
+  amountDue,
   isOperationsAction,
   operationsDefaults,
   operationsReducer,
@@ -46,6 +47,8 @@ import {
   type SettingsState,
 } from './settings';
 import { isLeagueAction, leagueDefaults, leagueReducer, type LeagueAction, type LeagueState } from './league';
+import { creditLedgerDefaults, type CreditLedgerState } from './credit-ledger';
+import { checkoutDefaults, checkoutReducer, isCheckoutAction, type CheckoutAction, type CheckoutModal, type CheckoutState } from './checkout';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -145,7 +148,9 @@ export type Modal =
   /** The back office's dialogs (V1 → V2, Wave 3) — `state/operations.ts`. */
   | OperationsModal
   /** Settings' dialogs (V1 → V2) — `state/settings.ts`. */
-  | SettingsModal;
+  | SettingsModal
+  /** Checkout's credit tenders and order tools (Nov 26) — `state/checkout.ts`. */
+  | CheckoutModal;
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -286,7 +291,14 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState, LeagueState {
+export interface PosState
+  extends RegisterExtrasState,
+    RestaurantState,
+    OperationsState,
+    SettingsState,
+    LeagueState,
+    CreditLedgerState,
+    CheckoutState {
   view: MainView;
 
   /**
@@ -525,6 +537,8 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     ...operationsDefaults(),
     ...settingsDefaults(),
     ...leagueDefaults(),
+    ...creditLedgerDefaults(),
+    ...checkoutDefaults(),
     ...overrides,
   };
 }
@@ -585,6 +599,8 @@ export type Action =
       method: string;
       amount: number;
       tip?: number;
+      /** Buck's Credit Card Surcharge on a card payment (V1 → V2, Nov 26); included in `amount`, like the tip. */
+      surcharge?: number;
       /** What the tender drew on — a customer's account or card, a gift card, an event (Wave 3). */
       ref?: PaymentRef;
     }
@@ -602,6 +618,8 @@ export type Action =
   | { type: 'closeSidebar' }
   | { type: 'setNavOpen'; open: boolean }
   | { type: 'setTransportFromRow'; on: boolean }
+  /** V1 → V2 (Nov 26): price by Buck — per-line tax, service charges, discounts. Set by the shell. */
+  | { type: 'setBuckCheckout'; on: boolean }
   | { type: 'openPaidOrder'; bookingId: string }
   // Courts and bays (V1 → V2)
   | { type: 'seedResourceDay'; kind: ResourceKind; date: string }
@@ -666,7 +684,9 @@ export type Action =
   // Settings (V1 → V2): the terminal, checkout and receipts, staff and PINs.
   | SettingsAction
   // The League view (V1 → V2, 100226): a league's tee times, check-in and placement — `state/league.ts`.
-  | LeagueAction;
+  | LeagueAction
+  // Checkout that's right (Nov 26): discounts, price overrides, splits, service charges — `state/checkout.ts`.
+  | CheckoutAction;
 
 /** The cart's check-in line index, or -1. */
 const checkInIndex = (cart: CartItem[]) => cart.findIndex((i) => i.isCheckIn);
@@ -1070,6 +1090,14 @@ export function reducer(state: PosState, action: Action): PosState {
     case 'addGolfer':
       return { ...state, addedGolfers: [...state.addedGolfers, action.golfer] };
     case 'recordPayment': {
+      // A split check (Nov 26): a payment that settles one part but not the order is that part — the
+      // order stays open for the next. Every tender pays `dueNow`, so this is where a part is told apart.
+      if (state.checkSplit) {
+        const share = Math.round((action.amount - (action.tip ?? 0) - (action.surcharge ?? 0)) * 100) / 100;
+        if (share < amountDue(state) - 0.005) {
+          return reducer(state, { type: 'payPart', method: action.method, amount: share, ref: action.ref, tip: action.tip, surcharge: action.surcharge });
+        }
+      }
       // Three slices react to a payment, and two of them touch customer records. Each runs on the
       // one before's result — never beside it — so none can silently undo another (V1 → V2, Wave 3).
       const orderNumber = paidOrderNumber(state);
@@ -1098,13 +1126,14 @@ export function reducer(state: PosState, action: Action): PosState {
       // The payment ledger, and a tab being paid is closed — its table is free (Wave 2).
       const ledgered: PosState = {
         ...gifted,
-        ...recordRestaurantPayment(gifted, { method: action.method, amount: action.amount, tip: action.tip, orderNumber, ref: action.ref }),
+        ...recordRestaurantPayment(gifted, { method: action.method, amount: action.amount, tip: action.tip, surcharge: action.surcharge, orderNumber, ref: action.ref }),
       };
       // The order kept whole, stock taken off the shelf, and what the tender drew on (Wave 3).
       return recordOperationsPayment(ledgered, {
         method: action.method,
         amount: action.amount,
         tip: action.tip,
+        surcharge: action.surcharge,
         ref: action.ref,
         paymentId: ledgered.payments.at(-1)!.id,
         orderNumber,
@@ -1149,6 +1178,8 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, navOpen: action.open };
     case 'setTransportFromRow':
       return state.transportFromRow === action.on ? state : { ...state, transportFromRow: action.on };
+    case 'setBuckCheckout':
+      return state.buckCheckout === action.on ? state : { ...state, buckCheckout: action.on };
     case 'openPaidOrder':
       // Same handoff as "Open in register", plus a breadcrumb back to the reservation.
       return { ...reducer(state, { type: 'loadBooking', bookingId: action.bookingId }), returnToBooking: action.bookingId };
@@ -1332,6 +1363,7 @@ export function reducer(state: PosState, action: Action): PosState {
       if (isRestaurantAction(action)) return restaurantReducer(state, action);
       if (isOperationsAction(action)) return operationsReducer(state, action);
       if (isLeagueAction(action)) return leagueReducer(state, action, reducer);
+      if (isCheckoutAction(action)) return checkoutReducer(state, action);
       if (isSettingsAction(action))
         return settingsReducer(state, action, demoNow().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
       return isRegisterExtrasAction(action)

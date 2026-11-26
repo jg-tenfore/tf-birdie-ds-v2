@@ -7,7 +7,7 @@ import { liveCustomer, liveRoster } from '../data/roster';
 import { SEED_OPEN_SHIFT, SEED_PUNCHES, SEED_SHIFT_HISTORY, type Punch, type Shift } from '../data/staff-seed';
 import { staffByPin } from '../data/staff';
 import { STOCK_ITEMS, applyStock, seedStock, type InventoryCount, type StockedCategory } from '../data/stock';
-import { orderTotals } from '../logic/cart';
+import { lineTotals, orderTotals } from '../logic/cart';
 import { allRefundable, refundAmount, refundSplit, type OrderRecord, type OrderTender, type PaymentRef, type RefundPart, type RefundRecord } from '../logic/orders';
 import { giftCardCovers } from '../logic/tenders';
 import { DEFAULT_GIFT_CATEGORIES } from '../data/spend';
@@ -15,8 +15,12 @@ import type { PaymentRecord } from '../logic/restaurant';
 import { drawerWorkings } from '../logic/shift';
 import type { Booking, CartItem } from '../types';
 import { bookingOrder } from '../logic/booking-orders';
+import { orderNumberFromId } from '../logic/reservation';
 import { rateContext } from './rate-context';
 import type { PosState } from './pos-store';
+import { applyCredit } from './credit-ledger';
+import { currentPart, pricingOf } from './checkout';
+import { isCreditMethod } from '../logic/credit-tenders';
 import type { DrawerEvent } from './register-extras';
 
 /**
@@ -178,8 +182,11 @@ export type OperationsAction =
   /** Loads an event's bill onto the register for its organiser to pay. */
   | { type: 'billEvent'; eventId: string }
   // Tenders and refunds
-  /** Part of the order paid now — a gift card that does not cover it all. The rest stays due. */
-  | { type: 'payPart'; method: string; amount: number; ref?: PaymentRef }
+  /**
+   * Part of the order paid now — a gift card that does not cover it all, or one part of a split check.
+   * The rest stays due. `amount` is the order's share; a `tip` and a card `surcharge` ride with it.
+   */
+  | { type: 'payPart'; method: string; amount: number; ref?: PaymentRef; tip?: number; surcharge?: number }
   | { type: 'refundOrder'; orderNumber: string; picks?: { index: number; qty: number }[]; reason?: string }
   // What each screen has open
   | { type: 'selectOrder'; orderNumber: string | null }
@@ -259,7 +266,14 @@ export function refundPlan(
   const cards = order.tenders.filter((t) => t.method === 'giftcard' && t.ref?.giftCardId);
   const categories = [...new Set(cards.flatMap((t) => findGiftCard(s, t.ref!.giftCardId!, t.ref?.customerId)?.card.categories ?? DEFAULT_GIFT_CATEGORIES))];
   const cardShare = cards.length ? giftCardCovers({ balance: Number.POSITIVE_INFINITY, categories }, returned, Number.POSITIVE_INFINITY) : 0;
-  return refundSplit(order, amount, cardShare).map((p) => ({ tender: order.tenders[p.tender], index: p.tender, amount: p.amount }));
+  // A credit's share: what it paid of the lines going back, in proportion to how many go back.
+  const creditShare: Record<number, number> = {};
+  order.tenders.forEach((t, i) => {
+    const covers = t.ref?.credit?.covers;
+    if (!isCreditMethod(t.method) || !covers) return;
+    creditShare[i] = cents(picks.reduce((s, p) => s + (covers[p.index] ?? 0) * (p.qty / Math.max(1, order.lines[p.index]?.qty ?? 1)), 0));
+  });
+  return refundSplit(order, amount, cardShare, creditShare).map((p) => ({ tender: order.tenders[p.tender], index: p.tender, amount: p.amount }));
 }
 
 /**
@@ -287,12 +301,30 @@ export const onTheClock = (s: Pick<OperationsState, 'punches'>, staffId: string)
  */
 export const taxRateOf = (s: Pick<PosState, 'terminalSettings'>): number => s.terminalSettings.checkout.taxRate;
 
-/** The register's order, totalled at the terminal's tax rate. */
-export const registerTotals = (s: Pick<PosState, 'cart' | 'terminalSettings'>) => orderTotals(s.cart, taxRateOf(s));
+/** What the register state needs to price its order (`pricingOf`). */
+type Priced = Pick<PosState, 'cart' | 'terminalSettings' | 'buckCheckout' | 'clubPricing'> & Partial<Pick<PosState, 'payingTabId' | 'tabs' | 'payingEventId'>>;
 
-export function amountDue(s: Pick<PosState, 'cart' | 'splitTender' | 'terminalSettings'>): number {
+/** The register's order, totalled at the terminal's pricing — Buck's per line in V1 → V2 (`pricingOf`). */
+export const registerTotals = (s: Priced) => orderTotals(s.cart, pricingOf(s));
+
+export function amountDue(s: Priced & Pick<PosState, 'splitTender'>): number {
   return cents(Math.max(0, registerTotals(s).total - (s.splitTender?.paid ?? 0)));
 }
+
+/** What each line of the register's order charges with its tax (`lineTotals`), at the terminal's pricing. */
+export const registerLineTotals = (s: Priced): number[] => lineTotals(s.cart, pricingOf(s));
+
+/**
+ * What the next tender should take: everything still due — or, on a split check (Nov 26), what is left
+ * of the part being paid.
+ */
+export const dueNow = (s: Priced & Pick<PosState, 'splitTender'> & Partial<Pick<PosState, 'checkSplit'>>): number => {
+  const all = amountDue(s);
+  const split = s.checkSplit;
+  if (!split) return all;
+  const i = currentPart(split);
+  return cents(Math.min(all, Math.max(0, split.parts[i].amount - split.paid[i])));
+};
 
 /** An event's whole bill: its golf (taxed at checkout) plus everything charged to it (already taxed). */
 export function eventBill(event: GolfEvent, bookings: PosState['bookings']) {
@@ -378,6 +410,8 @@ function applyTender(
 ): PosState {
   const now = demoNow();
   const staffId = state.operatorId;
+  // A rain check, punch card, credit book or lesson credit (Nov 26). Credits never carry a tip.
+  if (ref?.credit) return applyCredit(state, ref.credit, sign, amount, orderNumber);
   if (method === 'giftcard' && ref?.giftCardId) {
     return { ...state, ...moveGiftCard(state, ref.giftCardId, ref.customerId, -sign * cents(amount + tip)) };
   }
@@ -402,9 +436,12 @@ function applyTender(
   if (method === 'event' && ref?.eventId) {
     // Charged to an event: the order's lines join its ledger, tax included, so the organiser's bill
     // reads as what was served rather than one lump. A refund goes on as a negative charge.
-    const lines = state.cart.filter((l) => !l.isTax && l.name !== 'Taxes');
+    const lines = state.cart.filter((l) => !l.isTax && l.name !== 'Taxes' && !l.serviceCharge);
     const t = registerTotals(state);
-    const taxShare = (l: CartItem) => (t.subtotal > 0 ? ((l.price * l.qty) / t.subtotal) * t.tax : 0);
+    // Buck's per-line pricing (V1 → V2): each line's own tax and service; otherwise the tax by share.
+    const exact = state.buckCheckout ? registerLineTotals(state) : null;
+    const lineTotal = (l: CartItem) =>
+      exact ? exact[state.cart.indexOf(l)] : l.price * l.qty + (t.subtotal > 0 ? ((l.price * l.qty) / t.subtotal) * t.tax : 0);
     let seq = state.opsSeq.charge;
     const charges: EventCharge[] =
       sign === 1
@@ -414,7 +451,7 @@ function applyTender(
             time: clock(now),
             description: l.name,
             qty: l.qty,
-            amount: cents(l.price * l.qty + taxShare(l)),
+            amount: cents(lineTotal(l)),
             orderNumber,
             staffId,
           }))
@@ -611,22 +648,30 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
       const due = amountDue(state);
       const amount = cents(Math.min(action.amount, due));
       if (amount <= 0 || amount >= due) return state; // the whole remainder is `recordPayment`'s job
-      const orderNumber = state.splitTender?.orderNumber ?? `#A-${30000 + state.restaurantSeq.payment + 1}`;
+      // A tee time keeps its reservation's order number on a split too, as it does paid whole.
+      const orderNumber =
+        state.splitTender?.orderNumber ?? (state.selectedBookingId ? orderNumberFromId(state.selectedBookingId) : `#A-${30000 + state.restaurantSeq.payment + 1}`);
       const paymentId = `P-${state.restaurantSeq.payment + 1}`;
+      const tip = cents(Math.max(0, action.tip ?? 0));
+      const surcharge = cents(Math.max(0, action.surcharge ?? 0));
       const payment: PaymentRecord = {
         id: paymentId,
         date: today,
         time: clock(now),
         method: action.method,
-        amount,
-        tip: 0,
+        amount: cents(amount + surcharge),
+        tip,
         orderNumber,
         staffId: state.operatorId,
         kind: 'sale',
+        ...(surcharge ? { surcharge } : {}),
         ref: action.ref,
         cardLast4: action.ref?.cardLast4,
       };
-      const after = applyTender(state, action.method, amount, action.ref, orderNumber, 1);
+      const after = applyTender(state, action.method, amount, action.ref, orderNumber, 1, tip);
+      // A split check (Nov 26): the part being paid has this much more on it.
+      const split = state.checkSplit;
+      const part = currentPart(split);
       return {
         ...after,
         payments: [...after.payments, payment],
@@ -636,6 +681,7 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
           paid: cents((state.splitTender?.paid ?? 0) + amount),
           tenders: [...(state.splitTender?.tenders ?? []), { paymentId, method: action.method, amount, ref: action.ref }],
         },
+        ...(split && { checkSplit: { ...split, paid: split.paid.map((p, i) => (i === part ? cents(p + amount) : p)) } }),
       };
     }
 
@@ -741,10 +787,11 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
  */
 export function recordOperationsPayment(
   state: PosState,
-  payment: { method: string; amount: number; tip?: number; ref?: PaymentRef; paymentId: string; orderNumber: string },
+  payment: { method: string; amount: number; tip?: number; surcharge?: number; ref?: PaymentRef; paymentId: string; orderNumber: string },
 ): PosState {
   const t = registerTotals(state);
-  const tender: OrderTender = { paymentId: payment.paymentId, method: payment.method, amount: cents(payment.amount - (payment.tip ?? 0)), ref: payment.ref };
+  // The order's share of the payment: not the tip, nor a card surcharge (Buck's, V1 → V2) — neither is refunded with the goods.
+  const tender: OrderTender = { paymentId: payment.paymentId, method: payment.method, amount: cents(payment.amount - (payment.tip ?? 0) - (payment.surcharge ?? 0)), ref: payment.ref };
   const tenders = [...(state.splitTender?.tenders ?? []), tender];
   const booking = state.selectedBookingId ? state.bookings.find((b) => b.id === state.selectedBookingId) : undefined;
   const tab = state.payingTabId ? state.tabs.find((x) => x.id === state.payingTabId) : undefined;
@@ -765,6 +812,15 @@ export function recordOperationsPayment(
     bookingId: booking?.id,
     customerId: payment.ref?.customerId ?? state.payingAccountId ?? undefined,
     eventId: payment.ref?.eventId ?? state.payingEventId ?? undefined,
+    // A split check (Nov 26): its parts, each paid by the tenders above.
+    ...(state.checkSplit && { split: { mode: state.checkSplit.mode, parts: state.checkSplit.parts.map((p) => ({ label: p.label, amount: p.amount })) } }),
+    // Buck's per-line pricing (V1 → V2): each line's exact share, and the receipt's tax and service lines.
+    ...(state.buckCheckout && {
+      lineTotals: registerLineTotals(state),
+      taxes: t.taxes,
+      serviceCharges: t.serviceCharges,
+      service: t.service,
+    }),
   };
 
   let next = applyTender(state, payment.method, tender.amount, payment.ref, payment.orderNumber, 1, payment.tip ?? 0);
@@ -793,6 +849,7 @@ export function recordOperationsPayment(
     orders: [...next.orders, order],
     stock: applyStock(next.stock, state.cart, -1),
     splitTender: null,
+    checkSplit: null,
     payingAccountId: null,
     payingEventId: null,
   };
@@ -824,5 +881,5 @@ export function unwindSplitTender(state: PosState): PosState {
     };
     next = { ...next, payments: [...next.payments, payment], restaurantSeq: { ...next.restaurantSeq, payment: next.restaurantSeq.payment + 1 } };
   }
-  return { ...next, splitTender: null };
+  return { ...next, splitTender: null, checkSplit: null };
 }

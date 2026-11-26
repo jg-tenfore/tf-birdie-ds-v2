@@ -1,4 +1,4 @@
-import { taxRateOf } from '../../state/operations';
+import { pricingOf } from '../../state/checkout';
 import { useState } from 'react';
 import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { grid as gridTokens, md3, playerAccents, radius } from '../../../theme/tokens';
@@ -58,7 +58,7 @@ export function TabEditor({ tab }: { tab: Tab }) {
 
   const target = { tabId: tab.id };
   const toSend = unsent(tab.lines).length;
-  const totals = orderTotals(tab.lines, taxRateOf(state));
+  const totals = orderTotals(tab.lines, pricingOf(state, { tab }));
   const payable = canPayTab(state, tab.id);
   const seatWord = seat ? `Seat ${seat}` : 'Shared';
 
@@ -94,7 +94,7 @@ export function TabEditor({ tab }: { tab: Tab }) {
                 Total
               </Box>
               <Box data-tab-total sx={{ textAlign: 'right', fontWeight: 800, color: md3.onSurface, fontSize: 14 }}>
-                {money(tabTotal(tab, taxRateOf(state)))}
+                {money(tabTotal(tab, pricingOf(state)))}
               </Box>
             </Box>
 
@@ -133,7 +133,7 @@ export function TabEditor({ tab }: { tab: Tab }) {
                   '&.Mui-disabled': { bgcolor: md3.surfaceHighest, color: md3.onSurfaceVariant, opacity: 0.7 },
                 }}
               >
-                Pay {money(tabTotal(tab, taxRateOf(state)))}
+                Pay {money(tabTotal(tab, pricingOf(state)))}
               </ButtonBase>
             </Stack>
 

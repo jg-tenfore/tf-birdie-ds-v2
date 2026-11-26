@@ -109,6 +109,12 @@ import PointOfSale from '@mui/icons-material/PointOfSale';
 import Print from '@mui/icons-material/Print';
 import PriorityHigh from '@mui/icons-material/PriorityHigh';
 import RadioButtonUnchecked from '@mui/icons-material/RadioButtonUnchecked';
+// Checkout that's right (Nov 26): the credit tenders, discounts, splits and the reader's key-in.
+import RadioButtonChecked from '@mui/icons-material/RadioButtonChecked';
+import ConfirmationNumber from '@mui/icons-material/ConfirmationNumber';
+import MenuBook from '@mui/icons-material/MenuBook';
+import School from '@mui/icons-material/School';
+import Store from '@mui/icons-material/Store';
 import Receipt from '@mui/icons-material/Receipt';
 import ReceiptLong from '@mui/icons-material/ReceiptLong';
 import Repeat from '@mui/icons-material/Repeat';
@@ -311,6 +317,11 @@ export const ICONS: Record<string, SvgIconComponent> = {
   print: Print,
   priority_high: PriorityHigh,
   radio_button_unchecked: RadioButtonUnchecked,
+  radio_button_checked: RadioButtonChecked,
+  confirmation_number: ConfirmationNumber,
+  menu_book: MenuBook,
+  school: School,
+  store: Store,
   receipt: Receipt,
   receipt_long: ReceiptLong,
   repeat: Repeat,

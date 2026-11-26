@@ -15,7 +15,7 @@ import { liveCustomer, searchRoster } from '../../../data/roster';
 import { idMeGroupOf } from '../../../data/golfers';
 import { seatSuggestedRecord } from '../../../logic/seat-pricing';
 import { IdMeBadge } from '../../../components/IdMeBadge';
-import { rainCheckBalance, rainChecksFor } from '../../../data/rain-checks';
+import { liveRainCheckBalance, liveRainChecksFor } from '../../../state/credit-ledger';
 import { money } from '../../../logic/cart';
 import { assignPlayer } from '../../../logic/reservation';
 import { Stack } from '../../../components/Stack';
@@ -51,7 +51,7 @@ export function CustomerRecordScreen({ route }: ScreenProps<'customerRecord'>) {
 }
 
 function Record({ customer }: { customer: Customer }) {
-  const { dispatch } = usePos();
+  const { state, dispatch } = usePos();
   const nav = useMobileNav();
   const [email, setEmail] = useState(customer.email);
   const [phone, setPhone] = useState(formatPhone(customer.phone));
@@ -61,7 +61,7 @@ function Record({ customer }: { customer: Customer }) {
 
   const tier = memberTierOf(customer);
   const idMe = idMeGroupOf(customer.id);
-  const credits = rainChecksFor(customer.id);
+  const credits = liveRainChecksFor(state, customer.id);
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
 
   return (
@@ -136,7 +136,7 @@ function Record({ customer }: { customer: Customer }) {
         <Stack direction="row" gap={1} sx={{ flexWrap: 'wrap' }}>
           <Stat label="Rewards" value={`+${customer.rewardsBalance}`} />
           <Stat label="Balance" value={money(customer.balance)} alert={customer.balance > 0} />
-          <Stat label="Rain checks" value={money(rainCheckBalance(customer.id))} />
+          <Stat label="Rain checks" value={money(liveRainCheckBalance(state, customer.id))} />
           <Stat label="Rounds" value={String(customer.teeTimes.length)} />
           <Stat label="No-shows" value={String(noShows)} alert={noShows > 0} />
         </Stack>

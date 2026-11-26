@@ -1,4 +1,4 @@
-import { taxRateOf } from '../../state/operations';
+import { pricingOf } from '../../state/checkout';
 import { useState, type ReactNode } from 'react';
 import { Box, ButtonBase, Divider, Typography } from '@mui/material';
 import { grid as gridTokens, md3, radius } from '../../../theme/tokens';
@@ -381,7 +381,7 @@ function SeatedDetail({ tabId, ctx, onOpen }: { tabId: string; ctx: FloorCtx; on
   const dishes = tab.lines.filter((l) => !l.dish?.voided);
   const waiting = unsent(tab.lines).length;
   const payable = canPayTab(state, tab.id);
-  const total = tabTotal(tab, taxRateOf(state));
+  const total = tabTotal(tab, pricingOf(state));
 
   const row = (label: string, value: ReactNode) => (
     <Stack direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
@@ -552,7 +552,7 @@ function Overview({ ctx, onPick }: { ctx: FloorCtx; onPick: (roomId: string, tab
             return item(
               t.id,
               t.name,
-              `${w?.room.name ?? ''} · ${money(tabTotal(t, taxRateOf(state)))}${min != null ? ` · sat ${formatSeated(min)}` : ''}`,
+              `${w?.room.name ?? ''} · ${money(tabTotal(t, pricingOf(state)))}${min != null ? ` · sat ${formatSeated(min)}` : ''}`,
               w ? () => onPick(w.room.id, w.table.id) : undefined,
             );
           })}

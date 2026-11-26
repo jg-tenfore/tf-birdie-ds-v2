@@ -1,6 +1,7 @@
 import { allTables, type Room } from '../data/floor';
 import { staffById, type StaffMember } from '../data/staff';
 import { tabTotal, tableLabel, unsent, type Tab } from './restaurant';
+import type { Pricing } from './pricing';
 
 /**
  * The open-tabs list (V1 → V2, Wave 2): what a row says, and how rows sort and group. Pure, so
@@ -55,7 +56,7 @@ export function formatOpenFor(min: number): string {
 }
 
 /** One row per open tab, measured against the demo's clock. */
-export function tabRows(tabs: Tab[], floor: Room[], nowMin: number, roster?: readonly StaffMember[], taxRate?: number): TabRow[] {
+export function tabRows(tabs: Tab[], floor: Room[], nowMin: number, roster?: readonly StaffMember[], taxRate?: number | Pricing): TabRow[] {
   const tables = allTables(floor);
   return tabs
     .filter((t) => t.status === 'open')

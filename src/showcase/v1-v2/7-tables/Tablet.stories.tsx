@@ -2,6 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_ROOMS, type Room } from '../../../pos/data/floor';
+import { SEED_TABS } from '../../../pos/data/restaurant-seed';
+import { money } from '../../../pos/logic/cart';
+import { buckPricing } from '../../../pos/logic/pricing';
+import { tabTotal } from '../../../pos/logic/restaurant';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
@@ -53,6 +57,12 @@ const meta = {
 
 export default meta;
 type Story = StoryObj;
+
+/**
+ * Table 10's tab as the register charges it: Buck's tax per line and, as table service, the F&B Service
+ * Charge (Nov 26). It was $154.98 at one flat rate.
+ */
+const TABLE_10_PAY = `Pay ${money(tabTotal(SEED_TABS.find((t) => t.tableId === 'd-10')!, buckPricing()))}`;
 
 const floorState = (extra: Partial<PosState> = {}) => atVenue('eighteen', { view: 'tables', leftPanelCollapsed: true, ...extra });
 
@@ -238,7 +248,7 @@ export const PayingFromTheFloor: Story = {
     await userEvent.click(tableEl(canvasElement, 'd-10'));
     const p = panel(canvasElement);
     await expect(p.getByText('The table has asked for its check.')).toBeTruthy();
-    await userEvent.click(p.getByRole('button', { name: 'Pay $154.98' }));
+    await userEvent.click(p.getByRole('button', { name: TABLE_10_PAY }));
     await waitFor(() => expect(canvasElement.querySelector('[data-restaurant-view="TablesView"]')).toBeNull());
     await waitFor(() => expect(within(canvasElement).getAllByText('Turn Burger').length).toBeGreaterThan(0));
   },
@@ -254,7 +264,7 @@ export const PayIsRefusedWhileTheRegisterIsBusy: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(tableEl(canvasElement, 'd-10'));
     const p = panel(canvasElement);
-    await expect(p.getByRole('button', { name: 'Pay $154.98' })).toBeDisabled();
+    await expect(p.getByRole('button', { name: TABLE_10_PAY })).toBeDisabled();
     await expect(p.getByText(/Another order is on the register/)).toBeTruthy();
   },
 };

@@ -24,8 +24,17 @@ import type { Customer, CustomerGiftCard, CustomerPunchCard } from './customers'
  * A Buck credit book is a pot of money for a league or an event — *Men's League Weekly Play*,
  * *Member-Guest* — that pays out **to gift cards**: Buck's own gift-card detail reads "Paid out from
  * credit book …", typed *Winnings*. So Birdie's *Winnings* cards now say which book paid them, and a
- * customer's record lists the books they are in. A book is never a tender at the counter — the
- * gift card it paid is.
+ * customer's record lists the books they are in.
+ *
+ * ## Credits as tenders (Nov 26, "checkout that's right")
+ *
+ * Justin approved the four credits Buck configures as **checkout tenders**, for the customer on the
+ * order: a **rain check** (Buck's "Rainchecks Only on Tee Times" and its 365-day expiry; the counter
+ * keys the amount, never prorates), a **punch card** (one punch per eligible item, or minutes per
+ * punch for an activity), a **credit book** (a league's or an event's account — only for what Buck
+ * says it applies to) and a **lesson credit** (one lesson of its length per credit). The cards Buck
+ * shapes with several items, and the lesson packs, are below; the rules that decide what each pays
+ * are `logic/credit-tenders.ts`.
  *
  * Titles are generic league and event names in Buck's style, invented here; balances and counts are
  * invented and fixed. No clock, no randomness: a card's book is hashed from its id.
@@ -139,3 +148,124 @@ export const giftCardTypeLine = (card: Pick<CustomerGiftCard, 'id' | 'type'>): s
   const book = creditBookOf(card);
   return book ? `${card.type} · ${book.title}` : card.type;
 };
+
+// ─── Buck's multi-item punch cards ──────────────────────────────────────────
+
+/**
+ * Buck's punch-card item kinds (`punch-cards-v2/data.ts`), the ones a counter redeems: a green fee
+ * (one punch a seat — the ride is still billed), a transportation fee, a product (one punch a unit),
+ * and an activity (minutes per punch — a bay booked for 90 minutes on a 60-minute card takes two).
+ */
+export type BuckPunchItemKind = 'green-fee' | 'transportation' | 'product' | 'activity';
+
+export interface BuckPunchItem {
+  kind: BuckPunchItemKind;
+  /** What it covers, by Birdie's own catalog name — "Any green fee", "Range Bucket Large", "Simulator Bays". */
+  target: string;
+  /** Activities: minutes one punch buys. */
+  duration?: number;
+  awarded: number;
+  used: number;
+}
+
+/** A Buck punch card on a customer, as `punch-cards-table/data.ts` shapes an owned card. */
+export interface BuckPunchCard {
+  id: string;
+  title: string;
+  /** `MM/DD/YYYY`, as Birdie's other credits print it. */
+  expires: string | null;
+  items: BuckPunchItem[];
+}
+
+/** Buck's unit for each kind ("rounds", "cart fees", "items", "sessions"). */
+export const PUNCH_UNIT: Record<BuckPunchItemKind, string> = {
+  'green-fee': 'rounds',
+  transportation: 'cart fees',
+  product: 'items',
+  activity: 'sessions',
+};
+
+/** "Simulator Bays · 60 min each", the way Buck's card lists an activity. */
+export const punchItemLabel = (i: Pick<BuckPunchItem, 'kind' | 'target' | 'duration'>): string =>
+  i.kind === 'activity' && i.duration ? `${i.target} · ${i.duration} min each` : i.target;
+
+/**
+ * The multi-item cards — invented holders and counts, Buck's shape. Marissa Chen has a range pass and
+ * a simulator-bay card beside her 20-round card; Kelsey Sutton has Buck's "Golf & Range Bundle".
+ */
+export const BUCK_PUNCH_CARDS: Record<string, BuckPunchCard[]> = {
+  '458346': [
+    { id: 'CPC-10611', title: 'Range Pass', expires: '12/31/2026', items: [{ kind: 'product', target: 'Range Bucket Large', awarded: 10, used: 3 }] },
+    { id: 'CPC-10612', title: 'Sim Bay 10-Pack', expires: '03/31/2027', items: [{ kind: 'activity', target: 'Simulator Bays', duration: 60, awarded: 10, used: 2 }] },
+  ],
+  '458349': [
+    {
+      id: 'CPC-10598',
+      title: 'Golf & Range Bundle',
+      expires: '10/31/2026',
+      items: [
+        { kind: 'green-fee', target: 'Any green fee', awarded: 10, used: 4 },
+        { kind: 'transportation', target: 'Riding Cart', awarded: 10, used: 4 },
+        { kind: 'product', target: 'Range Bucket Small', awarded: 10, used: 6 },
+      ],
+    },
+  ],
+};
+
+/** A Buck card's status, by its items: exhausted only when every item is used up. */
+export function buckPunchCardStatus(card: BuckPunchCard, today: Date = DEMO_TODAY()): PunchCardStatus {
+  const remaining = card.items.reduce((s, i) => s + Math.max(0, i.awarded - i.used), 0);
+  return punchCardStatus({ name: card.title, total: 1, remaining, expires: card.expires ?? '' }, today);
+}
+
+// ─── Lesson credits ─────────────────────────────────────────────────────────
+
+/**
+ * A pack of lesson credits on a golfer — Buck's `CreditBalance` (`nov-17-2026/lesson-packages/data.ts`):
+ * "5 × 45-Minute Private", bought for a price per lesson, good for a year after purchase. One credit
+ * pays one lesson of its length. Instructors and holders are invented.
+ */
+export interface LessonCredit {
+  id: string;
+  /** "5 × 30-Minute Tune-Up". */
+  label: string;
+  instructor: string;
+  /** The length a credit pays for — the register's lesson lines are by length. */
+  minutes: number;
+  creditsTotal: number;
+  creditsRemaining: number;
+  /** What one lesson cost in the pack. */
+  perLesson: number;
+  purchased: string;
+  /** `MM/DD/YYYY` — Buck: one year after purchase. */
+  expires: string;
+}
+
+export const LESSON_CREDITS: Record<string, LessonCredit[]> = {
+  '458347': [
+    { id: 'bal-jp-5', label: '5 × 30-Minute Tune-Up', instructor: 'Jordan Pike · Head Pro', minutes: 30, creditsTotal: 5, creditsRemaining: 3, perLesson: 50, purchased: '02/10/2026', expires: '02/10/2027' },
+    { id: 'bal-so-3', label: '3 × 60-Minute Private', instructor: 'Sam Ortega', minutes: 60, creditsTotal: 3, creditsRemaining: 1, perLesson: 88, purchased: '06/12/2025', expires: '06/12/2026' },
+  ],
+};
+
+/** The register's lesson lines, by length. */
+export const LESSON_LINE_MINUTES: Record<string, number> = { 'Lesson 30 Min': 30, 'Lesson 60 Min': 60 };
+
+// ─── Rain checks: Buck's rules ──────────────────────────────────────────────
+
+/**
+ * Buck › Course Settings: **Rainchecks Only on Tee Times** (Booking Engine, on) and **Rain Check
+ * Expiration** (Main Info, 365 days). The counter keys a rain check's amount — Buck's own New rain
+ * check takes an amount, not holes played — so nothing here prorates.
+ */
+export const RAIN_CHECK_RULES = { onlyOnTeeTimes: true, expirationDays: 365 } as const;
+
+/** `MM/DD/YYYY`, `days` after `from` — a rain check's expiry from the day it is issued. */
+export function mdyAfter(from: Date, days: number): string {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + days, 12);
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+/** `MM/DD/YYYY` → whether it is before `today`. */
+export const isPastMdy = (mdy: string | null | undefined, today: Date = DEMO_TODAY()): boolean =>
+  Boolean(mdy) && parseMdy(mdy!).getTime() < today.getTime();
