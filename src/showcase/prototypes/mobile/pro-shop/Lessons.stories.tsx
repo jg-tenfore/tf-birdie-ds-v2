@@ -5,7 +5,7 @@ import { MobileStory, mobileMeta } from '../../../pos-mobile/mobile-helpers';
 import { HOLDERS, golfer } from '../../tablet/pro-shop/checkout-kit';
 
 /**
- * Register on the handheld — **a lesson is rung up with its instructor** (Nov 26 decision).
+ * Pro Shop on the handheld — **a lesson is rung up with its instructor** (Nov 26 decision).
  *
  * The phone's form of the tablet's picker: tapping a lesson asks who it is with, in a bottom sheet.
  * With a customer on the order, each instructor shows that customer's credits of this length with
@@ -13,8 +13,8 @@ import { HOLDERS, golfer } from '../../tablet/pro-shop/checkout-kit';
  * instructor). The order line then says who the lesson is with.
  */
 const meta = {
-  title: 'Prototypes/Mobile/Register/Lessons with their instructor',
-  id: 'prototypes-mobile-register-lessons-with-their-instructor',
+  title: 'Prototypes/Mobile/Pro Shop/Lessons with their instructor',
+  id: 'prototypes-mobile-pro-shop-lessons-with-their-instructor',
   decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
