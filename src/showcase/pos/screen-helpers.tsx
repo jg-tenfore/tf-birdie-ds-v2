@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { md3, shell } from '../../theme/tokens';
+import { md3 } from '../../theme/tokens';
+import { useTabletFrame } from '../../pos/device-context';
 import { ModalContainerProvider } from '../../pos/modals/modal-container';
 import { DEMO_TODAY } from '../../pos/data/bookings';
 import { PosApp } from '../../pos/PosApp';
@@ -13,6 +14,7 @@ import {
   withWalkInOrder,
 } from '../../pos/state/scenarios';
 import type { PosState } from '../../pos/state/pos-store';
+import { useEdition } from '../../pos/edition';
 import type { Edition } from '../../pos/edition';
 import type { VenueId } from '../../pos/data/venues';
 import { venueBookings } from '../../pos/data/venues';
@@ -68,24 +70,25 @@ export const memberBooking = (): Booking => findToday((b) => b.status === 'membe
 const GROUND = 8;
 
 /**
- * The scale that fits the 1366×840 terminal, plus its ground, into the current window.
- * Never above 1: at the counter-terminal viewport the frame renders at its real size.
+ * The scale that fits the terminal, plus its ground, into the current window — the 1366×840
+ * design canvas, or the device Storybook's **Device** toolbar chose. Never above 1: at the
+ * counter-terminal viewport the frame renders at its real size.
  */
 export function useFitScale(): number {
+  const { width, height } = useTabletFrame();
   const measure = () =>
     typeof window === 'undefined'
       ? 1
-      : Math.min(
-          1,
-          (window.innerWidth - GROUND * 2) / shell.width,
-          (window.innerHeight - GROUND * 2) / shell.height,
-        );
+      : Math.min(1, (window.innerWidth - GROUND * 2) / width, (window.innerHeight - GROUND * 2) / height);
   const [scale, setScale] = useState(measure);
   useEffect(() => {
     const onResize = () => setScale(measure());
+    onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+    // `measure` closes over the frame; re-measure when a device changes it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [width, height]);
   return scale;
 }
 
@@ -95,8 +98,8 @@ export function useFitScale(): number {
  * The dark ground matches the prototype and the hosted app — it frames the terminal so a
  * screenshot reads as hardware rather than as a cropped web page.
  *
- * The terminal is a fixed 1366×840 layout, so on a smaller viewport (the Tablet and iPad
- * presets) it is scaled down whole rather than cropped: the same design, smaller. Dialogs are
+ * The terminal is a fixed layout — 1366×840, or the device the **Device** toolbar chose — so on
+ * a smaller viewport it is scaled down whole rather than cropped: the same design, smaller. Dialogs are
  * scoped into the scaled frame so they shrink with it instead of opening full-size over it.
  *
  * URL syncing stays off: Storybook already uses the address bar to track which story is
@@ -107,10 +110,16 @@ export function Screen({
   edition,
 }: {
   initialState?: Partial<PosState>;
-  /** Render Weston's edits (`'weston'`) or the base POS. Defaults to the build's own. */
+  /**
+   * Which edition renders. Defaults to the story file's `withEdition` decorator
+   * (`../edition-decorator.tsx`), and outside one to the build's own.
+   */
   edition?: Edition;
 }) {
+  const fromDecorator = useEdition();
+  const resolved = edition ?? fromDecorator;
   const scale = useFitScale();
+  const size = useTabletFrame();
   const [frame, setFrame] = useState<HTMLElement | null>(null);
   const scaled = scale < 1;
 
@@ -126,25 +135,25 @@ export function Screen({
       }}
     >
       {scaled ? (
-        <Box sx={{ width: shell.width * scale, height: shell.height * scale, flexShrink: 0 }}>
+        <Box sx={{ width: size.width * scale, height: size.height * scale, flexShrink: 0 }}>
           <Box
             ref={setFrame}
             sx={{
-              width: shell.width,
-              height: shell.height,
+              width: size.width,
+              height: size.height,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}
           >
             {frame && (
               <ModalContainerProvider container={frame}>
-                <PosApp initialState={initialState} edition={edition} />
+                <PosApp initialState={initialState} edition={resolved} />
               </ModalContainerProvider>
             )}
           </Box>
         </Box>
       ) : (
-        <PosApp initialState={initialState} edition={edition} />
+        <PosApp initialState={initialState} edition={resolved} />
       )}
     </Box>
   );

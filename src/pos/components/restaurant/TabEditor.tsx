@@ -32,7 +32,9 @@ import { MenuBrowser } from './MenuBrowser';
  * ## What this does
  *
  * - **The header is the tab.** Name (editable in place), table and room, guests on a stepper,
- *   server, and *Check requested* as a toggle the whole list can see.
+ *   server, and **Table view** — back to the floor with this tab's table selected (Nov 26: it
+ *   replaced the *Check requested* toggle in that spot). A requested check still shows, as a tag by
+ *   the table; it is set and cleared from the table's panel on the floor, where the host sees it.
  * - **Seat bands** for every seat, empty ones included, and a **Shared** band for plates the
  *   table splits. The active band says "Adding here", and the menu says where the next item goes.
  * - **The menu stays put** beside the check (`MenuBrowser`); an item with options opens the dish
@@ -239,7 +241,7 @@ function SeatBand({
   );
 }
 
-/** Name, table, guests, server, check requested — everything that is the tab rather than its food. */
+/** Name, table, guests, server, the way back to the floor — everything that is the tab rather than its food. */
 function TabHeader({ tab }: { tab: Tab }) {
   const { state, dispatch } = usePos();
   // Settings' roster (V1 → V2): someone added as a server can carry a tab.
@@ -297,6 +299,18 @@ function TabHeader({ tab }: { tab: Tab }) {
         <Icon name="table_restaurant" size={16} />
         {at ? `${tableLabel(at.table)} · ${at.room.name}` : 'No table'}
       </Stack>
+      {tab.checkRequested && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          gap={0.5}
+          data-check-requested
+          sx={{ px: 1, height: 26, borderRadius: `${radius.sm}px`, bgcolor: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}
+        >
+          <Icon name="receipt" size={14} />
+          Check requested
+        </Stack>
+      )}
 
       <Box sx={{ flex: 1 }} />
 
@@ -340,24 +354,24 @@ function TabHeader({ tab }: { tab: Tab }) {
       </Box>
 
       <ButtonBase
-        data-check-requested-toggle
-        aria-pressed={Boolean(tab.checkRequested)}
-        onClick={() => patch({ checkRequested: !tab.checkRequested })}
+        data-table-view
+        title={at ? `Back to ${tableLabel(at.table)} on the floor` : 'Back to the floor'}
+        onClick={() => dispatch({ type: 'showTabOnFloor', tabId: tab.id })}
         sx={{
           minHeight: 44,
-          px: 1.5,
+          px: 1.75,
           gap: 0.625,
           borderRadius: `${radius.xl}px`,
-          border: `1.5px solid ${tab.checkRequested ? '#b45309' : md3.outlineVariant}`,
-          bgcolor: tab.checkRequested ? '#b45309' : '#fff',
-          color: tab.checkRequested ? '#fff' : md3.onSurfaceVariant,
+          bgcolor: md3.primaryContainer,
+          color: md3.onPrimaryContainer,
           fontSize: 13,
-          fontWeight: 700,
+          fontWeight: 800,
           whiteSpace: 'nowrap',
+          '&:hover': { bgcolor: md3.primaryContainer, boxShadow: `inset 0 0 0 1.5px ${md3.primary}` },
         }}
       >
-        <Icon name="receipt" size={16} />
-        Check requested
+        <Icon name="grid_view" size={17} />
+        Table view
       </ButtonBase>
     </Stack>
   );

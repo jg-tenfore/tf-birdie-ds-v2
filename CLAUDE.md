@@ -3,8 +3,10 @@
 A **React 19 + MUI v9 + Emotion** design system for the TenFore golf-course point of sale,
 plus the prototype built from it. Scaffolded from `jg-tenfore/goose-kds`.
 
-Published at https://jg-tenfore.github.io/tf-birdie-ds-v2/ — Storybook at the root, the
-prototype at `/prototype/`, the original HTML prototype at `/reference/`.
+Published at https://jg-tenfore.github.io/tf-birdie-ds-v2/ — Storybook at the root, the current
+tablet at `/prototype/` and phone at `/mobile/`, the original port under `/archive/prototype/`
+and `/archive/mobile/`, the original HTML prototype at `/reference/`. The older per-club and
+per-edition paths are redirect pages (`scripts/build-site.mjs`).
 
 ## The rule that matters
 
@@ -12,11 +14,18 @@ prototype at `/prototype/`, the original HTML prototype at `/reference/`.
 second copy of anything. If you find yourself writing a component for one and not the other,
 stop — that's the drift this repo exists to prevent.
 
-That includes the **three prototypes**. They are not forks: a club is a course layout
-(`src/pos/data/venues.ts`), the tee sheet renders one column group per course, and each
-deployment is the same build with a different `VITE_VENUE`. Adding a fourth club is adding an
-entry to `VENUES` and a line to `PROTOTYPES` in `scripts/build-site.mjs` — never a copy of the
-app.
+That includes the **clubs**. They are not forks: a club is a course layout
+(`src/pos/data/venues.ts`), the tee sheet renders one column group per course, and any build
+opens at any club with `?venue=`. Adding a fourth club is adding an entry to `VENUES` — never a
+copy of the app.
+
+And the **devices**. The frames are `useTabletFrame()` / `useMobileFrame()` from
+`src/pos/device-context.tsx`, never the `shell` / `mobile.frame` constants: with no
+`DeviceProvider` they are the 1366×840 / 402×797 design canvases, and the prototype's device
+panel or Storybook's **Device** toolbar can put any screen on the Clover Mini (1280×800), the
+large display (1920×1080), the Quest (360×800) or the Clover Flex (360×720). Layout that depends
+on the room reads `useTabletFrameClass()` / `useMobileFrameClass()`; check a change on the
+Clover Mini and a 360px handheld before calling it done.
 
 `/reference/` is the original single-file HTML prototype, unmodified. It is the answer to
 "is this what the original did", and it is never edited.
@@ -179,33 +188,83 @@ Anything else that differs from `/reference/` is a bug, not a decision.
 ## Mobile Screens
 
 The phone companion lives in `src/pos/mobile/`, its stories in `src/showcase/pos-mobile/`
-(numbered to match POS Screens), and the hosted mobile prototypes in `src/mobile-prototype/`
-(`/mobile/`, `/mobile-18/`, `/mobile-9/` — one build per club, like the terminal), whose screen
-list is *read from* those story files — add a story and it appears. Every story must work at
+(numbered to match POS Screens), and the hosted mobile prototype in `src/mobile-prototype/`
+(`/mobile/`, current; `/archive/mobile/`, the original port), whose screen list is *read from*
+those story files — add a story and it appears. Every story must work at
 all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the stories load
 (`setVenueOverride`), so a story that assumes two courses will break at the single nine.
 
 - **Same reducer, data and logic as the terminal; different presentation.** Mobile screens use
   `usePos()` and `src/pos/logic`, never the terminal's dense components or modals.
-- **`src/pos/mobile/navigation.tsx` is the whole IA.** Four destinations on an MD3
-  navigation bar; every other route declares its presentation — `push` (back arrow),
+- **`src/pos/mobile/navigation.tsx` is the whole IA.** Destinations on an MD3 navigation bar —
+  which ones is the operator's role (`bar-by-role.ts`, V1 → V2; the golf four otherwise); every
+  other route declares its presentation — `push` (back arrow),
   `dialog` (full-screen, ✕ + confirm), `takeover` (no exit; payment only). No centred
   dialogs on the phone. Short contextual choices use `BottomSheet` from `chrome.tsx`
   (never MUI `Drawer`/`Dialog`, which portal outside the frame).
-- **402×797, MD3 touch density** via `src/theme/mobile-theme.ts` and the `mobile` token block.
+- **MD3 touch density** via `src/theme/mobile-theme.ts` and the `mobile` token block, designed
+  at 402×797 and run on 360px-wide handhelds (the Quest is the priority device).
+- **The handheld restaurant** (`screens/restaurant/`) dispatches the tablet's restaurant actions
+  and reads its logic; its stories are `src/showcase/prototypes/mobile/<area>/`, which the mobile
+  prototype indexes in V1 → V2 builds only.
 - **Story metas must write `parameters` inline** (`parameters: { ...mobileMeta.parameters }`).
   Storybook's docs plugin injects its own `parameters` key and silently overwrites one that
   arrives by spread or by variable, dropping `layout: 'fullscreen'`.
+
+## Storybook sidebar
+
+Roots, in order: **Start Here**, **Prototypes** (`Tablet` / `Mobile` › nav area › topic, the
+current edition), **Design System** (`Styles`, `Components`), **Reviews** (`Mon D – Topic`,
+newest first, `Summary` first), **Archive** (collapsed). The order lives in `storySort` in
+`.storybook/preview.tsx`.
+
+- **Never use "·", "→" or "∕" in a title.** They leak into story ids. Use "–" in review folder
+  names.
+- **Moving a file never changes its ids.** Give the meta an `id:` equal to its current component
+  id (read it from `/index.json`). MDX can't pin an id: add the old docs id to
+  `.storybook/static/legacy-redirects.js`.
+- **Every story file states its edition** with `decorators: [withEdition(…)]` from
+  `src/showcase/edition-decorator.tsx`: `'current-tablet'` / `'current-mobile'` under
+  Prototypes, `'archived'` under Archive, a literal edition under Reviews. A story's own
+  `edition` prop, or a story-level `withEdition`, still wins (that is how the few Weston-only
+  stories under Prototypes are pinned).
+- **The current phone and tablet screens of the original port** are re-rendered in the current
+  edition by thin re-export files in `src/showcase/current-edition/` (copies of the archived
+  story objects, never the objects themselves).
+- **The mobile prototype reads story files by folder**, not by sidebar title, and builds its
+  hash routes from the pinned ids (`src/mobile-prototype/screen-index.ts`).
+
+## Docs pages (Start Here, Screen indexes, Review summaries, Archive)
+
+Built on `src/stories/docs-kit/` (ported from TF Crane's kit, in Birdie's MD3 tokens). Birdie has
+no Tailwind: the kit styles itself inline plus one injected stylesheet, and every page sits in
+`<DocPage>` (`sb-unstyled`), so Storybook's docs CSS stays out. Markdown inside a kit page goes in
+`<Prose>`.
+
+- **Link into Storybook with `DocLink` / `to="<id>"`**, never a raw `?path=` anchor: it switches
+  pages through the preview channel and works under the Pages base. Docs ids end `--overview`.
+- **Link into a prototype with `tabletPrototype('#/…')` / `mobilePrototype('<story id>')`**, which
+  go through `surfaceUrl` in `SiteLink.tsx`. Never build a prototype URL by hand.
+- **Don't type counts.** Story counts come from `screen-index-data.ts` (regenerate with
+  `node scripts/gen-screen-index.mjs` after adding or moving a prototype story), device counts from
+  `devices.ts`, Buck counts from `buck-sources.ts`.
+- **Screens are real screenshots** in the flat `TerminalFrame` / `HandheldFrame`, never generated
+  device art. `node scripts/capture-screens.mjs` retakes them on their devices (prototype on :5193,
+  Storybook on :6044 for the few clipped from a story). Higgsfield art lives in `.storybook/static/docs/`
+  (not `public/`, which Vite copies into every prototype build) and is for these pages only.
+- `node scripts/check-doc-links.mjs` fails on any link target missing from `/index.json`.
 
 ## Weston Edits (editions)
 
 `src/pos/edition.tsx` defines editions: `base` (default) and `weston` (Weston's golf-first
 reservation flow). It's a context, not a fork: branch with `useWestonEdits()` only where the
 edits differ, and pass `edition="weston"` to `<Screen>` / `<MobileStory>` / `<PosApp>` /
-`<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=weston`. Published
-as `/weston-edits/` and `/weston-edits-mobile/` (18-hole club). Storybook's **Weston Edits**
-category has `Overview` plus one folder per changed component, each with `Tablet` and
-`Mobile` story files. Per-player reservation values (`holes`, `fee`, `transport`) live on
+`<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=`, and with
+neither the prototype opens `CURRENT_EDITION` (`v1v2` on the tablet and the phone) — the
+current Birdie, published at `/prototype/` and `/mobile/` (18-hole club). The Weston Edits story files
+(`src/showcase/weston-edits/`, one folder per changed component, `Tablet` and `Mobile`) now sit
+in Storybook under **Prototypes** by nav area; their overview is **Reviews › Sep 22 – Weston
+Edits, rounds 1–5 › Summary**. Per-player reservation values (`holes`, `fee`, `transport`) live on
 `PlayerState` and are edited through `src/pos/logic/reservation.ts`. A seat's rate class is its
 own player's (`seatRateClass` in `logic/rates.ts`), so pass `rateContext(state)` — which
 carries the roster — to anything that prices a seat.

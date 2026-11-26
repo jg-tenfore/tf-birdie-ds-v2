@@ -1,0 +1,31 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, DocButton, DocLink, DocPage, Section, art, tabletPrototype } from '../docs-kit/docs-kit';
+import { AreaCards, AreaPills, KeyScreens, ScreenIndexTable, areaCountOf, countOf } from './screen-index';
+
+<Meta title="Prototypes/Tablet/Screen index" />
+
+<DocPage>
+
+<Banner
+  eyebrow="Prototypes · Tablet"
+  title="Screen index"
+  art={art('banner-tablet')}
+  pills={<AreaPills app="tablet" />}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet')}>Open the tablet prototype</DocButton><DocLink to="weston-edits-19-·-deep-links-tablet--every-link">Every deep link</DocLink></>}
+>
+  The counter terminal as the team works from it: Weston Edits plus every destination in the main nav (the V1 → V2 edition), at The Dunes of Delgado's 18-hole course. {countOf('tablet')} in {areaCountOf('tablet')}, in the nav's own order. Each area opens in the prototype at that screen; each row opens its story here.
+</Banner>
+
+<Section title="Key states" intro="Captured on the Clover Mini. Each opens the prototype in that state.">
+<KeyScreens app="tablet" />
+</Section>
+
+<Section title="Area by area" intro="The nav's three groups, as the app's menu heads them, with getting around first. The count is the area's stories; the link opens the area in the prototype on the Clover Mini.">
+<AreaCards app="tablet" />
+</Section>
+
+<Section title="Every screen" intro={`All ${countOf('tablet')}, in sidebar order. Story opens it here; the area card above opens it in the prototype.`}>
+<ScreenIndexTable app="tablet" />
+</Section>
+
+</DocPage>

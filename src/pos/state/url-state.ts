@@ -15,6 +15,7 @@ import { isOperationsModal } from './operations';
 import { DEFAULT_SETTINGS_SECTION, SETTINGS_SECTIONS, isSettingsModal, type SettingsSection } from './settings';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 import { leagueById } from '../data/leagues';
+import { resourceById } from '../data/resources';
 
 /**
  * Deep linking: a two-way map between POS state and a URL.
@@ -452,9 +453,18 @@ export function stateToHash(state: PosState): string {
   if (state.returnToLeague) q.set('from-league', state.returnToLeague);
   // A court or bay booking's panel (V1 → V2).
   if (state.resourcePanel) q.set('rb', state.resourcePanel.bookingId);
+  // Courts or bays switched off on the sheet on screen — only that sheet's, so a link to the bay
+  // sheet doesn't carry the court sheet's choice along with it.
+  if (state.view === 'courts' || state.view === 'bays') {
+    const kind = state.view === 'courts' ? 'court' : 'bay';
+    const hidden = state.hiddenResources.filter((id) => resourceById(id)?.kind === kind);
+    if (hidden.length) q.set('hide', hidden.join(','));
+  }
   // The restaurant (V1 → V2, Wave 2): the tab open in the editor, and which room of the floor.
   if (state.activeTabId) q.set('tab', state.activeTabId);
   if (state.floorRoomId !== state.floor[0]?.id) q.set('room', state.floorRoomId);
+  // The table selected on Tables (Nov 26: the tab editor's Table view lands on it).
+  if (state.view === 'tables' && state.floorTableId) q.set('table', state.floorTableId);
   // Operations (V1 → V2, Wave 3): what each screen has open. Not `order=` or `cust=` — those
   // already mean the register's scenario and the customer record.
   if (state.selectedOrderNumber) q.set('ord', state.selectedOrderNumber);
@@ -683,11 +693,18 @@ export function hashToState(hash: string, session?: UrlSession): Partial<PosStat
   // should have.
   const rb = q.get('rb');
   if (rb) patch.resourcePanel = { bookingId: rb };
+  // Courts or bays off on their sheet. Unlike `rb`, checked: an id the club doesn't have is dropped,
+  // so a stale link shows every column rather than an unexplained gap.
+  const hide = q.get('hide');
+  if (hide) patch.hiddenResources = hide.split(',').filter((id) => resourceById(id) !== undefined);
   // Taken on trust like `rb`: a tab or room that does not exist renders nothing selected.
   const tab = q.get('tab');
   if (tab) patch.activeTabId = tab;
   const room = q.get('room');
   if (room) patch.floorRoomId = room;
+  // Taken on trust like `room`: a table the floor doesn't have selects nothing.
+  const table = q.get('table');
+  if (table) patch.floorTableId = table;
   // Operations' selections, on trust like `tab`: a stale id selects nothing.
   const ord = q.get('ord');
   if (ord) patch.selectedOrderNumber = ord;

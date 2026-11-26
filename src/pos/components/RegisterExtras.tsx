@@ -6,6 +6,7 @@ import { money } from '../logic/cart';
 import { comboComponents, comboSaving, comboSavings } from '../logic/register-extras';
 import { canHold } from '../state/register-extras';
 import { usePos } from '../state/PosProvider';
+import { useTileColumns } from '../device-context';
 import type { CartItem } from '../types';
 import { CategoryButton } from './CategoryButton';
 import { Icon, SectionLabel } from './primitives';
@@ -29,13 +30,20 @@ import { Stack } from './Stack';
 
 // ─── Catalog ────────────────────────────────────────────────────────────────
 
-/** The V1 → V2 category row: Combos (a category) and Gift card (a dialog). */
-export function RegisterCategoryRow() {
+/**
+ * The V1 → V2 category row: Combos (a category) and Gift card (a dialog). `inline` drops the
+ * row's own grid so the buttons join the catalog's — the large display's six-column layout.
+ */
+export function RegisterCategoryRow({ inline = false }: { inline?: boolean } = {}) {
   const { state, dispatch } = usePos();
   return (
     <Box
       data-register-categories
-      sx={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '7px', mt: '5px' }}
+      sx={
+        inline
+          ? { display: 'contents' }
+          : { display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '7px', mt: '5px' }
+      }
     >
       {REGISTER_CATEGORIES.map((c) => {
         const active = !c.opens && state.currentCategory === c.key;
@@ -68,6 +76,8 @@ export function RegisterCategoryRow() {
  */
 export function ComboGrid() {
   const { dispatch, toast } = usePos();
+  // Three to a row; four on the large display.
+  const columns = useTileColumns(3, 4);
   const color = REGISTER_CATEGORIES.find((c) => c.key === COMBOS_CATEGORY)!.color;
 
   return (
@@ -78,7 +88,7 @@ export function ComboGrid() {
           {COMBOS.length} combos
         </Box>
       </SectionLabel>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${columns},1fr)`, gap: '8px' }}>
         {COMBOS.map((combo) => {
           const saving = comboSaving(combo);
           return (
@@ -108,6 +118,9 @@ export function ComboGrid() {
                 <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1.25 }}>{combo.name}</Typography>
                 <Typography sx={{ fontSize: 14, fontWeight: 800, color }}>{money(combo.price)}</Typography>
               </Stack>
+              <Typography data-combo-department sx={{ fontSize: 10, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: md3.outline }}>
+                {combo.department}
+              </Typography>
               <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, lineHeight: 1.35 }}>
                 {comboComponents(combo)
                   .map((c) => (c.qty > 1 ? `${c.qty} × ${c.name}` : c.name))

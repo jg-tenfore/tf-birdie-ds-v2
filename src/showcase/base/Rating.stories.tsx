@@ -4,17 +4,17 @@ import Whatshot from '@mui/icons-material/Whatshot';
 import WhatshotBorder from '@mui/icons-material/WhatshotOutlined';
 
 const meta = {
-  title: 'Components/Forms/Rating',
+  title: 'Design System/Components/Forms/Rating',
+  id: 'components-forms-rating',
   component: Rating,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'MUI `Rating` captures a quick star (or custom-icon) score. On the KDS it fits shift-end quality checks, ' +
-          'expo plate-rating, or a manager rating how a station kept pace during the rush. ' +
-          'It supports whole- or half-step precision, a configurable max, read-only display, and swappable icons. ' +
-          'Use the **Controls** panel to explore `value`, `precision`, `max`, `size`, and the read-only / disabled states.',
+          'MUI `Rating` captures a star (or custom-icon) score. **Birdie does not use it** and documents it to avoid: nothing at ' +
+          'the counter or on the handheld asks for a score. These are MUI demos with generic data from the kit this repo was ' +
+          'scaffolded from. Use the **Controls** panel to explore `value`, `precision`, `max`, `size`, and the read-only / disabled states.',
       },
     },
   },
@@ -51,15 +51,15 @@ type Story = StoryObj<typeof meta>;
 /** Fully interactive — click a star, or change any prop in the **Controls** panel. */
 export const Playground: Story = {};
 
-/** Half-star precision for finer shift-quality scores. */
+/** Half-star precision. MUI demo. */
 export const HalfRatings: Story = {
   parameters: { docs: { description: { story: 'Set `precision={0.5}` to allow half-star scores such as 3.5.' } } },
   render: (args) => <Rating {...args} precision={0.5} defaultValue={3.5} />,
 };
 
-/** Read-only display beside a label, e.g. a station's rush-performance score. */
+/** Read-only display beside a label and its number. MUI demo. */
 export const ReadOnlyWithLabel: Story = {
-  parameters: { docs: { description: { story: 'A non-interactive score paired with its label for dashboards and summaries.' } } },
+  parameters: { docs: { description: { story: 'A non-interactive score with its number beside it — the only way a score reads exactly. MUI demo.' } } },
   render: (args) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       {([
@@ -81,9 +81,9 @@ export const ReadOnlyWithLabel: Story = {
   ),
 };
 
-/** A custom "heat" icon rates how slammed a station was. */
+/** A custom icon in place of the star. */
 export const CustomIcon: Story = {
-  parameters: { docs: { description: { story: 'Swap the star for any icon — here a flame rates station "heat" during the rush.' } } },
+  parameters: { docs: { description: { story: 'Any icon can replace the star. A scale like this needs a legend, which is one reason Birdie avoids it.' } } },
   render: (args) => (
     <Rating
       {...args}

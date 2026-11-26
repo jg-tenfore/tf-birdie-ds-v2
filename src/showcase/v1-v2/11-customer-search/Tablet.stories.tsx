@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { orderTotals } from '../../../pos/logic/cart';
 import type { PosState } from '../../../pos/state/pos-store';
@@ -6,7 +7,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 11 · Customer Search / Tablet
+ * Prototypes / Tablet / Customer Search / Search & house accounts (V1 → V2 Migration, section 11)
  *
  * **Find someone, see what they owe and hold, and settle an account — with the money taken at checkout.**
  *
@@ -40,7 +41,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * - None of it exists in Weston Edits.
  */
 const meta = {
-  title: 'V1 → V2 Migration/11 · Customer Search/Tablet',
+  title: 'Prototypes/Tablet/Customer Search/Search & house accounts',
+  id: 'v1-→-v2-migration-11-·-customer-search-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

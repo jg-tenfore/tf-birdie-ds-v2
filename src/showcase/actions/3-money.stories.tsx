@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Exhibit, T0, actionParams, afterShows, mk, row, rowKey } from './action-helpers';
 import type { PlayerState } from '../../pos/types';
 
 /**
- * Tee Sheet Actions / **3 · Money**
+ * Archive / Tee Sheet Actions / **Money** (Tee Sheet Actions, section 3)
  *
  * Actions that change what is owed. All three leave the tee time in place and change only
  * its payment state, because the round happened (or was paid for) either way — the sheet is
@@ -13,7 +14,9 @@ import type { PlayerState } from '../../pos/types';
  * stories are the clearest way to see why.
  */
 const meta = {
-  title: 'Tee Sheet Actions/3 · Money',
+  title: 'Archive/Tee Sheet Actions/Money',
+  id: 'tee-sheet-actions-3-·-money',
+  decorators: [withEdition('archived')],
   parameters: actionParams,
 } satisfies Meta;
 

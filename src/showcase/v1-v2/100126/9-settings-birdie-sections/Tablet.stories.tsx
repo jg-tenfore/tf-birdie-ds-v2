@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { withEdition } from '../../../edition-decorator';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, ButtonBase, Switch, Typography } from '@mui/material';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
@@ -10,7 +11,7 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
 import { Chip, PillButton, ProposalTerminal, WhatChanged } from '../mock-kit';
 
 /**
- * V1 → V2 Migration / 100126 / 9 · Settings: Birdie's real sections
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 9 · Settings: Birdie's real sections (100126)
  *
  * **Weston:** *"actually, these I don't think are settings that we have currently… We have device
  * info. We have connecting to a reader. Then we have Clover settings that I don't think we really use
@@ -24,7 +25,9 @@ import { Chip, PillButton, ProposalTerminal, WhatChanged } from '../mock-kit';
  * marked as proposals until Weston (or Buck) confirms the real list.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/9 · Settings Birdie sections',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/9. Settings Birdie sections',
+  id: 'v1-→-v2-migration-100126-9-·-settings-birdie-sections',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { APP_IDENTITY } from '../../../pos/data/nav';
 import { STAFF } from '../../../pos/data/staff';
@@ -6,7 +7,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / Sign-in / Tablet
+ * Prototypes / Tablet / Sign-in / PIN sign-in (V1 → V2 Migration)
  *
  * **Who is at the terminal — a PIN pad, one PIN per person.**
  *
@@ -34,7 +35,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * - **Demo PINs**, clearly labelled, so anyone reviewing can get in.
  */
 const meta = {
-  title: 'V1 → V2 Migration/Sign-in/Tablet',
+  title: 'Prototypes/Tablet/Sign-in/PIN sign-in',
+  id: 'v1-→-v2-migration-sign-in-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

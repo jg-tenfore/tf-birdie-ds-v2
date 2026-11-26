@@ -51,6 +51,12 @@ export interface RestaurantState {
   floor: Room[];
   /** The room Tables and Table Chart are showing — shared, so moving between them keeps your place. */
   floorRoomId: string;
+  /**
+   * The table selected on Tables, its panel open beside the floor. Shared rather than the view's
+   * own, so a tab can send the server back to its table (`showTabOnFloor`) and a link can name it
+   * (`#/tables?table=`).
+   */
+  floorTableId: string | null;
   tabs: Tab[];
   diningReservations: DiningReservation[];
   /** Every payment, as it happened — what Orders & Tips lists. */
@@ -69,6 +75,7 @@ export interface RestaurantState {
 export const restaurantDefaults = (): RestaurantState => ({
   floor: SEED_ROOMS,
   floorRoomId: SEED_ROOMS[0].id,
+  floorTableId: null,
   tabs: SEED_TABS,
   diningReservations: SEED_RESERVATIONS,
   payments: SEED_PAYMENTS,
@@ -149,13 +156,20 @@ export type RestaurantAction =
   | { type: 'moveDish'; target: DishTarget; lineId: string; seat: number | null }
   /** Split one unit off a line of two or more onto another seat. */
   | { type: 'splitDish'; target: DishTarget; lineId: string; seat: number | null }
-  /** Percent off a dish, sent or not. 0 removes it. */
-  | { type: 'discountDish'; target: DishTarget; lineId: string; pct: number }
+  /** Percent off a dish, sent or not, and the Buck discount type it came from. 0 removes it. */
+  | { type: 'discountDish'; target: DishTarget; lineId: string; pct: number; discountTypeId?: number }
   | { type: 'sendToKitchen'; target: DishTarget }
   /** Load a tab onto the register to be paid. Refused while a different order is on the rail. */
   | { type: 'payTab'; tabId: string }
   | { type: 'saveFloor'; rooms: Room[] }
   | { type: 'setFloorRoom'; roomId: string }
+  /** Select a table on Tables (null clears it), switching to its room. */
+  | { type: 'selectFloorTable'; tableId: string | null }
+  /**
+   * Leave a tab for the floor: Tables, in the tab's room, with its table selected — the tab editor's
+   * **Table view**. A tab with no table lands on the floor with nothing selected.
+   */
+  | { type: 'showTabOnFloor'; tabId: string }
   | { type: 'createReservation'; reservation: Omit<DiningReservation, 'id' | 'status'> & { status?: ReservationStatus } }
   | { type: 'patchReservation'; id: string; patch: Partial<Omit<DiningReservation, 'id'>> }
   /** Seat a reservation at a table: opens a tab on it, sized to the party, and links the two. */
@@ -179,6 +193,8 @@ const ACTION_TYPES = new Set<string>([
   'payTab',
   'saveFloor',
   'setFloorRoom',
+  'selectFloorTable',
+  'showTabOnFloor',
   'createReservation',
   'patchReservation',
   'seatReservation',
@@ -328,7 +344,7 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
     }
 
     case 'discountDish':
-      return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? discountDishLine(l, action.pct) : l)));
+      return withLines(action.target, (ls) => ls.map((l) => (l.dish?.lineId === action.lineId ? discountDishLine(l, action.pct, action.discountTypeId) : l)));
 
     case 'sendToKitchen': {
       const tab = action.target === 'cart' ? undefined : tabById(state, action.target.tabId);
@@ -366,6 +382,26 @@ export function restaurantReducer(state: PosState, action: RestaurantAction): Po
 
     case 'setFloorRoom':
       return state.floor.some((r) => r.id === action.roomId) ? { ...state, floorRoomId: action.roomId } : state;
+
+    case 'selectFloorTable': {
+      if (!action.tableId) return { ...state, floorTableId: null };
+      const at = tableOf(state, action.tableId);
+      return at ? { ...state, floorTableId: at.table.id, floorRoomId: at.room.id } : state;
+    }
+
+    case 'showTabOnFloor': {
+      const tab = state.tabs.find((t) => t.id === action.tabId);
+      const at = tableOf(state, tab?.tableId);
+      return {
+        ...state,
+        view: 'tables',
+        // Tables is full width, like the tee sheet: the rail is out.
+        leftPanelCollapsed: true,
+        activeTabId: null,
+        floorTableId: at?.table.id ?? null,
+        floorRoomId: at?.room.id ?? state.floorRoomId,
+      };
+    }
 
     case 'createReservation': {
       const id = `R-${seq.reservation + 1}`;

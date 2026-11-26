@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { withEdition } from '../../../edition-decorator';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Typography } from '@mui/material';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
@@ -8,7 +9,7 @@ import { CompactRow, MockPanel, MockPanelFooter, MockPanelHeader, PillButton, Pr
 import { king, panelOn, sheet } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 1 · Compact player rows
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 1. Compact player rows (100126)
  *
  * **Weston:** *"Currently, even on our screens, that 4th player, you always have to scroll to get to
  * that 4th player… can you just get it all to fit on one screen so I don't have to scroll like when I
@@ -23,7 +24,9 @@ import { king, panelOn, sheet } from '../scenarios';
  * 9/18 and the price. Tap the chevron for the full editor. All four fit, with room for a group note.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/1 · Compact player rows',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/1. Compact player rows',
+  id: 'v1-→-v2-migration-100126-1-·-compact-player-rows',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

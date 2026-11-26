@@ -57,7 +57,7 @@ export function TipScreen({ route }: ScreenProps<'tip'>) {
             variant="contained"
             size="large"
             fullWidth
-            onClick={() => nav.push({ name: 'paymentReader', method: route.method, amount })}
+            onClick={() => nav.push({ name: 'paymentReader', method: route.method, amount, tip })}
           >
             Continue to reader
           </Button>

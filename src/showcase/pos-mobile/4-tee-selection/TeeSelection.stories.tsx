@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { userEvent, within } from 'storybook/test';
 import type { PosState } from '../../../pos/state/pos-store';
 import { DEMO_BOOKINGS, MobileStory, mobileMeta, withWalkInOrder } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 4 · Tee Time Selection
+ * Archive / Original port / Mobile / Tee Time Selection (Mobile Screens, section 4)
  *
  * Choosing a slot for the round on the order, and confirming a reservation. Both are
  * pushed from the order and pop back to it: the tee time is a property of the order, so
@@ -14,7 +15,9 @@ import { DEMO_BOOKINGS, MobileStory, mobileMeta, withWalkInOrder } from '../mobi
  * offered.
  */
 const meta = {
-  title: 'Mobile Screens/4 · Tee Time Selection',
+  title: 'Archive/Original port/Mobile/Tee Time Selection',
+  id: 'mobile-screens-4-·-tee-time-selection',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

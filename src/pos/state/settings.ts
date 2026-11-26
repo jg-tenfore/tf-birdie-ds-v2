@@ -1,3 +1,4 @@
+import { MAIN_INFO, printersFor } from '../data/buck-club';
 import { DEFAULT_GIFT_CATEGORIES, type SpendCategory } from '../data/spend';
 import { STAFF, type StaffMember, type StaffRole } from '../data/staff';
 import { TAX_RATE } from '../data/config';
@@ -71,13 +72,38 @@ export interface StaffRecord extends StaffMember {
 }
 
 /**
- * Settings' sections, in the order the list shows them. Birdie's own come first — device info, the
- * card reader, Clover, the tee sheet — then the V1 → V2 proposals, which Birdie does not have today.
- * Weston: *"We have device info. We have connecting to a reader. Then we have Clover settings… This is
- * a good layout. We would just add those settings here."* So Settings opens on **Device info**.
+ * Settings' sections, in the order the list shows them, in two groups (Nov 26, aligned with TF Buck).
+ *
+ * **Editable here** — what belongs to this terminal or is decided at the counter. Birdie's own come
+ * first — device info, the card reader, Clover, the tee sheet — as Weston laid them out: *"We have
+ * device info. We have connecting to a reader. Then we have Clover settings… This is a good layout. We
+ * would just add those settings here."* So Settings opens on **Device info**. Then the register and
+ * its printers, the tip suggestions and gift-card default, and staff & PINs (managers only).
+ *
+ * **Set in Buck** — the club-wide settings Buck's Course Settings owns, shown read-only under Buck's
+ * own section names: Birdie, Taxes & Fees, Payments, Transportation Types, Printers & Tablets, Main
+ * Info. See `data/buck-club.ts`.
  */
-export type SettingsSection = 'device' | 'reader' | 'clover' | 'teesheet' | 'hardware' | 'checkout' | 'staff';
-export const SETTINGS_SECTIONS: SettingsSection[] = ['device', 'reader', 'clover', 'teesheet', 'hardware', 'checkout', 'staff'];
+export type SettingsSection =
+  | 'device'
+  | 'reader'
+  | 'clover'
+  | 'teesheet'
+  | 'hardware'
+  | 'checkout'
+  | 'staff'
+  | 'birdie'
+  | 'taxes'
+  | 'payments'
+  | 'transport'
+  | 'printers'
+  | 'maininfo';
+/** The sections the counter edits. */
+export const LOCAL_SETTINGS_SECTIONS: SettingsSection[] = ['device', 'reader', 'clover', 'teesheet', 'hardware', 'checkout', 'staff'];
+/** The sections Buck owns — read-only at the counter. */
+export const BUCK_SETTINGS_SECTIONS: SettingsSection[] = ['birdie', 'taxes', 'payments', 'transport', 'printers', 'maininfo'];
+export const SETTINGS_SECTIONS: SettingsSection[] = [...LOCAL_SETTINGS_SECTIONS, ...BUCK_SETTINGS_SECTIONS];
+export const isBuckSection = (s: SettingsSection): boolean => BUCK_SETTINGS_SECTIONS.includes(s);
 /** Where Settings opens, and the section a bare `#/settings` link means. */
 export const DEFAULT_SETTINGS_SECTION: SettingsSection = 'device';
 
@@ -90,13 +116,19 @@ export interface SettingsState {
   settingsSeq: number;
 }
 
-/** The devices the simulated hardware lists offer. The first of each is what the terminal ships with. */
+/**
+ * The devices the simulated hardware lists offer. The first of each is what the terminal ships with.
+ *
+ * The two printers are the club's, as Buck's Course Settings › Printers lists them, offered by what
+ * each is for — Buck's **Pro Shop Printer** for receipts, its **Service Printer** for kitchen
+ * tickets. So a register can only be pointed at a printer the club has, for a job it does.
+ */
 export const HARDWARE_OPTIONS = {
-  receiptPrinter: ['Epson TM-m30III · Front counter', 'Star TSP143IV · Pro shop', 'None'],
+  receiptPrinter: [...printersFor('Pro Shop Printer').map((p) => p.name), 'None'],
   cardReader: ['Stripe Reader S700 · 0184', 'BBPOS WisePOS E · 2231', 'None'],
   cashDrawer: ['Opened by the receipt printer', 'USB cash drawer', 'None'],
-  kitchenPrinter: ['Epson TM-U220 · Kitchen', 'Star SP742 · 19th Hole bar', 'None'],
-} as const;
+  kitchenPrinter: [...printersFor('Service Printer').map((p) => p.name), 'None'],
+} as const satisfies Record<string, readonly string[]>;
 
 export const settingsDefaults = (): SettingsState => ({
   terminalSettings: {
@@ -112,8 +144,9 @@ export const settingsDefaults = (): SettingsState => ({
       taxRate: TAX_RATE,
       tipPresets: [15, 18, 20],
       tenders: Object.fromEntries(TENDER_KEYS.map((k) => [k, true])) as Record<TenderKey, boolean>,
-      receiptHeader: 'The Dunes of Delgado\nPro Shop · (555) 010-4400',
-      receiptFooter: 'Thank you for playing. Rain checks are good for 30 days.',
+      // Buck › Main Info's name and phone; the footer is Buck › Birdie › Pro Shop Receipt Tag.
+      receiptHeader: `${MAIN_INFO.courseName}\nPro Shop · ${MAIN_INFO.phone}`,
+      receiptFooter: 'Thank you for playing! Rain checks are good for a year.',
       giftCategories: [...DEFAULT_GIFT_CATEGORIES],
     },
   },

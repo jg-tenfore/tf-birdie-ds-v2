@@ -5,21 +5,21 @@ import CloseIcon from '@mui/icons-material/Close';
 
 /**
  * Native MUI `Snackbar` — a brief, non-blocking message that appears at the
- * edge of the screen and auto-dismisses. In the KDS it confirms transient
- * actions such as "Ticket bumped" without interrupting the cook's flow.
+ * edge of the screen and auto-dismisses. Birdie's toast is one of these, owned
+ * by the store: "{name} · marked paid", "Payment approved · $154.98".
  */
 function SnackbarDemo() {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Bump ticket
+        Mark paid
       </Button>
       <Snackbar
         open={open}
         autoHideDuration={4000}
         onClose={() => setOpen(false)}
-        message="Ticket #142 bumped"
+        message="Garcia, L. · marked paid"
         action={
           <IconButton size="small" color="inherit" onClick={() => setOpen(false)}>
             <CloseIcon fontSize="small" />
@@ -31,21 +31,21 @@ function SnackbarDemo() {
 }
 
 /**
- * Snackbar with an **Undo** action — mirrors the KDS bump-undo, giving the cook
- * a few seconds to restore a ticket bumped by mistake.
+ * Snackbar with an **Undo** action. MUI supports it; Birdie's toast does not
+ * (it is text only, and Undo lives in the screen's toolbar instead).
  */
 function SnackbarUndoDemo() {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Bump ticket
+        Move booking
       </Button>
       <Snackbar
         open={open}
         autoHideDuration={5000}
         onClose={() => setOpen(false)}
-        message="Ticket #142 bumped"
+        message="Bay 1 · moved to 11:00 AM"
         action={
           <>
             <Button color="secondary" size="small" onClick={() => setOpen(false)}>
@@ -62,16 +62,16 @@ function SnackbarUndoDemo() {
 }
 
 /**
- * Severity variants — a styled `Alert` inside the `Snackbar` colour-codes
- * success, error, warning, and info feedback.
+ * Severity variants — a styled `Alert` inside the `Snackbar`. Not used in
+ * Birdie: errors are said in place, with a Callout.
  */
 function SnackbarSeverityDemo() {
   const [severity, setSeverity] = useState<'success' | 'error' | 'warning' | 'info' | null>(null);
   const messages = {
-    success: 'Order sent to the kitchen',
-    error: 'Failed to reach the POS',
-    warning: 'Ticket #142 is running late',
-    info: '3 tickets waiting on the grill',
+    success: 'Payment approved · $154.98',
+    error: 'Card declined',
+    warning: 'Table 10 has asked for its check',
+    info: 'Receipt printed',
   } as const;
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -101,15 +101,15 @@ function SnackbarSeverityDemo() {
 }
 
 /**
- * Anchored to the top-centre — useful for board-wide alerts the whole line
- * should notice, rather than the default bottom-left toast.
+ * Anchored to the top-centre. Birdie keeps its toast at the bottom centre, inside
+ * the device frame; shown for reference.
  */
 function SnackbarAnchorDemo() {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Broadcast alert
+        Show at the top
       </Button>
       <Snackbar
         open={open}
@@ -118,7 +118,7 @@ function SnackbarAnchorDemo() {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert severity="info" variant="filled" onClose={() => setOpen(false)} sx={{ width: '100%' }}>
-          Kitchen closing in 15 minutes
+          Note saved
         </Alert>
       </Snackbar>
     </Box>
@@ -126,16 +126,17 @@ function SnackbarAnchorDemo() {
 }
 
 const meta = {
-  title: 'Components/Feedback & Status/Snackbar',
+  title: 'Design System/Components/Feedback & Status/Snackbar',
+  id: 'components-feedback-status-snackbar',
   component: SnackbarDemo,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'Native MUI `Snackbar` — a brief, non-blocking message shown at the edge of the screen that auto-dismisses after `autoHideDuration`. ' +
-          'In the golf-diner KDS it confirms transient actions such as "Ticket bumped" without interrupting the cook, and can carry an **Undo** action, a colour-coded `Alert`, or a custom `anchorOrigin`. ' +
-          'For blocking, in-progress feedback use **Backdrop** instead.',
+          'Native MUI `Snackbar` — a brief, non-blocking message shown at the edge of the screen that auto-dismisses. ' +
+          'Birdie renders exactly one per surface (PosApp, MobileApp), fed by `toast()` from the store: text only, bottom centre, 2.2 seconds. ' +
+          'The Undo, severity and anchor stories show what MUI can do and Birdie chooses not to.',
       },
     },
   },
@@ -143,12 +144,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Interactive — press **Bump ticket** to show a toast that auto-hides after 4 seconds. */
+/** Interactive — press **Mark paid** to show a toast that auto-hides after 4 seconds. */
 export const Playground: Story = {
   render: () => <SnackbarDemo />,
 };
 
-/** A bump confirmation with an **Undo** action, mirroring the KDS bump-undo pattern. */
+/** A confirmation with an **Undo** action. Not a Birdie pattern; see the page. */
 export const WithUndoAction: Story = {
   parameters: {
     docs: { description: { story: 'Snackbar with an Undo action button and a close icon.' } },
@@ -164,10 +165,10 @@ export const SeverityVariants: Story = {
   render: () => <SnackbarSeverityDemo />,
 };
 
-/** Positioned at the top-centre for board-wide broadcasts. */
+/** Positioned at the top-centre. Not a Birdie pattern. */
 export const AnchorOrigin: Story = {
   parameters: {
-    docs: { description: { story: 'A custom anchorOrigin (top-centre) for alerts the whole line should see.' } },
+    docs: { description: { story: 'A custom anchorOrigin (top-centre). Birdie keeps toasts bottom centre.' } },
   },
   render: () => <SnackbarAnchorDemo />,
 };

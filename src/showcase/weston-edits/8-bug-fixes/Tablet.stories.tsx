@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { venue } from '../../../pos/data/venues';
 import { buildTeeTimeCart, money, orderTotals } from '../../../pos/logic/cart';
@@ -7,7 +8,7 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
 import { openParty, paidTwilight, registerWith, twilightNine } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 8 · Bug Fixes / Tablet
+ * Reviews / Sep 22 – Weston Edits, rounds 1–5 / Bug fixes / Tablet (Weston Edits, section 8)
  *
  * Five bugs Weston's Loom caught in the register, and everything found chasing them since.
  * **All of it ships in every edition** — the fixes live in shared logic, not behind
@@ -93,7 +94,9 @@ import { openParty, paidTwilight, registerWith, twilightNine } from '../tablet-s
  * matched, and is not meant to be. That is the honest limit of the guard.
  */
 const meta = {
-  title: 'Weston Edits/8 · Bug Fixes/Tablet',
+  title: 'Reviews/Sep 22 – Weston Edits, rounds 1–5/Bug fixes/Tablet',
+  id: 'weston-edits-8-·-bug-fixes-tablet',
+  decorators: [withEdition('weston')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

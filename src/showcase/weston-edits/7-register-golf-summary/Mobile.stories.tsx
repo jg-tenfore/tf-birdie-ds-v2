@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, within } from 'storybook/test';
 import { money, orderTotals } from '../../../pos/logic/cart';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, loadedOrder, partlyPaidNamed } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 7 · Register Golf Summary / Mobile
+ * Prototypes / Mobile / Pro Shop / Register golf summary (Weston Edits, section 7)
  *
  * On the phone's order screen, golf from a reservation becomes a **read-only summary** —
  * players, holes, fee, transport — with **Edit reservation**. The per-player modifier push
@@ -92,7 +93,9 @@ import { adjustedParty, loadedOrder, partlyPaidNamed } from '../mobile-scenarios
  * reach the order. Same gap as the tablet's summary.
  */
 const meta = {
-  title: 'Weston Edits/7 · Register Golf Summary/Mobile',
+  title: 'Prototypes/Mobile/Pro Shop/Register golf summary',
+  id: 'weston-edits-7-·-register-golf-summary-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -108,7 +111,7 @@ type Story = StoryObj;
  * plus the goods.
  */
 export const GolfSummary: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(adjustedParty(), { extras: true })} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(adjustedParty(), { extras: true })} tab="register" stack={[{ name: 'order' }]} />,
 };
 
 /** **Edit reservation**: back on the Tee Sheet destination, on this booking's reservation. */
@@ -121,7 +124,7 @@ export const EditReservation: Story = {
 
 /** Paid seats stay on the summary so the whole party is visible, struck through and not charged. */
 export const PaidSeats: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(partlyPaidNamed())} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(partlyPaidNamed())} tab="register" stack={[{ name: 'order' }]} />,
 };
 
 /**

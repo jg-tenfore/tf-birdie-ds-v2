@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import type { PosState } from '../../../pos/state/pos-store';
 import type { MobileRoute } from '../../../pos/mobile/navigation';
 import { orderMoney } from '../../../pos/mobile/screens/register/parts';
@@ -12,7 +13,7 @@ import {
 } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 5 · Payment
+ * Archive / Original port / Mobile / Payment (Mobile Screens, section 5)
  *
  * Two kinds of screen, deliberately different. Checkout and Tip are ordinary pushed
  * pages — back returns to change your mind. The reader and the receipt are
@@ -26,7 +27,9 @@ import {
  *                    → Receipt  (member charge)
  */
 const meta = {
-  title: 'Mobile Screens/5 · Payment',
+  title: 'Archive/Original port/Mobile/Payment',
+  id: 'mobile-screens-5-·-payment',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

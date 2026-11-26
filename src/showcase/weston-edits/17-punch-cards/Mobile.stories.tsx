@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import type { ReactElement } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { bookingName } from '../../../pos/data/customers';
@@ -19,7 +20,7 @@ import {
 } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 17 · Punch Cards / Mobile
+ * Prototypes / Mobile / Pro Shop / Punch cards (Weston Edits, section 17)
  *
  * **A punch card holds prepaid rounds.** That sentence is the whole design, and getting it wrong
  * is what the old prototype did: its transport list carried a row called *Free Punch Cart*, which
@@ -130,7 +131,9 @@ import {
  *   which card, for a customer holding more than one.
  */
 const meta = {
-  title: 'Weston Edits/17 · Punch Cards/Mobile',
+  title: 'Prototypes/Mobile/Pro Shop/Punch cards',
+  id: 'weston-edits-17-·-punch-cards-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -152,7 +155,6 @@ const owes = (b: Booking, seat: number) =>
 
 const rateEditor = (b: Booking, seat: number): ReactElement => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[
@@ -164,7 +166,6 @@ const rateEditor = (b: Booking, seat: number): ReactElement => (
 
 const reservation = (b: Booking): ReactElement => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[{ name: 'bookingDetail', bookingId: b.id }]}

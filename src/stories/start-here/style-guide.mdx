@@ -1,0 +1,212 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Bullets, Code, DocButton, DocPage, Grid, NavCard, Pill, Rule, Section, SubHead, mobilePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { PayBadges, RoleSwatches, StatusChips } from './style-parts';
+
+<Meta title="Start Here/Style guide" />
+
+<DocPage>
+
+<Banner
+  eyebrow="The Birdie style guide"
+  title="Eight rules, each with a screen that follows it."
+  pills={<><Pill>Colour roles</Pill><Pill>Type and density</Pill><Pill>Slide-over and dialogs</Pill><Pill>Tee-sheet status</Pill><Pill>Money</Pill><Pill>The nav</Pill><Pill>Imagery</Pill><Pill>Sample data</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet')}>See it in the prototype</DocButton><DocButton variant="secondary" to="foundations-colors--overview">Colours</DocButton></>}
+>
+  One set of rules for the counter terminal and the handheld. Each sits beside a real screen from the current prototypes, captured on the Clover Mini or the Quest handheld, and links to the Design System page or the stories behind it.
+</Banner>
+
+<Rule
+  n={1}
+  eyebrow="Colour"
+  title="Material Design 3 roles, on the POS green"
+  img={screen('tablet-check-in-pay')}
+  caption="The register after Check in & pay · Clover Mini"
+  links={[
+    { label: 'Colours', to: 'foundations-colors--overview' },
+    { label: 'Open this screen', href: tabletPrototype('#/register/GOLF%20BALLS?booking=p04_m6') },
+  ]}
+>
+  <Bullets
+    items={[
+      ['One green.', <>The POS green <Code>#17a34a</Code> is <Code>primary</Code>; its pale partner <Code>primary-container</Code> marks what's selected or loaded. Both came verbatim from the original HTML prototype's <Code>:root</Code>.</>],
+      ['MD3 role names, never colour literals.', <>Components read <Code>md3.primary</Code>, <Code>md3.outlineVariant</Code>, <Code>payBadges.paid</Code> from <Code>src/theme/tokens.ts</Code>. A colour that recurs and isn't there gets added there.</>],
+      ['Light mode only.', 'The counter is a lit pro shop. The tokens are semantic, so a dark scheme later means adding tones, not touching components.'],
+    ]}
+  />
+</Rule>
+
+<RoleSwatches />
+
+<Rule
+  n={2}
+  eyebrow="Type and density"
+  title="Dense on the counter: 12 to 14px, mouse and touch"
+  img={screen('tablet-reservation')}
+  caption="A reservation over the tee sheet · Clover Mini"
+  flip
+  links={[
+    { label: 'Typography', to: 'foundations-typography--overview' },
+    { label: 'Player rows', to: 'weston-edits-2-·-player-rows-tablet--as-booked' },
+  ]}
+>
+  <Bullets
+    items={[
+      ['A 13px base.', 'Body text is 12 to 13px, headings 14 to 22px at 700 to 800 weight, and section labels are the 11px tracked capitals you see over every group (PLAYERS · 3/3 CHECKED IN).'],
+      ['Controls are compact.', '1.5px outlines and roughly 32 to 40px targets, sized for a counter worked with a mouse or a finger. The reservation\'s row controls are 40px since round 4.'],
+      ['Roboto renders.', <>The stack asks for Google Sans first and falls back to Roboto, which is what's bundled and what every screenshot shows.</>],
+    ]}
+  />
+</Rule>
+
+<Rule
+  eyebrow="Type and density · handheld"
+  title="Touch-first on the handheld: MD3's scale and 48dp targets"
+  img={screen('mobile-player-rows')}
+  frame="handheld"
+  caption="Player rows · Quest handheld"
+  links={[
+    { label: 'The whole phone app', to: 'prototypes-mobile-global-nav-navigation--interactive' },
+    { label: 'Open this screen', href: mobilePrototype('weston-edits-2-·-player-rows-mobile--player-rows') },
+  ]}
+>
+  <Bullets
+    items={[
+      ['Same tokens, inverted density.', <><Code>mobile-theme.ts</Code> keeps every colour but uses MD3's type scale: 16px body, 22px titles, a 64dp top app bar and an 80dp navigation bar.</>],
+      ['48dp targets.', 'A thumb, not a mouse. At 360 wide the rows tighten their gaps and margins first (one ⋮ is still 44px, open on the Devices page).'],
+      ['A pay badge reads the same on both.', 'Status colours, member dots and accents come from the same tokens, so a screen on the handheld matches the counter.'],
+    ]}
+  />
+</Rule>
+
+<Rule
+  n={3}
+  eyebrow="Panels and dialogs"
+  title="The reservation slides over the tee sheet; a record opens over everything"
+  img={screen('tablet-customer-record')}
+  caption="The customer record over the reservation · Clover Mini"
+  links={[
+    { label: 'Reservation panel', to: 'weston-edits-1-·-reservation-panel-tablet--over-the-tee-sheet' },
+    { label: 'Panel size', to: 'weston-edits-10-·-panel-size-tablet--overview' },
+    { label: 'Customer record', to: 'weston-edits-4-·-customer-profile-tablet--booker-record' },
+  ]}
+>
+  <Bullets
+    items={[
+      ['A tee time opens a slide-over, 820 wide.', 'The sheet behind it freezes under a 70% scrim, so you never lose your place. Weston chose 820 over 640 in round 4; 640 and full cover stay on the toolbar to compare.'],
+      ['Dialogs are for one decision.', 'Checkout, blocking a time, moving players: a centred dialog over the screen, closed by its own buttons.'],
+      ['A person is not part of a tee time.', 'Tapping a player\'s name opens their customer record over everything; closing it leaves the reservation exactly as it was.'],
+      ['On the handheld, nothing is centred.', 'Pages push in with a back arrow, forms are full-screen dialogs with ✕ and Save, short choices are bottom sheets, and taking payment is a takeover with no way out but finishing.'],
+    ]}
+  />
+</Rule>
+
+<Rule
+  n={4}
+  eyebrow="Status on the tee sheet"
+  title="Colour says who still owes money, first"
+  img={screen('tablet-tee-sheet')}
+  caption="The tee sheet, early morning · Clover Mini"
+  flip
+  links={[
+    { label: 'Tee sheet payment states', to: 'components-layout-structure-tee-sheet--payment-states' },
+    { label: 'Open this screen', href: tabletPrototype('#/tee-sheet?shift=early') },
+  ]}
+>
+  <Bullets
+    items={[
+      ['A chip\'s colour is its payment state, not its booking type.', 'The counter needs "who still owes" before anything else, so unpaid is the one white chip in a green row.'],
+      ['Width is the party.', 'A foursome spans four slots, a single one, so a row reads as capacity without numbers.'],
+      ['Never colour alone.', 'No-show, rain check, refunded, blocked and event chips carry the word too, and the badges beside names spell it out.'],
+    ]}
+  />
+</Rule>
+
+<div style={{ marginBottom: 12 }}>
+<StatusChips />
+</div>
+<div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', fontSize: 13 }}>
+  <span>The same states as badges, beside a name in panels and lists:</span>
+  <PayBadges />
+</div>
+
+<Rule
+  n={5}
+  eyebrow="Money and tenders"
+  title="A price is a named rate, and there is one total"
+  img={screen('tablet-checkout')}
+  caption="Checkout for a walk-in · Clover Mini"
+  links={[
+    { label: 'Rate catalog', to: 'prototypes-tablet-tee-sheet-rate-catalog--overview' },
+    { label: 'Checkout', to: 'prototypes-tablet-pro-shop-payment--checkout' },
+    { label: 'Tenders', to: 'v1-→-v2-migration-11-·-customer-search-tablet--the-tenders-in-v-1-v-2' },
+  ]}
+>
+  <Bullets
+    items={[
+      ['A seat\'s fee is a rate with a name', '("Weekday Senior Resident $54.00"), picked from what this tee time sells on this date. The system picks what the player is owed; every other rate is one tap away, dimmed, because overriding is part of the job.'],
+      ['One calculation, everywhere.', 'The row, the reservation\'s total, the register, checkout, the tip and the reader all charge the same figure. Golf is taxed by its booking\'s tax line, everything else at the sales-tax rate; a $0 seat carries no tax, and a gift card isn\'t taxed when it\'s sold.'],
+      ['Tenders sit at checkout.', 'Card reader, cash, gift card (good for everything but alcohol by default), house account (members only), card on file, check, and charge to an event. A refund goes back to the tenders that paid.'],
+    ]}
+  />
+</Rule>
+
+<Rule
+  n={6}
+  eyebrow="Navigation"
+  title="The hamburger is the menu, and the menu is v1's"
+  img={screen('tablet-main-nav')}
+  caption="The main nav · Clover Mini"
+  flip
+  links={[
+    { label: 'Main nav', to: 'weston-edits-20-·-main-nav-tablet--the-navigation' },
+    { label: 'Menu by role', to: 'v1-→-v2-migration-100126-7-·-menu-by-role--overview' },
+    { label: 'Every deep link', to: 'weston-edits-19-·-deep-links-tablet--every-link' },
+  ]}
+>
+  <Bullets
+    items={[
+      ['One gesture, one meaning.', 'The hamburger opens the menu, on the collapsed rail and the expanded one alike. The rail\'s own body expands it.'],
+      ['v1\'s destinations, in v1\'s groups and order:', 'Pro Shop, Restaurant, then the rest, a full-screen sheet of tiles. The header names the facility, version and device, because a support call starts by asking for them.'],
+      ['Your role decides what\'s in it.', 'A bartender doesn\'t see the tee sheet: destinations a role can\'t use are left out, not dimmed. Editing who sees what belongs in Buck.'],
+      ['On the handheld,', 'four destinations sit on the navigation bar (Tee Sheet, Register, People, More) and everything else is one level down.'],
+    ]}
+  />
+</Rule>
+
+<Rule
+  n={7}
+  eyebrow="Imagery"
+  title="Product and menu photos in the app; scene art only in the docs"
+  img={screen('tablet-dish-dialog')}
+  caption="The dish dialog, with its menu photo · Clover Mini"
+  links={[
+    { label: 'Menu photography', to: 'prototypes-tablet-quick-order-menu-photography--photographed-dishes' },
+    { label: 'Product tiles', to: 'prototypes-tablet-pro-shop-register-order--category-and-items' },
+    { label: 'Images', to: 'foundations-images--overview' },
+  ]}
+>
+  <Bullets
+    items={[
+      ['Every sellable good has its product photo,', <>square, matched to the catalog by file name (<Code>titleist-pro-v1-box.png</Code>); a test fails if one goes missing.</>],
+      ['Every dish has a menu photo:', 'generated for Birdie, single serving, three-quarter overhead on white, with no logos, hands or props. Branded snacks, sodas, beers and wines get unbranded stand-ins.'],
+      ['Rates have no picture.', 'Check-in rates, modifiers and memberships stay compact text tiles. A blank image panel would read as missing.'],
+      ['Generated scene art is for these docs only,', 'never inside the app. And no copy, here or in the app, names another company\'s product as inspiration: describe the pattern instead.'],
+    ]}
+  />
+</Rule>
+
+<Section title="8 · Sample data">
+<Grid cols={3}>
+  <NavCard eyebrow="The club" title="The Dunes of Delgado" to="prototypes-tablet-tee-sheet-club-layouts--three-nines" cta="Club layouts">
+    The facility name Buck uses too. The prototypes can show three course layouts: an 18-hole course (what the current Birdie opens on), three nines (the original port's) and a single nine. A layout is data in <Code>venues.ts</Code>, never a fork.
+  </NavCard>
+  <NavCard eyebrow="The clock" title="Always Thursday, May 21, 2026, at noon">
+    The now-line, the opening scroll, walk-ins and every timestamp read one demo clock. The booking window is generated by hashing ids, never <Code>Date.now()</Code> or <Code>Math.random()</Code>, so every screenshot is identical whenever it's taken.
+  </NavCard>
+  <NavCard eyebrow="The people" title="Invented, and linked on purpose" to="prototypes-tablet-customer-search-people--golfer-search" cta="Golfer search">
+    340 customer records, every one invented. A seat is matched to a record by a link or the booker's phone, never by name. New sample numbers are 555 numbers; demo PINs run 1111 to 6666.
+  </NavCard>
+</Grid>
+</Section>
+
+</DocPage>

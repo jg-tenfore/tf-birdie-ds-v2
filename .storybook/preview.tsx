@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react-vite';
+import { AutoDocsPage } from '../src/showcase/ds-docs/AutoDocsPage';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -7,35 +8,70 @@ import { theme } from '../src/theme';
 import { WestonDefaultsProvider, westonDefaultsKey } from '../src/pos/state/weston-globals';
 import { DEFAULT_WESTON_OPTIONS } from '../src/pos/state/pos-store';
 import type { WestonOptions } from '../src/pos/state/pos-store';
+import { DEVICES, DEVICE_GROUP_LABELS, formatSize, isDeviceId } from '../src/pos/devices';
+import type { DeviceId } from '../src/pos/devices';
+import { DeviceProvider } from '../src/pos/device-context';
 
 /**
- * Birdie POS is a fixed-size counter terminal, not a responsive app: the prototype's
- * shell is 1366×840 and never reflows. Stories therefore default to that frame, and
- * the viewport control offers the neighbouring hardware sizes rather than phones.
+ * Viewports: the hardware Birdie ships on, from `src/pos/devices.ts`, plus the two design
+ * canvases every screen was drawn on.
+ *
+ * A tablet viewport is the device plus the 8px of dark ground `Screen` draws around the
+ * terminal on each side, so the whole frame — its bottom edge included — shows at 1:1 without
+ * scrolling. A phone viewport is the device exactly: the phone fills the canvas edge to edge.
+ *
+ * The canvases keep their old ids (`counterTerminal`, `mobile402`), because story files pin
+ * them — the phone stories open in `mobile402`, Weston's tablet stories in `counterTerminal`.
+ *
+ * The viewport sizes the canvas; the **Device** toolbar (below) sizes the app inside it. Pick
+ * the same device in both to see it at exactly its size.
  */
-const POS_VIEWPORTS = {
-  // Mobile Screens only — each of those story files selects it; nothing else defaults to it.
-  mobile402: {
-    name: 'Mobile · 402×797',
-    styles: { width: '402px', height: '797px' },
-    type: 'mobile' as const,
-  },
-  // The 1366×840 frame plus the 8px of dark ground `Screen` draws around it, so the whole
-  // terminal — its bottom edge included — is visible without scrolling.
-  counterTerminal: {
-    name: 'Counter terminal · 1366×840',
-    styles: { width: '1382px', height: '856px' },
-    type: 'desktop' as const,
-  },
-  tabletLandscape: {
-    name: 'Tablet · Landscape',
-    styles: { width: '1280px', height: '800px' },
-    type: 'tablet' as const,
-  },
-  ipadLandscape: {
-    name: 'iPad · Landscape',
-    styles: { width: '1024px', height: '768px' },
-    type: 'tablet' as const,
+const VIEWPORT_ID: Partial<Record<DeviceId, string>> = {
+  'tablet-canvas': 'counterTerminal',
+  'phone-canvas': 'mobile402',
+};
+const SCREEN_GROUND = 8;
+
+const POS_VIEWPORTS = Object.fromEntries(
+  DEVICES.map((d) => {
+    const ground = d.form === 'tablet' ? SCREEN_GROUND * 2 : 0;
+    return [
+      VIEWPORT_ID[d.id] ?? d.id,
+      {
+        name: `${d.label}${d.physical ? ` · ${formatSize(d.viewport)}` : ''}`,
+        styles: { width: `${d.viewport.width + ground}px`, height: `${d.viewport.height + ground}px` },
+        type: d.form === 'tablet' ? ('tablet' as const) : ('mobile' as const),
+      },
+    ];
+  }),
+);
+
+/**
+ * The **Device** toolbar: any story on any device. `auto` leaves each story on its own design
+ * canvas (1366×840 or 402×797), which is what every story and test renders without it.
+ *
+ * A device resizes the app of its own form only — a handheld leaves a tablet story on its
+ * canvas, and the other way round (see `src/pos/device-context.tsx`). Inside the frame,
+ * components lay out by the room they get: the large display shows more register tiles and a
+ * wider rail, a 360px handheld tightens the spacing of its rows.
+ */
+const DEVICE_GLOBAL_TYPES = {
+  device: {
+    name: 'Device',
+    description: 'Render the story on a device: the frame takes that device\'s size. Auto keeps the story\'s own design canvas.',
+    toolbar: {
+      icon: 'mobile' as const,
+      title: 'Device',
+      dynamicTitle: true,
+      items: [
+        { value: 'auto', title: 'Device: story canvas' },
+        ...DEVICES.map((d) => ({
+          value: d.id,
+          // Singular: "Counter terminals" → "Counter terminal", "Design canvases" → "Design canvas".
+          title: `${DEVICE_GROUP_LABELS[d.group].replace(/(canvas)es$|s$/, '$1')} · ${d.shortLabel} ${formatSize(d.viewport)}`,
+        })),
+      ],
+    },
   },
 };
 
@@ -163,12 +199,15 @@ const preview: Preview = {
   tags: ['autodocs'],
   initialGlobals: {
     viewport: { value: 'counterTerminal', isRotated: false },
+    device: 'auto',
     // The Weston switches start where the prototype stands today, so an untouched toolbar
     // shows exactly what the hosted build shows.
     ...WESTON_INITIAL_GLOBALS,
   },
-  globalTypes: WESTON_GLOBAL_TYPES,
+  globalTypes: { ...DEVICE_GLOBAL_TYPES, ...WESTON_GLOBAL_TYPES },
   parameters: {
+    // Design System entries render the Design System template; every other page is Storybook's own.
+    docs: { page: AutoDocsPage },
     viewport: { options: POS_VIEWPORTS },
     controls: {
       matchers: { color: /(background|color)$/i, date: /Date$/i },
@@ -178,126 +217,208 @@ const preview: Preview = {
       test: 'todo',
     },
     // Explicit sidebar order — Storybook sorts alphabetically otherwise.
+    //
+    // The roots are TF Crane's: Start Here, Prototypes, Design System, Reviews, then Archive.
+    // Prototypes are the current Birdie (`CURRENT_EDITION`), area by area in the nav's own
+    // order (`src/pos/data/nav.ts`), each opening on its Screen index. Reviews are newest first,
+    // each with its Summary first. Titles never use "·", "→" or "∕": they leak into story ids.
+    // Every file moved on Nov 26 pins its old id in its meta, so links from before still open.
     options: {
       storySort: {
         order: [
-          'Getting Started',
-          ['Introduction', 'Deep Links'],
-          'Foundations',
-          ['Colors', 'Typography', 'Spacing', 'Radius', 'Border', 'Effect Styles', 'Icons', 'Logos', 'Images'],
-          'Components',
+          'Start Here',
+          ['Overview', 'Style guide', 'Devices', 'Buck and Birdie', 'Process & roadmap', 'How to review', 'Deep links', '*'],
+          'Prototypes',
           [
-            'Actions',
-            'Navigation',
-            'Forms',
-            'Feedback & Status',
-            'Layout & Structure',
-            'Media & Visuals',
-            'Typography & Content',
+            'Tablet',
+            [
+              'Screen index',
+              'Global Nav',
+              ['Main nav', 'Deep links', '*'],
+              'Pro Shop',
+              [
+                'Register & order',
+                'Register golf summary',
+                'Order rail',
+                'Per-seat cart',
+                'Punch cards',
+                'Register functions',
+                'Tee time selection',
+                'Payment',
+                '*',
+              ],
+              'Tee Sheet',
+              [
+                'Sheet views',
+                'Reservation panel',
+                'Player rows',
+                'Player row detail',
+                'ID.me badge',
+                'Rate selector',
+                'Rate catalog',
+                'Financial, notes & activity',
+                'Notes & order number',
+                'Check in & pay',
+                'Next in line',
+                'Cart signout',
+                'Date navigation',
+                'Booking & check-in',
+                'Operations',
+                'Club layouts',
+                '*',
+              ],
+              'Court Sheet',
+              'Bay Sheet',
+              'Quick Order',
+              'Tabs',
+              'Tables',
+              'Reservations',
+              'Orders & Tips',
+              'Table Chart',
+              'Customer Search',
+              ['Search & house accounts', 'Customer profile', 'People', '*'],
+              'Settings',
+              'Order Lookup',
+              'Time Clock',
+              'Gift Cards',
+              'Events',
+              'Inventory',
+              'Shift',
+              'Sign-in',
+              '*',
+            ],
+            'Mobile',
+            [
+              'Screen index',
+              'Global Nav',
+              'Pro Shop',
+              [
+                'Register & order',
+                'Register golf summary',
+                'Per-seat cart',
+                'Punch cards',
+                'Tee time selection',
+                'Payment',
+                '*',
+              ],
+              'Tee Sheet',
+              [
+                'Sheet views',
+                'Reservation panel',
+                'Player rows',
+                'Player row detail',
+                'ID.me badge',
+                'Rate selector',
+                'Financial, notes & activity',
+                'Check in & pay',
+                'Next in line',
+                'Cart signout',
+                'Date navigation',
+                'Booking & check-in',
+                'Operations',
+                '*',
+              ],
+              'Court Sheet',
+              'Bay Sheet',
+              'Quick Order',
+              'Tabs',
+              'Tables',
+              'Reservations',
+              'Orders & Tips',
+              'Table Chart',
+              'Customer Search',
+              ['Customer profile', 'People', '*'],
+              'Settings',
+              'Order Lookup',
+              'Time Clock',
+              'Gift Cards',
+              'Events',
+              'Inventory',
+              'Shift',
+              'Sign-in',
+              '*',
+            ],
+            '*',
           ],
-          'App Chrome',
-          'Account',
-          ['Log in', 'Sign up', 'Forgot password', 'Verification'],
-          'POS Screens',
-          [
-            '1 · Register & Order',
-            ['Empty Register', 'Category & Items', 'Walk-in Order', 'Loaded Tee Time', 'Per-player Modifiers', 'Order Settings'],
-            '2 · Tee Sheet',
-            ['Calendar Grid', 'Compact & Bands', 'Blocks & Events', 'List View', 'Filters', 'Day Summary'],
-            '3 · Booking & Check-in',
-            ['Booking Detail', 'Players & Status', 'Financial', 'Group Notes', 'Activity', 'New Tee Time'],
-            '4 · Tee Time Selection',
-            ['Tee Picker', 'Eighteen Holes', 'Reserve Confirmation'],
-            '5 · Payment',
-            ['Checkout', 'Tip & Change', 'Payment Reader'],
-            '6 · Operations',
-            ['Block Time', 'Time Note', 'Price Override', 'League & Outing', 'Move Players', 'Rate Card', 'Multi-select'],
-            '7 · People',
-            ['Member Lookup', 'Golfer Search', 'Guest Detail', 'New Customer', 'Action Panel'],
-          ],
-          'Mobile Screens',
-          [
-            '0 · Navigation',
-            '1 · Register & Order',
-            '2 · Tee Sheet',
-            '3 · Booking & Check-in',
-            '4 · Tee Time Selection',
-            '5 · Payment',
-            '6 · Operations',
-            '7 · People',
-          ],
-          'Weston Edits',
+          'Design System',
           [
             'Overview',
-            '1 · Reservation Panel', ['Tablet', 'Mobile'],
-            '2 · Player Rows', ['Tablet', 'Mobile'],
-            '3 · ID.me Badge', ['Tablet', 'Mobile'],
-            '4 · Customer Profile', ['Tablet', 'Mobile'],
-            '5 · Financial, Notes & Activity', ['Tablet', 'Mobile'],
-            '6 · Check In & Pay', ['Tablet', 'Mobile'],
-            '7 · Register Golf Summary', ['Tablet', 'Mobile'],
-            '8 · Bug Fixes', ['Tablet', 'Mobile'],
-            '9 · Date Navigation', ['Tablet', 'Mobile'],
-            '10 · Panel Size', ['Tablet', 'Mobile'],
-            '11 · Rate Selector', ['Tablet', 'Mobile'],
-            '12 · Player Row Detail', ['Tablet', 'Mobile'],
-            '13 · Order Rail', ['Tablet'],
-            '14 · Per-seat Cart', ['Tablet', 'Mobile'],
-            '15 · Next In Line', ['Tablet', 'Mobile'],
-            '16 · Cart Signout', ['Tablet', 'Mobile'],
-            '17 · Punch Cards', ['Tablet', 'Mobile'],
-            '18 · Rate Catalog',
-            '19 · Deep Links', ['Tablet'],
-            '20 · Main Nav', ['Tablet'],
-            '21 · Notes & Order Number', ['Tablet'],
+            'Styles',
+            ['Colors', 'Typography', 'Spacing', 'Radius', 'Border', 'Effect Styles', 'Icons', 'Logos', 'Images', '*'],
+            'Components',
+            [
+              'Actions',
+              'Navigation',
+              'Forms',
+              'Feedback & Status',
+              'Layout & Structure',
+              'Media & Visuals',
+              'Typography & Content',
+              '*',
+            ],
+            '*',
           ],
-          // V1 → V2: numbered by the shipping app's nav order, which is also the build order.
-          // Sections arrive as their wave lands, so gaps in the numbering are destinations
-          // still to come — 2 · Tee Sheet is Weston Edits' own and lives there.
-          'V1 → V2 Migration',
+          'Reviews',
           [
-            'Overview',
-            '1 · Pro Shop', ['Tablet'],
-            '3 · Court Sheet', ['Tablet'],
-            '4 · Bay Sheet', ['Tablet'],
-            '5 · Quick Order', ['Tablet'],
-            '6 · Tabs', ['Tablet'],
-            '7 · Tables', ['Tablet'],
-            '8 · Reservations', ['Tablet'],
-            '9 · Orders & Tips', ['Tablet'],
-            '10 · Table Chart', ['Tablet'],
-            '11 · Customer Search', ['Tablet'],
-            '12 · Order Lookup', ['Tablet'],
-            '13 · Time Clock', ['Tablet'],
-            '14 · Gift Cards', ['Tablet'],
-            '15 · Events', ['Tablet'],
-            '16 · Inventory', ['Tablet'],
-            '17 · Shift', ['Tablet'],
-            '18 · Settings', ['Tablet'],
-            'Sign-in', ['Tablet'],
-            '100126',
+            'Oct 2 – Proposal review',
+            ['Summary', 'Built into the app', '1. Player rows v2', '8. League view v2', '*'],
+            'Oct 1 – Proposals from the Sep 30 call',
             [
-              'Overview',
-              '1 · Compact player rows', ['Original', 'Proposal', '*'],
-              '2 · Status chip instead of the stepper', ['Original', 'Proposal', '*'],
-              '3 · Membership on every player', ['Original', 'Proposal', '*'],
-              '4 · Contact details once', ['Original', 'Proposal', '*'],
-              '5 · Financial order number per player', ['Original', 'Proposal', '*'],
-              '6 · Empty rail collapsed by default', ['Original', 'Proposal', '*'],
-              '7 · Menu by role', ['Original', 'Proposal', '*'],
-              '8 · League and group view', ['Original', 'Proposal', '*'],
-              '9 · Settings Birdie sections', ['Original', 'Proposal', '*'],
-              '10 · Phone tee sheet header', ['Original', 'Proposal', '*'],
-              '11 · Phone reservation pager', ['Original', 'Proposal', '*'],
-              '12 · Course menu bug', ['Original', 'Proposal', '*'],
+              'Summary',
+              '1. Compact player rows',
+              '2. Status chip instead of the stepper',
+              '3. Membership on every player',
+              '4. Contact details once',
+              '5. Financial order number per player',
+              '6. Empty rail collapsed by default',
+              '7. Menu by role',
+              '8. League and group view',
+              '9. Settings Birdie sections',
+              '10. Phone tee sheet header',
+              '11. Phone reservation pager',
+              '12. Course menu bug',
+              '*',
             ],
-            '100226',
+            'Sep 22 – Weston Edits, rounds 1–5',
+            ['Summary', 'Bug fixes', ['Tablet', 'Mobile'], 'Panel size', ['Tablet', 'Mobile'], '*'],
+            '*',
+          ],
+          'Archive',
+          [
+            'About the archive',
+            'Original port',
             [
-              'Overview',
-              'Built into the app', ['Tablet'],
-              '1 · Player rows v2', ['Original', 'Proposal', '*'],
-              '8 · League view v2', ['Original', 'Proposal', '*'],
+              'Tablet',
+              [
+                'Register & Order',
+                'Tee Sheet',
+                ['*', 'Club Layouts'],
+                'Booking & Check-in',
+                'Tee Time Selection',
+                'Payment',
+                'Operations',
+                'People',
+                '*',
+              ],
+              'Mobile',
+              [
+                'Navigation',
+                'Register & Order',
+                'Tee Sheet',
+                'Booking & Check-in',
+                'Tee Time Selection',
+                'Payment',
+                'Operations',
+                'People',
+                '*',
+              ],
             ],
+            'Tee Sheet Actions',
+            ['Action map', 'Create', 'Booking', 'Money', 'Time row', 'Move & select', 'Course', '*'],
+            'Account',
+            ['Log in', 'Sign up', 'Forgot password', 'Verification'],
+            'V1 to V2 migration',
+            '*',
           ],
           '*',
         ],
@@ -307,6 +428,18 @@ const preview: Preview = {
   // Every story renders inside the POS theme plus a date-picker localization
   // context, so MUI and MUI X components are themed and functional everywhere.
   decorators: [
+    // The **Device** toolbar. `auto` (or anything unrecognised from an old bookmark) renders
+    // no provider at all, so the story is exactly what it was before devices existed. Keyed so
+    // a new device remounts the story: its state was built for the frame it was born in.
+    (Story, context) => {
+      const id = context.globals.device;
+      if (!isDeviceId(id)) return <Story />;
+      return (
+        <DeviceProvider key={id} device={id}>
+          <Story />
+        </DeviceProvider>
+      );
+    },
     // Carries the toolbar's variant choices down to `PosProvider`, which folds them into the
     // state it builds. The `key` is what makes the toolbar feel connected: Storybook re-renders
     // a story when a global changes but does not remount it, and these are initial-state

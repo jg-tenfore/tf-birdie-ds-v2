@@ -1,0 +1,83 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Bullets, Callout, Code, DocButton, DocLink, DocPage, DocTable, Grid, P, Pill, Section, StatusPill, screen, tabletPrototype, mobilePrototype } from '../docs-kit/docs-kit';
+import { TerminalFrame } from '../docs-kit/frames';
+import { DeviceRow, DeviceTable, deviceCount } from './devices';
+
+<Meta title="Start Here/Devices" />
+
+<DocPage>
+
+<Banner
+  eyebrow="Devices"
+  title="The hardware Birdie runs on, and how we simulate it."
+  pills={<><Pill tone="brand">{deviceCount('terminal')} counter terminals</Pill><Pill tone="brand">{deviceCount('handheld')} handhelds</Pill><Pill>{deviceCount('canvas')} design canvases</Pill><Pill tone="mint">Quest handheld is the priority</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet')}>Open the tablet prototype</DocButton><DocLink href={mobilePrototype()}>The phone prototype</DocLink></>}
+>
+  Clubs run Birdie on a counter terminal at the pro shop and on handhelds out on the course and in the dining room. The prototypes and Storybook can show any screen on any of them. Only each device's <strong>aspect ratio</strong> matters here: the design keeps its own density everywhere, dense 12–14px controls on a terminal and MD3 touch sizing on a handheld, so a device is simulated as the CSS viewport its browser actually lays out at.
+</Banner>
+
+<P>
+  Terminals render at 1×. The handhelds are XHDPI Android screens, so a 720-pixel-wide panel lays out as a 360px CSS viewport at 2×. The two <strong>design canvases</strong> are the frames every screen was drawn on before devices existed (1366×840 for the tablet, 402×797 for the phone); they stay in the list so a screen can still be compared with the size it was designed at. Every profile lives in <Code>src/pos/devices.ts</Code>, the one file the prototype, Storybook's toolbar and this page all read.
+</P>
+
+<Section title="Counter terminals" intro="The tablet app. Drawn to one scale, so the frames compare: the large display gives the layout half again as much width as the Clover Mini. Each shows the same reservation over the tee sheet, captured on that device.">
+<DeviceRow form="tablet" />
+</Section>
+
+<Section title="Handhelds" intro="The phone app. The Quest is the device staff carry and the one the phone prototype opens on; the Clover Flex is the card-reader handheld, the shortest screen Birdie runs on. Each shows the tee sheet, captured on that device.">
+<DeviceRow form="handheld" />
+</Section>
+
+<Section title="All six at a glance">
+<DeviceTable />
+</Section>
+
+<Section title="What changes per device" intro="Layouts size themselves by the room a device gives them, not by which device it is. What that means today, and what's still open.">
+<DocTable
+  columns={['Device', 'What changes', 'Still open']}
+  widths={['20%', '50%', '30%']}
+  rows={[
+    [<strong>Clover Mini · 1280×800</strong>, 'All 18 destinations fit unchanged. Dialogs keep a 16px margin to the edge, and tall dialogs cap at 720px.', <><StatusPill tone="open" /> With the order rail open beside the 820 reservation panel, only about 140px of tee sheet shows (about 226 on the design canvas).</>],
+    [<strong>Large display · 1920×1080</strong>, 'The order rail widens from 320 to 380. The register shows 7 items a row (was 5), 4 combos and 6 categories a row; the main nav 6 tiles a row; the sheets show more rows.', <><StatusPill tone="open" /> The Tabs and Orders & Tips tables spread across about 1500px, and some detail areas sit empty.</>],
+    [<strong>Quest handheld · 360×800</strong>, 'A reservation’s player row used to overrun its card. When narrow, gaps and padding tighten and list margins go from 16 to 12.', <><StatusPill tone="open" /> The row’s ⋮ target is 44px; MD3 asks for 48.</>],
+    [<strong>Clover Flex · 360×720</strong>, 'The same player-row fix. The Register’s category grid shows about two and a half rows above View order.', '—'],
+    [<strong>Design canvases</strong>, 'Unchanged: what every story renders when no device is chosen.', '—'],
+  ]}
+/>
+</Section>
+
+<Section title="Switch device in the prototype" intro="Both prototypes open on their device: the tablet on the Clover Mini, the phone on the Quest handheld.">
+<Grid cols={2}>
+<div>
+  <TerminalFrame src={screen('prototype-device-panel')} alt="The tablet prototype on the large display, with the Device panel open" size={{ width: 1440, height: 900 }} stand={false} />
+</div>
+<div style={{ fontSize: 14, lineHeight: '22px' }}>
+  <Bullets
+    items={[
+      ['The Device panel', 'floats in the corner: a grouped list (Counter terminals, Handhelds, Design canvases), and a readout of the hardware, aspect ratio, viewport and the scale it is shown at. It collapses to one line.'],
+      ['Fit to window', 'scales the device down when the window is smaller than it, and never up, so type sizes and touch targets stay true.'],
+      ['Another form switches apps.', 'Picking a handheld from the tablet opens the phone prototype at the same club and edition, and the other way round.'],
+      ['In the link:', <><Code>?device=clover-flex</Code> picks a device, and the choice is remembered; <Code>?presenter=0</Code> hides the panel, for screenshots and screen shares.</>],
+    ]}
+  />
+</div>
+</Grid>
+</Section>
+
+<Section title="Switch device in Storybook" intro="The Device toolbar renders any story on any device. Auto keeps each story on its own design canvas, which is what every story and test renders without it.">
+<TerminalFrame src={screen('storybook-device-toolbar')} alt="Storybook's Device toolbar open over a tablet story" size={{ width: 1140, height: 600 }} stand={false} />
+<div style={{ marginTop: 18 }}>
+<Bullets
+  items={[
+    ['A device only resizes stories of its own form.', 'A handheld leaves a tablet story on its canvas, and the other way round.'],
+    ['The viewport list is the device list.', 'The viewport sizes Storybook’s canvas; the Device toolbar sizes the app inside it. Pick the same device in both to see it at exactly its size.'],
+    ['It stacks with Weston’s switches.', 'Panel width, row density, transport and rate catalog still apply on any device.'],
+  ]}
+/>
+</div>
+<Callout title="A screenshot or a link for someone else?">
+Use the prototype with <Code>?device=…</Code>: the link carries the device. In Storybook, the toolbar's choice is in the URL as <Code>globals=device:quest-handheld</Code>.
+</Callout>
+</Section>
+
+</DocPage>

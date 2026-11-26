@@ -3,17 +3,16 @@ import { useState } from 'react';
 import { Backdrop, Box, Button, CircularProgress, Typography } from '@mui/material';
 
 /**
- * Native MUI `Backdrop` — a full-screen dimming layer that signals the app is
- * busy and blocks interaction while a task runs. In the KDS it fronts a
- * `CircularProgress` spinner while tickets sync from the POS or an order batch
- * is bumped. Click the dimmed area to dismiss.
+ * Native MUI `Backdrop` used as a busy screen: a full-screen dim with a spinner
+ * that blocks everything. Shown so it is recognisable; Birdie avoids it (see the
+ * page). Click the dimmed area to dismiss.
  */
 function BackdropDemo() {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Sync tickets
+        Show busy backdrop
       </Button>
       <Backdrop
         open={open}
@@ -27,15 +26,15 @@ function BackdropDemo() {
 }
 
 /**
- * Backdrop with a labelled message beneath the spinner — clearer for longer
- * operations such as reconnecting to the kitchen network.
+ * Backdrop with a labelled message beneath the spinner. Clearer than a bare
+ * spinner, and still not a Birdie pattern: the counter keeps working.
  */
 function BackdropMessageDemo() {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
       <Button variant="contained" onClick={() => setOpen(true)}>
-        Reconnect
+        Show with a message
       </Button>
       <Backdrop
         open={open}
@@ -44,7 +43,7 @@ function BackdropMessageDemo() {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
           <CircularProgress color="inherit" />
-          <Typography variant="body1">Syncing…</Typography>
+          <Typography variant="body1">Working…</Typography>
         </Box>
       </Backdrop>
     </Box>
@@ -52,16 +51,17 @@ function BackdropMessageDemo() {
 }
 
 const meta = {
-  title: 'Components/Feedback & Status/Backdrop',
+  title: 'Design System/Components/Feedback & Status/Backdrop',
+  id: 'components-feedback-status-backdrop',
   component: BackdropDemo,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'Native MUI `Backdrop` — a full-screen dimming layer that communicates a blocking, in-progress task and prevents interaction until it finishes. ' +
-          'In the golf-diner KDS it fronts a `CircularProgress` spinner while tickets sync from the POS or an order batch is bumped. ' +
-          'Press the button to open it, then click the dimmed area to dismiss. For non-blocking, transient feedback use **Snackbar** instead.',
+          'Native MUI `Backdrop` — a full-screen dimming layer. As a busy screen (these stories) it is avoided in Birdie; ' +
+          'the dim behind dialogs and panels comes from Dialog and the panels\' own scrims. ' +
+          'Press the button to open it, then click the dimmed area to dismiss.',
       },
     },
   },
@@ -69,12 +69,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Interactive — click **Sync tickets** to raise the backdrop, then click anywhere to close it. */
+/** Interactive — click **Show busy backdrop** to raise it, then click anywhere to close it. */
 export const Playground: Story = {
   render: () => <BackdropDemo />,
 };
 
-/** A spinner paired with a **Syncing…** label for longer-running operations. */
+/** A spinner paired with a **Working…** label. */
 export const WithMessage: Story = {
   parameters: {
     docs: { description: { story: 'Backdrop with a custom message under the spinner for longer tasks.' } },

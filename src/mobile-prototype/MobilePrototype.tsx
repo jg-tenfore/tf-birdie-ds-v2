@@ -23,10 +23,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { Stack } from '../pos/components/Stack';
 import { buildVenue } from '../pos/data/venues';
+import { DeviceProvider } from '../pos/device-context';
+import { DEFAULT_DEVICE } from '../pos/devices';
+import { buildEdition } from '../pos/edition';
+import { DevicePresenter } from '../presenter/DevicePresenter';
+import { otherAppHref } from '../presenter/device-choice';
+import { usePrototypeDevice } from '../presenter/use-prototype-device';
 import type { VenueId } from '../pos/data/venues';
 import { md3 } from '../theme/tokens';
 import { PhoneStage } from './PhoneStage';
-import { HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
+import { CURRENT, HOME, SCREENS, SECTIONS, WESTON, findScreen } from './screen-index';
 import type { ScreenEntry } from './screen-index';
 
 /**
@@ -88,46 +94,60 @@ function useRoute() {
 const DEV = import.meta.env.DEV;
 const STORYBOOK_ORIGIN = (import.meta.env.VITE_STORYBOOK_ORIGIN as string | undefined) ?? 'http://localhost:6006';
 
+/**
+ * Storybook sits at the site root; this build is one or two directories down (`/mobile/`,
+ * `/archive/mobile/`), so the root is the base path with this build's own directory taken off.
+ */
+const SITE_ROOT = import.meta.env.BASE_URL.replace(/(archive\/)?(prototype|mobile)\/$/, '');
+
 const storybookHref = (id?: string) =>
-  DEV ? `${STORYBOOK_ORIGIN}/${id ? `?path=/story/${id}` : ''}` : `../${id ? `?path=/story/${id}` : ''}`;
+  DEV ? `${STORYBOOK_ORIGIN}/${id ? `?path=/story/${id}` : ''}` : `${SITE_ROOT}${id ? `?path=/story/${id}` : ''}`;
 // ── Clubs ──────────────────────────────────────────────────────────────────
 
 /**
- * The three clubs, each its own mobile build (`/mobile/`, `/mobile-18/`, `/mobile-9/`)
- * beside the matching tablet one — the same split the terminal prototypes use. In dev one
- * server serves all three, so the club rides along as `?venue=` instead.
+ * The three clubs. One build serves all three: `?venue=` picks the club before the story
+ * modules load (`main.tsx`), in dev and in the published builds alike — the old per-club
+ * builds (`/mobile-18/`, `/mobile-9/`) are now redirects to `?venue=` on `/mobile/`.
  */
-const CLUBS: Array<{ id: VenueId; label: string; mobileDir: string; tabletDir: string }> = [
-  { id: 'three-nines', label: 'Three nines', mobileDir: 'mobile', tabletDir: 'prototype' },
-  { id: 'eighteen', label: '18 holes', mobileDir: 'mobile-18', tabletDir: 'prototype-18' },
-  { id: 'nine', label: 'Single nine', mobileDir: 'mobile-9', tabletDir: 'prototype-9' },
+const CLUBS: Array<{ id: VenueId; label: string }> = [
+  { id: 'three-nines', label: 'Three nines' },
+  { id: 'eighteen', label: '18 holes' },
+  { id: 'nine', label: 'Single nine' },
 ];
 const CLUB = CLUBS.find((c) => c.id === buildVenue()) ?? CLUBS[0];
 
-/** The same screen at another club — the hash (which story) carries over. */
+/** The same screen at another club — the hash (which story) and the device carry over. */
 const clubHref = (id: VenueId) => {
-  const club = CLUBS.find((c) => c.id === id)!;
-  const hash = typeof window === 'undefined' ? '' : window.location.hash;
-  return DEV ? `/mobile/?venue=${id}${hash}` : `../${club.mobileDir}/${hash}`;
+  if (typeof window === 'undefined') return `?venue=${id}`;
+  const q = new URLSearchParams(window.location.search);
+  q.set('venue', id);
+  return `?${q.toString()}${window.location.hash}`;
 };
 
-// Weston Edits pairs with its own tablet prototype, at the 18-hole club.
-const TABLET_HREF = WESTON
-  ? DEV
-    ? 'http://localhost:5173/?edition=weston#/tee-sheet?venue=eighteen'
-    : '../weston-edits/'
-  : DEV
-    ? `http://localhost:5173/#/register?venue=${CLUB.id}`
-    : `../${CLUB.tabletDir}/`;
+/** The tablet prototype at this club and in the matching edition, on its default device. */
+const tabletHref = () =>
+  otherAppHref({
+    target: 'tablet',
+    deviceId: DEFAULT_DEVICE.tablet,
+    search: typeof window === 'undefined' ? '' : window.location.search,
+    edition: buildEdition(),
+    venue: CLUB.id,
+    dev: DEV,
+  });
 
 /**
- * Weston Edits is one club (18 holes), so its prototype names the edition instead of
- * offering a club switch — switching would leave the edition.
+ * Which Birdie this is: the current phone is V1 → V2 — Weston's edits plus the restaurant — and
+ * the archive is the original port. A page opened with `?edition=weston` says so.
  */
 function EditionLabel() {
   return (
     <Stack direction="row" gap={0.75} sx={{ mt: 1.25 }}>
-      <Chip label="Weston Edits · 18 holes" size="small" color="primary" variant="filled" />
+      <Chip
+        label={buildEdition() === 'weston' ? 'Weston Edits' : 'Current · V1 → V2'}
+        size="small"
+        color="primary"
+        variant="filled"
+      />
     </Stack>
   );
 }
@@ -213,22 +233,23 @@ function SidebarHeader() {
   return (
     <Box sx={{ px: 2, pt: 2, pb: 1.5, borderBottom: `1px solid ${md3.outlineVariant}` }}>
       <Typography variant="h6" sx={{ fontWeight: 600, color: md3.onSurface }}>
-        ⛳ Birdie POS · {WESTON ? 'Weston Edits · Mobile' : 'Mobile'}
+        Birdie POS · {WESTON ? 'Phone' : 'Phone · Archive'}
       </Typography>
       <Typography variant="body2" sx={{ color: md3.onSurfaceVariant, mb: 1 }}>
         {WESTON
-          ? `${SCREENS.length} screens — Weston Edits first, then Mobile Screens`
-          : `${SCREENS.length} screens from Storybook's Mobile Screens`}
+          ? `${SCREENS.length} screens — Weston Edits first${CURRENT ? ', then the restaurant' : ''}, then the phone screens`
+          : `${SCREENS.length} screens — the original port, before Weston's rounds`}
       </Typography>
       <Stack direction="row" gap={2} flexWrap="wrap">
         <Link href={storybookHref()} target="_blank" rel="noopener" variant="body2" underline="hover">
           Design system (Storybook)
         </Link>
-        <Link href={TABLET_HREF} variant="body2" underline="hover">
+        <Link href={tabletHref()} variant="body2" underline="hover">
           Tablet prototype
         </Link>
       </Stack>
-      {WESTON ? <EditionLabel /> : <ClubSwitcher />}
+      {WESTON && <EditionLabel />}
+      <ClubSwitcher />
     </Box>
   );
 }
@@ -383,7 +404,32 @@ function isTyping(target: EventTarget | null) {
 
 // ── The page ───────────────────────────────────────────────────────────────
 
+/**
+ * The page, on a device: the Quest handheld by default (the priority device), or whatever the
+ * presenter's device panel picked. Picking a counter terminal opens the tablet prototype.
+ */
 export default function MobilePrototype() {
+  const d = usePrototypeDevice('handheld');
+  const [scale, setScale] = useState(1);
+  return (
+    <DeviceProvider device={d.deviceId}>
+      <MobilePrototypePage fit={d.fit} onScale={setScale} />
+      {!d.hidden && (
+        <DevicePresenter
+          form="handheld"
+          deviceId={d.deviceId}
+          onChange={d.setDevice}
+          onSwitchApp={d.switchApp}
+          fit={d.fit}
+          onFit={d.setFit}
+          scale={scale}
+        />
+      )}
+    </DeviceProvider>
+  );
+}
+
+function MobilePrototypePage({ fit, onScale }: { fit: boolean; onScale: (scale: number) => void }) {
   const { entry, go } = useRoute();
   const wide = useMediaQuery(WIDE, { noSsr: true });
   const [runs, setRuns] = useState(0);
@@ -399,7 +445,7 @@ export default function MobilePrototype() {
   const onRestart = useCallback(() => setRuns((n) => n + 1), []);
 
   useEffect(() => {
-    document.title = WESTON ? 'Birdie POS — Weston Edits · Mobile' : `Birdie POS — Mobile prototype · ${CLUB.label}`;
+    document.title = WESTON ? 'Birdie POS — Phone' : `Birdie POS — Phone · Archive · ${CLUB.label}`;
   }, []);
 
   useEffect(() => {
@@ -430,7 +476,7 @@ export default function MobilePrototype() {
           <Box sx={{ pt: 1.5 }}>
             <Description text={entry.description} />
           </Box>
-          <PhoneStage entry={entry} runKey={runKey} padding={24} />
+          <PhoneStage entry={entry} runKey={runKey} padding={24} fit={fit} onScale={onScale} />
         </Box>
       </Box>
     );
@@ -439,7 +485,7 @@ export default function MobilePrototype() {
   return (
     <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', bgcolor: md3.scrim, overflow: 'hidden' }}>
       <NarrowToolbar {...nav} onMenu={() => setDrawer(true)} />
-      <PhoneStage entry={entry} runKey={runKey} padding={8} />
+      <PhoneStage entry={entry} runKey={runKey} padding={8} fit={fit} onScale={onScale} />
       <Drawer
         open={drawer}
         onClose={() => setDrawer(false)}

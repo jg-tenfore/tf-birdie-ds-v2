@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button, IconButton, Stack, Tooltip } from '@mui/material';
-import Info from '@mui/icons-material/Info';
+import PersonOff from '@mui/icons-material/PersonOff';
 
 const meta = {
-  title: 'Components/Typography & Content/Tooltip',
+  title: 'Design System/Components/Typography & Content/Tooltip',
+  id: 'components-typography-content-tooltip',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;
@@ -13,12 +14,14 @@ export const Tooltip_: Story = {
   name: 'Tooltip',
   render: () => (
     <Stack direction="row" spacing={3} sx={{ alignItems: 'center' }}>
-      <Tooltip title="Top tooltip" placement="top">
-        <Button variant="outlined">Hover me</Button>
+      <Tooltip title="Out with Garcia, L. · 6:00 AM" placement="top">
+        <Button variant="outlined" sx={{ textDecoration: 'line-through' }}>
+          14
+        </Button>
       </Tooltip>
-      <Tooltip title="Ticket has been in the queue 4m 30s" arrow>
+      <Tooltip title="Mark no-show">
         <IconButton>
-          <Info />
+          <PersonOff />
         </IconButton>
       </Tooltip>
     </Stack>

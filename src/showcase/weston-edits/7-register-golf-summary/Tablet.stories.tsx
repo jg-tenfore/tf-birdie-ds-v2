@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, within } from 'storybook/test';
 import { ROUND_STEP } from '../../../pos/data/config';
 import { venue, venueBookings } from '../../../pos/data/venues';
@@ -9,7 +10,7 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
 import { adjustedParty, openParty, paidTwilight, registerWith } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 7 · Register Golf Summary / Tablet
+ * Prototypes / Tablet / Pro Shop / Register golf summary (Weston Edits, section 7)
  *
  * In the recording, "+ modifier" and "Guest Details" dominated each golf line before the golf
  * was confirmed, and "I click modifier, which — modifiers are used for food and beverage, so
@@ -89,7 +90,9 @@ import { adjustedParty, openParty, paidTwilight, registerWith } from '../tablet-
  * reason. That is worth closing on both, since the register is where an owner asks the question.
  */
 const meta = {
-  title: 'Weston Edits/7 · Register Golf Summary/Tablet',
+  title: 'Prototypes/Tablet/Pro Shop/Register golf summary',
+  id: 'weston-edits-7-·-register-golf-summary-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
@@ -97,9 +100,17 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2's reservation footer is Player rows v2's (**Pay** for the players on the order, see
+ * Reviews › Oct 2 – Proposal review › 1. Player rows v2), so Weston's **Update order** button,
+ * which this story presses, is Weston Edits only.
+ */
+const westonOnly = [withEdition('weston')];
+
 /** An adjusted party checked in: a mixed 9/18 round, per-player charges, one total. */
 export const AdjustedParty: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(adjustedParty())} />,
+  render: () => <Screen initialState={registerWith(adjustedParty())} />,
 };
 
 /** The same order with retail rung up after the golf — retail keeps its normal lines. */
@@ -108,7 +119,6 @@ export const WithRetail: Story = {
     const s = registerWith(openParty());
     return (
       <Screen
-        edition="weston"
         initialState={{ ...s, cart: [...(s.cart ?? []), { name: 'Titleist Pro V1 Sleeve', price: 16, qty: 1 }, { name: 'Water', price: 2.5, qty: 2 }] }}
       />
     );
@@ -117,7 +127,7 @@ export const WithRetail: Story = {
 
 /** A paid booking in the register: every seat PAID, "Golf paid", and nothing due. */
 export const PaidBooking: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(paidTwilight())} />,
+  render: () => <Screen initialState={registerWith(paidTwilight())} />,
 };
 
 /**
@@ -125,7 +135,8 @@ export const PaidBooking: Story = {
  * test clicks it and checks the panel opened.
  */
 export const EditReservation: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(adjustedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={registerWith(adjustedParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.queryByText('+ modifier')).toBeNull();
@@ -148,7 +159,7 @@ const RETAIL: CartItem[] = [
 export const RetailIsTaxed: Story = {
   render: () => {
     const s = registerWith(openParty());
-    return <Screen edition="weston" initialState={{ ...s, cart: [...(s.cart ?? []), ...RETAIL] }} />;
+    return <Screen initialState={{ ...s, cart: [...(s.cart ?? []), ...RETAIL] }} />;
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -173,7 +184,6 @@ export const WalkInOrder: Story = {
     const checkedIn = { ...w, playerStates: w.playerStates.map((p) => ({ ...p, step: ROUND_STEP.checkedIn })) };
     return (
       <Screen
-        edition="weston"
         initialState={atVenue('eighteen', {
           bookings: [...(base.bookings ?? []), checkedIn],
           view: 'pos',

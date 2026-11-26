@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_TABS } from '../../../pos/data/restaurant-seed';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 6 · Tabs / Tablet
+ * Prototypes / Tablet / Tabs / Bar tabs (V1 → V2 Migration, section 6)
  *
  * **Every open tab, and the seat-by-seat check a tab opens into — now with a kitchen.**
  *
@@ -35,7 +36,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   open, status, total — sorts on any of them, groups by server or room, and searches. Status says
  *   *Check requested*, *N not sent*, *Nothing ordered* or *All sent*.
  * - **The editor's header is the tab**: name in place, table, a guest stepper (it will not drop
- *   below a seat that has a plate), server, and *Check requested*.
+ *   below a seat that has a plate), server, and **Table view** back to the floor with the tab's
+ *   table selected (Nov 26; it took the *Check requested* toggle's place — a requested check now
+ *   shows as a tag by the table, and is set from the table's panel on the floor).
  * - **Seat bands**, empty ones and *Shared* included. v1's one good idea is kept: **tapping a band
  *   makes it the seat that receives the next item**; nothing collapses.
  * - **One menu browser**, shared with Quick Order, beside the check and never replacing it.
@@ -46,7 +49,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * - **Pay** hands the tab to the register — or, if the register has someone else's order, says so.
  */
 const meta = {
-  title: 'V1 → V2 Migration/6 · Tabs/Tablet',
+  title: 'Prototypes/Tablet/Tabs/Bar tabs',
+  id: 'v1-→-v2-migration-6-·-tabs-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 
@@ -146,10 +151,32 @@ export const ADeepLinkOpensIt: Story = {
     await expect(q(canvasElement, '[data-tab-editor="T-1003"]')).not.toBeNull();
     await expect(qa(canvasElement, '[data-seat-band]')).toHaveLength(9);
     await expect(canvas.getByRole('button', { name: 'One fewer guest' })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Check requested' })).toHaveAttribute('aria-pressed', 'true');
+    // T-1003 has asked for its check: a tag by the table, not a button.
+    await expect(q(canvasElement, '[data-check-requested]')!.textContent).toBe('Check requested');
     await userEvent.click(canvas.getByRole('button', { name: 'One more guest' }));
     await waitFor(() => expect(qa(canvasElement, '[data-seat-band]')).toHaveLength(10));
     await expect(within(band(canvasElement, 9)).getByText('Nothing yet')).toBeTruthy();
+  },
+};
+
+/**
+ * **Table view goes back to the floor** (Nov 26). From T-1003 — Table 10, which has asked for its
+ * check — Table view opens Tables in the Dining Room with Table 10 selected, its panel showing the
+ * request and the way to clear it. Open tab there comes straight back.
+ */
+export const TableViewGoesBackToTheFloor: Story = {
+  render: () => <Screen edition="v1v2" initialState={onTab('T-1003')} />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(q(canvasElement, '[data-table-view]')!);
+    await waitFor(() => expect(q(canvasElement, '[data-restaurant-view="TablesView"]')).not.toBeNull());
+    const panel = q(canvasElement, '[data-table-panel]')!;
+    await expect(panel.getAttribute('data-table-panel')).not.toBe('overview');
+    await expect(panel.getAttribute('aria-label')).toBe('Table 10 details');
+    await expect(within(panel).getByText('The table has asked for its check.')).toBeTruthy();
+    await expect(within(panel).getByRole('button', { name: 'Clear check request' })).toBeTruthy();
+    // And back into the tab from the table.
+    await userEvent.click(within(panel).getByRole('button', { name: 'Open tab' }));
+    await waitFor(() => expect(q(canvasElement, '[data-tab-editor="T-1003"]')).not.toBeNull());
   },
 };
 
@@ -186,7 +213,7 @@ export const ASingleChoiceAndASet: Story = {
   render: () => <Screen edition="v1v2" initialState={burgerOnP2} />,
   play: async () => {
     const dialog = within(await screen.findByRole('dialog'));
-    const temperature = dialog.getByRole('radiogroup', { name: 'Temperature' });
+    const temperature = dialog.getByRole('radiogroup', { name: 'Temp' });
     const t = within(temperature);
     await userEvent.click(t.getByRole('radio', { name: 'Rare' }));
     await userEvent.click(t.getByRole('radio', { name: 'Medium' }));
@@ -194,7 +221,7 @@ export const ASingleChoiceAndASet: Story = {
     await expect(t.getByRole('radio', { name: 'Medium' })).toHaveAttribute('aria-checked', 'true');
     await expect(t.getAllByRole('radio').filter((r) => r.getAttribute('aria-checked') === 'true')).toHaveLength(1);
 
-    const addons = within(dialog.getByRole('group', { name: 'Add-ons' }));
+    const addons = within(dialog.getByRole('group', { name: 'Burger Add-ons' }));
     await userEvent.click(addons.getByRole('checkbox', { name: /Bacon/ }));
     await userEvent.click(addons.getByRole('checkbox', { name: /Avocado/ }));
     await expect(addons.getByRole('checkbox', { name: /Bacon/ })).toHaveAttribute('aria-checked', 'true');
@@ -213,9 +240,9 @@ export const ARequiredGroupBlocks: Story = {
     const dialog = within(await screen.findByRole('dialog'));
     const add = dialog.getByRole('button', { name: 'Add to Seat 1' });
     await expect(add).toBeDisabled();
-    await expect(dialog.getByText('Choose temperature and side')).toBeTruthy();
+    await expect(dialog.getByText('Choose temp and sides')).toBeTruthy();
     await userEvent.click(dialog.getByRole('radio', { name: 'Medium' }));
-    await expect(dialog.getByText('Choose side')).toBeTruthy();
+    await expect(dialog.getByText('Choose sides')).toBeTruthy();
     await expect(add).toBeDisabled();
     await userEvent.click(dialog.getByRole('radio', { name: 'Fries' }));
     await expect(add).toBeEnabled();
@@ -418,7 +445,8 @@ export const ANewBarTab: Story = {
  * control, open on sent plates too, because none of them touches the food: moving a fired plate from
  * seat 4 to seat 2 changes who pays, not what the cook makes.
  *
- * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other.
+ * The play test splits Table 1's two Miller Lites so seat 2 has one, then comps the other with Buck's
+ * Shift Drink discount type.
  */
 export const AdjustingASentPlate: Story = {
   render: () => <Screen edition="v1v2" initialState={onTab('T-1001')} />,
@@ -450,7 +478,8 @@ export const AdjustingASentPlate: Story = {
     const left = both.find((el) => band(canvasElement, 4).contains(el))!;
     const leftPanel = q(left, '[data-dish-adjust]');
     if (!leftPanel) throw new Error('the seat-4 line should still have its Adjust panel open after the split');
-    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Comp' }));
+    // Since Nov 26 the Discount row offers Buck's discount types; a beer takes Shift Drink (100%).
+    await userEvent.click(within(leftPanel).getByRole('button', { name: 'Shift Drink · 100%' }));
     await waitFor(() => expect(left.textContent).toContain('$0.00'));
     await expect(canvas.queryByText(/Voided/)).toBeNull();
   },

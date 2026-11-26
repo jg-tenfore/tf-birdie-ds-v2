@@ -1,32 +1,50 @@
 import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, DocButton, DocLink, DocPage, DocTable, Pill, Prose, Section, StatusPill, tabletPrototype } from '../../../stories/docs-kit/docs-kit';
 
-<Meta title="V1 → V2 Migration/100226/Overview" />
+<Meta title="Reviews/Oct 2 – Proposal review/Summary" />
 
-# 100226 · Weston's review of the 100126 proposals, Oct 2
+<DocPage>
 
-Weston went through the twelve **100126** proposals on Oct 2. Ten were approved and are built into
-the app; see **Built into the app** in this folder for each one, play-tested on the live screen. The
-other two went another round as mockups here, and Justin approved both on **Oct 3** — they are now
-built too, and their stories render the live V1 → V2 app.
+<Banner
+  eyebrow="Review · Oct 2, 2026"
+  title="Proposal review"
+  pills={<><Pill>12 proposals</Pill><Pill tone="mint">10 approved Oct 2</Pill><Pill tone="mint">2 approved Oct 3</Pill><Pill tone="brand">All built</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet?res=p04_m6')}>Open the tablet prototype</DocButton><DocLink to="v1-→-v2-migration-100226-built-into-the-app-tablet--players-and-contact">Built into the app</DocLink><DocLink to="reviews-oct-1-proposals-from-the-sep-30-call-summary--overview">The Oct 1 proposals</DocLink></>}
+>
+  Weston's review of the Sep 30 proposals: he went through all twelve on Oct 2. Ten were approved and are built into the app; <strong>Built into the app</strong> in this folder play-tests each one on the live screen. The other two, player rows and the league view, went another round as mockups here; Justin approved both on Oct 3, and they are built too.
+</Banner>
 
-## Where each 100126 item stands
+<Section title="Decisions" intro="Where each Sep 30 proposal stands.">
+<DocTable
+  columns={['#', 'Proposal', 'Oct 2', 'Now']}
+  widths={['6%', '40%', '38%', '16%']}
+  rows={[
+    ['1', 'Compact player rows', <>“This solves the problem, but I feel like we're losing a lot of data.” Another round.</>, <><StatusPill tone="done">Built</StatusPill> <DocLink to="v1-→-v2-migration-100226-1-·-player-rows-v2--original">v2</DocLink></>],
+    ['2', 'Status chip instead of the stepper', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['3', 'Membership and customer type on every player', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['4', 'Contact details once, in the header', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['5', 'Order number per paid player', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['6', 'Empty rail collapsed by default', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['7', 'Menu by role', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['8', 'League and group view', <>Liked: “a place where you can manage the whole group.” Needs more; not phase one. Another round.</>, <><StatusPill tone="done">Built</StatusPill> <DocLink to="v1-→-v2-migration-100226-8-·-league-view-v2--original">v2</DocLink></>],
+    ['9', 'Settings led by Birdie’s sections', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['10', 'Phone: tee sheet header collapses', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['11', 'Phone: no “30 of 88” pager', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+    ['12', 'Bug: the course ⋮ menu', 'Approved', <StatusPill tone="done">Built</StatusPill>],
+  ]}
+/>
+</Section>
 
-| # | 100126 change | Oct 2 | Now |
-|---|---|---|---|
-| 1 | Compact player rows | *"this solves the problem, but I feel like we're losing a lot of data"* | Another round → approved Oct 3, **built**: 1 · Player rows v2 |
-| 2 | Status chip instead of the stepper | Approved | Built |
-| 3 | Membership and customer type on every player, including long plan names and players with several | Approved | Built |
-| 4 | Contact details once, in the header | Approved | Built |
-| 5 | Order number per paid player | Approved | Built |
-| 6 | Empty rail collapsed by default | Approved | Built |
-| 7 | Menu by role | Approved | Built |
-| 8 | League and group view | Liked: *"a place where you can manage the whole group"*. Needs more on it; not phase one | Another round → approved Oct 3, **built**: 8 · League view v2 |
-| 9 | Settings led by Birdie's sections | Approved | Built |
-| 10 | Phone: tee sheet header collapses | Approved | Built |
-| 11 | Phone: no "30 of 88" pager | Approved | Built |
-| 12 | Bug: course ⋮ menu | Approved | Built |
+<Section title="Left open">
+<Callout>
+Nothing from this review. The calls Justin made on Oct 3 (below) are built; what the build itself raised is on <DocLink to="start-here-process-roadmap--overview">Process & roadmap</DocLink>.
+</Callout>
+</Section>
 
-## 1 · Player rows v2
+<Section title="The two that went another round">
+<Prose>
+
+### 1 · Player rows v2
 
 What Weston asked for:
 
@@ -46,7 +64,7 @@ on the order before tax, and **Pay** goes straight to checkout with just those p
 added it totals the party and offers **Check in & pay all**. ⋯ holds Change golfer, the tee fee, a
 cart key, No-show, Take off the order, Remove and the rate editor.
 
-## 8 · League view v2
+### 8 · League view v2
 
 What Weston asked for: speed, and checking in golfers who arrive at the same time, e.g. *"Justin's
 here, pay. Johnny, check in, pay."* Justin chose to show all four of these:
@@ -62,5 +80,10 @@ here, pay. Johnny, check in, pay."* Justin chose to show all four of these:
 18-hole club; the League view checks in, pays through the real checkout, places the roster onto real
 seats and switches format. Justin's calls (Oct 3): the leagues are **real tee-sheet leagues**, so the
 sheet and the League view always agree; **Pay goes through the normal checkout** and comes back to
-the League view; and **shotgun is a League view label** — the tee sheet keeps the league's tee
+the League view; and **shotgun is a League view label**: the tee sheet keeps the league's tee
 times. The 8 · League view v2 stories render the live app.
+
+</Prose>
+</Section>
+
+</DocPage>

@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Exhibit, T0, actionParams, afterShows, mk, row, rowKey } from './action-helpers';
 import type { PlayerState } from '../../pos/types';
 
 /**
- * Tee Sheet Actions / **4 · Time Row**
+ * Archive / Tee Sheet Actions / **Time row** (Tee Sheet Actions, section 4)
  *
  * Right-clicking the time in the gutter acts on the whole row, across every course at once.
  * That is the row's reason to exist as a target: a frost delay, a shotgun start or a
@@ -14,7 +15,9 @@ import type { PlayerState } from '../../pos/types';
  * survive whatever gets booked into it later.
  */
 const meta = {
-  title: 'Tee Sheet Actions/4 · Time Row',
+  title: 'Archive/Tee Sheet Actions/Time row',
+  id: 'tee-sheet-actions-4-·-time-row',
+  decorators: [withEdition('archived')],
   parameters: actionParams,
 } satisfies Meta;
 

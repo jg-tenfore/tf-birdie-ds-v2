@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { APP_IDENTITY } from '../../../pos/data/nav';
 import { settingsDefaults, type CheckoutSettings, type TerminalHardware } from '../../../pos/state/settings';
@@ -6,7 +7,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 18 · Settings / Tablet
+ * Prototypes / Tablet / Settings / Terminal settings (V1 → V2 Migration, section 18)
  *
  * **Birdie's own settings first — device info, the card reader, Clover, the tee sheet — then the
  * V1 → V2 proposals: the terminal, checkout and receipts, staff and PINs.**
@@ -37,7 +38,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   Clover's switches are the screen's own.
  */
 const meta = {
-  title: 'V1 → V2 Migration/18 · Settings/Tablet',
+  title: 'Prototypes/Tablet/Settings/Terminal settings',
+  id: 'v1-→-v2-migration-18-·-settings-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 
@@ -62,10 +65,11 @@ export const DeviceInfo: Story = {
     await expect(panel.querySelector('[data-device-info="Card reader"]')!.textContent).toContain('Stripe Reader S700 · 0184');
     await expect(panel.querySelector('[data-device-info="Last synced"]')!.textContent).toContain('Thu, May 21');
     const order = [...canvasElement.querySelectorAll('[data-settings-section]')].map((b) => b.getAttribute('data-settings-section'));
-    await expect(order).toEqual(['device', 'reader', 'clover', 'teesheet', 'hardware', 'checkout', 'staff']);
+    // Nov 26: the counter's own sections, then the six Buck owns (read-only here).
+    await expect(order).toEqual(['device', 'reader', 'clover', 'teesheet', 'hardware', 'checkout', 'staff', 'birdie', 'taxes', 'payments', 'transport', 'printers', 'maininfo']);
     await expect(canvasElement.querySelector('[data-settings-section="device"]')!.getAttribute('aria-current')).toBe('page');
-    await expect(canvasElement.querySelector('[data-settings-proposed-heading]')!.textContent).toBe('Proposed — not in Birdie today');
-    await expect(canvasElement.querySelectorAll('[data-proposed] [data-chip="Proposed"]').length).toBe(3);
+    await expect(canvasElement.querySelector('[data-settings-buck-heading]')!.textContent).toBe('Set in Buck · read-only here');
+    await expect(canvasElement.querySelectorAll('[data-set-in-buck]').length).toBe(6);
     await userEvent.click(within(panel).getByRole('button', { name: 'Copy for support' }));
     await page(canvasElement).findByText('Device info copied for support');
   },
@@ -111,16 +115,18 @@ export const Clover: Story = {
   },
 };
 
-/** **Terminal & hardware** (proposed). Each device has a test; Save stays off until something changes. */
+/**
+ * **Register & printers** (was Terminal & hardware). Each device has a test; Save stays off until
+ * something changes. Since Nov 26 the printers are the club's, as Buck lists them.
+ */
 export const TerminalAndHardware: Story = {
   render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'hardware' })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
-    await expect(canvasElement.querySelector('[data-settings-panel="hardware"] [data-chip="Proposed"]')).not.toBeNull();
     await expect(c.getByRole('button', { name: 'Save' })).toBeDisabled();
     const printer = canvasElement.querySelector<HTMLElement>('[data-device="receiptPrinter"]')!;
     await userEvent.click(within(printer).getByRole('button', { name: 'Test' }));
-    await page(canvasElement).findByText('Test slip sent to Epson TM-m30III · Front counter');
+    await page(canvasElement).findByText('Test slip sent to Pro Shop Counter');
     const name = c.getByDisplayValue('Register 1');
     await userEvent.clear(name);
     await userEvent.type(name, 'Pro Shop Register');
@@ -144,24 +150,24 @@ export const DiscardPutsItBack: Story = {
 };
 
 /**
- * **Checkout & receipts.** Tax, tips, tenders and receipt text save together — and a draft that would
- * leave checkout with no way to take money says so rather than saving.
+ * **Tips & gift cards** (was Checkout & receipts). Since Nov 26 tax, tenders and receipt text are
+ * Buck's and read-only here; the tip suggestions stay the counter's, and a tip that is not a
+ * percentage anyone would leave says so rather than saving.
  */
 export const CheckoutAndReceipts: Story = {
   render: () => <Screen edition="v1v2" initialState={at({ settingsSection: 'checkout' })} />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await expect(c.getByText(/Checkout reads these as soon as they are saved/)).toBeTruthy();
-    await userEvent.click(c.getByRole('switch', { name: 'Card' }));
-    await userEvent.click(c.getByRole('switch', { name: 'Cash' }));
-    await expect(canvasElement.querySelector('[data-settings-problem]')!.textContent).toMatch(/Card or Cash/);
+    const tip = c.getByDisplayValue('20');
+    await userEvent.clear(tip);
+    await userEvent.type(tip, '80');
+    await expect(canvasElement.querySelector('[data-settings-problem]')!.textContent).toMatch(/tip/i);
     await expect(c.getByRole('button', { name: 'Save' })).toBeDisabled();
-    await userEvent.click(c.getByRole('switch', { name: 'Cash' }));
-    const tax = c.getByDisplayValue('8');
-    await userEvent.clear(tax);
-    await userEvent.type(tax, '6.5');
+    await userEvent.clear(tip);
+    await userEvent.type(tip, '22');
     await userEvent.click(c.getByRole('button', { name: 'Save' }));
-    await page(canvasElement).findByText('Checkout & receipts saved');
+    await page(canvasElement).findByText('Tips & gift cards saved');
   },
 };
 

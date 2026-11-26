@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Box } from '@mui/material';
 import { md3 } from '../../theme/tokens';
 import { TeeSheet } from '../../pos/components/TeeSheet';
@@ -62,7 +63,9 @@ import {
  * not the wiring.
  */
 const meta = {
-  title: 'Components/Layout & Structure/Tee Sheet',
+  title: 'Design System/Components/Layout & Structure/Tee Sheet',
+  id: 'components-layout-structure-tee-sheet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 
@@ -122,8 +125,9 @@ export const BandTwilight: Story = { render: () => <Frame state={{ shift: 'twili
 /**
  * Compact rows: 30px instead of 46px, and the chip's meta line drops away.
  *
- * This is what fits a whole day on one screen. The name and the colour survive, which is
- * what an operator actually scans for.
+ * About 21 rows show on the Clover Mini instead of 14 — a long morning, not the whole day (the
+ * settings panel's "fits a full day on screen" overstates it). The name and the colour survive,
+ * which is what an operator scans for; the status word (REFUNDED, NO SHOW) does not.
  */
 export const CompactRows: Story = {
   render: () => <Frame state={{ settings: withSettings({ compactMode: true }) }} />,
@@ -134,28 +138,39 @@ export const HideEmptyRows: Story = {
   render: () => <Frame state={{ settings: withSettings({ hideEmpty: true }) }} />,
 };
 
-/** A 7-minute interval — tighter tee times, more rows. */
+/**
+ * A 7-minute interval, as the settings panel offers it.
+ *
+ * **Known gap:** the tablet grid draws its rows from the default 8-minute times and the band, not
+ * from `settings.intervalMins`, so this renders the same 90 rows as Default. The handheld honours
+ * the setting. Open decision on the Tee Sheet page.
+ */
 export const Interval7Minutes: Story = {
   render: () => <Frame state={{ settings: withSettings({ intervalMins: 7 }) }} />,
 };
 
-/** A 10-minute interval. */
+/** A 10-minute interval. Same known gap as the 7-minute story: the grid ignores the setting. */
 export const Interval10Minutes: Story = {
   render: () => <Frame state={{ settings: withSettings({ intervalMins: 10 }) }} />,
 };
 
 /**
- * A 15-minute interval — the loosest common spacing, and the case where the generated
- * bookings no longer land on a row, so most chips disappear.
+ * A 15-minute interval — the loosest common spacing.
  *
- * Worth keeping: it shows that the grid is built from the interval rather than from the
- * bookings, so a settings change can orphan data rather than move it.
+ * Kept for when the grid honours it: then the generated bookings would no longer land on a row,
+ * and most chips would disappear — a settings change orphaning data rather than moving it.
+ * **Today** the tablet grid ignores `settings.intervalMins` and renders the same rows as Default.
  */
 export const Interval15Minutes: Story = {
   render: () => <Frame state={{ settings: withSettings({ intervalMins: 15 }) }} />,
 };
 
-/** Extended hours, 5am to 8pm — the widest window the settings panel offers. */
+/**
+ * Extended hours, 5am to 8pm — the widest window the settings panel offers.
+ *
+ * **Known gap:** the grid filters its rows by the band (6 AM–6 PM for Day), not by
+ * `gridStartHour` / `gridEndHour`, so this still runs 6:00 AM to 5:52 PM.
+ */
 export const ExtendedHours: Story = {
   render: () => (
     <Frame state={{ settings: withSettings({ gridStartHour: 5, gridEndHour: 20 }) }} />
@@ -165,8 +180,9 @@ export const ExtendedHours: Story = {
 /**
  * The first and last rows of the day, on an empty sheet.
  *
- * The window is inclusive of its closing hour: a 6→18 setting ends on a 6:00 PM row, not
- * 5:52. Easiest to confirm with nothing else on the grid.
+ * `generateTimes` is inclusive of its closing hour (a 6→18 setting has a 6:00 PM row), but the
+ * grid then keeps only times before the band's end, so the sheet ends on **5:52 PM**. The
+ * handheld, which reads the settings, ends on 6:00 PM. Easiest to see with nothing on the grid.
  */
 export const DayBoundaries: Story = {
   render: () => <Frame state={only([], { settings: withSettings({ autoScrollNow: false }) })} />,

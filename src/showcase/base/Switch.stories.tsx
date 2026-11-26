@@ -3,16 +3,16 @@ import { useState } from 'react';
 import { Box, FormControlLabel, FormGroup, Switch as MuiSwitch, Typography } from '@mui/material';
 
 /**
- * Native MUI Switch — for binary on/off settings such as the KDS
- * "New-ticket sound" chime (see KDS Screens › Settings / Setup).
+ * Native MUI Switch — for a binary on/off setting that applies at once, such as the tee sheet's
+ * "Compact rows" (Settings › Tee sheet on the tablet, Tee sheet & courses on the handheld).
  */
 function SwitchDemo() {
-  const [sound, setSound] = useState(true);
+  const [compact, setCompact] = useState(true);
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
       <FormControlLabel
-        control={<MuiSwitch checked={sound} onChange={(e) => setSound(e.target.checked)} />}
-        label="New-ticket sound"
+        control={<MuiSwitch checked={compact} onChange={(e) => setCompact(e.target.checked)} />}
+        label="Compact rows"
       />
 
       <FormGroup>
@@ -37,7 +37,8 @@ function SwitchDemo() {
 }
 
 const meta = {
-  title: 'Components/Forms/Switch',
+  title: 'Design System/Components/Forms/Switch',
+  id: 'components-forms-switch',
   component: SwitchDemo,
   tags: ['autodocs'],
   parameters: {
@@ -45,7 +46,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Native MUI `Switch` for a binary on/off setting — for example the KDS **New-ticket sound** chime (see KDS Screens › Settings / Setup). ' +
+          'Native MUI `Switch` for a binary on/off setting that applies at once — for example the tee sheet\'s **Compact rows** (Settings › Tee sheet). ' +
           'Toggle the first switch to see it work; the rest show the on / off, disabled, and small / medium variants. For a segmented multi-option choice use **Toggle** instead.',
       },
     },

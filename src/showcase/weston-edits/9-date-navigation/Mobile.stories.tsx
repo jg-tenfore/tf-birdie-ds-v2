@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { COMPACT_DATE_BAR_H } from '../../../pos/mobile/screens/tee/collapsing-header';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { at18 } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 9 · Date Navigation / Mobile
+ * Prototypes / Mobile / Tee Sheet / Date navigation (Weston Edits, section 9)
  *
  * Weston's second round: *"If I'm on the tee sheet and I want to go to, let's say, June —
  * there's no way to select the month, so I just have to click."* On the base phone the date
@@ -131,7 +132,9 @@ import { at18 } from '../mobile-scenarios';
  * bring it back); the other two are one small scroll up away, in the peeking header.
  */
 const meta = {
-  title: 'Weston Edits/9 · Date Navigation/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Date navigation',
+  id: 'weston-edits-9-·-date-navigation-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -150,7 +153,7 @@ type Story = StoryObj;
  * within the week, so the arrows take the bigger step.
  */
 export const WeekStrip: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
 };
 
 /**
@@ -161,7 +164,7 @@ export const WeekStrip: Story = {
  * **Why:** the list only offered the demo's eleven days, with no month or way to page.
  */
 export const CalendarSheet: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: {} }]} />,
+  render: () => <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: {} }]} />,
 };
 
 /**
@@ -172,7 +175,7 @@ export const CalendarSheet: Story = {
  * **Why:** Weston's exact case — "I want to go to, let's say, June".
  */
 export const JumpToJune: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByLabelText('Choose date'));
@@ -193,7 +196,7 @@ export const JumpToJune: Story = {
  */
 export const YearChooser: Story = {
   render: () => (
-    <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: { view: 'years' } }]} />
+    <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'teeSheet', calendar: { view: 'years' } }]} />
   ),
 };
 
@@ -206,7 +209,6 @@ export const YearChooser: Story = {
 export const TodayButton: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18(undefined, { currentDate: new Date(2026, 5, 12) })}
       tab="tee"
       stack={[{ name: 'teeSheet', calendar: {} }]}
@@ -229,7 +231,6 @@ export const TodayButton: Story = {
 export const OutOfRange: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18(undefined, { currentDate: new Date(2027, 4, 18) })}
       tab="tee"
       stack={[{ name: 'teeSheet', calendar: {} }]}
@@ -278,7 +279,7 @@ const scrollTo = async (list: HTMLElement, y: number) => {
  * the compact row.
  */
 export const HeaderFoldsOnScroll: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     const list = await listOf(c);
@@ -329,7 +330,7 @@ export const HeaderFoldsOnScroll: Story = {
  * **Why:** Weston's *"click that and go to a different date… or click the arrows."*
  */
 export const CompactRowStepsADay: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="tee" />,
+  render: () => <MobileStory initialState={at18()} tab="tee" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await scrollTo(await listOf(c), 400);
@@ -357,7 +358,6 @@ export const CompactRowStepsADay: Story = {
 export const ClearedDayStaysEmpty: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       // June 12 was filled, then every booking on it deleted: no June bookings in state,
       // and the date recorded as generated.
       initialState={at18(undefined, { currentDate: new Date(2026, 5, 12), generatedDates: ['2026-06-12'] })}

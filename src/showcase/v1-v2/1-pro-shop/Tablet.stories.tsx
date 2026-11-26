@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { COMBOS, comboById } from '../../../pos/data/combos';
 import { ALL_GOLFERS } from '../../../pos/data/golfers';
@@ -8,7 +9,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 1 · Pro Shop / Tablet
+ * Prototypes / Tablet / Pro Shop / Register functions (V1 → V2 Migration, section 1)
  *
  * **The four things the Pro Shop register could do in v1 and could not do here.** Each was
  * audited in v1 (`tf-birdie-ds-v1`) for what it does, and rebuilt the way this register works —
@@ -77,7 +78,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * order never paid, issues nothing.
  */
 const meta = {
-  title: 'V1 → V2 Migration/1 · Pro Shop/Tablet',
+  title: 'Prototypes/Tablet/Pro Shop/Register functions',
+  id: 'v1-→-v2-migration-1-·-pro-shop-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 
@@ -140,7 +143,7 @@ export const CombosCategory: Story = {
 };
 
 /**
- * **A combo rings as one line.** Tapping Turn Dog twice gives one line at quantity 2 — not six
+ * **A combo rings as one line.** Tapping Turn Special twice gives one line at quantity 2 — not six
  * `[c]` lines — with its components beneath it and the saving for both.
  */
 export const RingingAComboAddsOneLine: Story = {

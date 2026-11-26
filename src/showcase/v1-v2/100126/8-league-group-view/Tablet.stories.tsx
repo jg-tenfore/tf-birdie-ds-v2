@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { withEdition } from '../../../edition-decorator';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
@@ -11,7 +12,7 @@ import { Chip, PillButton, ProposalTerminal, WhatChanged } from '../mock-kit';
 import { memberGuest, outing } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 8 · League and group view
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 8. League and group view (100126)
  *
  * **Weston:** *"when you click into a league reservation right now, we treat it like a tee time…
  * What I think it should be is when you click into a league, it should take you to maybe a different
@@ -28,7 +29,9 @@ import { memberGuest, outing } from '../scenarios';
  * first; the phone version is still open.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/8 · League and group view',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/8. League and group view',
+  id: 'v1-→-v2-migration-100126-8-·-league-and-group-view',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

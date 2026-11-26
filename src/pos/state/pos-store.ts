@@ -3,7 +3,7 @@ import type { Customer } from '../data/customers';
 import type { ShiftKey } from '../../theme/tokens';
 import { DEFAULT_TEE_SHEET_SETTINGS, toDateStr } from '../data/courses';
 import { DEMO_TODAY, demoNow } from '../data/bookings';
-import { seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
+import { resourcesOf, seedResourceDay, type ResourceBooking, type ResourceKind } from '../data/resources';
 import { resourceCartLine } from '../logic/resource-booking';
 import { orderNumberFromId } from '../logic/reservation';
 import { checkInPlayer } from '../logic/bookings';
@@ -386,6 +386,16 @@ export interface PosState extends RegisterExtrasState, RestaurantState, Operatio
   /** The court or bay booking open in its slide-over, if any. */
   resourcePanel: { bookingId: string } | null;
   /**
+   * Courts and bays switched **off** on their sheet (resource ids, both kinds in one list).
+   *
+   * Off rather than on, so the default — nothing here — is every column, and a club that adds a
+   * bay sees it without anyone having to switch it on. It hides a column; it never touches the
+   * bookings on it, and the filter row says how many bookings the hidden ones carry, so a busy bay
+   * can't be switched off and forgotten. Held here rather than in the sheet so it survives a trip
+   * to the register and back, and so a deep link can carry it (`?hide=`).
+   */
+  hiddenResources: string[];
+  /**
    * Tee sheet settings, lifted out of `TeeSheetView`'s local state.
    *
    * It only ever had one way in — the toolbar cog — so local state was enough. The nav's
@@ -497,6 +507,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     resourceBookings: [],
     resourceSeeded: [],
     resourcePanel: null,
+    hiddenResources: [],
     timeNotes: {},
     timePrices: {},
     listFilters: { ...emptyListFilters },
@@ -599,6 +610,10 @@ export type Action =
   | { type: 'removeResourceBooking'; id: string }
   | { type: 'openResourceBooking'; bookingId: string }
   | { type: 'closeResourcePanel' }
+  /** Switch one court or bay's column on or off on its sheet. */
+  | { type: 'setResourceShown'; resourceId: string; shown: boolean }
+  /** Every court or bay of a kind back on. */
+  | { type: 'showAllResources'; kind: ResourceKind }
   | { type: 'checkInResource'; id: string }
   | { type: 'clearReturnToBooking' }
   | { type: 'setTeeSheetSettings'; open: boolean }
@@ -841,6 +856,7 @@ export function reducer(state: PosState, action: Action): PosState {
         activeTabId: null,
         // A link that names no room means the first one, as the encoder omits it only then.
         floorRoomId: state.floor[0]?.id ?? state.floorRoomId,
+        floorTableId: null,
         // Wave 3: what each back-office screen has open is navigation; the records are the day.
         selectedOrderNumber: null,
         selectedEventId: null,
@@ -1183,6 +1199,14 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, resourcePanel: { bookingId: action.bookingId }, contextMenu: null };
     case 'closeResourcePanel':
       return { ...state, resourcePanel: null };
+    case 'setResourceShown': {
+      const others = state.hiddenResources.filter((id) => id !== action.resourceId);
+      return { ...state, hiddenResources: action.shown ? others : [...others, action.resourceId] };
+    }
+    case 'showAllResources': {
+      const ofKind = new Set(resourcesOf(action.kind).map((r) => r.id));
+      return { ...state, hiddenResources: state.hiddenResources.filter((id) => !ofKind.has(id)) };
+    }
     case 'checkInResource': {
       // The tee time's Check in & pay, for a court or a bay: check the party in, put the
       // booking on the order, and hand over to the register. Already on the order means the

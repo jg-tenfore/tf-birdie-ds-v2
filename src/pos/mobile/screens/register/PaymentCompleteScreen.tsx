@@ -16,6 +16,7 @@ import { Stack } from '../../../components/Stack';
 import { MobileScreen } from '../../chrome';
 import { useMobileNav } from '../../navigation';
 import { orderLines } from './parts';
+import { popsToRestaurantList } from '../restaurant/restaurant-helpers';
 
 /**
  * Receipt — a **takeover** that *replaced* the reader, so there's no back: the sale is
@@ -38,9 +39,16 @@ export function PaymentCompleteScreen() {
   const golfer =
     state.selectedGolfer ?? (booking ? (findMemberByPhone(booking.phone, roster) ?? findMemberByName(booking.name, roster)) : undefined);
 
+  // V1 → V2: a tab or a counter order was paid from the restaurant. Done goes back to the floor, the
+  // tab list or the counter it came from — on a server's bar or under a manager's More alike —
+  // rather than to the root of whichever destination it happened in.
+  const restaurantPops = popsToRestaurantList(nav.stack);
+  const restaurantList = restaurantPops != null ? nav.stack[nav.stack.length - 1 - restaurantPops].name : null;
+
   const finish = (toTee: boolean) => {
     dispatch({ type: 'clearOrder' });
-    nav.popToRoot();
+    if (restaurantPops != null) nav.pop(restaurantPops);
+    else nav.popToRoot();
     if (toTee) nav.selectTab('tee');
   };
 
@@ -56,7 +64,7 @@ export function PaymentCompleteScreen() {
       bottomBar={
         <Box sx={{ px: 2, pb: 2, pt: 1 }}>
           <Button variant="contained" size="large" fullWidth onClick={() => finish(false)}>
-            New order
+            {restaurantList === 'tables' ? 'Back to tables' : restaurantList === 'tabs' ? 'Back to tabs' : 'New order'}
           </Button>
           {booking && (
             <Button fullWidth sx={{ mt: 1 }} onClick={() => finish(true)}>

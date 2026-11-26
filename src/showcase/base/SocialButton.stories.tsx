@@ -4,7 +4,8 @@ import Google from '@mui/icons-material/Google';
 import Apple from '@mui/icons-material/Apple';
 
 const meta = {
-  title: 'Components/Actions/Social Button',
+  title: 'Design System/Components/Actions/Social Button',
+  id: 'components-actions-social-button',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

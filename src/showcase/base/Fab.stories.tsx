@@ -5,16 +5,18 @@ import Edit from '@mui/icons-material/Edit';
 import Navigation from '@mui/icons-material/Navigation';
 
 const meta = {
-  title: 'Components/Actions/Floating Action Button',
+  title: 'Design System/Components/Actions/Floating Action Button',
+  id: 'components-actions-floating-action-button',
   component: Fab,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'A Floating Action Button (`Fab`) is a round, elevated button for the single most important action on a screen — ' +
-          'on the KDS think **New manual ticket**, **Recall last order**, or jump-to-newest. It comes in three sizes, several colors, and ' +
-          'a `circular` (icon-only) or `extended` (icon + label) variant. Set the props in the **Controls** panel to preview each combination.',
+          'MUI `Fab`: a floating, elevated button for the one action a screen exists to start. In Birdie it is handheld only and ' +
+          'always `extended` (icon + label): **New customer** on People, **New tab** and **Add items** in the restaurant, passed ' +
+          'through `MobileScreen`’s `fab` slot. These stories render in the tablet theme, so they are circles; the handheld theme ' +
+          'makes them 16px rounded squares. Set the props in the **Controls** panel to preview each combination.',
       },
     },
   },
@@ -98,16 +100,16 @@ export const Sizes: Story = {
 
 /** Extended Fabs pair an icon with a text label. */
 export const Extended: Story = {
-  parameters: { docs: { description: { story: 'The `extended` variant shows a label — good for a primary KDS action like starting a new ticket.' } } },
+  parameters: { docs: { description: { story: 'The `extended` variant shows a label. It is the only variant Birdie uses: every FAB says what it creates.' } } },
   render: (args) => (
     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
       <Fab {...args} variant="extended" color="primary">
         <Add sx={{ mr: 1 }} />
-        New ticket
+        New tab
       </Fab>
       <Fab {...args} variant="extended" color="secondary">
         <Edit sx={{ mr: 1 }} />
-        Edit order
+        Add items
       </Fab>
     </Box>
   ),

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { leagueBookingId, LEAGUES } from '../../../../pos/data/leagues';
 import type { PosState } from '../../../../pos/state/pos-store';
@@ -6,7 +7,7 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
 import { MAY30, memberGuest, outing } from '../../100126/scenarios';
 
 /**
- * V1 → V2 Migration / 100226 / 8 · League view v2
+ * Reviews / Oct 2 – Proposal review / 8. League view v2 (100226)
  *
  * **Weston, on 100126's group view:** *"the idea is just to have a place where you can manage the
  * whole group… speed and checking in of golfers who are arriving at the same time."* Two of his
@@ -38,7 +39,9 @@ import { MAY30, memberGuest, outing } from '../../100126/scenarios';
  * The way in: a league tee time still opens like any reservation, with League view one tap away.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100226/8 · League view v2',
+  title: 'Reviews/Oct 2 – Proposal review/8. League view v2',
+  id: 'v1-→-v2-migration-100226-8-·-league-view-v2',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

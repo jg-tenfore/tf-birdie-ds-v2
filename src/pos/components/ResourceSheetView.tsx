@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Box, ButtonBase, Divider, Typography } from '@mui/material';
 import { grid as gridTokens, md3, radius } from '../../theme/tokens';
 import { DEMO_NOW_MIN, DEMO_TODAY } from '../data/bookings';
 import { formatTimeLabel, toDateStr } from '../data/courses';
-import { SHEETS, resourcesOf, type ResourceBooking, type ResourceKind } from '../data/resources';
-import { canStartAt, clampDuration, formatDuration, maxDurationAt, snap } from '../logic/resource-booking';
+import { NO_MEMBERSHIP, ribbonOf } from '../data/memberships';
+import { SHEETS, capacityOf, resourceById, resourcesOf, type ResourceBooking, type ResourceKind } from '../data/resources';
+import { liveCustomer } from '../data/roster';
+import { canStartAt, clampDuration, formatDuration, maxDurationAt, moveProblem, snap } from '../logic/resource-booking';
 import { usePos } from '../state/PosProvider';
 import { DatePickerPopover } from './DatePickerPopover';
 import { ToolbarButton } from './TeeSheetView';
@@ -37,6 +39,32 @@ import { Stack } from './Stack';
  * panel as a draft; closing the panel without confirming removes it, so a stray tap leaves no
  * trace. Where the minimum length does not fit, the tap does nothing — a sheet that offers a
  * booking it then refuses is worse than one that says nothing.
+ *
+ * ## Aligned with TF Buck's bay sheet (Nov 26)
+ *
+ * Buck decided its bay sheet on Nov 24 — Layout A, bay columns — and these follow it:
+ *
+ * - **Buck's ten bays**, each header saying how many it holds, priced by Buck's fees.
+ * - **The ribbon is the golfer's membership colour** (`memberships.ts`) — the same colour the tee
+ *   sheet's member dot and Customer Search draw for that plan; grey is *No membership*. A legend
+ *   under the toolbar names the plans on the day.
+ * - **Drag a booking to move it** — down the day or across to another column — and **drag its bottom
+ *   edge to make it longer or shorter**. A move that cannot happen does not snap back in silence: a
+ *   toast says why (who is in the way, closing time, the bay's capacity), from `moveProblem`.
+ * - **Undo** the last move or resize from the toolbar.
+ * - Booking still starts by tapping open time — there is no New booking button — and opens the
+ *   slide-over (`ResourcePanel`).
+ *
+ * ## Switching bays (and courts) off — Nov 26
+ *
+ * A row of filter chips under the toolbar, one per bay, the way Buck's bay sheet filters its bays:
+ * every chip starts **on**; tap one to switch that bay's column off, tap it again to bring it back,
+ * and **All** puts every bay back. The columns that remain share the width, so two bays on a
+ * Clover Mini are two wide columns, not two narrow ones and a gap. Each chip carries the bay's
+ * booking count for the day, and while anything is off the row says how many bookings the hidden
+ * bays hold — switching a bay off hides its column, never its bookings. The choice lives in the
+ * store (`hiddenResources`), so it survives a trip to the register and rides in the deep link
+ * (`#/bays?hide=bay-3,palmer`). The court sheet is the same component and gets the same row.
  */
 
 /**
@@ -46,9 +74,11 @@ import { Stack } from './Stack';
 export const PPM = 1.6;
 const GUTTER = 64;
 const HEADER = 52;
+/** Ten bays share the width of a 1280px Clover Mini; 110 keeps a name and a ribbon legible in each. */
+const COL_MIN = 110;
 
 export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
-  const { state, dispatch } = usePos();
+  const { state, dispatch, toast } = usePos();
   const cfg = SHEETS[kind];
   const resources = resourcesOf(kind);
   const date = toDateStr(state.currentDate);
@@ -88,13 +118,59 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
     dispatch({ type: 'createResourceBooking', booking });
   };
 
-  const booked = bookings.length;
-  const paid = bookings.filter((b) => b.paid).length;
+  // The columns switched on; a switched-off one keeps its bookings, it just isn't drawn.
+  const shown = resources.filter((r) => !state.hiddenResources.includes(r.id));
+  const shownIds = new Set(shown.map((r) => r.id));
+  const shownBookings = bookings.filter((b) => shownIds.has(b.resourceId));
+
+  const booked = shownBookings.length;
+  const paid = shownBookings.filter((b) => b.paid).length;
+
+  // The last move or resize, so the toolbar can undo it.
+  const [lastChange, setLastChange] = useState<{ before: ResourceBooking; label: string } | null>(null);
+  const undo = () => {
+    if (!lastChange) return;
+    const { before } = lastChange;
+    dispatch({ type: 'patchResourceBooking', id: before.id, patch: { resourceId: before.resourceId, startMin: before.startMin, durationMin: before.durationMin } });
+    toast(`Undid: ${lastChange.label}`);
+    setLastChange(null);
+  };
+
+  // Plans on the day, for the legend: each colour once, then No membership.
+  const legend = [...new Map(shownBookings.map((b) => ribbonOf(liveCustomer(b.crmId))).map((r) => [r.name, r])).values()]
+    .filter((r) => r.name !== NO_MEMBERSHIP.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <Stack sx={{ flex: 1, minWidth: 0, height: '100%' }} data-resource-sheet={kind}>
-      <ResourceToolbar title={cfg.title} summary={`${booked} booked · ${paid} paid`} />
+      <ResourceToolbar
+        title={cfg.title}
+        summary={`${booked} booked · ${paid} paid`}
+        filterNote={filterNote(kind, resources, bookings, state.hiddenResources)}
+        undo={lastChange ? { label: `Undo ${lastChange.label.split(' · ')[0].toLowerCase()}`, onClick: undo } : undefined}
+      />
+      <ResourceFilterRow kind={kind} resources={resources} bookings={bookings} />
+      <Stack
+        direction="row"
+        alignItems="center"
+        gap={1.5}
+        data-membership-legend
+        sx={{ px: 1.75, py: 0.75, bgcolor: '#fff', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0, flexWrap: 'wrap', minHeight: 34 }}
+      >
+        <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: md3.outline }}>Ribbon</Typography>
+        {[...legend, NO_MEMBERSHIP].map((r) => (
+          <Stack key={r.name} direction="row" alignItems="center" gap={0.5} data-legend={r.name}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: r.color }} />
+            <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>{r.name}</Typography>
+          </Stack>
+        ))}
+        <Box sx={{ flex: 1 }} />
+        <Typography sx={{ fontSize: 11.5, color: md3.outline }}>Drag to move · drag the bottom edge to resize</Typography>
+      </Stack>
 
+      {shown.length === 0 ? (
+        <AllSwitchedOff kind={kind} />
+      ) : (
       <Box sx={{ flex: 1, overflow: 'auto', bgcolor: md3.surfaceContainer, position: 'relative' }}>
         {/* Column headers, pinned while the day scrolls under them. */}
         <Box
@@ -103,14 +179,14 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
             top: 0,
             zIndex: 3,
             display: 'grid',
-            gridTemplateColumns: `${GUTTER}px repeat(${resources.length}, minmax(140px, 1fr))`,
+            gridTemplateColumns: `${GUTTER}px repeat(${shown.length}, minmax(${COL_MIN}px, 1fr))`,
             height: HEADER,
             bgcolor: '#fff',
             borderBottom: `1px solid ${md3.outlineVariant}`,
           }}
         >
           <Box />
-          {resources.map((r) => (
+          {shown.map((r) => (
             <Box
               key={r.id}
               sx={{ px: 1.25, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `1px solid ${md3.outlineVariant}` }}
@@ -118,7 +194,10 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
               <Typography sx={{ fontSize: 13.5, fontWeight: 800, color: md3.onSurface, lineHeight: 1.2 }} noWrap>
                 {r.name}
               </Typography>
-              <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>${r.hourly}/hr</Typography>
+              <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }} data-resource-capacity>
+                {/* A bay's price depends on the hour and the golfer (Buck's fees); its capacity does not. */}
+                {r.kind === 'bay' ? `Up to ${capacityOf(r)}` : `$${r.hourly}/hr`}
+              </Typography>
             </Box>
           ))}
         </Box>
@@ -126,7 +205,7 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: `${GUTTER}px repeat(${resources.length}, minmax(140px, 1fr))`,
+            gridTemplateColumns: `${GUTTER}px repeat(${shown.length}, minmax(${COL_MIN}px, 1fr))`,
             position: 'relative',
             height,
           }}
@@ -151,7 +230,7 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
             ))}
           </Box>
 
-          {resources.map((r) => (
+          {shown.map((r) => (
             <Box
               key={r.id}
               data-resource-column={r.id}
@@ -175,7 +254,13 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
               {bookings
                 .filter((b) => b.resourceId === r.id)
                 .map((b) => (
-                  <BookingBlock key={b.id} booking={b} openMin={cfg.openMin} />
+                  <BookingBlock
+                    key={b.id}
+                    booking={b}
+                    openMin={cfg.openMin}
+                    onMoved={(before, label) => setLastChange({ before, label })}
+                    onRefused={(why) => toast(why)}
+                  />
                 ))}
             </Box>
           ))}
@@ -224,6 +309,139 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
           )}
         </Box>
       </Box>
+      )}
+    </Stack>
+  );
+}
+
+/** "Showing 6 of 10 bays · 20 bookings hidden", or nothing while every column is on. */
+function filterNote(
+  kind: ResourceKind,
+  resources: { id: string }[],
+  bookings: ResourceBooking[],
+  hiddenIds: string[],
+): { text: string; warn: boolean } | undefined {
+  const hidden = resources.filter((r) => hiddenIds.includes(r.id));
+  if (!hidden.length) return undefined;
+  const noun = NOUN[kind];
+  const onHidden = bookings.filter((b) => hidden.some((r) => r.id === b.resourceId)).length;
+  const text = `Showing ${resources.length - hidden.length} of ${resources.length} ${noun.many}`;
+  return onHidden
+    ? { text: `${text} · ${onHidden} booking${onHidden === 1 ? '' : 's'} hidden`, warn: true }
+    : { text, warn: false };
+}
+
+/** What the sheet is called on its chips: "bays", "courts". */
+const NOUN: Record<ResourceKind, { one: string; many: string }> = {
+  bay: { one: 'bay', many: 'bays' },
+  court: { one: 'court', many: 'courts' },
+};
+
+/**
+ * The filter row: one chip per bay (or court), each switching that column on or off.
+ *
+ * MD3 filter chips — on is the tonal container with a check, off is outlined and muted — so the
+ * state reads the same whether one is off or nine. The count on each chip is that bay's bookings for
+ * the day; while anything is off, the toolbar says how many show and how many bookings the hidden
+ * columns hold (`filterNote`) — up there rather than at the end of this row, so the row never wraps
+ * and the sheet doesn't jump when a bay goes off.
+ */
+function ResourceFilterRow({
+  kind,
+  resources,
+  bookings,
+}: {
+  kind: ResourceKind;
+  resources: { id: string; name: string; short: string }[];
+  bookings: ResourceBooking[];
+}) {
+  const { state, dispatch } = usePos();
+  const noun = NOUN[kind];
+  const hidden = resources.filter((r) => state.hiddenResources.includes(r.id));
+  const countOn = (id: string) => bookings.filter((b) => b.resourceId === id).length;
+
+  const chip = (on: boolean) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 0.5,
+    height: 28,
+    px: 1.25,
+    borderRadius: `${radius.sm}px`,
+    fontSize: 12.5,
+    fontWeight: 700,
+    whiteSpace: 'nowrap' as const,
+    border: `1.5px solid ${on ? md3.primaryContainer : md3.outlineVariant}`,
+    bgcolor: on ? md3.primaryContainer : '#fff',
+    color: on ? md3.onPrimaryContainer : md3.onSurfaceVariant,
+    '&:hover': { bgcolor: on ? md3.primaryContainer : md3.surfaceContainer, borderColor: on ? md3.primary : md3.outline },
+  });
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      gap={0.75}
+      role="group"
+      aria-label={`${noun.many[0].toUpperCase()}${noun.many.slice(1)} shown`}
+      data-resource-filter={kind}
+      sx={{ px: 1.75, py: 0.75, bgcolor: '#fff', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0, flexWrap: 'wrap', rowGap: 0.75 }}
+    >
+      <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: md3.outline, mr: 0.25 }}>
+        {noun.many}
+      </Typography>
+      <ButtonBase
+        aria-pressed={hidden.length === 0}
+        data-resource-show-all
+        onClick={() => dispatch({ type: 'showAllResources', kind })}
+        sx={chip(hidden.length === 0)}
+      >
+        {hidden.length === 0 && <Icon name="check" size={14} />}
+        All {resources.length}
+      </ButtonBase>
+      <Box sx={{ width: '1px', height: 20, bgcolor: md3.outlineVariant, mx: 0.25 }} />
+      {resources.map((r) => {
+        const on = !state.hiddenResources.includes(r.id);
+        const n = countOn(r.id);
+        return (
+          <ButtonBase
+            key={r.id}
+            title={`${on ? 'Hide' : 'Show'} ${r.name}`}
+            aria-pressed={on}
+            aria-label={`${r.name}, ${n} booking${n === 1 ? '' : 's'}`}
+            data-resource-toggle={r.id}
+            onClick={() => dispatch({ type: 'setResourceShown', resourceId: r.id, shown: !on })}
+            sx={chip(on)}
+          >
+            {on ? <Icon name="check" size={14} /> : <Icon name="visibility_off" size={14} />}
+            {r.short}
+            <Box
+              component="span"
+              sx={{ fontWeight: 600, fontSize: 11.5, color: on ? md3.onPrimaryContainer : md3.outline, opacity: 0.8 }}
+            >
+              {n}
+            </Box>
+          </ButtonBase>
+        );
+      })}
+    </Stack>
+  );
+}
+
+/** Every column switched off: say so, and offer the one way back. */
+function AllSwitchedOff({ kind }: { kind: ResourceKind }) {
+  const { dispatch } = usePos();
+  const noun = NOUN[kind];
+  return (
+    <Stack alignItems="center" justifyContent="center" gap={1.5} sx={{ flex: 1, bgcolor: md3.surfaceContainer }} data-resource-all-off>
+      <Icon name="visibility_off" size={32} color={md3.outline} />
+      <Typography sx={{ fontSize: 15, fontWeight: 700, color: md3.onSurface }}>Every {noun.one} is switched off</Typography>
+      <Typography sx={{ fontSize: 13, color: md3.onSurfaceVariant }}>Switch one back on above, or show them all.</Typography>
+      <ButtonBase
+        onClick={() => dispatch({ type: 'showAllResources', kind })}
+        sx={{ mt: 0.5, px: 2, height: 36, borderRadius: `${radius.xl}px`, bgcolor: md3.primary, color: md3.onPrimary, fontSize: 13, fontWeight: 700 }}
+      >
+        Show all {noun.many}
+      </ButtonBase>
     </Stack>
   );
 }
@@ -231,39 +449,132 @@ export function ResourceSheetView({ kind }: { kind: ResourceKind }) {
 /**
  * One booking on the sheet. Its height is its length; below 60 minutes it drops the second
  * line, because a 48px block has room for a name and nothing else legible.
+ *
+ * The left edge is the **membership ribbon** — the golfer's plan colour, grey for none (Buck). Drag
+ * the block to move it, its bottom edge to resize it; a tap without a drag opens it. Paid bookings
+ * stay where they are: the money has moved, so the booking does not.
  */
-function BookingBlock({ booking: b, openMin }: { booking: ResourceBooking; openMin: number }) {
+function BookingBlock({
+  booking: b,
+  openMin,
+  onMoved,
+  onRefused,
+}: {
+  booking: ResourceBooking;
+  openMin: number;
+  onMoved: (before: ResourceBooking, label: string) => void;
+  onRefused: (why: string) => void;
+}) {
   const { state, dispatch } = usePos();
   const open = state.resourcePanel?.bookingId === b.id;
   const tall = b.durationMin >= 60;
+  const ribbon = ribbonOf(liveCustomer(b.crmId));
+  const cfg = SHEETS[b.kind];
   // The tee sheet's palette: owed is white with a green edge, paid is solid green.
   const tone = b.paid
     ? { bg: md3.primary, border: md3.primary, name: '#fff', meta: 'rgba(255,255,255,.8)' }
     : { bg: '#fff', border: md3.primary, name: md3.onSurface, meta: md3.onSurfaceVariant };
 
+  // A drag in progress: where it started, what it is doing, and how far it has gone.
+  const drag = useRef<{ mode: 'move' | 'resize'; x: number; y: number; moved: boolean } | null>(null);
+  // When a drag ended: the click the browser fires after it is the drag's, not a tap.
+  const draggedAt = useRef(0);
+  const [preview, setPreview] = useState<{ dy: number; dh: number } | null>(null);
+
+  const snapMinutes = (px: number) => Math.round(px / PPM / cfg.stepMin) * cfg.stepMin;
+  const columnAt = (x: number, y: number): string | null => {
+    const hit = (typeof document.elementsFromPoint === 'function' ? document.elementsFromPoint(x, y) : []).find((el) =>
+      el.hasAttribute('data-resource-column'),
+    );
+    return hit?.getAttribute('data-resource-column') ?? null;
+  };
+
+  const begin = (mode: 'move' | 'resize') => (e: ReactPointerEvent) => {
+    if (b.paid || e.button !== 0) return;
+    e.stopPropagation();
+    drag.current = { mode, x: e.clientX, y: e.clientY, moved: false };
+    // Captured so the drag follows the pointer across columns; a synthetic event has no live pointer.
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* not capturable */
+    }
+  };
+  const move = (e: ReactPointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dy = e.clientY - d.y;
+    if (!d.moved && Math.abs(dy) < 6 && Math.abs(e.clientX - d.x) < 6) return;
+    d.moved = true;
+    setPreview(d.mode === 'move' ? { dy: snapMinutes(dy) * PPM, dh: 0 } : { dy: 0, dh: snapMinutes(dy) * PPM });
+  };
+  const end = (e: ReactPointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    setPreview(null);
+    if (!d?.moved) return;
+    draggedAt.current = performance.now();
+    const delta = snapMinutes(e.clientY - d.y);
+    const to =
+      d.mode === 'move'
+        ? { resourceId: columnAt(e.clientX, e.clientY) ?? b.resourceId, startMin: b.startMin + delta, durationMin: b.durationMin }
+        : { resourceId: b.resourceId, startMin: b.startMin, durationMin: b.durationMin + delta };
+    if (to.resourceId === b.resourceId && to.startMin === b.startMin && to.durationMin === b.durationMin) return;
+    const problem = moveProblem(b, to, state.resourceBookings);
+    if (problem) {
+      onRefused(problem);
+      return;
+    }
+    dispatch({ type: 'patchResourceBooking', id: b.id, patch: to });
+    const where = resourceById(to.resourceId)?.name ?? '';
+    onMoved(
+      b,
+      d.mode === 'move'
+        ? `Move · ${b.name} to ${where} at ${formatTimeLabel(to.startMin)}`
+        : `Resize · ${b.name} to ${formatDuration(to.durationMin)}`,
+    );
+  };
+
   return (
     <ButtonBase
       data-resource-booking={b.id}
+      data-ribbon={ribbon.name}
       aria-label={`${b.name}, ${formatTimeLabel(b.startMin)}, ${formatDuration(b.durationMin)}${b.paid ? ', paid' : ''}`}
-      onClick={() => dispatch({ type: 'openResourceBooking', bookingId: b.id })}
+      onClick={() => {
+        if (performance.now() - draggedAt.current < 400) return;
+        dispatch({ type: 'openResourceBooking', bookingId: b.id });
+      }}
+      onPointerDown={begin('move')}
+      onPointerMove={move}
+      onPointerUp={end}
+      onPointerCancel={() => {
+        drag.current = null;
+        setPreview(null);
+      }}
       sx={{
         position: 'absolute',
         top: (b.startMin - openMin) * PPM + 2,
         left: 4,
         right: 4,
-        height: b.durationMin * PPM - 4,
+        height: b.durationMin * PPM - 4 + (preview?.dh ?? 0),
+        transform: preview?.dy ? `translateY(${preview.dy}px)` : undefined,
         borderRadius: `${radius.sm}px`,
         border: `1.5px solid ${tone.border}`,
+        // The membership ribbon, inside the edge so the paid/owed outline still reads.
+        boxShadow: `inset 5px 0 0 ${ribbon.color}${open ? `, 0 0 0 3px ${md3.primary}55` : ''}${preview ? ', 0 6px 16px rgba(0,0,0,.22)' : ''}`,
         bgcolor: tone.bg,
-        px: 1,
+        pl: 1.5,
+        pr: 1,
         py: 0.5,
         flexDirection: 'column',
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         textAlign: 'left',
         overflow: 'hidden',
-        boxShadow: open ? `0 0 0 3px ${md3.primary}55` : 'none',
-        zIndex: 1,
+        zIndex: preview ? 4 : 1,
+        cursor: b.paid ? 'pointer' : preview ? 'grabbing' : 'grab',
+        touchAction: 'none',
+        opacity: preview ? 0.92 : 1,
       }}
     >
       <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: tone.name, lineHeight: 1.25 }} noWrap>
@@ -279,6 +590,14 @@ function BookingBlock({ booking: b, openMin }: { booking: ResourceBooking; openM
           {b.paid ? 'PAID' : 'CHECKED IN'}
         </Typography>
       )}
+      {!b.paid && (
+        <Box
+          data-resize-handle
+          aria-hidden
+          onPointerDown={begin('resize')}
+          sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 10, cursor: 'ns-resize', '&::after': { content: '""', position: 'absolute', left: '40%', right: '40%', bottom: 3, height: 2, borderRadius: 1, bgcolor: md3.outlineVariant } }}
+        />
+      )}
     </ButtonBase>
   );
 }
@@ -287,7 +606,18 @@ function BookingBlock({ booking: b, openMin }: { booking: ResourceBooking; openM
  * The tee sheet's date controls, reused — the same prev / date / next / Today, so moving
  * between the three sheets does not move the controls under the operator's hand.
  */
-function ResourceToolbar({ title, summary }: { title: string; summary: string }) {
+function ResourceToolbar({
+  title,
+  summary,
+  filterNote,
+  undo,
+}: {
+  title: string;
+  summary: string;
+  /** While columns are switched off: how many show, and how many bookings the hidden ones hold. */
+  filterNote?: { text: string; warn: boolean };
+  undo?: { label: string; onClick: () => void };
+}) {
   const { state, dispatch } = usePos();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const dateLabel = state.currentDate.toLocaleDateString('en-US', {
@@ -335,6 +665,15 @@ function ResourceToolbar({ title, summary }: { title: string; summary: string })
       <ToolbarButton icon="chevron_right" onClick={() => dispatch({ type: 'shiftDate', days: 1 })} title="Next day" />
       <ToolbarButton label="Today" onClick={() => dispatch({ type: 'setDate', date: DEMO_TODAY() })} />
       <Box sx={{ flex: 1 }} />
+      {undo && <ToolbarButton icon="undo" label={undo.label} onClick={undo.onClick} />}
+      {filterNote && (
+        <Typography
+          data-resource-filter-summary
+          sx={{ fontSize: 12.5, fontWeight: 700, mr: 1, color: filterNote.warn ? '#92400e' /* the app's amber note text */ : md3.onSurfaceVariant }}
+        >
+          {filterNote.text}
+        </Typography>
+      )}
       <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: md3.onSurfaceVariant }} data-resource-summary>
         {summary}
       </Typography>

@@ -67,7 +67,7 @@ describe('allergies', () => {
 
 describe('order and prompts', () => {
   it('lists an item’s groups in the order the menu gives them', () => {
-    expect(groupsOf(burger).map((x) => x.id)).toEqual(['temperature', 'side', 'burger-addons', 'hold', 'allergies']);
+    expect(groupsOf(burger).map((x) => x.id)).toEqual(['temperature', 'side', 'cheeses', 'burger-addons', 'hold', 'allergies']);
     expect(groupsOf(menuItem('counter-miller-lite')!)).toEqual([]);
   });
 
@@ -86,7 +86,8 @@ describe('order and prompts', () => {
 
   it('says what is missing in words', () => {
     expect(missingPrompt([])).toBe('');
-    expect(missingPrompt([g('temperature')])).toBe('Choose temperature');
-    expect(missingPrompt([g('temperature'), g('side')])).toBe('Choose temperature and side');
+    // Buck's group names (Nov 26): Temp and Sides.
+    expect(missingPrompt([g('temperature')])).toBe('Choose temp');
+    expect(missingPrompt([g('temperature'), g('side')])).toBe('Choose temp and sides');
   });
 });

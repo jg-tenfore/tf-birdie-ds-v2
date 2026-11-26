@@ -44,3 +44,12 @@ jobs:
       # the visual review; this covers the build itself.
       - name: Build the full site
         run: npm run build:site
+
+      # The docs pages link stories by id, and the Screen indexes are generated from the sidebar.
+      # Both are checked against the built Storybook's index, so a renamed or moved story fails
+      # here rather than turning up as a dead link in a review.
+      - name: Docs links and screen index
+        run: |
+          STORYBOOK_INDEX=site/index.json node scripts/check-doc-links.mjs
+          STORYBOOK_INDEX=site/index.json node scripts/gen-screen-index.mjs --check
+          node scripts/gen-ds-usage.mjs --check

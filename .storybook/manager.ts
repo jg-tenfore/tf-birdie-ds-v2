@@ -4,9 +4,15 @@ import { create } from 'storybook/theming';
 /**
  * Storybook chrome.
  *
- * Two reasons this file exists beyond vanity: the sidebar brand names the system (three
- * TenFore design-system Storybooks look identical otherwise), and `brandUrl` points at
- * the prototype — the sibling deliverable people arriving here usually want next.
+ * The sidebar brand is one row, like TF Crane's: the TenFore wordmark, a hairline, then
+ * "Birdie" over a small uppercase "Design System" — so the TenFore design-system Storybooks read
+ * as one family and still say which one this is. The wordmark stays whole at 22px tall rather
+ * than being cropped to a square mark, because its antlers overlap the "T" and don't survive a
+ * crop. One row keeps the header about as tall as Crane's, so the nav starts where it does there. It links to Start Here › Overview; the prototypes are one click
+ * from there.
+ *
+ * The logo is `static/tenfore-logo.svg` (served by `staticDirs` in `main.ts`), addressed
+ * relatively so it resolves both locally and under GitHub Pages' `/tf-birdie-ds-v2/`.
  *
  * The palette is the POS brand green from `src/theme/tokens.ts`, duplicated as literals
  * because the manager bundle is built separately from the preview and can't import from
@@ -15,9 +21,16 @@ import { create } from 'storybook/theming';
 addons.setConfig({
   theme: create({
     base: 'light',
-    brandTitle: '⛳ Birdie POS — Design System',
-    brandUrl: './prototype/',
-    brandTarget: '_blank',
+    brandTitle: `<span style="display:flex;align-items:center;gap:10px;font-family:'Google Sans','Google Sans Text',Roboto,'Helvetica Neue',Arial,sans-serif">
+        <img src="tenfore-logo.svg" width="82" height="22" alt="TenFore" style="display:block" />
+        <span style="width:1px;height:28px;background:#c0c9c1"></span>
+        <span style="display:flex;flex-direction:column;line-height:1.1">
+            <span style="font-size:16px;font-weight:700;color:#191d19">Birdie</span>
+            <span style="font-size:10.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#707973">Design System</span>
+        </span>
+    </span>`,
+    brandUrl: './?path=/docs/start-here-overview--overview',
+    brandTarget: '_self',
 
     colorPrimary: '#17a34a',
     colorSecondary: '#17a34a',
@@ -43,7 +56,9 @@ addons.setConfig({
     fontBase: "'Google Sans', 'Google Sans Text', Roboto, 'Helvetica Neue', Arial, sans-serif",
   }),
   sidebar: {
-    // POS Screens has seven numbered sections; leaving them expanded buries everything else.
+    // Roots as headings (Start Here, Prototypes, Design System, Reviews, Archive), and the
+    // archive kept rather than featured: it starts closed.
     showRoots: true,
+    collapsedRoots: ['archive'],
   },
 });

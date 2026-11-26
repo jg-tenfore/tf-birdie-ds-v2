@@ -1,8 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Box, TextField } from '@mui/material';
+import { useState } from 'react';
+import { Box, TextField, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import { Field } from '../../../pos/modals/ModalFrame';
+import { mobileTheme } from '../../../theme/mobile-theme';
 
 const meta = {
-  title: 'Components/Forms/Text Field',
+  title: 'Design System/Components/Forms/Text Field',
+  id: 'components-forms-text-field',
   component: TextField,
   tags: ['autodocs'],
   parameters: {
@@ -77,4 +82,46 @@ export const States: Story = {
       <TextField {...args} label="Required" required />
     </Box>
   ),
+};
+
+/**
+ * The text fields the product really uses. The tablet's is Birdie's own `Field`
+ * (`src/pos/modals/ModalFrame.tsx`): a small bold label above, a 1.5px outline, an optional `$`
+ * prefix and a hint. No tablet screen uses MUI's `TextField`. The handheld's is the MUI
+ * `TextField` under `mobileTheme`: outlined, 16px text, a floating label, 56dp tall.
+ */
+function InBirdieFields() {
+  const [name, setName] = useState('');
+  const [fee, setFee] = useState('54.00');
+  const [mobileName, setMobileName] = useState('');
+  return (
+    <Box sx={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <Box sx={{ width: 320, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Typography variant="overline">Tablet · Field</Typography>
+        <Field label="Last name" value={name} onChange={setName} placeholder="Last, First" />
+        <Field label="Green fee" prefix="$" value={fee} onChange={setFee} hint="Leave blank to keep the published rate" />
+        <Field label="Register name" value="Register 1" onChange={() => {}} disabled />
+      </Box>
+      <ThemeProvider theme={mobileTheme}>
+        <Box sx={{ width: 328, display: 'flex', flexDirection: 'column', gap: 2, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+          <Typography variant="overline">Handheld · TextField</Typography>
+          <TextField label="Last name" value={mobileName} onChange={(e) => setMobileName(e.target.value)} placeholder="Last, First" />
+          <TextField label="Or enter a name" placeholder="Last, First" helperText="Books a walk-up with no customer record" />
+        </Box>
+      </ThemeProvider>
+    </Box>
+  );
+}
+
+/** Birdie's own fields, side by side: the tablet's `Field` and the handheld's themed `TextField`. */
+export const InBirdie: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'What the product renders. Left: the tablet `Field` from `src/pos/modals/ModalFrame.tsx`, at the counter\'s density. Right: the handheld `TextField` under `mobileTheme`, at touch size.',
+      },
+    },
+  },
+  render: () => <InBirdieFields />,
 };

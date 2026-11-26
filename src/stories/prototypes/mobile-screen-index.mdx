@@ -1,0 +1,31 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, DocButton, DocLink, DocPage, Section, art, mobilePrototype } from '../docs-kit/docs-kit';
+import { AreaCards, AreaPills, KeyScreens, ScreenIndexTable, areaCountOf, countOf } from './screen-index';
+
+<Meta title="Prototypes/Mobile/Screen index" />
+
+<DocPage>
+
+<Banner
+  eyebrow="Prototypes · Mobile"
+  title="Screen index"
+  art={art('banner-mobile')}
+  pills={<AreaPills app="mobile" />}
+  actions={<><DocButton href={mobilePrototype()}>Open the phone prototype</DocButton><DocLink to="prototypes-mobile-global-nav-navigation--interactive">The whole app in Storybook</DocLink></>}
+>
+  The handheld as the team works from it: the phone app in the V1 → V2 edition (Weston's edits, plus the restaurant on the handheld), at The Dunes of Delgado's 18-hole course, on the Quest handheld. {countOf('mobile')} in {areaCountOf('mobile')}. Every row has its own route in the phone prototype, so Prototype opens that exact screen, still fully clickable.
+</Banner>
+
+<Section title="Key states" intro="Captured on the Quest handheld. Each opens the phone prototype on that screen.">
+<KeyScreens app="mobile" />
+</Section>
+
+<Section title="Area by area" intro="The phone has fewer areas than the tablet: four destinations on its navigation bar (Tee Sheet, Register, People, More), with the rest one level down. Servers, bartenders and hosts get a restaurant bar instead (Tables, Tabs, Quick Order or Reservations), set by who is signed in.">
+<AreaCards app="mobile" />
+</Section>
+
+<Section title="Every screen" intro={`All ${countOf('mobile')}, in sidebar order. Story opens it here; Prototype opens the phone prototype on that screen.`}>
+<ScreenIndexTable app="mobile" />
+</Section>
+
+</DocPage>

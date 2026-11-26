@@ -533,5 +533,7 @@ export interface CartDish {
    * to a dish the kitchen already has. v1 offered it per line; the first cut of Wave 2 missed it.
    */
   discountPct?: number;
+  /** The Buck discount type behind `discountPct` (`data/discount-types.ts`), so the reason is on the line. */
+  discountTypeId?: number;
 }
 

@@ -4,7 +4,7 @@ import { Box, Button, MobileStepper, Paper, Typography } from '@mui/material';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 
-const SLIDES = ['Grill', 'Fry', 'Cold', 'Beverage'];
+const SLIDES = ['Front 9', 'Back 9', 'Range', 'Pro Shop'];
 
 function CarouselDemo() {
   const [step, setStep] = useState(0);
@@ -39,7 +39,8 @@ function CarouselDemo() {
 }
 
 const meta = {
-  title: 'Components/Media & Visuals/Carousel',
+  title: 'Design System/Components/Media & Visuals/Carousel',
+  id: 'components-media-visuals-carousel',
   component: CarouselDemo,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof CarouselDemo>;

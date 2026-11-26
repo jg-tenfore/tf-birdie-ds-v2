@@ -20,16 +20,17 @@ import Settings from '@mui/icons-material/Settings';
 import ReceiptLong from '@mui/icons-material/ReceiptLong';
 
 const meta = {
-  title: 'Components/Navigation/Drawer',
+  title: 'Design System/Components/Navigation/Drawer',
+  id: 'components-navigation-drawer',
   component: Drawer,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'Side panel for navigation and secondary tools, built on MUI `Drawer`. ' +
-          'In the golf-diner KDS a temporary drawer slides the station sidebar in on demand — All-day counts, Item availability, and Settings — keeping the ticket board full-bleed until the expo needs it. ' +
-          'Use `temporary` (overlay) for touch, or `permanent` for a fixed rail on large kitchen displays. Set `anchor` to place it on either edge.',
+          'MUI `Drawer`, shown for reference. Birdie builds its side panels (the reservation slide-over, the day summary, the ' +
+          'main navigation sheet, the order rail) as siblings inside the terminal frame instead, because a `Drawer` portals to ' +
+          'the page and positions itself against the browser window. Set `anchor` to place it on either edge.',
       },
     },
   },
@@ -49,9 +50,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const navItems = [
-  { label: 'Open tickets', icon: <ReceiptLong /> },
-  { label: 'All-day counts', icon: <Tag /> },
-  { label: 'Item availability', icon: <Inventory2 /> },
+  { label: 'Order Lookup', icon: <ReceiptLong /> },
+  { label: 'Time Clock', icon: <Tag /> },
+  { label: 'Inventory', icon: <Inventory2 /> },
   { label: 'Settings', icon: <Settings /> },
 ];
 
@@ -59,7 +60,7 @@ function DrawerContent() {
   return (
     <Box sx={{ width: 260 }} role="presentation">
       <List
-        subheader={<ListSubheader disableSticky>Station</ListSubheader>}
+        subheader={<ListSubheader disableSticky>Operations</ListSubheader>}
       >
         {navItems.map((item) => (
           <ListItemButton key={item.label}>
@@ -79,7 +80,7 @@ function TemporaryDrawerDemo({ anchor }: { anchor?: DrawerAnchor }) {
   return (
     <>
       <Button variant="outlined" startIcon={<Menu />} onClick={() => setOpen(true)}>
-        Open station menu
+        Open the drawer
       </Button>
       <Drawer anchor={anchor} open={open} onClose={() => setOpen(false)}>
         <Box onClick={() => setOpen(false)}>
@@ -95,10 +96,10 @@ export const Playground: Story = {
   render: (args) => <TemporaryDrawerDemo anchor={args.anchor} />,
 };
 
-/** Temporary drawers from either edge — left is the default station rail; right suits contextual tools. */
+/** Temporary drawers from either edge. Birdie's right-hand panels (the reservation, the day summary) are built in the frame instead. */
 export const AnchorLeftAndRight: Story = {
   parameters: {
-    docs: { description: { story: 'The same drawer anchored left and right. Temporary drawers overlay the board and dismiss on backdrop click.' } },
+    docs: { description: { story: 'The same drawer anchored left and right. Temporary drawers overlay the page and dismiss on backdrop click.' } },
   },
   render: () => (
     <Box sx={{ display: 'flex', gap: 2 }}>
@@ -108,10 +109,10 @@ export const AnchorLeftAndRight: Story = {
   ),
 };
 
-/** A `permanent` drawer stays pinned as a fixed rail — ideal for always-on expo displays. */
+/** A `permanent` drawer pinned as a fixed rail — the shape of Birdie's order rail, which is built without MUI. */
 export const Permanent: Story = {
   parameters: {
-    docs: { description: { story: 'A permanent-variant drawer rendered inline as a fixed sidebar rail alongside the board content.' } },
+    docs: { description: { story: 'A permanent-variant drawer rendered inline as a fixed rail beside the content.' } },
   },
   render: () => (
     <Box sx={{ display: 'flex', height: 340, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
@@ -125,7 +126,7 @@ export const Permanent: Story = {
       >
         <Toolbar sx={{ px: 2 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Expo Station
+            The Dunes of Delgado
           </Typography>
         </Toolbar>
         <Divider />
@@ -133,7 +134,7 @@ export const Permanent: Story = {
       </Drawer>
       <Box sx={{ flex: 1, p: 3 }}>
         <Typography variant="body2" color="text.secondary">
-          Ticket board area
+          Screen content
         </Typography>
       </Box>
     </Box>

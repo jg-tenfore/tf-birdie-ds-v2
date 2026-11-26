@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import type { ReactElement } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { price as ratePrice } from '../../../pos/data/rate-catalog';
@@ -12,7 +13,7 @@ import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, openParty, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 11 · Rate Selector / Mobile
+ * Prototypes / Mobile / Tee Sheet / Rate selector (Weston Edits, section 11)
  *
  * Round 3's biggest change, on the phone: a player's fee stops being a number somebody types
  * and becomes a **rate somebody chooses**.
@@ -113,7 +114,9 @@ import { adjustedParty, at18, openParty, withBookings } from '../mobile-scenario
  *   dishonest about the button; a true cancel would mean staging the edit.
  */
 const meta = {
-  title: 'Weston Edits/11 · Rate Selector/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Rate selector',
+  id: 'weston-edits-11-·-rate-selector-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -156,7 +159,6 @@ const feeFor = (b: Booking, seat: number, rate: string) => {
 /** The reservation with one seat's rate editor open over it. */
 const rateEditor = (b: Booking, seat: number, extra: Partial<PosState> = {}): ReactElement => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b), extra)}
     tab="tee"
     stack={[
@@ -185,7 +187,6 @@ const heavy = { weston: { ...DEFAULT_WESTON_OPTIONS, rateCatalog: 'heavy' as con
 export const OpensFromTheFeeChip: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18()}
       tab="tee"
       stack={[{ name: 'bookingDetail', bookingId: openParty().id }]}

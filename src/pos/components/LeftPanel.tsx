@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Box, Button, ButtonBase, Divider, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
-import { elevation, grid, md3, payBadges, radius } from '../../theme/tokens';
+import { elevation, md3, payBadges, radius } from '../../theme/tokens';
 import { SETTINGS_MENU_ITEMS, TRANSPORT_META } from '../data/config';
 import { COURSES, TIMES } from '../data/courses';
 import { useV1V2, useWestonEdits } from '../edition';
+import { useLeftPanelWidth } from '../device-context';
 import { CASH_PAYOUT_MENU_ITEM } from '../data/register-extras';
 import { ComboLine, GiftCardLine, HeldOrdersBar, HoldButton } from './RegisterExtras';
 import { RailDishLine } from './restaurant/DishLine';
@@ -48,6 +49,7 @@ export function LeftPanel() {
   const [cogAnchor, setCogAnchor] = useState<HTMLElement | null>(null);
   const weston = useWestonEdits();
   const v1v2 = useV1V2();
+  const railW = useLeftPanelWidth();
   // V1 → V2 adds Cash payout to the cog — a drawer action, not part of any order.
   const menuItems = v1v2 ? [...SETTINGS_MENU_ITEMS, CASH_PAYOUT_MENU_ITEM] : SETTINGS_MENU_ITEMS;
   const orderCount = orderItemCount(state.cart);
@@ -121,7 +123,8 @@ export function LeftPanel() {
   return (
     <Box
       sx={{
-        width: state.leftPanelCollapsed ? 0 : grid.leftPanelW,
+        // 320, or 380 on the large display (`useLeftPanelWidth`).
+        width: state.leftPanelCollapsed ? 0 : railW,
         flexShrink: 0,
         bgcolor: '#fff',
         borderRight: state.leftPanelCollapsed ? 'none' : `1px solid ${md3.outlineVariant}`,

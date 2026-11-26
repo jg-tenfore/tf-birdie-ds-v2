@@ -1,0 +1,162 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, Code, DocButton, DocPage, DocTable, Grid, NavCard, Pill, Section, StatusPill, Steps, Timeline, archivePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { LATEST_REVIEW } from '../prototypes/screen-index-data';
+import { CURRENT_EDITION, ARCHIVED_EDITION } from '../../pos/edition';
+
+<Meta title="Start Here/Process & roadmap" />
+
+<DocPage>
+
+<Banner
+  eyebrow="Process & roadmap"
+  title="From the HTML prototype to the current Birdie, and what comes next."
+  pills={<><Pill tone="brand">Current: Weston Edits</Pill><Pill>Updated Nov 26, 2026</Pill><Pill tone="amber">Birdie V2 redesign by end of 2026</Pill></>}
+  actions={<><DocButton to="start-here-how-to-review--overview">Start the review</DocButton><DocButton variant="secondary" to={LATEST_REVIEW.id}>The latest review</DocButton></>}
+>
+  Birdie's screens are designed here, against working prototypes, and reviewed with Weston one round at a time. Each round gets a folder in Reviews; what's approved is built into the prototype the same week, so the next round starts from it.
+</Banner>
+
+<Section title="The process" intro="Four steps. Design and review run as a loop; the redesign is being planned in pieces.">
+<Steps
+  steps={[
+    { label: 'Step 1', status: 'now', title: 'Design in Storybook', body: 'Every screen and state is a story, built from the same components as the prototypes, so what is reviewed is what runs.', owner: 'Design' },
+    { label: 'Step 2', status: 'now', title: 'Review with product', body: 'Weston walks the prototype on a call or a Loom. Each round gets a folder in Reviews, with what was decided and left open.', owner: 'Product, with design' },
+    { label: 'Step 3', status: 'next', title: 'Build', body: 'Engineering builds from these screens: the Birdie V2 redesign in pieces, and a Windows port on the current design.', owner: 'Engineering' },
+    { label: 'Step 4', status: 'next', title: 'Roll out to clubs', body: 'On the hardware on the Devices page: the Clover Mini at the counter, the Quest handheld on the course.' },
+  ]}
+/>
+</Section>
+
+<Section title="Current and archive" intro="Two words this Storybook uses everywhere.">
+<Grid cols={2}>
+  <NavCard eyebrow="Current" title="Weston Edits, on both apps" href={tabletPrototype('#/tee-sheet')} cta="Open the current tablet">
+    The design the team works from: the <Code>{CURRENT_EDITION.tablet}</Code> edition (V1 → V2) on the tablet and <Code>{CURRENT_EDITION.mobile}</Code> on the phone — Weston's edits plus the other nav destinations. The tablet has all eighteen; the handheld has the golf screens and, since Nov 26, the restaurant (Tables, Tabs, Quick Order, Reservations, Orders & Tips), with its bottom bar set by the signed-in role. Both live under <strong>Prototypes</strong>, and at <Code>/prototype/</Code> and <Code>/mobile/</Code>.
+  </NavCard>
+  <NavCard eyebrow="Archive" title="The original port, and what it was built on" href={archivePrototype('tablet')} cta="Open the archived tablet">
+    The <Code>{ARCHIVED_EDITION}</Code> edition: the port of the HTML prototype before Weston's rounds, plus the work built on it. Still rendered, still linkable, at <Code>/archive/prototype/</Code> and <Code>/archive/mobile/</Code>, and under <strong>Archive</strong> in the sidebar.
+  </NavCard>
+</Grid>
+<Callout>
+An edition is a setting, not a copy. Components ask which edition they're in and branch only where Weston's edits differ, so one change reaches every edition that shares it. Every story file names its edition.
+</Callout>
+</Section>
+
+<Section title="Milestones" intro="From git history. All dates are 2026.">
+<Timeline
+  items={[
+    {
+      date: 'Aug 12',
+      status: 'done',
+      title: 'The port: a design system and a React prototype from the HTML prototype',
+      body: 'MD3 tokens ported from the original’s :root, the register, the tee sheet, check-in and payments, every dialog as a story. The original stays published, read-only.',
+      link: { label: 'The archive', to: 'archive-about-the-archive--overview' },
+    },
+    {
+      date: 'Aug 31 – Sep 3',
+      status: 'done',
+      title: 'Deep links, product photos, three club layouts',
+      body: 'Every screen and dialog gets a URL; every sellable good a photo; the 18-hole and single-nine clubs join the three nines; the tee sheet action showcase.',
+      img: screen('tablet-pro-shop'),
+      link: { label: 'Deep links', to: 'start-here-deep-links--overview' },
+    },
+    {
+      date: 'Sep 21',
+      status: 'done',
+      title: 'Mobile Screens',
+      body: 'The same POS on a phone, as a native MD3 app: four destinations on the navigation bar, everything else one level down. Three mobile prototypes.',
+      img: screen('mobile-tee-sheet'),
+      frame: 'handheld',
+      link: { label: 'Phone screen index', to: 'prototypes-mobile-screen-index--overview' },
+    },
+    {
+      date: 'Sep 22 – 29',
+      status: 'done',
+      title: 'Weston Edits, rounds 1 to 5',
+      body: 'Golf first, order second: a tee time opens its reservation in a slide-over. Rates by name, a customer database, cart signout, punch cards; 820 and a frozen sheet (round 4); a main nav, readable notes and the order number (round 5).',
+      img: screen('tablet-reservation'),
+      link: { label: 'The Weston Edits review', to: 'reviews-sep-22-weston-edits-rounds-1-5-summary--overview' },
+    },
+    {
+      date: 'Sep 29 – Oct 6',
+      status: 'done',
+      title: 'V1 → V2: every destination in the nav',
+      body: 'Wave 1 the Pro Shop group (courts, bays, register functions), wave 2 the restaurant, wave 3 everything else and PIN sign-in, then Settings. The Sep 30 call’s twelve proposals; ten approved Oct 2, the other two approved Oct 3 after another round. All built.',
+      img: screen('tablet-tables'),
+      link: { label: 'The Oct 2 review', to: 'reviews-oct-2-proposal-review-summary--overview' },
+    },
+    {
+      date: 'Nov 26',
+      status: 'now',
+      title: 'The revamp: current is Weston Edits',
+      body: 'The sidebar regrouped like TF Crane’s, the original port archived, a device picker for the real hardware, Buck’s back-office data behind Settings, menus, credits and bays, photos on every menu tile, and these Start Here pages.',
+      img: screen('device-clover-mini'),
+      link: { label: 'Devices', to: 'start-here-devices--overview' },
+    },
+    {
+      date: 'Nov 26',
+      status: 'now',
+      title: 'The restaurant on the handheld',
+      body: 'Tables, Tabs, Quick Order, Reservations and Orders & Tips on the Quest handheld, on the tablet\'s own rules and store. The bottom bar follows the signed-in role: servers and bartenders get Tables · Tabs · Quick Order, hosts Tables · Reservations, managers reach the restaurant from More. Next for the handheld: the operations screens (Customer Search, Gift Cards, Time Clock, Shift).',
+      link: { label: 'Phone screen index', to: 'prototypes-mobile-screen-index--overview' },
+    },
+    {
+      date: 'By end of 2026',
+      status: 'next',
+      title: 'Birdie V2 redesign, in pieces',
+      body: 'Weston’s direction: food and beverage first (tabs and tables), the tee sheet later. Each piece reviewed here before it is built.',
+    },
+    {
+      date: 'Then',
+      status: 'next',
+      title: 'A Windows port, on the current design',
+      body: 'The current Birdie as it stands, not the redesign. Designs get checked on a 22-inch 16:9 display, which the large display (1920×1080) simulates.',
+      link: { label: 'The large display', to: 'start-here-devices--overview' },
+    },
+  ]}
+/>
+</Section>
+
+<Section title="Decisions still open" intro="Gathered from the review summaries, the stories' own notes, the device pass and the Buck pass. Each is built one way today, and each is one place to change.">
+<DocTable
+  columns={['Question', 'Built today', 'From', 'Status']}
+  widths={['32%', '40%', '16%', '12%']}
+  rows={[
+    ['Is 820 wide enough for the reservation, or bigger?', '820 ships; 640 and full cover are on the toolbar. There is no size between 820 and cover.', 'Round 5', <StatusPill tone="open" />],
+    ['Slide-over or modal for the reservation?', 'Slide-over. A modal version is built on the same booking to compare.', 'Round 1', <StatusPill tone="open" />],
+    ['What does an ID.me document look like?', 'View ID draws a stand-in card from the record; nobody has seen what ID.me returns.', 'Round 4', <StatusPill tone="open" />],
+    ['Phone parity with the tablet', 'The phone has no View ID, Change golfer or note alert yet. "We still want to look the same, roughly."', 'Rounds 4–5', <StatusPill tone="open" />],
+    ['NOT LINKED and the green Change golfer on guest rows', 'Shown as they are; offered three times, unanswered.', 'Round 5', <StatusPill tone="open" />],
+    ['Where the rate grid changes shape', 'Past twelve rates. A guess, never measured against a real club’s price book.', 'Round 3', <StatusPill tone="open" />],
+    ['✕ and Save changes both keep in the rate editor', 'As Weston asked; Cancel beside them discards. Worth one more look.', 'Round 4', <StatusPill tone="open" />],
+    ['Financial’s per-player rows show the rate before a discount or punch', 'The balance above is right; the rows below are gross. A display bug not yet carried over from the cart fix.', 'Story notes', <StatusPill tone="open" />],
+    ['Court prices, and gift-card expiry per club', 'Placeholders: tennis $20/hr, pickleball $15, basketball $25, pool $10; cards expire after five years.', 'V1 → V2', <StatusPill tone="open" />],
+    ['Keep the Clover settings section?', 'Marked Rarely used, with switches nothing reads, until it is dropped or kept.', 'V1 → V2', <StatusPill tone="open" />],
+    ['Should Staff & PINs move to Set in Buck?', 'Managers edit them at the counter; Buck keeps them too.', 'Buck pass', <StatusPill tone="open" />],
+    ['Does Buck’s bay daily limit count bookings or hours?', 'Birdie counts bookings: two a day, with a staff override.', 'Buck pass', <StatusPill tone="open" />],
+    ['Rename Buck’s “Burger Temps”; is a Lunch menu OK?', 'Birdie says Burger Add-ons, and adds Lunch, 11 AM–4 PM.', 'Buck pass', <StatusPill tone="open" />],
+    ['Bays named after real golfers', 'Kept as Buck names them (Nicklaus Bay, Palmer Bay).', 'Buck pass', <StatusPill tone="open" />],
+    ['Plan colours for Senior and Junior members on the tee sheet', 'The sheet draws by tier, which differs for those two overrides only.', 'Buck pass', <StatusPill tone="open" />],
+    ['The Clover Mini with the rail open beside the 820 panel', 'About 140px of tee sheet shows.', 'Device pass', <StatusPill tone="open" />],
+    ['Wide tables on the large display', 'Tabs and Orders & Tips stretch to about 1500px.', 'Device pass', <StatusPill tone="open" />],
+    ['A 44px ⋮ on the handheld’s player row', 'MD3 asks for 48.', 'Device pass', <StatusPill tone="open" />],
+    ['A Starter or Ranger view', 'A phone-first check-in and cart view with no money on it. Weston likes it, "maybe not even tied into Birdie".', 'Oct 1', <StatusPill tone="parked" />],
+    ['Tips and release notes in the empty rail', 'Not built.', 'Oct 1', <StatusPill tone="parked" />],
+  ]}
+/>
+</Section>
+
+<Section title="Read more">
+<Grid cols={3}>
+  <NavCard eyebrow="Sep 22 – 29" title="Weston Edits, rounds 1–5" to="reviews-sep-22-weston-edits-rounds-1-5-summary--overview" cta="Read the rounds">
+    Golf first, order second, and every decision since.
+  </NavCard>
+  <NavCard eyebrow="Oct 1 – 2" title="The Sep 30 call and its review" to="reviews-oct-1-proposals-from-the-sep-30-call-summary--overview" cta="Read the proposals">
+    Twelve proposals, ten approved, two more rounds, all built.
+  </NavCard>
+  <NavCard eyebrow="Nov 26" title="Buck and Birdie" to="start-here-buck-and-birdie--overview" cta="What Buck sets up">
+    Which Buck screen sets up which part of the counter, and how closely the prototype follows it.
+  </NavCard>
+</Grid>
+</Section>
+
+</DocPage>

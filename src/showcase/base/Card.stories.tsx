@@ -11,9 +11,11 @@ import {
   Typography,
 } from '@mui/material';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import { Stat } from '../../pos/components/operations/OpsParts';
 
 const meta = {
-  title: 'Components/Layout & Structure/Card',
+  title: 'Design System/Components/Layout & Structure/Card',
+  id: 'components-layout-structure-card',
   component: Card,
   parameters: {
     layout: 'centered',
@@ -135,5 +137,21 @@ export const StatCard: Story = {
         </Box>
       </CardContent>
     </Card>
+  ),
+};
+
+/**
+ * **In Birdie: stat tiles.** The figure tiles on Inventory, built from OpsParts' `Stat` — not MUI
+ * Card. Neutral by default; `warn` and `bad` (and `strong` elsewhere) only when a figure needs attention.
+ */
+export const InBirdieStatTiles: Story = {
+  name: 'In Birdie · Stat tiles',
+  render: () => (
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 180px)', gap: '10px' }}>
+      <Stat label="Items stocked" value="65" sub="6 categories" />
+      <Stat label="On the shelf" value="1045 units" sub="$22,896.00 at retail" />
+      <Stat label="Low" value="14" sub="3 or fewer left" tone="warn" />
+      <Stat label="Out" value="8" sub="Still sellable" tone="bad" />
+    </Box>
   ),
 };

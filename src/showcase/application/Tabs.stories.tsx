@@ -4,7 +4,8 @@ import { Box, Tab, Tabs, Typography } from '@mui/material';
 
 function TabsDemo() {
   const [value, setValue] = useState(0);
-  const labels = ['Open / Pending', 'Completed', 'All-day counts'];
+  // The reservation's four tabs, on both surfaces.
+  const labels = ['Players', 'Financial', 'Notes', 'Activity'];
   return (
     <Box sx={{ width: 520 }}>
       <Tabs value={value} onChange={(_, v) => setValue(v)}>
@@ -22,7 +23,8 @@ function TabsDemo() {
 }
 
 const meta = {
-  title: 'Components/Navigation/Tabs',
+  title: 'Design System/Components/Navigation/Tabs',
+  id: 'components-navigation-tabs',
   component: TabsDemo,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof TabsDemo>;

@@ -5,6 +5,14 @@ import type { ReactNode, UIEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { keyframes } from '@emotion/react';
 import ArrowBack from '@mui/icons-material/ArrowBack';
+import AssignmentTurnedIn from '@mui/icons-material/AssignmentTurnedIn';
+import AssignmentTurnedInOutlined from '@mui/icons-material/AssignmentTurnedInOutlined';
+import Bolt from '@mui/icons-material/Bolt';
+import BoltOutlined from '@mui/icons-material/BoltOutlined';
+import CreditCard from '@mui/icons-material/CreditCard';
+import CreditCardOutlined from '@mui/icons-material/CreditCardOutlined';
+import Restaurant from '@mui/icons-material/Restaurant';
+import RestaurantOutlined from '@mui/icons-material/RestaurantOutlined';
 import Close from '@mui/icons-material/Close';
 import GolfCourse from '@mui/icons-material/GolfCourse';
 import GolfCourseOutlined from '@mui/icons-material/GolfCourseOutlined';
@@ -19,7 +27,9 @@ import Wifi from '@mui/icons-material/Wifi';
 import BatteryFull from '@mui/icons-material/BatteryFull';
 import { md3, mobile } from '../../theme/tokens';
 import { Stack } from '../components/Stack';
+import { useMobileFrame } from '../device-context';
 import type { MobileTab } from './navigation';
+import { GOLF_BAR } from './bar-by-role';
 import { TABS, useMobileNav } from './navigation';
 
 /**
@@ -77,8 +87,9 @@ function GestureBar({ tone = 'light' }: { tone?: 'light' | 'dark' }) {
 }
 
 /**
- * The 402×797 phone. Fixed-size for the same reason the terminal is: these are drafts of
- * specific screens at a specific size, not a responsive layout.
+ * The phone. Fixed-size for the same reason the terminal is: these are drafts of specific
+ * screens at a specific size — the 402×797 design canvas, or the handheld a device picker
+ * chose (360×800 on the Quest, 360×720 on the Clover Flex) — not a fluid layout.
  */
 export function MobileFrame({
   children,
@@ -90,11 +101,14 @@ export function MobileFrame({
   statusBg?: string;
 }) {
   const [sheetHost, setSheetHost] = useState<HTMLElement | null>(null);
+  // 402×797 — the design canvas — unless a handheld is chosen (see `device-context.tsx`).
+  const frame = useMobileFrame();
   return (
     <Box
+      data-mobile-frame={`${frame.width}x${frame.height}`}
       sx={{
-        width: mobile.frame.width,
-        height: mobile.frame.height,
+        width: frame.width,
+        height: frame.height,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -145,6 +159,10 @@ export function MobileScreen({
       {topBar}
       <Box onScroll={onBodyScroll} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', ...bodySx }}>
         {children}
+        {/* With a FAB, the body ends in room for it (56 tall + 16 off the edge + 16 clear), so the
+            last row — a list's last name, a tab's total — can scroll out from under the button
+            instead of sitting behind it at the bottom of the list. */}
+        {fab && <Box aria-hidden sx={{ height: 88, flexShrink: 0 }} />}
       </Box>
       {fab && (
         <Box sx={{ position: 'absolute', right: 16, bottom: 16 + (bottomBar ? 80 : 0), zIndex: 2 }}>
@@ -305,19 +323,31 @@ export function BottomActionBar({ children, summary }: { children: ReactNode; su
   );
 }
 
+/** The restaurant's icons are the tablet main menu's (`data/nav.ts`), so a destination looks the same on both. */
 const TAB_ICONS: Record<MobileTab, { on: typeof GolfCourse; off: typeof GolfCourse }> = {
   tee: { on: GolfCourse, off: GolfCourseOutlined },
   register: { on: PointOfSale, off: PointOfSaleOutlined },
   people: { on: Group, off: GroupOutlined },
   more: { on: Menu, off: MenuOutlined },
+  tables: { on: Restaurant, off: RestaurantOutlined },
+  tabs: { on: CreditCard, off: CreditCardOutlined },
+  quick: { on: Bolt, off: BoltOutlined },
+  reservations: { on: AssignmentTurnedIn, off: AssignmentTurnedInOutlined },
 };
 
 /**
- * MD3 navigation bar: four destinations, filled icon + pill indicator on the active one.
- * `badges` puts a count on a destination — the Register shows how many lines are on the
- * open order, so an order in progress is visible from anywhere.
+ * MD3 navigation bar: three to five destinations, filled icon + pill indicator on the active one.
+ * `tabs` is the signed-in operator's bar (`barFor` in `navigation.tsx`) — the golf bar unless a
+ * role says otherwise. `badges` puts a count on a destination — the Register shows how many lines
+ * are on the open order, so an order in progress is visible from anywhere.
  */
-export function NavigationBar({ badges = {} }: { badges?: Partial<Record<MobileTab, number>> }) {
+export function NavigationBar({
+  badges = {},
+  tabs = GOLF_BAR,
+}: {
+  badges?: Partial<Record<MobileTab, number>>;
+  tabs?: MobileTab[];
+}) {
   const nav = useMobileNav();
   return (
     <Stack
@@ -326,7 +356,7 @@ export function NavigationBar({ badges = {} }: { badges?: Partial<Record<MobileT
       aria-label="Main"
       sx={{ height: mobile.navBarH, bgcolor: md3.surfaceContainer, flexShrink: 0 }}
     >
-      {TABS.map((t) => {
+      {tabs.map((id) => TABS.find((t) => t.id === id)!).map((t) => {
         const active = nav.tab === t.id;
         const Ico = active ? TAB_ICONS[t.id].on : TAB_ICONS[t.id].off;
         const count = badges[t.id] ?? 0;

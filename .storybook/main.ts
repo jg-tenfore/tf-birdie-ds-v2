@@ -22,7 +22,28 @@ const config: StorybookConfig = {
     '@storybook/addon-mcp',
   ],
   framework: '@storybook/react-vite',
+  // Agent worktrees live in .claude/worktrees inside the repo. Storybook's dev server doesn't take
+  // vite.config.ts's `server.watch`, so it watched them too: every agent save reloaded the docs, and
+  // deleting a worktree (thousands of files, each with its own tsconfig.json) hung it.
+  viteFinal: (config) => ({
+    ...config,
+    server: { ...config.server, watch: { ...config.server?.watch, ignored: ['**/.claude/**', '**/site/**'] } },
+  }),
+  // `static/` holds the sidebar's TenFore logo and `legacy-redirects.js`, which sends links to
+  // pages moved in the Nov 26 regroup to their new ids (loaded by manager-head.html and
+  // preview-head.html).
+  //
+  // `static/docs` is the docs pages' art and screenshots (`scripts/capture-screens.mjs`), served
+  // at `/docs` so MDX can use relative URLs (`docs/hero-overview.webp`) that hold locally and
+  // under the Pages base. It lives here rather than in `public/` because Vite copies all of
+  // `public/` into every prototype build, and the prototypes have no use for 2.6 MB of docs art.
+  staticDirs: ['./static'],
   docs: { defaultName: 'Overview' },
+  // Storybook's own onboarding (the "Become an expert" checklist, its menu guide) and "what's
+  // new" toasts sit at the top of the sidebar and push the docs down; this Storybook is for
+  // reviewing Birdie, not learning Storybook.
+  core: { disableWhatsNewNotifications: true },
+  features: { sidebarOnboardingChecklist: false, menuOnboardingChecklist: false },
 };
 
 export default config;

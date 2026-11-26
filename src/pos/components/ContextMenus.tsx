@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { elevation, md3, radius } from '../../theme/tokens';
 import { ROUND_STEP } from '../data/config';
@@ -37,6 +38,42 @@ type Entry =
       run: () => void;
     };
 
+/**
+ * Where a menu opened at a click's client coordinates goes.
+ *
+ * Kept on screen: flipped back from the right and bottom edges rather than left to clip.
+ *
+ * A terminal scaled down to fit — Storybook on a small canvas, or the prototype's **Fit to
+ * window** showing a device bigger than the window — sits inside a CSS transform, and a
+ * transform makes its box the containing block for `position: fixed`. The click's coordinates
+ * are the window's, so there they are mapped into the frame's own unscaled space, and the menu
+ * is kept inside the frame rather than the window. At 1:1 nothing is transformed and the
+ * window's coordinates are the right ones, as they always were.
+ */
+function placeMenu(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  host: HTMLElement | null,
+): { left: number; top: number } {
+  const frame = host?.closest<HTMLElement>('[data-pos-shell]');
+  if (frame && frame.offsetWidth > 0) {
+    const r = frame.getBoundingClientRect();
+    const scale = r.width / frame.offsetWidth;
+    if (Math.abs(scale - 1) > 0.001) {
+      return {
+        left: Math.min((x - r.left) / scale, frame.offsetWidth - width - 8),
+        top: Math.min((y - r.top) / scale, Math.max(8, frame.offsetHeight - height - 8)),
+      };
+    }
+  }
+  return {
+    left: Math.min(x, window.innerWidth - width - 8),
+    top: Math.min(y, Math.max(8, window.innerHeight - height - 8)),
+  };
+}
+
 function MenuShell({
   x,
   y,
@@ -51,15 +88,21 @@ function MenuShell({
   width?: number;
 }) {
   const { dispatch } = usePos();
-
-  // Keep the menu on screen: flip it back from the right and bottom edges rather
-  // than letting it clip, since the app runs in a fixed 1366×840 frame.
-  const left = Math.min(x, window.innerWidth - width - 8);
-  const top = Math.min(y, Math.max(8, window.innerHeight - 460));
+  // The backdrop, once mounted — how the menu finds the terminal frame it opened in.
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  // The menu's real height once drawn. It used to be assumed at 460, but the booking menu runs
+  // taller than that once its sections are all present, so a right-click low on the sheet
+  // pushed the bottom entries off the terminal — on every frame, not just the small ones.
+  const [height, setHeight] = useState(452);
+  const measure = (el: HTMLElement | null) => {
+    if (el && el.offsetHeight > 0 && el.offsetHeight !== height) setHeight(el.offsetHeight);
+  };
+  const { left, top } = placeMenu(x, y, width, height, host);
 
   return (
     <>
       <Box
+        ref={setHost}
         onClick={() => dispatch({ type: 'closeContextMenu' })}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -68,6 +111,7 @@ function MenuShell({
         sx={{ position: 'fixed', inset: 0, zIndex: 8999 }}
       />
       <Box
+        ref={measure}
         sx={{
           position: 'fixed',
           left,
