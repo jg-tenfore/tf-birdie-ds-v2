@@ -1,15 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Autocomplete,
   Box,
   Checkbox,
   TextField,
+  Typography,
 } from '@mui/material';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import { md3 } from '../../theme/tokens';
+import { formatPhone } from '../../pos/data/customers';
+import { liveRoster } from '../../pos/data/roster';
+import { findCustomers, plainName } from '../../pos/logic/customer-search';
+import { Field, ResultList, ResultRow } from '../../pos/modals/ModalFrame';
 
-// Kitchen stations a ticket can be routed to on the Goose KDS.
+// Generic demo data for MUI's own Autocomplete (kitchen stations, from the kit this repo was
+// scaffolded from). Birdie's screens don't use Autocomplete — see the In Birdie story.
 const stations = ['Grill', 'Fryer', 'Expo', 'Cold Line', 'Beverage', 'Dessert'];
 
 // Menu items grouped by station, for the grouped-options variant.
@@ -34,10 +41,9 @@ const meta = {
     docs: {
       description: {
         component:
-          'MUI `Autocomplete` pairs a `TextField` with a filtered, type-ahead popup — ideal on the KDS for picking a **station** to route a ticket to, ' +
-          'tagging an order with menu items, or searching a long list without scrolling. ' +
-          'It supports single- and multi-select, free-solo entry for ad-hoc values, grouped options, and inline checkboxes. ' +
-          'Adjust the props in the **Controls** panel to preview each mode live.',
+          'MUI `Autocomplete` pairs a `TextField` with a filtered, type-ahead popup. **Birdie does not use it**: it searches into a ' +
+          'list on the page instead (see the **In Birdie** story and the Design System page). These are MUI demos with generic data, ' +
+          'themed as the product would theme them. Adjust the props in the **Controls** panel to preview each mode.',
       },
     },
   },
@@ -65,13 +71,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Single-select — start typing to filter the list of KDS stations. */
+/** Single-select — start typing to filter the list. MUI demo; not used by Birdie. */
 export const Playground: Story = {};
 
 /** Multi-select renders each choice as a removable Chip. */
 export const MultipleWithChips: Story = {
   parameters: {
-    docs: { description: { story: 'Tag a ticket with several stations at once; selections appear as removable chips.' } },
+    docs: { description: { story: 'Several values as removable chips. MUI demo; Birdie shows several-of as visible chips instead (see Multi-Select).' } },
   },
   render: (args) => (
     <Autocomplete
@@ -86,10 +92,10 @@ export const MultipleWithChips: Story = {
   ),
 };
 
-/** Free-solo lets expo staff type a value that isn't in the list. */
+/** Free-solo accepts a value that isn't in the list. */
 export const FreeSolo: Story = {
   parameters: {
-    docs: { description: { story: 'Free-solo allows ad-hoc entries — e.g. an off-menu special that has no preset option.' } },
+    docs: { description: { story: 'Free-solo allows a typed value that is not an option. MUI demo.' } },
   },
   render: (args) => (
     <Autocomplete
@@ -103,10 +109,10 @@ export const FreeSolo: Story = {
   ),
 };
 
-/** Grouped options bucket menu items under their station heading. */
+/** Grouped options under a heading. */
 export const Grouped: Story = {
   parameters: {
-    docs: { description: { story: 'Options grouped by station make a long menu easier to scan.' } },
+    docs: { description: { story: 'Options grouped under headings. MUI demo.' } },
   },
   render: (args) => (
     <Autocomplete
@@ -155,7 +161,49 @@ function CheckboxAutocompleteDemo() {
 /** Inline checkboxes keep the popup open for fast multi-select. */
 export const WithCheckboxes: Story = {
   parameters: {
-    docs: { description: { story: 'Checkbox options with `disableCloseOnSelect` let a manager tick several stations in one pass.' } },
+    docs: { description: { story: 'Checkbox options with `disableCloseOnSelect` keep the popup open for several picks. MUI demo.' } },
   },
   render: () => <CheckboxAutocompleteDemo />,
+};
+
+/** Find someone the way Birdie's tablet dialogs do: a field, then result rows on the page. */
+function BirdieSearch() {
+  const [query, setQuery] = useState('bren');
+  const roster = useMemo(() => liveRoster(), []);
+  const results = useMemo(() => findCustomers(query, roster, 6), [query, roster]);
+  const searching = query.trim().length >= 2;
+  return (
+    <Box sx={{ width: 420, p: 2.5, bgcolor: '#fff', borderRadius: 2 }}>
+      <Field value={query} onChange={setQuery} placeholder="Find the customer — name, email, phone" />
+      {searching && (
+        <Box sx={{ mt: 1 }}>
+          {results.length === 0 ? (
+            <Typography sx={{ fontSize: 12.5, color: md3.onSurfaceVariant }}>Nobody matches “{query.trim()}”.</Typography>
+          ) : (
+            <ResultList maxHeight={300}>
+              {results.map((c) => (
+                <ResultRow
+                  key={c.id}
+                  primary={plainName(c)}
+                  secondary={[c.email, formatPhone(c.phone)].filter(Boolean).join(' · ')}
+                  badge={c.memberships[0]?.name}
+                />
+              ))}
+            </ResultList>
+          )}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+/**
+ * **In Birdie:** search into a list on the page, not a popup — `Field`, `ResultList` and
+ * `ResultRow` from `src/pos/modals/ModalFrame.tsx`, matching with `findCustomers()` over the real
+ * roster, as the checkout tenders do (`TenderCustomerPicker`). Nothing until two characters; at
+ * most six results; each row says enough to tell two Brennevins apart.
+ */
+export const InBirdie: Story = {
+  name: 'In Birdie',
+  render: () => <BirdieSearch />,
 };

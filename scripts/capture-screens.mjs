@@ -117,6 +117,11 @@ const SHOTS = [
   { name: 'mobile-quick-order', route: 'prototypes-mobile-quick-order-counter-on-the-handheld--the-counter' },
   { name: 'mobile-reservations', route: 'prototypes-mobile-reservations-today-on-the-handheld--todays-book' },
   { name: 'mobile-orders-tips', route: 'prototypes-mobile-orders-tips-today-on-the-handheld--the-day-so-far' },
+  // ── Design System › Forms: the same choices on both devices (date, select, checkbox, radio, form) ──
+  { name: 'ds-tablet-date-picker', story: 'weston-edits-9-·-date-navigation-tablet--calendar-range' },
+  { name: 'ds-tablet-block-time', hash: '#/tee-sheet?modal=block&t=0912' },
+  { name: 'ds-mobile-block-time', route: 'mobile-screens-6-·-operations--block-time' },
+  { name: 'ds-mobile-dish-dialog', route: 'prototypes-mobile-tabs-tabs-on-the-handheld--the-dish-dialog' },
   // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
   { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
   { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },
