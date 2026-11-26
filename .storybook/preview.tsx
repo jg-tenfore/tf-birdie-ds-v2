@@ -342,6 +342,7 @@ const preview: Preview = {
           ],
           'Design System',
           [
+            'Overview',
             'Styles',
             ['Colors', 'Typography', 'Spacing', 'Radius', 'Border', 'Effect Styles', 'Icons', 'Logos', 'Images', '*'],
             'Components',
