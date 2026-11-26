@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react-vite';
+import { AutoDocsPage } from '../src/showcase/ds-docs/AutoDocsPage';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -205,6 +206,8 @@ const preview: Preview = {
   },
   globalTypes: { ...DEVICE_GLOBAL_TYPES, ...WESTON_GLOBAL_TYPES },
   parameters: {
+    // Design System entries render the Design System template; every other page is Storybook's own.
+    docs: { page: AutoDocsPage },
     viewport: { options: POS_VIEWPORTS },
     controls: {
       matchers: { color: /(background|color)$/i, date: /Date$/i },
