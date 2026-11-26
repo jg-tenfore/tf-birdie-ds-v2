@@ -7,7 +7,7 @@ import { SPEND_CATEGORIES, spendCategoryOf } from '../data/spend';
 import { money } from '../logic/cart';
 import { giftCardCanPay, isSpent, orderCustomerId, plainName, searchGiftCards, withPlainHolders } from '../logic/customer-search';
 import { linesACardCannotPay } from '../logic/tenders';
-import { allGiftCards, amountDue, findGiftCard, type OperationsModal } from '../state/operations';
+import { allGiftCards, dueNow, findGiftCard, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { GoodForChips, SpentBadge } from '../components/operations/CustomerChips';
 import { giftCardTypeLine } from '../data/credits';
@@ -35,7 +35,8 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
   const [pick, setPick] = useState<{ cardId: string; customerId?: string } | null>(null);
   // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
   const tip = m.tip ?? 0;
-  const orderDue = amountDue(state);
+  // The part being paid, on a split check (Nov 26); otherwise everything still due.
+  const orderDue = dueNow(state);
   const due = Math.round((orderDue + tip) * 100) / 100;
   const back = () => dispatch({ type: 'openModal', modal: { kind: 'checkout', ...(tip > 0 && { tip }) } });
 

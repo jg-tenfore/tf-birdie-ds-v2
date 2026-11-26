@@ -4,7 +4,7 @@ import { md3, radius } from '../../theme/tokens';
 import { eventSpend } from '../data/events';
 import { money } from '../logic/cart';
 import { chargeableEvents, eventStatusLabel, fromDateStr } from '../logic/event-screen';
-import { amountDue, type OperationsModal } from '../state/operations';
+import { dueNow, type OperationsModal } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon } from '../components/primitives';
 import { Stack } from '../components/Stack';
@@ -28,7 +28,8 @@ export function TenderEventDialog({ m }: { m: Extract<OperationsModal, { kind: '
   const [picked, setPicked] = useState<string | null>(todays.length === 1 ? todays[0].id : events.length === 1 ? events[0].id : null);
   // The tip recalculated into checkout travels with the tender (V1 → V2): it is charged here with the order.
   const tip = m.tip ?? 0;
-  const orderDue = amountDue(state);
+  // The part being paid, on a split check (Nov 26); otherwise everything still due.
+  const orderDue = dueNow(state);
   const due = Math.round((orderDue + tip) * 100) / 100;
   const event = events.find((e) => e.id === picked);
   const close = () => dispatch({ type: 'closeModal' });

@@ -18,7 +18,7 @@ import {
 import { orderCustomerId, plainName } from '../logic/customer-search';
 import { creditOptionsFor } from '../state/credit-ledger';
 import type { CheckoutModal } from '../state/checkout';
-import { dueNow, registerLineTotals } from '../state/operations';
+import { amountDue, dueNow, registerLineTotals } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Stack } from '../components/Stack';
@@ -84,7 +84,9 @@ export function TenderCreditDialog({ m }: { m: Extract<CheckoutModal, { kind: 't
     const what = `${option.title} · ${balanceLabel(option.unit, before, money)} → ${balanceLabel(option.unit, after, money)}`;
     if (covers) {
       dispatch({ type: 'recordPayment', method: kind, amount: due, ref });
-      dispatch({ type: 'closeModal' });
+      // One part of a split check paid (Nov 26): back to checkout for the next part.
+      if (state.checkSplit && due < amountDue(state) - 0.005) back();
+      else dispatch({ type: 'closeModal' });
       toast(tip > 0 ? `Paid ${money(due)} · ${what} · the ${money(tip)} tip was not taken — credits don’t pay tips` : `Paid ${money(due)} · ${what}`);
     } else {
       dispatch({ type: 'payPart', method: kind, amount: pays, ref });

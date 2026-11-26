@@ -28,6 +28,7 @@ import {
   type RestaurantState,
 } from './restaurant';
 import {
+  amountDue,
   isOperationsAction,
   operationsDefaults,
   operationsReducer,
@@ -1089,6 +1090,14 @@ export function reducer(state: PosState, action: Action): PosState {
     case 'addGolfer':
       return { ...state, addedGolfers: [...state.addedGolfers, action.golfer] };
     case 'recordPayment': {
+      // A split check (Nov 26): a payment that settles one part but not the order is that part — the
+      // order stays open for the next. Every tender pays `dueNow`, so this is where a part is told apart.
+      if (state.checkSplit) {
+        const share = Math.round((action.amount - (action.tip ?? 0) - (action.surcharge ?? 0)) * 100) / 100;
+        if (share < amountDue(state) - 0.005) {
+          return reducer(state, { type: 'payPart', method: action.method, amount: share, ref: action.ref, tip: action.tip, surcharge: action.surcharge });
+        }
+      }
       // Three slices react to a payment, and two of them touch customer records. Each runs on the
       // one before's result — never beside it — so none can silently undo another (V1 → V2, Wave 3).
       const orderNumber = paidOrderNumber(state);

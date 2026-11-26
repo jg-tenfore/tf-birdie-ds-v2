@@ -1,6 +1,7 @@
 import type { CheckoutModal } from '../state/checkout';
 import { TenderCreditDialog } from './TenderCreditDialog';
 import { LineDiscountDialog, OrderDiscountDialog } from './DiscountDialogs';
+import { ReceiptDialog, ServiceChargeDialog, SplitCheckDialog, TransferOrderDialog } from './OrderToolsDialogs';
 
 /**
  * Checkout's dialogs (Nov 26), routed from `ModalHost`'s default branch — one file per dialog, and
@@ -14,5 +15,13 @@ export function CheckoutDialogs({ m }: { m: CheckoutModal }) {
       return <LineDiscountDialog m={m} />;
     case 'orderDiscount':
       return <OrderDiscountDialog m={m} />;
+    case 'splitCheck':
+      return <SplitCheckDialog m={m} />;
+    case 'serviceCharge':
+      return <ServiceChargeDialog m={m} />;
+    case 'receipt':
+      return <ReceiptDialog m={m} />;
+    case 'transferOrder':
+      return <TransferOrderDialog />;
   }
 }

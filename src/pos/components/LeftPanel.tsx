@@ -7,6 +7,7 @@ import { useV1V2, useWestonEdits } from '../edition';
 import { useLeftPanelWidth } from '../device-context';
 import { CASH_PAYOUT_MENU_ITEM } from '../data/register-extras';
 import { productSettings } from '../data/products';
+import { VENUES } from '../data/venues';
 import { lineDiscountAmount, lineDiscountOffers } from '../logic/discounts';
 
 /** V1 → V2 (Nov 26): Buck's discount types on the whole order, from the cog. */
@@ -119,6 +120,18 @@ export function LeftPanel() {
         return dispatch({ type: 'openModal', modal: { kind: 'actionPanel', action: 'raincheck' } });
       case 'cashPayout':
         return dispatch({ type: 'openModal', modal: { kind: 'cashPayout' } });
+      // V1 → V2 (Nov 26): the order tools that used to toast "coming soon".
+      case 'split':
+      case 'transferCourse':
+      case 'serviceCharge':
+        if (!v1v2) return toast(`${action} — coming soon`);
+        if (!hasOrder || state.lastPayment) return toast('Add something to the order first');
+        return dispatch({
+          type: 'openModal',
+          modal: { kind: action === 'split' ? 'splitCheck' : action === 'transferCourse' ? 'transferOrder' : 'serviceCharge' },
+        });
+      case 'reprintReceipt':
+        return v1v2 ? dispatch({ type: 'openModal', modal: { kind: 'receipt' } }) : toast(`${action} — coming soon`);
       default:
         return toast(`${action} — coming soon`);
     }
@@ -157,6 +170,8 @@ export function LeftPanel() {
 
       {/* ── Held orders (V1 → V2) ── only while something is held. */}
       {v1v2 && <HeldOrdersBar />}
+      {/* ── Orders sent here from another course (Nov 26) ── */}
+      {v1v2 && <ArrivedOrdersBar />}
 
       {/* ── Header ── */}
       <Box sx={{ p: '14px 14px 10px', borderBottom: `1px solid ${md3.outlineVariant}`, flexShrink: 0 }}>
@@ -397,6 +412,8 @@ export function LeftPanel() {
                 <ComboLine key={`${item.name}-${i}`} item={item} index={i} />
               ) : item.giftCard ? (
                 <GiftCardLine key={`${item.name}-${i}`} item={item} index={i} />
+              ) : item.serviceCharge ? (
+                <ServiceChargeLine key={`${item.name}-${i}`} item={item} index={i} amount={totals.serviceCharges?.find((c) => c.id === `${item.serviceCharge!.id}-${i}`)?.amount ?? 0} />
               ) : item.orderDiscount ? (
                 <OrderDiscountLine key={`${item.name}-${i}`} item={item} index={i} amount={-(totals.discountLines?.find((d) => d.id === `order-${i}`)?.amount ?? 0)} />
               ) : (
@@ -1017,6 +1034,50 @@ function StandardLine({ item, index }: { item: CartItem; index: number }) {
         <Icon name="close" size={16} />
       </ButtonBase>
     </Stack>
+  );
+}
+
+/** A service charge added by hand (Nov 26), as its own line: its name, what it comes to, remove. */
+function ServiceChargeLine({ item, index, amount }: { item: CartItem; index: number; amount: number }) {
+  const { state, dispatch } = usePos();
+  const c = item.serviceCharge!;
+  return (
+    <Stack data-service-charge-line={c.id} direction="row" gap={1} sx={{ alignItems: 'center', p: '9px 10px', borderRadius: `${radius.md}px`, bgcolor: md3.surfaceContainer, mb: 0.75 }}>
+      <Icon name="add_circle" size={16} color={md3.onSurfaceVariant} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{c.percent != null ? `${c.label} ${c.percent}%` : c.label}</Typography>
+        <Typography sx={{ fontSize: 11, color: md3.onSurfaceVariant }}>{c.appliesTo === 'fnb' ? 'On the food and drink' : 'On the order'} · untaxed</Typography>
+      </Box>
+      <Typography sx={{ fontSize: 12, fontWeight: 700, color: md3.primary }}>{cart.money(amount)}</Typography>
+      {!state.splitTender && (
+        <ButtonBase aria-label={`Remove ${c.label}`} onClick={() => dispatch({ type: 'removeItem', index })} sx={{ color: md3.outline, p: '1px', '&:hover': { color: md3.error } }}>
+          <Icon name="close" size={16} />
+        </ButtonBase>
+      )}
+    </Stack>
+  );
+}
+
+/** Orders another course sent this register (Nov 26, Transfer to course): open one to ring it up here. */
+function ArrivedOrdersBar() {
+  const { state, dispatch } = usePos();
+  const arrived = state.transferredOrders.filter((t) => t.toVenue === state.venueId && !t.receivedAt);
+  if (!arrived.length) return null;
+  const busy = state.cart.length > 0 && !state.lastPayment;
+  return (
+    <Box data-arrived-orders sx={{ p: '8px 14px', bgcolor: md3.primaryContainer, borderBottom: `1px solid ${md3.outlineVariant}` }}>
+      <SectionLabel color={md3.onPrimaryContainer}>Arrived from another course</SectionLabel>
+      {arrived.map((t) => (
+        <Stack key={t.id} direction="row" alignItems="center" gap={1} sx={{ mt: 0.5 }}>
+          <Typography sx={{ fontSize: 12, flex: 1, color: md3.onPrimaryContainer }}>
+            {VENUES[t.fromVenue].name} · {t.customer ?? `${t.cart.length} lines`} · {cart.money(t.total)}
+          </Typography>
+          <Button size="small" disabled={busy} data-receive-transfer={t.id} onClick={() => dispatch({ type: 'receiveTransfer', id: t.id })}>
+            Open
+          </Button>
+        </Stack>
+      ))}
+    </Box>
   );
 }
 

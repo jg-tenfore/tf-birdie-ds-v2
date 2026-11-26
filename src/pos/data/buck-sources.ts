@@ -206,7 +206,7 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckFile: CREDITS,
     birdieFile: 'src/pos/data/rain-checks.ts',
     status: 'aligned',
-    note: 'A checkout tender since Nov 26, by Buck’s two rules: tee times only, and 365 days from issue.',
+    note: 'A checkout tender since Nov 26, by Buck’s two rules: tee times only, and 365 days from issue. The register’s Rain check now cuts one — keyed, never prorated, as Buck’s New rain check takes an amount — onto the seat’s customer.',
   },
 
   // ─── Bays and members ─────────────────────────────────────────────────────

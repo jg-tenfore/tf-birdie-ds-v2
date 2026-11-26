@@ -15,10 +15,11 @@ import type { PaymentRecord } from '../logic/restaurant';
 import { drawerWorkings } from '../logic/shift';
 import type { Booking, CartItem } from '../types';
 import { bookingOrder } from '../logic/booking-orders';
+import { orderNumberFromId } from '../logic/reservation';
 import { rateContext } from './rate-context';
 import type { PosState } from './pos-store';
 import { applyCredit } from './credit-ledger';
-import { pricingOf } from './checkout';
+import { currentPart, pricingOf } from './checkout';
 import { isCreditMethod } from '../logic/credit-tenders';
 import type { DrawerEvent } from './register-extras';
 
@@ -181,8 +182,11 @@ export type OperationsAction =
   /** Loads an event's bill onto the register for its organiser to pay. */
   | { type: 'billEvent'; eventId: string }
   // Tenders and refunds
-  /** Part of the order paid now — a gift card that does not cover it all. The rest stays due. */
-  | { type: 'payPart'; method: string; amount: number; ref?: PaymentRef }
+  /**
+   * Part of the order paid now — a gift card that does not cover it all, or one part of a split check.
+   * The rest stays due. `amount` is the order's share; a `tip` and a card `surcharge` ride with it.
+   */
+  | { type: 'payPart'; method: string; amount: number; ref?: PaymentRef; tip?: number; surcharge?: number }
   | { type: 'refundOrder'; orderNumber: string; picks?: { index: number; qty: number }[]; reason?: string }
   // What each screen has open
   | { type: 'selectOrder'; orderNumber: string | null }
@@ -310,8 +314,17 @@ export function amountDue(s: Priced & Pick<PosState, 'splitTender'>): number {
 /** What each line of the register's order charges with its tax (`lineTotals`), at the terminal's pricing. */
 export const registerLineTotals = (s: Priced): number[] => lineTotals(s.cart, pricingOf(s));
 
-/** What the next tender should take: everything still due. */
-export const dueNow = (s: Priced & Pick<PosState, 'splitTender'>): number => amountDue(s);
+/**
+ * What the next tender should take: everything still due — or, on a split check (Nov 26), what is left
+ * of the part being paid.
+ */
+export const dueNow = (s: Priced & Pick<PosState, 'splitTender'> & Partial<Pick<PosState, 'checkSplit'>>): number => {
+  const all = amountDue(s);
+  const split = s.checkSplit;
+  if (!split) return all;
+  const i = currentPart(split);
+  return cents(Math.min(all, Math.max(0, split.parts[i].amount - split.paid[i])));
+};
 
 /** An event's whole bill: its golf (taxed at checkout) plus everything charged to it (already taxed). */
 export function eventBill(event: GolfEvent, bookings: PosState['bookings']) {
@@ -635,22 +648,30 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
       const due = amountDue(state);
       const amount = cents(Math.min(action.amount, due));
       if (amount <= 0 || amount >= due) return state; // the whole remainder is `recordPayment`'s job
-      const orderNumber = state.splitTender?.orderNumber ?? `#A-${30000 + state.restaurantSeq.payment + 1}`;
+      // A tee time keeps its reservation's order number on a split too, as it does paid whole.
+      const orderNumber =
+        state.splitTender?.orderNumber ?? (state.selectedBookingId ? orderNumberFromId(state.selectedBookingId) : `#A-${30000 + state.restaurantSeq.payment + 1}`);
       const paymentId = `P-${state.restaurantSeq.payment + 1}`;
+      const tip = cents(Math.max(0, action.tip ?? 0));
+      const surcharge = cents(Math.max(0, action.surcharge ?? 0));
       const payment: PaymentRecord = {
         id: paymentId,
         date: today,
         time: clock(now),
         method: action.method,
-        amount,
-        tip: 0,
+        amount: cents(amount + surcharge),
+        tip,
         orderNumber,
         staffId: state.operatorId,
         kind: 'sale',
+        ...(surcharge ? { surcharge } : {}),
         ref: action.ref,
         cardLast4: action.ref?.cardLast4,
       };
-      const after = applyTender(state, action.method, amount, action.ref, orderNumber, 1);
+      const after = applyTender(state, action.method, amount, action.ref, orderNumber, 1, tip);
+      // A split check (Nov 26): the part being paid has this much more on it.
+      const split = state.checkSplit;
+      const part = currentPart(split);
       return {
         ...after,
         payments: [...after.payments, payment],
@@ -660,6 +681,7 @@ export function operationsReducer(state: PosState, action: OperationsAction): Po
           paid: cents((state.splitTender?.paid ?? 0) + amount),
           tenders: [...(state.splitTender?.tenders ?? []), { paymentId, method: action.method, amount, ref: action.ref }],
         },
+        ...(split && { checkSplit: { ...split, paid: split.paid.map((p, i) => (i === part ? cents(p + amount) : p)) } }),
       };
     }
 
@@ -790,6 +812,8 @@ export function recordOperationsPayment(
     bookingId: booking?.id,
     customerId: payment.ref?.customerId ?? state.payingAccountId ?? undefined,
     eventId: payment.ref?.eventId ?? state.payingEventId ?? undefined,
+    // A split check (Nov 26): its parts, each paid by the tenders above.
+    ...(state.checkSplit && { split: { mode: state.checkSplit.mode, parts: state.checkSplit.parts.map((p) => ({ label: p.label, amount: p.amount })) } }),
     // Buck's per-line pricing (V1 → V2): each line's exact share, and the receipt's tax and service lines.
     ...(state.buckCheckout && {
       lineTotals: registerLineTotals(state),
@@ -825,6 +849,7 @@ export function recordOperationsPayment(
     orders: [...next.orders, order],
     stock: applyStock(next.stock, state.cart, -1),
     splitTender: null,
+    checkSplit: null,
     payingAccountId: null,
     payingEventId: null,
   };
@@ -856,5 +881,5 @@ export function unwindSplitTender(state: PosState): PosState {
     };
     next = { ...next, payments: [...next.payments, payment], restaurantSeq: { ...next.restaurantSeq, payment: next.restaurantSeq.payment + 1 } };
   }
-  return { ...next, splitTender: null };
+  return { ...next, splitTender: null, checkSplit: null };
 }

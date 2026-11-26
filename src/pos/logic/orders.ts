@@ -20,6 +20,8 @@ export interface PaymentRef {
   cardLast4?: string;
   /** A check's number, when the operator keyed it. */
   checkNumber?: string;
+  /** The card was typed in at the reader (Key in, Nov 26), not tapped or swiped. */
+  entry?: 'keyed';
   /** A credit that paid — a rain check, a punch card, a credit book, a lesson credit (Nov 26). */
   credit?: import('./credit-tenders').CreditRef;
 }
@@ -91,6 +93,8 @@ export interface OrderRecord {
   taxes?: { id: string; label: string; amount: number }[];
   serviceCharges?: { id: string; label: string; amount: number }[];
   service?: number;
+  /** A split check (Nov 26): how it was split, and each part's amount. Each part's payments are in `tenders`. */
+  split?: { mode: 'even' | 'items'; parts: { label: string; amount: number }[] };
 }
 
 const cents = (n: number) => Math.round(n * 100) / 100;

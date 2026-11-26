@@ -16,7 +16,7 @@ export function tenderLabel(method: string, ref?: PaymentRef, eventName?: string
   switch (method) {
     case 'card':
       // A live payment in the prototype has no card number; placeholder dashes read as a fault.
-      return ref?.cardLast4 ? `Card •••• ${ref.cardLast4}` : 'Card';
+      return ref?.cardLast4 ? `Card •••• ${ref.cardLast4}${ref.entry === 'keyed' ? ' (keyed)' : ''}` : 'Card';
     case 'cash':
       return 'Cash';
     case 'giftcard':
