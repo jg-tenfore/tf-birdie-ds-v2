@@ -5,7 +5,7 @@ import { AppBar, Box, Button, Divider, Menu, MenuItem, Toolbar } from '@mui/mate
 /**
  * MUI (`@mui/material` v9) does not ship a native `Menubar` component, so this composes one
  * from an `AppBar`/`Toolbar` of trigger `Button`s, each opening a `Menu` of `MenuItem`s —
- * the desktop-app menubar pattern (File / Edit / View / Help), KDS-flavoured.
+ * the desktop-app menubar pattern (File / Edit / View / Help). Birdie avoids it; see the page.
  */
 const meta = {
   title: 'Design System/Components/Navigation/Menubar',
@@ -16,10 +16,9 @@ const meta = {
     docs: {
       description: {
         component:
-          'A horizontal application menubar composed from MUI primitives — MUI does not export a native `Menubar`. ' +
-          'Each top-level trigger (Board, Tickets, Counts, Settings) opens a `Menu` of commands, mirroring a desktop app bar. ' +
-          'In the golf-diner KDS it gives the expo lead keyboard-and-mouse access to board layouts, ticket actions, all-day counts, and station settings from one persistent strip. ' +
-          'A single active menu is tracked with `anchorEl` plus the open menu key.',
+          'A desktop menubar composed from MUI primitives — MUI does not export a native `Menubar`. Each title opens a `Menu` ' +
+          'of commands. Birdie avoids it: a screen’s commands are on the screen, in a toolbar of pills, and the rare ones sit in a ' +
+          '⋮ menu beside what they act on. Shown here so the pattern is recognisable.',
       },
     },
   },
@@ -28,12 +27,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 type MenuKey = 'board' | 'tickets' | 'counts' | 'settings';
+// Keys kept as they were; the titles are what a menubar on the tee sheet would hold.
 
 const menus: Record<MenuKey, { label: string; items: string[] }> = {
-  board: { label: 'Board', items: ['Grid layout', 'List layout', 'Refresh board'] },
-  tickets: { label: 'Tickets', items: ['Recall ticket', 'Reprint', 'Void ticket'] },
-  counts: { label: 'Counts', items: ['Show all-day', 'Reset counts', 'Export counts'] },
-  settings: { label: 'Settings', items: ['Stations', 'Printers', 'Preferences'] },
+  board: { label: 'View', items: ['Calendar', 'List', 'Compact rows'] },
+  tickets: { label: 'Booking', items: ['Check in', 'Move players', 'Delete booking'] },
+  counts: { label: 'Day', items: ['Today', 'Day summary', 'Go to date…'] },
+  settings: { label: 'Settings', items: ['Tee sheet', 'Printers', 'Card reader'] },
 };
 
 function MenubarDemo() {
@@ -77,7 +77,7 @@ function MenubarDemo() {
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
           {menus[key].items.map((item, i) =>
-            item === 'Void ticket' ? (
+            item === 'Delete booking' ? (
               <Box key={item}>
                 <Divider />
                 <MenuItem onClick={handleClose} sx={{ color: 'error.main' }}>
@@ -101,15 +101,15 @@ export const Playground: Story = {
   render: () => <MenubarDemo />,
 };
 
-/** The menubar sitting above a mock board area, as it appears in the KDS shell. */
+/** The menubar above a screen. Compare the tee sheet's toolbar, where every command is visible without opening anything. */
 export const InContext: Story = {
   parameters: {
-    docs: { description: { story: 'The composed menubar pinned above the ticket board content.' } },
+    docs: { description: { story: 'The composed menubar pinned above a screen’s content: commands are invisible until a title is opened.' } },
   },
   render: () => (
     <Box sx={{ width: 520, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
       <MenubarDemo />
-      <Box sx={{ p: 4, color: 'text.secondary' }}>Ticket board area</Box>
+      <Box sx={{ p: 4, color: 'text.secondary' }}>Screen content</Box>
     </Box>
   ),
 };

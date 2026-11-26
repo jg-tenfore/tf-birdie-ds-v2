@@ -122,6 +122,10 @@ const SHOTS = [
   { name: 'ds-tablet-block-time', hash: '#/tee-sheet?modal=block&t=0912' },
   { name: 'ds-mobile-block-time', route: 'mobile-screens-6-·-operations--block-time' },
   { name: 'ds-mobile-dish-dialog', route: 'prototypes-mobile-tabs-tabs-on-the-handheld--the-dish-dialog' },
+  // ── Design System pages: Actions & Navigation (menus, sheets, step header) ──
+  { name: 'ds-tablet-context-menu', story: 'prototypes-tablet-tee-sheet-booking-check-in--chip-context-menu' },
+  { name: 'ds-tablet-new-booking-steps', hash: '#/tee-sheet?modal=new-booking&course=champ-front&t=1144&slot=0' },
+  { name: 'ds-mobile-booking-actions', route: 'mobile-screens-2-·-tee-sheet--booking-actions-sheet' },
   // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
   { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
   { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },

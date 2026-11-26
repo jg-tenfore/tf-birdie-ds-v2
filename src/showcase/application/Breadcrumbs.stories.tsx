@@ -15,12 +15,12 @@ export const Breadcrumbs_: Story = {
   render: () => (
     <Breadcrumbs>
       <Link underline="hover" color="inherit" href="#">
-        Settings
+        Buck
       </Link>
       <Link underline="hover" color="inherit" href="#">
-        Stations
+        Course Settings
       </Link>
-      <Typography color="text.primary">Grill 1</Typography>
+      <Typography color="text.primary">Taxes & Fees</Typography>
     </Breadcrumbs>
   ),
 };
