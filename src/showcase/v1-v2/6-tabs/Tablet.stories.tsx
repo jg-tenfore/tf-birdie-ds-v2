@@ -186,7 +186,7 @@ export const ASingleChoiceAndASet: Story = {
   render: () => <Screen edition="v1v2" initialState={burgerOnP2} />,
   play: async () => {
     const dialog = within(await screen.findByRole('dialog'));
-    const temperature = dialog.getByRole('radiogroup', { name: 'Temperature' });
+    const temperature = dialog.getByRole('radiogroup', { name: 'Temp' });
     const t = within(temperature);
     await userEvent.click(t.getByRole('radio', { name: 'Rare' }));
     await userEvent.click(t.getByRole('radio', { name: 'Medium' }));
@@ -194,7 +194,7 @@ export const ASingleChoiceAndASet: Story = {
     await expect(t.getByRole('radio', { name: 'Medium' })).toHaveAttribute('aria-checked', 'true');
     await expect(t.getAllByRole('radio').filter((r) => r.getAttribute('aria-checked') === 'true')).toHaveLength(1);
 
-    const addons = within(dialog.getByRole('group', { name: 'Add-ons' }));
+    const addons = within(dialog.getByRole('group', { name: 'Burger Add-ons' }));
     await userEvent.click(addons.getByRole('checkbox', { name: /Bacon/ }));
     await userEvent.click(addons.getByRole('checkbox', { name: /Avocado/ }));
     await expect(addons.getByRole('checkbox', { name: /Bacon/ })).toHaveAttribute('aria-checked', 'true');
@@ -213,9 +213,9 @@ export const ARequiredGroupBlocks: Story = {
     const dialog = within(await screen.findByRole('dialog'));
     const add = dialog.getByRole('button', { name: 'Add to Seat 1' });
     await expect(add).toBeDisabled();
-    await expect(dialog.getByText('Choose temperature and side')).toBeTruthy();
+    await expect(dialog.getByText('Choose temp and sides')).toBeTruthy();
     await userEvent.click(dialog.getByRole('radio', { name: 'Medium' }));
-    await expect(dialog.getByText('Choose side')).toBeTruthy();
+    await expect(dialog.getByText('Choose sides')).toBeTruthy();
     await expect(add).toBeDisabled();
     await userEvent.click(dialog.getByRole('radio', { name: 'Fries' }));
     await expect(add).toBeEnabled();

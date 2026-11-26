@@ -108,6 +108,9 @@ export function ComboGrid() {
                 <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1.25 }}>{combo.name}</Typography>
                 <Typography sx={{ fontSize: 14, fontWeight: 800, color }}>{money(combo.price)}</Typography>
               </Stack>
+              <Typography data-combo-department sx={{ fontSize: 10, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: md3.outline }}>
+                {combo.department}
+              </Typography>
               <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, lineHeight: 1.35 }}>
                 {comboComponents(combo)
                   .map((c) => (c.qty > 1 ? `${c.qty} × ${c.name}` : c.name))

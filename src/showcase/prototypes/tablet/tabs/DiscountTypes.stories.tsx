@@ -5,7 +5,11 @@ import type { PosState } from '../../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../../pos/screen-helpers';
 
 /**
- * Tabs — **Buck's menus and discount types** at the table (Nov 26).
+ * Tabs — **Buck's menus, modifier groups and discount types** at the table (Nov 26).
+ *
+ * The dish dialog's modifier groups use Buck's names and button colours where Buck has the group —
+ * *Temp*, *Sides*, *Cheeses*, *Sandwich Toppings*, *Side Sauces*, *Allergies* — with Birdie's
+ * single-choice / set / required rules on top.
  *
  * A table's tab opens on the dining room's running menu — *Lunch* at noon, *Dinner* after five — with
  * the counter's 19th Hole Menu one tap away. A plate's **Adjust › Discount** offers Buck's discount
@@ -14,7 +18,7 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
  * $0 plate always says why. A type Buck flags for approval needs a manager.
  */
 const meta = {
-  title: 'Prototypes/Tablet/Tabs/Menus and discount types',
+  title: 'Prototypes/Tablet/Tabs/Menus, modifiers and discounts',
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
@@ -83,5 +87,26 @@ export const ApprovalNeedsAManager: Story = {
     await userEvent.click(locked);
     await within(canvasElement.ownerDocument.body).findByText("Manager's Discount needs a manager — sign in as one to apply it");
     await expect(q(beers, '[data-dish-discount]')).toBeNull();
+  },
+};
+
+/**
+ * **Modifier groups by Buck's names.** A cheeseburger asks for its *Temp* and *Sides* (required),
+ * offers Buck's *Cheeses* in Buck's red mark, and Sides carries Buck's Apple slices.
+ */
+export const BucksModifierGroups: Story = {
+  render: () => (
+    <Screen
+      edition={CURRENT_EDITION.tablet}
+      initialState={onTab('T-1004', { modal: { kind: 'dish', target: { tabId: 'T-1004' }, menuItemId: 'counter-clubhouse-cheeseburger', seat: 1 } })}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const dialog = await within(canvasElement.ownerDocument.body).findByRole('dialog');
+    const d = within(dialog);
+    await expect(d.getByRole('radiogroup', { name: 'Temp' })).toBeTruthy();
+    await expect(d.getByText('Choose temp and sides')).toBeTruthy();
+    await expect(q(dialog, '[data-modifier-group="cheeses"] [data-group-color="error"]')).not.toBeNull();
+    await expect(within(d.getByRole('radiogroup', { name: 'Sides' })).getByRole('radio', { name: /Apple slices/ })).toBeTruthy();
   },
 };
