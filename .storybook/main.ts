@@ -22,6 +22,13 @@ const config: StorybookConfig = {
     '@storybook/addon-mcp',
   ],
   framework: '@storybook/react-vite',
+  // Agent worktrees live in .claude/worktrees inside the repo. Storybook's dev server doesn't take
+  // vite.config.ts's `server.watch`, so it watched them too: every agent save reloaded the docs, and
+  // deleting a worktree (thousands of files, each with its own tsconfig.json) hung it.
+  viteFinal: (config) => ({
+    ...config,
+    server: { ...config.server, watch: { ...config.server?.watch, ignored: ['**/.claude/**', '**/site/**'] } },
+  }),
   // `static/` holds the sidebar's TenFore logo and `legacy-redirects.js`, which sends links to
   // pages moved in the Nov 26 regroup to their new ids (loaded by manager-head.html and
   // preview-head.html).
