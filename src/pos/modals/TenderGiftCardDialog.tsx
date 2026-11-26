@@ -9,6 +9,7 @@ import { linesACardCannotPay } from '../logic/tenders';
 import { allGiftCards, amountDue, findGiftCard, type OperationsModal, taxRateOf } from '../state/operations';
 import { usePos } from '../state/PosProvider';
 import { GoodForChips, SpentBadge } from '../components/operations/CustomerChips';
+import { giftCardTypeLine } from '../data/credits';
 import { Icon, SectionLabel } from '../components/primitives';
 import { Stack } from '../components/Stack';
 import { Callout, Field, FilledButton, ModalFrame, OutlineButton, ResultList } from './ModalFrame';
@@ -111,7 +112,7 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" alignItems="center" gap={0.75}>
                 <Typography sx={{ fontSize: 14, fontWeight: 800, color: md3.onPrimaryContainer }}>
-                  {card.type} · #{card.id}
+                  {giftCardTypeLine(card)} · #{card.id}
                 </Typography>
                 {isSpent(card) && <SpentBadge />}
               </Stack>
@@ -194,7 +195,7 @@ export function TenderGiftCardDialog({ m }: { m: Extract<OperationsModal, { kind
                         </Typography>
                         {spent && <SpentBadge />}
                       </Stack>
-                      <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>{x.card.type}</Typography>
+                      <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>{giftCardTypeLine(x.card)}</Typography>
                     </Box>
                     <Typography sx={{ fontSize: 14, fontWeight: 800, color: spent ? md3.outline : md3.onSurface }}>{money(x.card.balance)}</Typography>
                   </ButtonBase>

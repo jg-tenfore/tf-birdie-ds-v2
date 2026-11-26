@@ -1,3 +1,4 @@
+import { isUsablePunchCard } from './credits';
 import { RATE_PRICING } from './courses';
 import type { Customer } from './customers';
 import { isMember } from './customers';
@@ -289,9 +290,12 @@ export function autoTransport(mode: Transport, customer: Customer | null): Trans
   return usable.sort((a, b) => a.price - b.price)[0] ?? defaultTransportFor(mode);
 }
 
-/** The punch cards this customer still has rounds on — what the tile offers. */
-export const usablePunchCards = (c: Customer | null) =>
-  (c?.punchCards ?? []).filter((p) => p.remaining > 0);
+/**
+ * The punch cards this customer can pay a round with — what the tile offers. Buck's statuses decide
+ * (Nov 26, `credits.ts`): an *Active* or *Expiring soon* card with rounds left; never an *Expired*
+ * one, however many punches it still shows.
+ */
+export const usablePunchCards = (c: Customer | null) => (c?.punchCards ?? []).filter((p) => isUsablePunchCard(p));
 
 /** Does this customer hold a punch card with anything left on it? */
 export const hasPunchCard = (c: Customer | null): boolean => usablePunchCards(c).length > 0;

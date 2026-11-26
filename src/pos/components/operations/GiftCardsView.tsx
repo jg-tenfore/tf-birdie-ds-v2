@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, ButtonBase, InputBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
+import { creditBookOf } from '../../data/credits';
 import { money } from '../../logic/cart';
 import { giftCardTotals, isSpent, searchGiftCards, withPlainHolders, type GiftCardListing } from '../../logic/customer-search';
 import { allGiftCards } from '../../state/operations';
@@ -178,6 +179,12 @@ function CardRow({ x, onOpen }: { x: GiftCardListing; onOpen?: () => void }) {
       </Box>
       <Box component="td" sx={td}>
         {x.card.type}
+        {/* Buck: Winnings are paid out from a credit book; the row says which. */}
+        {creditBookOf(x.card) && (
+          <Typography data-credit-book sx={{ fontSize: 10.5, color: md3.onSurfaceVariant }}>
+            {creditBookOf(x.card)!.title}
+          </Typography>
+        )}
       </Box>
       <Box component="td" sx={td}>
         <GoodForChips card={x.card} />
