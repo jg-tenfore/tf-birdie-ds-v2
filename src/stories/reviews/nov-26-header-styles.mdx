@@ -1,5 +1,8 @@
 import { Meta } from '@storybook/addon-docs/blocks';
 import { Banner, Callout, DocPage, DocTable, Grid, Pill, Section, StatusPill, art } from '../docs-kit/docs-kit';
+import { dsDocFor } from '../../showcase/ds-docs/DsDocsPage';
+
+export const RADIUS = dsDocFor('foundations-radius');
 
 <Meta title="Reviews/Nov 26 – Design System header styles/Summary" />
 
@@ -42,6 +45,28 @@ export const PAGES = [
     ))}
   </Section>
 ))}
+
+export const RADIUS_VARIANTS = [
+  { file: 'ds-radius', name: 'Today · Nested outlines', note: 'Square to circle, nested inside each other, with a hole and pin at the centre.' },
+  { file: 'options/ds-radius-1', name: 'R1 · Square to circle in a row', note: 'Five tiles, each corner rounder than the last, with its radius marked; a ball flight drops into a hole at the end.' },
+  { file: 'options/ds-radius-2', name: 'R2 · Corner construction', note: 'One corner up close, like an engineering detail: the compass arc, its centre, radius guides and dimension ticks, with contour lines following the curve.' },
+  { file: 'options/ds-radius-3', name: 'R3 · Contour morph', note: 'A green seen from above whose rings soften from a sharp square outside to circles around the pin.' },
+  { file: 'options/ds-radius-4', name: 'R4 · Four radii', note: "Four tiles stepping from small corners to a full pill, each with a dashed circle fitted to its corner — the idea behind Birdie's 8 / 12 / 16 / 28 scale." },
+];
+
+<Section title="Radius variations" intro="Justin asked for more versions of the Radius header. Today's, then four more in the same line style, each drawn as the real Radius page header — same summary, same height.">
+  {RADIUS_VARIANTS.map((v) => (
+    <div key={v.file} style={{ marginBottom: 18 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#191d19', margin: '0 0 4px' }}>{v.name}</div>
+      <div style={{ fontSize: 13.5, color: '#404943', margin: '0 0 10px' }}>{v.note}</div>
+      {/* The Radius page's own summary and status, so each header is the height it really is. */}
+      <Banner eyebrow="Design System · Styles" title="Radius" art={art(v.file)} pills={<StatusPill tone="now">Core</StatusPill>}>
+        {RADIUS?.summary}
+        {RADIUS?.statusNote && <div style={{ marginTop: 10, fontSize: 13.5, color: '#707973' }}><strong style={{ color: '#191d19' }}>Core:</strong> {RADIUS.statusNote}</div>}
+      </Banner>
+    </div>
+  ))}
+</Section>
 
 <Section title="Decision">
   <DocTable
