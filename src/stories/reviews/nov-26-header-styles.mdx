@@ -1,0 +1,59 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { Banner, Callout, DocPage, DocTable, Grid, Pill, Section, StatusPill, art } from '../docs-kit/docs-kit';
+
+<Meta title="Reviews/Nov 26 – Design System header styles/Summary" />
+
+export const OPTIONS = [
+  { key: 'a', name: 'A · Flat geometry', pitch: 'Swiss-modernist flat shapes in Birdie’s greens and sand: circles, bands, arcs, a pin. The crispest, and the closest to the flat UI it documents.' },
+  { key: 'b', name: 'B · Soft 3D forms', pitch: 'Matte clay spheres, discs and rounded tiles in soft studio light. The warmest and most tactile; the busiest behind text.' },
+  { key: 'c', name: 'C · Contour line art', pitch: 'Fine single-weight lines: green slope contours, a measured grid, dotted flight arcs. The quietest and most technical.' },
+];
+
+export const PAGES = [
+  { key: 'colors', title: 'Colors', line: 'Every colour role in Birdie, what it means on the tee sheet and the register, and which pairs pass contrast.' },
+  { key: 'spacing', title: 'Spacing', line: 'The 8px unit and the steps each surface uses, from the dense counter terminal to the handheld.' },
+  { key: 'radius', title: 'Radius', line: 'Four corner sizes and the circle, and which shape each one belongs to.' },
+];
+
+<DocPage>
+
+<Banner
+  eyebrow="Review · Nov 26, 2026"
+  title="Design System header styles"
+  pills={<><Pill>3 options</Pill><Pill>Shown on Colors, Spacing and Radius</Pill><StatusPill tone="open">Open</StatusPill></>}
+>
+  Justin asked for the foundation pages' headers to move from illustrated golf scenes to something more abstract: minimal, and about the design system, with golf only hinted at. Three directions follow, each drawn as the real page header (the white fade, the eyebrow, the title) on three pages. The chosen direction gets drawn for all ten foundation pages and the Design System overview.
+</Banner>
+
+<Section title="Today" intro="The illustrated header now on the foundation pages, for comparison.">
+  <Banner eyebrow="Design System · Styles" title="Colors" art={art('ds-colors')}>
+    {PAGES[0].line}
+  </Banner>
+</Section>
+
+{OPTIONS.map((o) => (
+  <Section key={o.key} title={o.name} intro={o.pitch}>
+    {PAGES.map((p) => (
+      <div key={p.key} style={{ marginBottom: 16 }}>
+        <Banner eyebrow="Design System · Styles" title={p.title} art={art(`options/ds-${o.key}-${p.key}`)}>
+          {p.line}
+        </Banner>
+      </div>
+    ))}
+  </Section>
+))}
+
+<Section title="Decision">
+  <DocTable
+    columns={['Question', 'Options', 'Status']}
+    widths={['34%', 'auto', '14%']}
+    rows={[
+      ['Which header style for the foundation pages and the Design System overview?', 'A · Flat geometry (recommended), B · Soft 3D forms, C · Contour line art', <StatusPill tone="open" />],
+    ]}
+  />
+  <Callout title="Why A is recommended">
+    The foundation pages are about tokens and rules: flat colour, exact spacing, precise corners. Flat geometry looks like what the pages describe, stays sharp at any size, and sits quietly behind the white fade. B is lovely but competes with the text; C is elegant but its thin lines fade out at banner size.
+  </Callout>
+</Section>
+
+</DocPage>
