@@ -32,6 +32,11 @@ const config: StorybookConfig = {
   // `public/` into every prototype build, and the prototypes have no use for 2.6 MB of docs art.
   staticDirs: ['./static'],
   docs: { defaultName: 'Overview' },
+  // Storybook's own onboarding (the "Become an expert" checklist, its menu guide) and "what's
+  // new" toasts sit at the top of the sidebar and push the docs down; this Storybook is for
+  // reviewing Birdie, not learning Storybook.
+  core: { disableWhatsNewNotifications: true },
+  features: { sidebarOnboardingChecklist: false, menuOnboardingChecklist: false },
 };
 
 export default config;

@@ -4,6 +4,7 @@
  *
  *   npx storybook dev -p 6044 --no-open      # Storybook running
  *   node scripts/check-doc-links.mjs         (STORYBOOK_URL=… to point elsewhere)
+ *   STORYBOOK_INDEX=site/index.json node scripts/check-doc-links.mjs   (CI, after build:site)
  *
  * Reads the docs kit's link targets from the source, as written (`to="<id>"`, `to: '<id>'`,
  * `route: '<id>'`, `mobilePrototype('<id>')`) in src/stories and the review summaries, plus every
@@ -18,12 +19,14 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = (process.env.STORYBOOK_URL ?? 'http://localhost:6044').replace(/\/$/, '');
 
-const res = await fetch(`${BASE}/index.json`).catch(() => null);
-if (!res?.ok) {
-  console.error(`Couldn't read ${BASE}/index.json. Start Storybook first.`);
+const fromFile = process.env.STORYBOOK_INDEX;
+const res = fromFile ? null : await fetch(`${BASE}/index.json`).catch(() => null);
+if (!fromFile && !res?.ok) {
+  console.error(`Couldn't read ${BASE}/index.json. Start Storybook first, or set STORYBOOK_INDEX.`);
   process.exit(1);
 }
-const known = new Set(Object.keys((await res.json()).entries));
+const index = fromFile ? JSON.parse(fs.readFileSync(fromFile, 'utf8')) : await res.json();
+const known = new Set(Object.keys(index.entries));
 
 const walk = (dir) =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => {

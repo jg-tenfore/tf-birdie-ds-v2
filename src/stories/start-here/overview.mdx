@@ -1,6 +1,7 @@
 import { Meta } from '@storybook/addon-docs/blocks';
 import { Code, DocButton, DocPage, Grid, Hero, HeroScreen, NavCard, P, Pill, Section, art, archivePrototype, mobilePrototype, referencePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
-import { AreaCards, countOf } from '../prototypes/screen-index';
+import { AreaCards, countOf, storyCountOf } from '../prototypes/screen-index';
+import { LATEST_REVIEW } from '../prototypes/screen-index-data';
 import { DEVICES } from '../../pos/devices';
 
 <Meta title="Start Here/Overview" />
@@ -11,7 +12,7 @@ import { DEVICES } from '../../pos/devices';
   eyebrow="TenFore Birdie design system"
   title="Birdie, at the counter and in the hand."
   art={art('hero-overview')}
-  pills={<><Pill>{countOf('tablet')} on the tablet</Pill><Pill>{countOf('mobile')} on the phone</Pill><Pill>{DEVICES.length} devices</Pill><Pill>Sample data only</Pill></>}
+  pills={<><Pill>{storyCountOf('tablet')} tablet stories</Pill><Pill>{storyCountOf('mobile')} phone stories</Pill><Pill>{DEVICES.length} devices</Pill></>}
   actions={<><DocButton href={tabletPrototype('#/tee-sheet')}>Open the tablet prototype</DocButton><DocButton variant="secondary" to="start-here-how-to-review--overview">How to review</DocButton></>}
   screens={<>
     <HeroScreen src={screen('tablet-reservation')} label="Tablet · a reservation over the tee sheet" href={tabletPrototype('#/tee-sheet?res=p04_m6')} />
@@ -47,7 +48,7 @@ import { DEVICES } from '../../pos/devices';
   <NavCard eyebrow="The back office" title="Buck and Birdie" to="start-here-buck-and-birdie--overview" cta="See what Buck sets up">
     Buck is where the club sets things up; Birdie is the counter that uses them. Which Buck screen feeds which Birdie area.
   </NavCard>
-  <NavCard eyebrow="The latest review" title="Oct 2 · Proposal review" to="reviews-oct-2-proposal-review-summary--overview" cta="Open the latest">
+  <NavCard eyebrow="The latest review" title={LATEST_REVIEW.folder} to={LATEST_REVIEW.id} cta="Open the latest">
     Weston's review of the twelve Sep 30 proposals: ten approved and built, two more rounds, both now built.
   </NavCard>
 </Grid>
@@ -72,7 +73,7 @@ import { DEVICES } from '../../pos/devices';
   <NavCard eyebrow="3" title="Design System" to="foundations-colors--overview" cta="See the colours">
     Styles (colour roles, type, spacing, radius, elevation, icons, logos, images) and the MUI components, grouped by purpose.
   </NavCard>
-  <NavCard eyebrow="4" title="Reviews" to="reviews-oct-2-proposal-review-summary--overview" cta="Open the latest">
+  <NavCard eyebrow="4" title="Reviews" to={LATEST_REVIEW.id} cta="Open the latest">
     One folder per review with Weston, newest first. Each opens on a summary of what was decided and left open.
   </NavCard>
   <NavCard eyebrow="5" title="Archive" to="archive-about-the-archive--overview" cta="About the archive">

@@ -614,6 +614,16 @@ export const MOBILE_SCREENS: ScreenIndexRow[] = [
   {"id":"prototypes-mobile-customer-search-people--customer-added-this-session-detail","area":"Customer Search","topic":"People","name":"Customer Added This Session Detail","description":"The same customer's detail page — found by id in the session roster, not the demo data.","docs":"prototypes-mobile-customer-search-people--overview","route":"mobile-screens-7-·-people--customer-added-this-session-detail"},
 ];
 
+/** Review folders, newest first: each Summary page's id, its folder name and its date. */
+export const REVIEWS: { id: string; folder: string; date: string }[] = [
+  {"id":"reviews-oct-2-proposal-review-summary--overview","folder":"Oct 2 – Proposal review","date":"2026-10-02"},
+  {"id":"reviews-oct-1-proposals-from-the-sep-30-call-summary--overview","folder":"Oct 1 – Proposals from the Sep 30 call","date":"2026-10-01"},
+  {"id":"reviews-sep-22-weston-edits-rounds-1-5-summary--overview","folder":"Sep 22 – Weston Edits, rounds 1–5","date":"2026-09-22"},
+];
+
+/** The newest review — what "the latest review" links on Start Here point at. */
+export const LATEST_REVIEW = REVIEWS[0];
+
 /** Archive folders in sidebar order, with their story and docs-page counts and first entry. */
 export const ARCHIVE_FOLDERS: { name: string; stories: number; docs: number; firstId: string }[] = [
   {"name":"About the archive","stories":0,"docs":1,"firstId":"archive-about-the-archive--overview"},

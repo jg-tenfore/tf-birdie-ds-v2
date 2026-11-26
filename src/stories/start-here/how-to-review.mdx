@@ -1,5 +1,6 @@
 import { Meta } from '@storybook/addon-docs/blocks';
 import { Banner, Callout, Code, DocButton, DocLink, DocPage, Grid, NavCard, NumberedRow, P, Pill, ScreenCard, Section, mobilePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { LATEST_REVIEW } from '../prototypes/screen-index-data';
 
 <Meta title="Start Here/How to review" />
 
@@ -194,7 +195,7 @@ import { Banner, Callout, Code, DocButton, DocLink, DocPage, Grid, NavCard, Numb
   </NavCard>
 </Grid>
 <Callout title="Send a link, not a description.">
-Every story has its own URL: copy it from the address bar and it opens that exact screen and state for whoever you send it to. The prototype's address bar works the same way for every screen and dialog (<DocLink to="start-here-deep-links--overview">the deep-link scheme</DocLink>). Each round of feedback gets its own folder in <DocLink to="reviews-oct-2-proposal-review-summary--overview">Reviews</DocLink>, with what was decided and left open.
+Every story has its own URL: copy it from the address bar and it opens that exact screen and state for whoever you send it to. The prototype's address bar works the same way for every screen and dialog (<DocLink to="start-here-deep-links--overview">the deep-link scheme</DocLink>). Each round of feedback gets its own folder in <DocLink to={LATEST_REVIEW.id}>Reviews</DocLink>, with what was decided and left open.
 </Callout>
 </Section>
 

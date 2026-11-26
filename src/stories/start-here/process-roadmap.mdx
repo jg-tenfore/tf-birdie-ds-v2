@@ -1,5 +1,6 @@
 import { Meta } from '@storybook/addon-docs/blocks';
 import { Banner, Callout, Code, DocButton, DocPage, DocTable, Grid, NavCard, Pill, Section, StatusPill, Steps, Timeline, archivePrototype, screen, tabletPrototype } from '../docs-kit/docs-kit';
+import { LATEST_REVIEW } from '../prototypes/screen-index-data';
 import { CURRENT_EDITION, ARCHIVED_EDITION } from '../../pos/edition';
 
 <Meta title="Start Here/Process & roadmap" />
@@ -10,7 +11,7 @@ import { CURRENT_EDITION, ARCHIVED_EDITION } from '../../pos/edition';
   eyebrow="Process & roadmap"
   title="From the HTML prototype to the current Birdie, and what comes next."
   pills={<><Pill tone="brand">Current: Weston Edits</Pill><Pill>Updated Nov 26, 2026</Pill><Pill tone="amber">Birdie V2 redesign by end of 2026</Pill></>}
-  actions={<><DocButton to="start-here-how-to-review--overview">Start the review</DocButton><DocButton variant="secondary" to="reviews-oct-2-proposal-review-summary--overview">The latest review</DocButton></>}
+  actions={<><DocButton to="start-here-how-to-review--overview">Start the review</DocButton><DocButton variant="secondary" to={LATEST_REVIEW.id}>The latest review</DocButton></>}
 >
   Birdie's screens are designed here, against working prototypes, and reviewed with Weston one round at a time. Each round gets a folder in Reviews; what's approved is built into the prototype the same week, so the next round starts from it.
 </Banner>

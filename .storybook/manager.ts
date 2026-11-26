@@ -4,9 +4,11 @@ import { create } from 'storybook/theming';
 /**
  * Storybook chrome.
  *
- * The sidebar brand is the TenFore wordmark over "Birdie / Design System" — the same two-line
- * lockup as TF Crane's, so the TenFore design-system Storybooks read as one family and still
- * say which one this is. It links to Start Here › Overview; the prototypes are one click
+ * The sidebar brand is one row, like TF Crane's: the TenFore wordmark, a hairline, then
+ * "Birdie" over a small uppercase "Design System" — so the TenFore design-system Storybooks read
+ * as one family and still say which one this is. The wordmark stays whole at 22px tall rather
+ * than being cropped to a square mark, because its antlers overlap the "T" and don't survive a
+ * crop. One row keeps the header about as tall as Crane's, so the nav starts where it does there. It links to Start Here › Overview; the prototypes are one click
  * from there.
  *
  * The logo is `static/tenfore-logo.svg` (served by `staticDirs` in `main.ts`), addressed
@@ -19,9 +21,10 @@ import { create } from 'storybook/theming';
 addons.setConfig({
   theme: create({
     base: 'light',
-    brandTitle: `<span style="display:flex;flex-direction:column;gap:8px;font-family:'Google Sans','Google Sans Text',Roboto,'Helvetica Neue',Arial,sans-serif">
-        <img src="tenfore-logo.svg" width="112" height="30" alt="TenFore" style="display:block" />
-        <span style="display:flex;flex-direction:column;line-height:1.15;padding-left:2px">
+    brandTitle: `<span style="display:flex;align-items:center;gap:10px;font-family:'Google Sans','Google Sans Text',Roboto,'Helvetica Neue',Arial,sans-serif">
+        <img src="tenfore-logo.svg" width="82" height="22" alt="TenFore" style="display:block" />
+        <span style="width:1px;height:28px;background:#c0c9c1"></span>
+        <span style="display:flex;flex-direction:column;line-height:1.1">
             <span style="font-size:16px;font-weight:700;color:#191d19">Birdie</span>
             <span style="font-size:10.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#707973">Design System</span>
         </span>

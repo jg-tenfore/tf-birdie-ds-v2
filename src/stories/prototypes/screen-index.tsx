@@ -47,6 +47,9 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 /** "184 stories" for an app, or for one of its areas. */
 export const countOf = (app: App, area?: string) => plural(area ? SCREENS[app].filter((r) => r.area === area).length : SCREENS[app].length, 'story', 'stories');
 
+/** The bare count, for labels that put the noun elsewhere ("413 tablet stories"). */
+export const storyCountOf = (app: App) => SCREENS[app].length;
+
 /** "20 areas". */
 export const areaCountOf = (app: App) => plural(areasOf(SCREENS[app]).length, 'area');
 
