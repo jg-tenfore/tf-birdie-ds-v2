@@ -75,7 +75,11 @@ export const TaxesAndFees: Story = {
     for (const label of ['General Tee Fee Tax Rate', 'Transportation Tax Rate', 'Open Food Tax Rate', 'Open Liquor Tax Rate']) {
       await expect(row(p, label).textContent).toContain('Sales Tax (8.00%)');
     }
-    await expect(row(p, 'F&B Service Charge').textContent).toContain('Shown only');
+    // Charged per line since Nov 26: beer, wine and liquor carry Buck's Tax Rate 2, and the service
+    // charges are added — so neither reads "Shown only" any more.
+    await expect(row(p, 'Open Liquor Tax Rate 2').textContent).toContain('Alcohol Tax (6.70%)');
+    await expect(row(p, 'F&B Service Charge').textContent).toContain('18%');
+    await expect(row(p, 'F&B Service Charge').textContent).not.toContain('Shown only');
   },
 };
 

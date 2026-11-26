@@ -50,8 +50,8 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckScreen: 'Buck › Course Settings › Taxes & Fees',
     buckFile: COURSE_SETTINGS,
     birdieFile: 'src/pos/data/buck-club.ts',
-    status: 'partial',
-    note: 'Buck sets a tax per line type (tee fee, transportation, food, liquor); Birdie charges one sales-tax rate on all of them. Service charges are shown, not added.',
+    status: 'aligned',
+    note: 'Since Nov 26 the register charges Buck’s tax per line (tee fee, transportation, food, liquor, each with its Tax Rate 2) and adds the F&B, Event and card service charges as their own lines. A tee time from the sheet keeps the tax its reservation was booked with rather than being recomputed.',
   },
   {
     birdieArea: 'Settings',
@@ -149,8 +149,8 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckScreen: 'Buck › Products › List · Product Groups · Price Stickers · Rewards',
     buckFile: PRODUCTS,
     birdieFile: 'src/pos/data/catalog.ts',
-    status: 'not yet',
-    note: 'The register still sells Birdie’s ported catalog; SKUs, groups and departments are not wired.',
+    status: 'partial',
+    note: 'The register still sells Birdie’s ported catalog; SKUs, groups and departments are not wired. Since Nov 26 a product can carry Buck’s own Tax and Tax 2 type, a cost and the Price override option (src/pos/data/products.ts); the rest take their kind’s tax.',
   },
 
   // ─── Credits ──────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Button, ButtonBase, IconButton, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
@@ -69,7 +70,7 @@ export function OrderScreen() {
   const checkIn = state.cart[checkInIdx];
   const back9 = state.cart.find((i) => i.is18HBack);
   const lines = orderLines(state.cart);
-  const money = orderMoney(state.cart);
+  const money = orderMoney(state.cart, pricingOf(state));
   const isReserve = state.flowMode === 'reserve';
   const needsTeeTime = Boolean(checkIn) && !checkIn?.teeTime && !booking;
   // Weston Edits: a round loaded from a reservation is golf already decided — the order
@@ -680,7 +681,7 @@ function RetailRow({ item, index }: { item: CartItem; index: number }) {
 function OrderActions({ needsTeeTime, isReserve }: { needsTeeTime: boolean; isReserve: boolean }) {
   const { state, dispatch, toast } = usePos();
   const nav = useMobileNav();
-  const { total } = orderMoney(state.cart);
+  const { total } = orderMoney(state.cart, pricingOf(state));
 
   if (state.lastPayment) {
     return (

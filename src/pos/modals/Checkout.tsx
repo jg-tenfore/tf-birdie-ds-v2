@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Box, ButtonBase, Divider, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { PR_CONFIG } from '../data/config';
@@ -10,12 +10,14 @@ import { Callout, FilledButton, ModalFrame, OutlineButton } from './ModalFrame';
 import { Stack } from '../components/Stack';
 import { demoNow } from '../data/bookings';
 import { tabById } from '../state/restaurant';
-import { amountDue, registerTotals, taxRateOf, type OperationsModal } from '../state/operations';
+import { amountDue, registerTotals, type OperationsModal } from '../state/operations';
 import { useV1V2 } from '../edition';
 import { ReceiptSlip } from '../components/ReceiptSlip';
 import type { TenderKey } from '../state/settings';
 import { tenderLabel } from '../logic/order-lookup';
 import { CREDIT_ICONS, CREDIT_KINDS, CREDIT_NAMES } from '../logic/credit-tenders';
+import { cardSurcharge, isPricing, type Pricing } from '../logic/pricing';
+import { pricingOf } from '../state/checkout';
 
 /**
  * V1 → V2, Wave 3: the tenders that are not a card reader. Each opens its own dialog, which pays
@@ -62,14 +64,11 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
   const offered = (key: string) => tenderSwitches[key as TenderKey] !== false;
 
   // The one order total (`orderTotals`): golf taxed by its booking's tax line, everything
-  // else at the sales-tax rate. The register's Pay button, this receipt and the reader all
-  // read it, so they can't disagree — before, this added the golf tax twice.
-  const taxRate = taxRateOf(state);
-  const base = useMemo(() => {
-    // At the terminal's tax rate (Settings, V1 → V2).
-    const t = cart.orderTotals(state.cart, taxRate);
-    return { discounts: Math.abs(t.discount), subtotal: t.subtotal, tax: t.tax, total: t.total };
-  }, [state.cart, taxRate]);
+  // else at the sales-tax rate — or, in V1 → V2, by Buck's tax per line with Buck's service charges
+  // (`pricingOf`). The register's Pay button, this receipt and the reader all read it, so they
+  // can't disagree — before, this added the golf tax twice.
+  const totals = registerTotals(state);
+  const base = { discounts: Math.abs(totals.discount), subtotal: totals.subtotal, tax: totals.tax, total: totals.total };
 
   const [mode, setMode] = useState<'tendered' | 'tip'>('tendered');
   const [tenderedDigits, setTenderedDigits] = useState('');
@@ -180,7 +179,26 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
           <Stack gap={0.5} sx={{ fontSize: 12.5 }}>
             <Row label="Discounts" value={base.discounts > 0 ? cart.creditMoney(base.discounts) : '$0.00'} color={base.discounts > 0 ? md3.error : undefined} />
             <Row label="Subtotal" value={cart.money(base.subtotal)} />
-            <Row label="Tax" value={cart.money(base.tax)} />
+            {/* Buck's service charges (V1 → V2, Nov 26), each its own line. */}
+            {(totals.serviceCharges ?? []).map((c) => (
+              <Box key={c.id} data-service-charge={c.id} sx={{ display: 'contents' }}>
+                <Row label={c.label} value={cart.money(c.amount)} />
+              </Box>
+            ))}
+            {totals.taxes ? (
+              // Buck's tax per line, by type: Sales Tax, Alcohol Tax, a tee time's reservation tax.
+              totals.taxes.length === 0 ? (
+                <Row label={totals.exempt ? 'Tax (exempt)' : 'Tax'} value={cart.money(0)} />
+              ) : (
+                totals.taxes.map((t) => (
+                  <Box key={t.id} data-tax-line={t.id} sx={{ display: 'contents' }}>
+                    <Row label={t.label} value={cart.money(t.amount)} />
+                  </Box>
+                ))
+              )
+            ) : (
+              <Row label="Tax" value={cart.money(base.tax)} />
+            )}
             {bakedTip > 0 && <Row label="Tip" value={cart.money(bakedTip)} />}
             <Divider sx={{ my: 0.75 }} />
             {split ? (
@@ -474,7 +492,9 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
   // Exactly the checkout total — `orderTotals` plus the tip checkout recalculated in. No
   // second tax: the reader used to add a flat 8% on top of an amount that already had it.
   // Less any part already paid by another tender (V1 → V2, Wave 3).
-  const amount = +(amountDue(state) + tip).toFixed(2);
+  // Buck's Credit Card Surcharge (V1 → V2, Nov 26) on a card — 0% at this club unless Buck pushes a rate.
+  const surcharge = method === 'card' ? cardSurcharge(amountDue(state), pricingOf(state)) : 0;
+  const amount = +(amountDue(state) + tip + surcharge).toFixed(2);
 
   const advance = () => {
     if (stage === 1) {
@@ -489,7 +509,7 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
     }
     if (stage === 3) {
       // The tip travels apart from the amount, so Orders & Tips can adjust it later (V1 → V2).
-      dispatch({ type: 'recordPayment', method, amount, tip });
+      dispatch({ type: 'recordPayment', method, amount, tip, ...(surcharge > 0 && { surcharge }) });
       dispatch({ type: 'closeModal' });
       toast(`Payment approved · ${cart.money(amount)}`);
     }
@@ -550,6 +570,11 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
           <Typography sx={{ fontSize: 13, color: md3.onSurfaceVariant, mt: 0.5 }}>
             {stage === 1 ? cfg.subtitle : stage === 2 ? 'Processing…' : 'Approved'}
           </Typography>
+          {surcharge > 0 && (
+            <Typography data-card-surcharge={surcharge.toFixed(2)} sx={{ fontSize: 12, color: md3.onSurfaceVariant, mt: 0.5 }}>
+              Includes Credit Card Surcharge {isPricing(pricingOf(state)) ? (pricingOf(state) as Pricing).club.serviceCharges.card : 0}% · {cart.money(surcharge)}
+            </Typography>
+          )}
         </Box>
 
         {stage === 1 && method === 'card' && (
@@ -574,6 +599,7 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
             lines={state.cart}
             totals={registerTotals(state)}
             tip={tip}
+            surcharge={surcharge}
             tender={method === 'cashpay' ? 'Other' : tenderLabel(method)}
             amount={amount}
             earlier={(state.splitTender?.tenders ?? []).map((t) => ({ label: tenderLabel(t.method, t.ref), amount: t.amount }))}

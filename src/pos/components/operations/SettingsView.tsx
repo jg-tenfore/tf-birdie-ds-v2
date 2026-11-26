@@ -645,23 +645,33 @@ function BuckBirdieSection() {
 }
 
 /**
- * Buck › Taxes & Fees. Buck names a tax for each kind of line; Birdie charges one sales-tax rate on
- * all of them (a round's tax comes from its booking), so every row reads the rate Checkout charges.
+ * Buck › Taxes & Fees. Buck names a tax for each kind of line, and a stacking Tax Rate 2. In V1 → V2 the
+ * register charges them per line (Nov 26, `logic/pricing.ts`); the default type's rate is the sales tax
+ * this terminal charges. The service charges are added too, each as its own line.
  */
 function BuckTaxesSection() {
   const { state } = usePos();
   const rate = taxRateOf(state);
-  const sales = taxTypeLabel({ name: 'Sales Tax', rate });
+  const club = state.clubPricing;
+  const followed = state.buckCheckout;
+  const typeLabel = (id: string | null) => {
+    if (!id) return 'No second tax';
+    const t = club.taxTypes.find((x) => x.id === id);
+    return t ? taxTypeLabel({ name: t.name, rate: t.isDefault ? rate : t.rate }) : id;
+  };
   return (
     <BuckFrame title="Taxes & Fees" section="taxes" buck="Taxes & Fees" intro="Tax rates and the fees applied to bookings and orders.">
-      <BuckGroup title="Tax Rates" buck="Taxes & Fees" hint="Which configured tax applies to each kind of line item.">
+      <BuckGroup title="Tax Rates" buck="Taxes & Fees" hint="Which configured tax applies to each kind of line item. A tee time from the sheet keeps the tax it was booked with.">
         {TAX_RATE_FIELDS.map((f) => (
-          <ReadRow key={f.label} label={f.label} value={f.tax === 'sales' ? sales : f.tax === 'exempt' ? 'Tax Exempt (0.00%)' : 'No tax'} note={f.appliesTo} />
+          <Box key={f.label} sx={{ display: 'contents' }}>
+            <ReadRow label={f.label} value={typeLabel(club.fields[f.field].tax)} note={f.appliesTo} followed={followed} />
+            <ReadRow label={`${f.label} 2`} value={typeLabel(club.fields[f.field].tax2)} followed={followed} />
+          </Box>
         ))}
       </BuckGroup>
-      <BuckGroup title="Service Charges" buck="Taxes & Fees">
+      <BuckGroup title="Service Charges" buck="Taxes & Fees" hint="Added as their own line on the order, the checkout and the receipt. Untaxed.">
         {SERVICE_CHARGES.map((c) => (
-          <ReadRow key={c.label} label={c.label} value={`${c.percent}%`} followed={false} />
+          <ReadRow key={c.label} label={c.label} value={`${club.serviceCharges[c.id]}%`} note={c.appliesTo} followed={followed} />
         ))}
       </BuckGroup>
     </BuckFrame>

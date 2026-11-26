@@ -156,6 +156,8 @@ export function PosAppBody({ syncUrl }: { syncUrl?: boolean } = {}) {
   // V1 → V2, 100226: what a row shows is what the order charges.
   useLayoutEffect(() => {
     dispatch({ type: 'setTransportFromRow', on: v1v2 });
+    // V1 → V2, Nov 26: checkout prices by Buck — per-line tax, service charges, discounts.
+    dispatch({ type: 'setBuckCheckout', on: v1v2 });
   }, [v1v2, dispatch]);
   useDemoDayFill(useWestonEdits());
   // V1 → V2's screens exist only in V1 → V2. The nav already dims their tiles elsewhere, but a

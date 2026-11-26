@@ -76,35 +76,52 @@ export interface TaxType {
 
 export const TAX_TYPES: TaxType[] = [
   { id: 'sales', name: 'Sales Tax', rate: 0.08, isDefault: true },
+  // Buck's own name for a liquor tax (Products › Tax types), charged as Open Liquor's Tax Rate 2.
+  { id: 'alcohol', name: 'Alcohol Tax', rate: 0.067 },
   { id: 'exempt', name: 'Tax Exempt', rate: 0 },
 ];
 
 /** "Sales Tax (8.00%)", the way Buck's selects print a tax type. */
 export const taxTypeLabel = (t: Pick<TaxType, 'name' | 'rate'>): string => `${t.name} (${(t.rate * 100).toFixed(2)}%)`;
 
+/** The four kinds of line Buck sets a tax for. */
+export type TaxField = 'teeFee' | 'transportation' | 'food' | 'liquor';
+
 /**
  * Buck › Taxes & Fees › **Tax Rates** — "Which configured tax applies to each kind of line item."
  *
- * Buck sets one per kind of line (and a second, stacking tax for each). Birdie charges **one**
- * sales-tax rate on everything that is not a round, and a round's tax comes from its booking —
- * so today every row below reads the same rate, the one Checkout charges (`taxRateOf`). Splitting
- * food from liquor at the register is listed as *not yet* in `buck-sources.ts`.
+ * Buck has eight fields: each kind's Tax Rate and a stacking **Tax Rate 2**. Since Nov 26 the register
+ * charges them **per line** (`logic/pricing.ts`, V1 → V2): a green fee by the tee-fee rate, a cart by
+ * transportation, food by open food, a beer by open liquor plus its Tax Rate 2. A line that is none of
+ * the four — a shirt, a sleeve of balls — takes the default tax type, as a Buck product does. A tee
+ * time from the sheet keeps the tax its reservation was booked with.
  */
-export const TAX_RATE_FIELDS: { label: string; appliesTo: string; tax: 'sales' | 'exempt' | 'none' }[] = [
-  { label: 'General Tee Fee Tax Rate', appliesTo: 'Green fees', tax: 'sales' },
-  { label: 'Transportation Tax Rate', appliesTo: 'Carts and walking fees', tax: 'sales' },
-  { label: 'Open Food Tax Rate', appliesTo: 'Food from the menus', tax: 'sales' },
-  { label: 'Open Liquor Tax Rate', appliesTo: 'Beer, wine and liquor', tax: 'sales' },
+export const TAX_RATE_FIELDS: { field: TaxField; label: string; appliesTo: string; tax: string; tax2: string | null }[] = [
+  { field: 'teeFee', label: 'General Tee Fee Tax Rate', appliesTo: 'Green fees', tax: 'sales', tax2: null },
+  { field: 'transportation', label: 'Transportation Tax Rate', appliesTo: 'Carts and walking fees', tax: 'sales', tax2: null },
+  { field: 'food', label: 'Open Food Tax Rate', appliesTo: 'Food from the menus', tax: 'sales', tax2: null },
+  { field: 'liquor', label: 'Open Liquor Tax Rate', appliesTo: 'Beer, wine and liquor', tax: 'sales', tax2: 'alcohol' },
 ];
 
+/** Buck's service charges, by what they are for. */
+export type ServiceChargeId = 'card' | 'fnb' | 'event';
+
 /**
- * Buck › Taxes & Fees › **Service Charges**, as percentages. Birdie does not add any of them yet —
- * Checkout's "Service charge" button is a placeholder — so the screen says so beside them.
+ * Buck › Taxes & Fees › **Service Charges**, as percentages. Added since Nov 26 (V1 → V2), each as its
+ * own line on the order, checkout and the receipt, untaxed — Buck's product total is price, tax, tax 2
+ * and fees, the fee untaxed:
+ *
+ * - **F&B Service Charge** on the food and drink of a **table's** tab — table service, not the counter.
+ * - **Event Service Charge** on an event's bill.
+ * - **Credit Card Surcharge** on a card payment — 0% at this club, so nothing is added unless Buck
+ *   pushes a rate.
+ *
+ * Checkout's **Service charge** button adds any of them by hand too.
  */
-export const SERVICE_CHARGES: { label: string; percent: number }[] = [
-  { label: 'Credit Card Surcharge', percent: 0 },
-  { label: 'F&B Service Charge', percent: 18 },
-  { label: 'Event Service Charge', percent: 20 },
+export const SERVICE_CHARGES: { id: ServiceChargeId; label: string; percent: number; appliesTo: string }[] = [
+  { id: 'card', label: 'Credit Card Surcharge', percent: 0, appliesTo: 'A card payment, on what the card pays' },
+  { id: 'fnb', label: 'F&B Service Charge', percent: 18, appliesTo: 'Food and drink on a table’s tab' },
+  { id: 'event', label: 'Event Service Charge', percent: 20, appliesTo: 'An event’s bill' },
 ];
 
 // ─── Payments ───────────────────────────────────────────────────────────────

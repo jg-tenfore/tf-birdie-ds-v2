@@ -20,6 +20,7 @@ export function ReceiptSlip({
   lines,
   totals,
   tip,
+  surcharge = 0,
   tender,
   amount,
   earlier = [],
@@ -31,6 +32,8 @@ export function ReceiptSlip({
   lines: CartItem[];
   totals: OrderTotals;
   tip: number;
+  /** Buck's Credit Card Surcharge, taken with this card payment. */
+  surcharge?: number;
   tender: string;
   amount: number;
   /** On a split, what the tenders before this one paid. */
@@ -42,7 +45,8 @@ export function ReceiptSlip({
       <span>{value}</span>
     </Stack>
   );
-  const items = lines.filter((l) => !l.isTax && l.name !== 'Taxes');
+  // Service charges print under the subtotal, from `totals`, not as items.
+  const items = lines.filter((l) => !l.isTax && l.name !== 'Taxes' && !l.serviceCharge);
   return (
     <Box
       data-receipt
@@ -74,8 +78,22 @@ export function ReceiptSlip({
       </Box>
       <Box sx={{ borderTop: `1px dashed ${md3.outlineVariant}`, pt: 0.75 }}>
         {row('Subtotal', money(totals.subtotal))}
-        {row('Tax', money(totals.tax))}
+        {totals.discount < 0 && row('Discounts', money(totals.discount))}
+        {/* Buck's service charges and tax by type (V1 → V2, Nov 26), each its own line. */}
+        {(totals.serviceCharges ?? []).map((c) => (
+          <Box key={c.id} data-receipt-service-charge={c.id}>
+            {row(c.label, money(c.amount))}
+          </Box>
+        ))}
+        {totals.taxes && totals.taxes.length
+          ? totals.taxes.map((t) => (
+              <Box key={t.id} data-receipt-tax={t.id}>
+                {row(t.label, money(t.amount))}
+              </Box>
+            ))
+          : row('Tax', money(totals.tax))}
         {tip > 0 && row('Tip', money(tip))}
+        {surcharge > 0 && row('Credit Card Surcharge', money(surcharge))}
         {earlier.map((e, i) => (
           <Box key={i}>{row(e.label, money(e.amount))}</Box>
         ))}

@@ -7,6 +7,7 @@ import { playerFee, playerHoles, playerName, playerTransport, roundLabel } from 
 import { seatIsMember } from './rates';
 import { seatNetGreenFee, seatTransportFee, seatTransportOverride } from './seat-pricing';
 import type { RateContext } from './rates';
+import { isPricing, priceOrder, type Pricing } from './pricing';
 
 /**
  * Cart construction and pricing.
@@ -235,6 +236,14 @@ export interface OrderTotals {
   exempt: boolean;
   /** `goods + tax` — the one number the Pay button, checkout and every reader charge. */
   total: number;
+  /**
+   * Buck's per-line pricing (V1 → V2, Nov 26): the tax by type — "Sales Tax 8%", "Alcohol Tax 6.7%",
+   * a tee time's reservation tax — and the service charges, each a line of its own. Absent at a flat rate.
+   */
+  taxes?: { id: string; label: string; amount: number }[];
+  serviceCharges?: { id: string; label: string; amount: number }[];
+  /** The service charges' sum; `total` includes it. 0 or absent at a flat rate. */
+  service?: number;
 }
 
 /**
@@ -254,7 +263,8 @@ export interface OrderTotals {
  * With nothing left to charge (every seat settled, or the round removed), a stray tax row
  * charges nothing.
  */
-export function orderTotals(cart: CartItem[], taxRate: number = TAX_RATE): OrderTotals {
+export function orderTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RATE): OrderTotals {
+  if (isPricing(taxRate)) return buckTotals(cart, taxRate);
   const lines = cart.filter((i) => !isTaxRow(i));
   const exempt = cart.some((i) => i.name === 'Tax Exempt');
   const goods = cents(payableTotal(lines));
@@ -281,6 +291,29 @@ export function orderTotals(cart: CartItem[], taxRate: number = TAX_RATE): Order
     tax,
     exempt,
     total: cents(goods + tax),
+  };
+}
+
+/** What a line charges before tax: its price, its seats', its discounts. */
+export const lineNet = (line: CartItem): number => (isTaxRow(line) || line.serviceCharge ? 0 : payableTotal([line]));
+
+/** `orderTotals` by Buck's per-line pricing (`logic/pricing.ts`, V1 → V2). */
+function buckTotals(cart: CartItem[], p: Pricing): OrderTotals {
+  const priced = priceOrder(cart, p, lineNet);
+  const subtotal = cents(cartTotals(cart.filter((i) => !isTaxRow(i) && !i.serviceCharge)).subtotal);
+  const golfTax = priced.taxes.find((t) => t.id === 'reservation')?.amount ?? 0;
+  return {
+    subtotal,
+    discount: cents(priced.goods - subtotal),
+    goods: priced.goods,
+    golfTax,
+    salesTax: cents(priced.tax - golfTax),
+    tax: priced.tax,
+    exempt: priced.exempt,
+    total: priced.total,
+    taxes: priced.taxes,
+    serviceCharges: priced.service,
+    service: priced.serviceTotal,
   };
 }
 
@@ -313,7 +346,8 @@ export function allocateCents(amount: number, weights: number[]): number[] {
  * they charge; a gift card, an account payment and an event's charges carry none. With Buck's
  * per-line pricing (`Pricing`, V1 → V2) each line's own tax and service charges are used instead.
  */
-export function lineTotals(cart: CartItem[], taxRate: number = TAX_RATE): number[] {
+export function lineTotals(cart: CartItem[], taxRate: number | Pricing = TAX_RATE): number[] {
+  if (isPricing(taxRate)) return priceOrder(cart, taxRate, lineNet).lines.map((l) => l.total);
   const t = orderTotals(cart, taxRate);
   const goods = cart.map((l) => (isTaxRow(l) ? 0 : payableTotal([l])));
   const untaxed = (l: CartItem) => isTaxRow(l) || Boolean(l.giftCard || l.accountPayment || l.eventBill);

@@ -81,6 +81,16 @@ export interface OrderRecord {
   bookingId?: string;
   customerId?: string;
   eventId?: string;
+  /**
+   * Buck's per-line pricing (V1 → V2, Nov 26): what each line charged with its own tax and its share of
+   * the service charges, index for index with `lines`. A refund gives back exactly a line's share — a
+   * beer's alcohol tax with the beer — and a whole refund adds up to `total` to the cent.
+   */
+  lineTotals?: number[];
+  /** The order's tax by type and its service charges, as the receipt printed them. */
+  taxes?: { id: string; label: string; amount: number }[];
+  serviceCharges?: { id: string; label: string; amount: number }[];
+  service?: number;
 }
 
 const cents = (n: number) => Math.round(n * 100) / 100;
@@ -112,6 +122,16 @@ const unitOf = (l: CartItem) => (l.isCheckIn ? (l.qty > 0 ? payableTotal([l]) / 
  * a whole-order refund would — to the cent.
  */
 export function refundAmount(order: OrderRecord, picks: { index: number; qty: number }[]): number {
+  // Priced per line (V1 → V2): each line's own total, its tax and service charges with it.
+  if (order.lineTotals) {
+    return cents(
+      picks.reduce((s, p) => {
+        const l = order.lines[p.index];
+        const qty = Math.min(p.qty, refundableQty(order, p.index));
+        return l && l.qty > 0 ? s + ((order.lineTotals![p.index] ?? 0) * qty) / l.qty : s;
+      }, 0),
+    );
+  }
   const goods = picks.reduce((s, p) => {
     const l = order.lines[p.index];
     const qty = Math.min(p.qty, refundableQty(order, p.index));

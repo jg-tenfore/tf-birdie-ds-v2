@@ -2,6 +2,7 @@ import { priceWithModifiers, type AppliedModifier, type MenuItem } from '../data
 import { allTables, type FloorElement, type Room } from '../data/floor';
 import type { CartItem } from '../types';
 import { orderTotals } from './cart';
+import { isPricing, type Pricing } from './pricing';
 
 /**
  * The rules of the restaurant (V1 → V2, Wave 2). Pure, so the floor, the tab, the kitchen and the
@@ -82,6 +83,8 @@ export interface PaymentRecord {
   kind?: 'sale' | 'refund';
   /** The customer, gift card or event a tender drew on (Wave 3's tenders). */
   ref?: import('./orders').PaymentRef;
+  /** Buck's Credit Card Surcharge taken with a card payment (V1 → V2, Nov 26); part of `amount`. */
+  surcharge?: number;
 }
 
 /** A ticket the kitchen received. Kept for the KDS that will one day read it. */
@@ -239,7 +242,12 @@ export function sendToKitchen(
 }
 
 /** What a tab owes — the register's own arithmetic, so the tab and the checkout agree. */
-export const tabTotal = (tab: Pick<Tab, 'lines'>, taxRate?: number): number => orderTotals(tab.lines, taxRate).total;
+/**
+ * A tab's total. At Buck's pricing (V1 → V2, Nov 26) a tab at a table is table service, so its food and
+ * drink take the F&B Service Charge — the same total the register charges when the tab is paid.
+ */
+export const tabTotal = (tab: Pick<Tab, 'lines' | 'tableId'>, taxRate?: number | Pricing): number =>
+  orderTotals(tab.lines, isPricing(taxRate) ? { ...taxRate, dineIn: Boolean(tab.tableId), eventBill: false } : taxRate).total;
 
 /** Dishes grouped by seat, shared plates last. Seats with nothing on them are kept, so an empty seat shows. */
 export function bySeat(tab: Pick<Tab, 'lines' | 'guests'>): { seat: number | null; lines: CartItem[] }[] {

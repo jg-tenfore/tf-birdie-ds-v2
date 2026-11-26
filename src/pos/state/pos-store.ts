@@ -47,7 +47,7 @@ import {
 } from './settings';
 import { isLeagueAction, leagueDefaults, leagueReducer, type LeagueAction, type LeagueState } from './league';
 import { creditLedgerDefaults, type CreditLedgerState } from './credit-ledger';
-import type { CheckoutModal } from './checkout';
+import { checkoutDefaults, type CheckoutModal, type CheckoutState } from './checkout';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -290,7 +290,14 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState, LeagueState, CreditLedgerState {
+export interface PosState
+  extends RegisterExtrasState,
+    RestaurantState,
+    OperationsState,
+    SettingsState,
+    LeagueState,
+    CreditLedgerState,
+    CheckoutState {
   view: MainView;
 
   /**
@@ -530,6 +537,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     ...settingsDefaults(),
     ...leagueDefaults(),
     ...creditLedgerDefaults(),
+    ...checkoutDefaults(),
     ...overrides,
   };
 }
@@ -590,6 +598,8 @@ export type Action =
       method: string;
       amount: number;
       tip?: number;
+      /** Buck's Credit Card Surcharge on a card payment (V1 → V2, Nov 26); included in `amount`, like the tip. */
+      surcharge?: number;
       /** What the tender drew on — a customer's account or card, a gift card, an event (Wave 3). */
       ref?: PaymentRef;
     }
@@ -607,6 +617,8 @@ export type Action =
   | { type: 'closeSidebar' }
   | { type: 'setNavOpen'; open: boolean }
   | { type: 'setTransportFromRow'; on: boolean }
+  /** V1 → V2 (Nov 26): price by Buck — per-line tax, service charges, discounts. Set by the shell. */
+  | { type: 'setBuckCheckout'; on: boolean }
   | { type: 'openPaidOrder'; bookingId: string }
   // Courts and bays (V1 → V2)
   | { type: 'seedResourceDay'; kind: ResourceKind; date: string }
@@ -1103,13 +1115,14 @@ export function reducer(state: PosState, action: Action): PosState {
       // The payment ledger, and a tab being paid is closed — its table is free (Wave 2).
       const ledgered: PosState = {
         ...gifted,
-        ...recordRestaurantPayment(gifted, { method: action.method, amount: action.amount, tip: action.tip, orderNumber, ref: action.ref }),
+        ...recordRestaurantPayment(gifted, { method: action.method, amount: action.amount, tip: action.tip, surcharge: action.surcharge, orderNumber, ref: action.ref }),
       };
       // The order kept whole, stock taken off the shelf, and what the tender drew on (Wave 3).
       return recordOperationsPayment(ledgered, {
         method: action.method,
         amount: action.amount,
         tip: action.tip,
+        surcharge: action.surcharge,
         ref: action.ref,
         paymentId: ledgered.payments.at(-1)!.id,
         orderNumber,
@@ -1154,6 +1167,8 @@ export function reducer(state: PosState, action: Action): PosState {
       return { ...state, navOpen: action.open };
     case 'setTransportFromRow':
       return state.transportFromRow === action.on ? state : { ...state, transportFromRow: action.on };
+    case 'setBuckCheckout':
+      return state.buckCheckout === action.on ? state : { ...state, buckCheckout: action.on };
     case 'openPaidOrder':
       // Same handoff as "Open in register", plus a breadcrumb back to the reservation.
       return { ...reducer(state, { type: 'loadBooking', bookingId: action.bookingId }), returnToBooking: action.bookingId };

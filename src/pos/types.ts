@@ -394,6 +394,11 @@ export interface CartItem {
   eventBill?: { eventId: string };
   /** A gift card to be issued when this order is paid (V1 → V2). See `CartGiftCard`. */
   giftCard?: CartGiftCard;
+  /**
+   * A service charge on the order (Nov 26) — Buck's F&B or Event Service Charge, or one typed in —
+   * priced from the lines it applies to (`logic/pricing.ts`). Its own `price` is 0.
+   */
+  serviceCharge?: import('./logic/pricing').CartServiceCharge;
 }
 
 // ─── Register extras (V1 → V2) ──────────────────────────────────────────────

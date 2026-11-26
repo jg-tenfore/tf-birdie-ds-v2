@@ -1,3 +1,4 @@
+import { pricingOf } from '../../../state/checkout';
 import { useState } from 'react';
 import { Box, Button, ButtonBase, IconButton, InputBase, Typography } from '@mui/material';
 import Close from '@mui/icons-material/Close';
@@ -21,7 +22,6 @@ import {
 } from '../../../data/menu-schedule';
 import { money, orderTotals } from '../../../logic/cart';
 import { unsent } from '../../../logic/restaurant';
-import { taxRateOf } from '../../../state/operations';
 import { linesOf, tabById, type DishTarget } from '../../../state/restaurant';
 import { usePos } from '../../../state/PosProvider';
 import { Stack } from '../../../components/Stack';
@@ -120,7 +120,7 @@ function MenuBody({
     toast(`Added: ${item.name}${tab ? ` · ${seatLabel(seat)}` : ''}`);
   };
 
-  const totals = orderTotals(lines, taxRateOf(state));
+  const totals = orderTotals(lines, tab ? pricingOf(state, { tab }) : pricingOf(state));
   const toSend = unsent(lines).length;
 
   return (
