@@ -121,6 +121,8 @@ const KIT_CSS = `
 .bd-prose th { background: ${DOC.surface}; color: ${DOC.ink}; font-weight: 600; text-align: left; padding: 10px 14px; border: none; }
 .bd-prose td { padding: 10px 14px; border: none; border-top: 1px solid ${DOC.line}; vertical-align: top; }
 .bd-prose tr:nth-child(even) td { background: #fbfcfb; }
+.bd-prose tr { border: 0 !important; background: transparent !important; }
+.bd-table tr { border: 0 !important; }
 `;
 
 /** The kit's stylesheet. React 19 hoists and dedupes it by `href`, so it renders once per page. */

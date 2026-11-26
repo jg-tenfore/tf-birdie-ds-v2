@@ -1,24 +1,71 @@
 import { Meta } from '@storybook/addon-docs/blocks';
-import { SiteLink } from '../../stories/SiteLink';
+import { Banner, DocButton, DocLink, DocPage, DocTable, Pill, Prose, Section, StatusPill, mobilePrototype, tabletPrototype } from '../../stories/docs-kit/docs-kit';
 
 <Meta title="Reviews/Sep 22 – Weston Edits, rounds 1–5/Summary" />
 
-# ✏️ Weston Edits
+<DocPage>
 
-Feedback from Weston Farnsworth on the tablet prototype, in three rounds:
+<Banner
+  eyebrow="Review · Sep 22 – 29, 2026"
+  title="Weston Edits: golf first, order second"
+  pills={<><Pill>5 rounds</Pill><Pill>2 Looms and 3 calls</Pill><Pill>Tablet and phone</Pill><Pill tone="brand">Now the current Birdie</Pill></>}
+  actions={<><DocButton href={tabletPrototype('#/tee-sheet?res=p04_m6')}>Open the tablet prototype</DocButton><DocButton variant="secondary" href={mobilePrototype('weston-edits-1-·-reservation-panel-mobile--reservation')}>Open the phone prototype</DocButton><DocLink to="weston-edits-10-·-panel-size-tablet--six-forty">Panel size</DocLink></>}
+>
+  Weston Farnsworth's feedback on the tablet prototype, over five rounds in September: clicking a tee time shouldn't turn it straight into an order. These edits are now the <strong>current Birdie</strong>: the tablet's V1 → V2 edition is built on them, and the phone's current edition is them. The change stories are filed under <strong>Prototypes</strong> by nav area; <strong>Bug fixes</strong> and <strong>Panel size</strong> stay in this folder.
+</Banner>
 
-| Round | Where it came from | What it covers |
-|---|---|---|
-| **1** | A Loom, ["Streamlining T-Time Editing Without Order Flow"](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b) (2:46, September 2026) | Golf first, order second — sections 1–8 |
-| **2** | A Loom, ["Request to Improve T Sheet Date Navigation"](https://www.loom.com/share/a0d4ed98b7344746b5a4bf8a9d7ee4fb) (46 s) | Getting to June without a dozen taps — section 9 |
-| **3** | A call, 22 September 2026 | The reservation becomes where the money is decided — sections 10–18 |
+<Section title="Rounds">
+<DocTable
+  columns={['Round', 'Where it came from', 'What it covers']}
+  widths={['10%', '45%', '45%']}
+  rows={[
+    [<strong>1</strong>, <>A Loom, <DocLink href="https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b">“Streamlining T-Time Editing Without Order Flow”</DocLink> (2:46)</>, 'Golf first, order second: sections 1 to 8'],
+    [<strong>2</strong>, <>A Loom, <DocLink href="https://www.loom.com/share/a0d4ed98b7344746b5a4bf8a9d7ee4fb">“Request to Improve T Sheet Date Navigation”</DocLink> (46 s)</>, 'Getting to June without a dozen taps: section 9'],
+    [<strong>3</strong>, 'A call, Sep 22', 'The reservation decides the money: sections 10 to 18'],
+    [<strong>4</strong>, 'A call, Sep 23', 'The panel is decided (820, a frozen sheet), and the customer record rebuilt on v1'],
+    [<strong>5</strong>, 'A call, Sep 29', 'A main nav, notes you can read on a tablet, and the order number: sections 20 and 21'],
+  ]}
+/>
+</Section>
 
-<SiteLink to="weston-edits" tone="filled" size="md">Open the tablet prototype</SiteLink>{' '}
-<SiteLink to="weston-edits-mobile" tone="filled" size="md">Open the mobile prototype</SiteLink>
+<Section title="Decisions" intro="The ones that shaped the current Birdie. The full notes below have every decision and Weston's own words.">
+<DocTable
+  columns={['Question', 'Decision', 'Round', 'Status']}
+  widths={['24%', '52%', '9%', '15%']}
+  rows={[
+    ['What clicking a tee time does', 'Opens the reservation. You work the golf there (players, holes, fees, transport, check-in), and only Check in & pay sends it to the register.', '1', <StatusPill tone="done">Built</StatusPill>],
+    ['How the reservation opens on the tablet', 'A slide-over, 820 wide, over a frozen tee sheet dimmed behind a scrim. 640 and full cover stay on the toolbar to compare.', '1, 4', <StatusPill tone="done">Built</StatusPill>],
+    ['What a fee is', 'A named rate, picked from what this tee time sells on this date. The system picks what the player is owed; every other rate stays one tap away, dimmed.', '3', <StatusPill tone="done">Built</StatusPill>],
+    ['Transport and punch cards', 'Transport is a priced catalog, a trail fee for walkers included. A punch card pays the round; the cart is still billed.', '3', <StatusPill tone="done">Built</StatusPill>],
+    ['Where a customer opens', 'Over everything, from the player’s name. The Customer tab is gone: a customer isn’t part of a tee time.', '3', <StatusPill tone="done">Built</StatusPill>],
+    ['Per-seat discounts', 'Removed: “the discounts are generally kind of built into the rates.” Discounts live in rates and on the order.', '4', <StatusPill tone="dropped">Removed</StatusPill>],
+    ['ID.me', 'A badge from the membership, and View ID to see the document. The verify flow is closed: verification happens at ID.me.', '4', <StatusPill tone="done">Built</StatusPill>],
+    ['Words', '“Seat” is for food and beverage, so assigning says Add golfer · position 2. “Link” meant nothing, so it is Change golfer.', '4', <StatusPill tone="done">Built</StatusPill>],
+    ['The hamburger', 'It means menu, on the strip and the expanded rail alike. The menu is v1’s destinations, in v1’s groups.', '5', <StatusPill tone="done">Built</StatusPill>],
+    ['Notes, and the order number', 'Group notes are a banner over the rows, a golfer’s note a line on their row. A paid reservation shows its order number, and tapping it opens the order.', '5', <StatusPill tone="done">Built</StatusPill>],
+    ['Four questions he wouldn’t decide from a description', 'Panel width, row density, transport style and rate catalog shipped as toolbar switches. Width was settled in round 4.', '3', <StatusPill tone="done">Variants</StatusPill>],
+  ]}
+/>
+</Section>
 
-Both are the **18-hole club** with the edits switched on. The other six prototypes are
-unchanged, except for what is marked *all editions* — the bug fixes in section 8, and round 3's
-confirm-before-clear and icon registry.
+<Section title="Left open" intro="From the end of rounds 4 and 5.">
+<DocTable
+  columns={['Question', 'Where it stands', 'Status']}
+  widths={['30%', '55%', '15%']}
+  rows={[
+    ['A bigger panel?', '“I’m almost wondering if we make it bigger.” He is asking around; 820 stands. There is no size between 820 and full cover.', <StatusPill tone="open" />],
+    ['Phone parity', 'The phone has no View ID, Change golfer or note alert yet. “We still want to look the same, right? Roughly.”', <StatusPill tone="open" />],
+    ['The ID.me document', 'Nobody here has seen what ID.me returns; View ID draws a stand-in.', <StatusPill tone="open" />],
+    ['NOT LINKED, and the green Change golfer on guest rows', 'Offered three times, still unanswered.', <StatusPill tone="open" />],
+    ['Where the rate grid truncates', 'At twelve rates: a guess, not measured against a real club’s price book.', <StatusPill tone="open" />],
+    ['✕ and Save changes do the same thing in the rate editor', 'As asked; worth one more look.', <StatusPill tone="open" />],
+    ['Smarter search', '“Somebody just doesn’t know about a setting and they don’t know where to ask.”', <StatusPill tone="open" />],
+  ]}
+/>
+</Section>
+
+<Section title="The full notes" intro="Round by round, as written at the time. Section numbers are the change stories' own; most now live under Prototypes by nav area.">
+<Prose>
 
 ## What Weston asked for
 
@@ -362,3 +409,8 @@ A prototype build picks one with `VITE_EDITION=weston`. In dev, add `?edition=we
 prototype URL.
 
 When Weston signs off, the edits become the default by changing one line in `edition.tsx`.
+
+</Prose>
+</Section>
+
+</DocPage>
