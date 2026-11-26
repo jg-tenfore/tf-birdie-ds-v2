@@ -75,6 +75,8 @@ const KIT_CSS = `
 .bd-page { font-family: ${fontFamily}; color: ${DOC.body}; font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; }
 .bd-page *, .bd-page *::before, .bd-page *::after { box-sizing: border-box; }
 .bd-page img { max-width: 100%; }
+/* MDX wraps text inside a component in <p>; inside the kit that paragraph takes the component's spacing. */
+.bd-page p { margin: 0; }
 .bd-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 720px) {
   .bd-grid--2, .bd-grid--3, .bd-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -172,13 +174,16 @@ export const linkProps = ({ to, href }: LinkTarget) =>
  * The current tablet prototype, at a hash route (`#/tee-sheet`, `#/register?order=walkin`).
  * Through `surfaceUrl`, so this is the same URL every other prototype link on the site uses.
  */
-export const tabletPrototype = (hash = '#/register') => surfaceUrl('v1-v2', hash);
+export const tabletPrototype = (hash = '#/register') => surfaceUrl('current-tablet', hash);
 
 /**
  * The current phone prototype. `route` is a screen's story id (the phone prototype routes by
  * them: `#/<story id>`); empty opens the free-running app on the Tee Sheet.
  */
-export const mobilePrototype = (route = '') => surfaceUrl('weston-edits-mobile', route ? `#/${encodeURI(route)}` : '');
+export const mobilePrototype = (route = '') => surfaceUrl('current-mobile', route ? `#/${encodeURI(route)}` : '');
+
+/** The original port, kept running under `/archive/`. */
+export const archivePrototype = (app: 'tablet' | 'mobile', path = '') => surfaceUrl(app === 'tablet' ? 'archive-tablet' : 'archive-mobile', path);
 
 /** The original HTML prototype, read-only. */
 export const referencePrototype = () => surfaceUrl('reference');
@@ -277,9 +282,12 @@ export const DocPage = ({ children }: { children: ReactNode }) => (
 /** Markdown inside a kit page, styled like the kit (headings, tables, quotes, code). */
 export const Prose = ({ children }: { children: ReactNode }) => <div className="bd-prose">{children}</div>;
 
-/** Plain paragraph with docs spacing. */
+/**
+ * A paragraph with docs spacing. A `div`, because MDX already wraps the text inside it in a `<p>`,
+ * and a `<p>` in a `<p>` is invalid HTML.
+ */
 export const P = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
-  <p style={{ margin: '12px 0 0', fontSize: 14, lineHeight: '22px', color: DOC.body, ...style }}>{children}</p>
+  <div style={{ margin: '12px 0 0', fontSize: 15, lineHeight: '24px', color: DOC.body, maxWidth: 860, ...style }}>{children}</div>
 );
 
 /** Inline code chip. */

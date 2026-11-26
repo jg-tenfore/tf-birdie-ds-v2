@@ -223,7 +223,7 @@ const preview: Preview = {
       storySort: {
         order: [
           'Start Here',
-          ['Overview', 'Style guide', 'Devices', 'Process & roadmap', 'How to review', 'Deep links', '*'],
+          ['Overview', 'Style guide', 'Devices', 'Buck and Birdie', 'Process & roadmap', 'How to review', 'Deep links', '*'],
           'Prototypes',
           [
             'Tablet',
