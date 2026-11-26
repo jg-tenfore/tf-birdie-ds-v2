@@ -110,6 +110,9 @@ const SHOTS = [
   { name: 'mobile-card-reader', route: 'mobile-screens-5-·-payment--reader-card' },
   { name: 'mobile-people', route: 'mobile-screens-7-·-people--people-list' },
   { name: 'mobile-more', route: 'mobile-screens-6-·-operations--more-root' },
+  // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
+  { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
+  { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },
   // ── How to switch device: the prototype's Device panel, and Storybook's Device toolbar ──
   // Whole-window shots (`page`), not a device clip.
   { name: 'prototype-device-panel', page: () => `${PROTO}/?device=large-display#/tee-sheet?shift=early`, click: /Open the device panel/, deviceOnly: true },
@@ -146,7 +149,7 @@ function urlFor(shot, deviceId) {
     const sep = shot.hash.includes('?') ? '&' : '?';
     return `${PROTO}/?edition=v1v2${shot.hash}${sep}venue=eighteen`;
   }
-  const q = `?device=${deviceId}&presenter=0`;
+  const q = `?device=${deviceId}&presenter=0${shot.query ? `&${shot.query}` : ''}`;
   if (app === 'mobile') return `${PROTO}/mobile/${q}${shot.route ? `#/${encodeURI(shot.route)}` : ''}`;
   return `${PROTO}/${q}${shot.hash}`;
 }

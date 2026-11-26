@@ -613,3 +613,13 @@ export const MOBILE_SCREENS: ScreenIndexRow[] = [
   {"id":"prototypes-mobile-customer-search-people--customer-added-this-session","area":"Customer Search","topic":"People","name":"Customer Added This Session","description":"Someone created earlier this session — what New customer's Save leaves behind.","docs":"prototypes-mobile-customer-search-people--overview","route":"mobile-screens-7-·-people--customer-added-this-session"},
   {"id":"prototypes-mobile-customer-search-people--customer-added-this-session-detail","area":"Customer Search","topic":"People","name":"Customer Added This Session Detail","description":"The same customer's detail page — found by id in the session roster, not the demo data.","docs":"prototypes-mobile-customer-search-people--overview","route":"mobile-screens-7-·-people--customer-added-this-session-detail"},
 ];
+
+/** Archive folders in sidebar order, with their story and docs-page counts and first entry. */
+export const ARCHIVE_FOLDERS: { name: string; stories: number; docs: number; firstId: string }[] = [
+  {"name":"About the archive","stories":0,"docs":1,"firstId":"archive-about-the-archive--overview"},
+  {"name":"Original port/Tablet","stories":70,"docs":8,"firstId":"pos-screens-1-·-register-order--overview"},
+  {"name":"Original port/Mobile","stories":84,"docs":9,"firstId":"mobile-screens-0-·-navigation--navigation-map"},
+  {"name":"Tee Sheet Actions","stories":35,"docs":7,"firstId":"archive-tee-sheet-actions-action-map--overview"},
+  {"name":"Account","stories":4,"docs":4,"firstId":"account-log-in--overview"},
+  {"name":"V1 to V2 migration","stories":0,"docs":1,"firstId":"archive-v1-to-v2-migration--overview"},
+];
