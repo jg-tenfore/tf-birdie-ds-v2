@@ -25,22 +25,27 @@ Everything is published to GitHub Pages from `main`, as one site:
 
 [jg-tenfore.github.io/tf-birdie-ds-v2](https://jg-tenfore.github.io/tf-birdie-ds-v2/)
 
-The front door, and the place to review anything in isolation. It holds:
+The front door, and the place to review anything in isolation. The sidebar is grouped the way
+TF Crane's is (regrouped Nov 26, 2026):
 
-- **Foundations**: MD3 colour roles, type, spacing, radius and elevation.
-- **Components**: the MUI component library, grouped by purpose.
-- **POS Screens** (69 stories, sections 1–7): the counter terminal, one story per state
-  worth reviewing: register, tee sheet, booking and check-in, tee-time selection, payment,
-  operations and people.
-- **Mobile Screens** (84 stories, sections 0–7, numbered to match): the phone version.
-  **0 · Navigation** has a click-through app and a **Navigation Map**, which lists every
-  screen, how you reach it and how you get out.
-- **Tee Sheet Actions** (35 stories): every action that writes to the tee sheet, before and
-  after.
-- **Weston Edits** (sections 1–18): an overview of Weston's three rounds of feedback and the
-  decisions behind each one, then each changed component with a **Tablet** story and a
-  **Mobile** one wherever the phone does it differently. **18 · Rate Catalog** is a doc page
-  rather than a screen — the eligibility model the rate tiles are built on.
+- **Start Here**: the overview, style guide, devices, process and roadmap, how to review, and
+  the deep-link scheme.
+- **Prototypes**: the current Birdie (`CURRENT_EDITION` in `src/pos/edition.tsx`), area by area
+  in the nav's own order. **Tablet** is the V1 → V2 edition (Weston's edits plus every nav
+  destination); **Mobile** is the Weston Edits edition. Each opens on a **Screen index**.
+- **Design System**: **Styles** (MD3 colour roles, type, spacing, radius, elevation, icons,
+  logos, images) and **Components** (the MUI library, grouped by purpose).
+- **Reviews**: one folder per review round, newest first, each with a **Summary** and its
+  change stories: the Oct 2 proposal review, the Oct 1 proposals from the Sep 30 call, and
+  Weston Edits rounds 1–5 (Sep 22 onward).
+- **Archive**: the original port (69 tablet and 84 phone stories, in the archived `base`
+  edition), the tee sheet action showcase, the scaffold's account screens and the V1 → V2
+  migration overview.
+
+Every story file says which edition it renders in its meta (`decorators: [withEdition(…)]`,
+`src/showcase/edition-decorator.tsx`), and every file that moved kept its story ids (a pinned
+`id:` in its meta), so links from before the regroup still open the same story. Moved MDX pages
+are redirected by `.storybook/static/legacy-redirects.js`.
 
 Every story is built from plain state, so the screen you review is exactly the one the
 prototypes render.
@@ -104,7 +109,7 @@ both, and a customer added on one exists on the other.
 
 [Tablet](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits/) ·
 [Mobile](https://jg-tenfore.github.io/tf-birdie-ds-v2/weston-edits-mobile/) ·
-[What changed (Storybook)](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/weston-edits-overview--overview)
+[What changed (Storybook)](https://jg-tenfore.github.io/tf-birdie-ds-v2/?path=/docs/reviews-sep-22-weston-edits-rounds-1-5-summary--overview)
 
 Weston's feedback on the tablet prototype
 ([Loom](https://www.loom.com/share/a54102c76bcf4bf3be4a1a3ae878501b)): clicking a tee time
@@ -150,7 +155,7 @@ sheet on any date within a year of today.
   order rail's one button clears the order (behind a confirm) and then collapses the rail to a
   56px strip once there's nothing left to clear.
 
-Storybook's **Weston Edits** category documents each change component by component, with the
+Storybook's **Reviews › Sep 22 – Weston Edits, rounds 1–5** documents each change component by component, with the
 decisions and Weston's own words behind them. The bugs the first recording turned up (a reserved
 tee time labelled "Walk-in", mismatched rates, a paid booking asking to be paid, tax on $0) are
 fixed in every prototype, not just this one — as are round 3's confirm-before-clear and the
@@ -250,7 +255,7 @@ want reviewed:
 ```
 
 Back and Forward step through screens and dialogs, not through every keystroke typed into a
-filter. Full scheme: **Getting Started → Deep Links** in Storybook, or
+filter. Full scheme: **Start Here › Deep links** in Storybook, or
 [`src/pos/state/url-state.ts`](src/pos/state/url-state.ts).
 
 Links use a hash because Pages has no SPA fallback — a real path would 404. Carts aren't
