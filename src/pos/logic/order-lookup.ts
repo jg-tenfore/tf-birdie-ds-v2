@@ -29,6 +29,17 @@ export function tenderLabel(method: string, ref?: PaymentRef, eventName?: string
       return eventName ? `Event · ${eventName}` : ref?.eventId ? `Event ${ref.eventId}` : 'Event';
     case 'check':
       return ref?.checkNumber ? `Check #${ref.checkNumber}` : 'Check';
+    // Credits as tenders (Nov 26): the credit by name, and what it took when it counts in units.
+    case 'raincheck':
+    case 'creditbook':
+    case 'lessoncredit':
+    case 'punchcard': {
+      const c = ref?.credit;
+      const name = { raincheck: 'Rain check', creditbook: 'Credit book', lessoncredit: 'Lesson credit', punchcard: 'Punch card' }[method];
+      if (!c) return name;
+      const units = c.units ? ` · ${c.units} ${c.unit === 'punch' ? (c.units === 1 ? 'punch' : 'punches') : c.units === 1 ? 'credit' : 'credits'}` : '';
+      return method === 'raincheck' ? c.label : `${name} · ${c.label}${units}`;
+    }
     default:
       return method ? method[0].toUpperCase() + method.slice(1) : '—';
   }

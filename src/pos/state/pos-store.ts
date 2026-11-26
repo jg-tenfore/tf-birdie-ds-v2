@@ -46,6 +46,8 @@ import {
   type SettingsState,
 } from './settings';
 import { isLeagueAction, leagueDefaults, leagueReducer, type LeagueAction, type LeagueState } from './league';
+import { creditLedgerDefaults, type CreditLedgerState } from './credit-ledger';
+import type { CheckoutModal } from './checkout';
 import type { PaymentRef } from '../logic/orders';
 import { buildVenue, venue, venueBookings } from '../data/venues';
 import type { VenueId } from '../data/venues';
@@ -145,7 +147,9 @@ export type Modal =
   /** The back office's dialogs (V1 → V2, Wave 3) — `state/operations.ts`. */
   | OperationsModal
   /** Settings' dialogs (V1 → V2) — `state/settings.ts`. */
-  | SettingsModal;
+  | SettingsModal
+  /** Checkout's credit tenders and order tools (Nov 26) — `state/checkout.ts`. */
+  | CheckoutModal;
 
 /** The reservation panel's tabs, in order. */
 /**
@@ -286,7 +290,7 @@ export type ContextMenuState =
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /** `RegisterExtrasState`: held orders, drawer events, issued gift cards (V1 → V2). */
-export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState, LeagueState {
+export interface PosState extends RegisterExtrasState, RestaurantState, OperationsState, SettingsState, LeagueState, CreditLedgerState {
   view: MainView;
 
   /**
@@ -525,6 +529,7 @@ export function createInitialState(overrides: Partial<PosState> = {}): PosState 
     ...operationsDefaults(),
     ...settingsDefaults(),
     ...leagueDefaults(),
+    ...creditLedgerDefaults(),
     ...overrides,
   };
 }

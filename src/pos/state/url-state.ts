@@ -13,6 +13,7 @@ import { isRegisterExtrasModal } from './register-extras';
 import { isRestaurantModal } from './restaurant';
 import { isOperationsModal } from './operations';
 import { DEFAULT_SETTINGS_SECTION, SETTINGS_SECTIONS, isSettingsModal, type SettingsSection } from './settings';
+import { isCheckoutModal } from './checkout';
 import { buildVenue, isVenueId, venue, venueBookings } from '../data/venues';
 import { leagueById } from '../data/leagues';
 import { resourceById } from '../data/resources';
@@ -178,6 +179,8 @@ function encodeModal(m: Modal, q: URLSearchParams): boolean {
   // And Wave 3's — a tender half-chosen or a refund being picked is not a place either.
   if (isOperationsModal(m)) return false;
   if (isSettingsModal(m)) return false;
+  // Checkout's credit tenders and order tools (Nov 26) — mid-payment, never a place.
+  if (isCheckoutModal(m)) return false;
   if (m.kind === 'golferSearch' && typeof m.target === 'object' && 'giftCard' in m.target) return false;
 
   q.set('modal', MODAL_SLUGS[m.kind]);

@@ -14,6 +14,8 @@ import { amountDue, registerTotals, taxRateOf, type OperationsModal } from '../s
 import { useV1V2 } from '../edition';
 import { ReceiptSlip } from '../components/ReceiptSlip';
 import type { TenderKey } from '../state/settings';
+import { tenderLabel } from '../logic/order-lookup';
+import { CREDIT_ICONS, CREDIT_KINDS, CREDIT_NAMES } from '../logic/credit-tenders';
 
 /**
  * V1 → V2, Wave 3: the tenders that are not a card reader. Each opens its own dialog, which pays
@@ -36,13 +38,6 @@ const TENDER_SETTING: Record<string, TenderKey> = {
   tenderCheck: 'check',
 };
 
-const TENDER_LABEL: Record<string, string> = {
-  giftcard: 'Gift card',
-  house: 'House account',
-  cardonfile: 'Card on file',
-  event: 'Event',
-  check: 'Check',
-};
 
 /**
  * Checkout — the receipt on the left, the numeric keypad on the right.
@@ -195,7 +190,7 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
                 {split.tenders.map((t) => (
                   <Row
                     key={t.paymentId}
-                    label={`Paid · ${TENDER_LABEL[t.method] ?? t.method}`}
+                    label={`Paid · ${tenderLabel(t.method, t.ref)}`}
                     value={cart.creditMoney(t.amount)}
                     color="#16a34a"
                   />
@@ -395,6 +390,40 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
                 </ButtonBase>
               ))}
           </Box>
+          {/* Credits as tenders (Nov 26): what Buck lets the customer on the order pay with. */}
+          {v1v2 && CREDIT_KINDS.some((k) => offered(k)) && (
+            <>
+              <SectionLabel color={md3.outline} sx={{ mt: 1.25, mb: 0.75 }}>
+                Credits on the customer
+              </SectionLabel>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0.75 }}>
+                {CREDIT_KINDS.filter((k) => offered(k)).map((k) => (
+                  <ButtonBase
+                    key={k}
+                    data-tender={`credit-${k}`}
+                    onClick={() => dispatch({ type: 'openModal', modal: { kind: 'tenderCredit', credit: k, ...(bakedTip > 0 && { tip: bakedTip }) } })}
+                    sx={{
+                      flexDirection: 'column',
+                      gap: 0.25,
+                      py: 0.75,
+                      textAlign: 'center',
+                      lineHeight: 1.15,
+                      borderRadius: `${radius.md}px`,
+                      border: `1.5px solid ${md3.outlineVariant}`,
+                      bgcolor: '#fff',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: md3.onSurfaceVariant,
+                      '&:hover': { borderColor: md3.primary, color: md3.primary, bgcolor: md3.primaryContainer },
+                    }}
+                  >
+                    <Icon name={CREDIT_ICONS[k]} size={18} />
+                    {CREDIT_NAMES[k]}
+                  </ButtonBase>
+                ))}
+              </Box>
+            </>
+          )}
         </Box>
       </Stack>
     </ModalFrame>
@@ -545,9 +574,9 @@ export function PaymentReader({ method, tip = 0 }: { method: string; tip?: numbe
             lines={state.cart}
             totals={registerTotals(state)}
             tip={tip}
-            tender={method === 'cashpay' ? 'Other' : method[0].toUpperCase() + method.slice(1)}
+            tender={method === 'cashpay' ? 'Other' : tenderLabel(method)}
             amount={amount}
-            earlier={(state.splitTender?.tenders ?? []).map((t) => ({ label: TENDER_LABEL[t.method] ?? t.method, amount: t.amount }))}
+            earlier={(state.splitTender?.tenders ?? []).map((t) => ({ label: tenderLabel(t.method, t.ref), amount: t.amount }))}
           />
         )}
       </Stack>

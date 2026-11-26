@@ -170,7 +170,7 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckFile: CREDITS,
     birdieFile: 'src/pos/data/credits.ts',
     status: 'partial',
-    note: 'Read-only at the counter; a book is never a tender. Which book paid a card is derived, not recorded.',
+    note: 'A book is a checkout tender (Nov 26) for the customers in it, for only what it applies to; a book in the red pays nothing. Which book a customer is in is still derived from the Winnings cards it paid, not recorded.',
   },
   {
     birdieArea: 'Customer Search',
@@ -179,15 +179,25 @@ export const BUCK_SOURCES: BuckSource[] = [
     buckFile: 'src/components/application/punch-cards-table/data.ts',
     birdieFile: 'src/pos/data/credits.ts',
     status: 'partial',
-    note: 'Buck cards can hold carts, products, activities, clinics and lessons; Birdie’s hold rounds only (Weston: a punch pays the green fee, the ride is still billed). Expired cards no longer pay.',
+    note: 'A checkout tender (Nov 26): one punch per green fee, cart or product, minutes per punch for a bay — Buck’s items and rules. A green-fee punch pays the seat, not the ride (Weston). Buck’s clinic and lesson items are not redeemed at the counter; lesson packs are their own tender.',
+  },
+  {
+    birdieArea: 'Pro Shop',
+    shows: 'Lesson credits: a pack’s credits left, one lesson of its length per credit, a year to use them',
+    buckScreen: 'Buck › Lessons › Lesson Packages (golfer credits)',
+    buckFile: 'src/components/application/nov-17-2026/lesson-packages/data.ts',
+    birdieFile: 'src/pos/data/credits.ts',
+    status: 'partial',
+    note: 'A checkout tender (Nov 26) for the register’s 30- and 60-minute lesson lines. The register does not know which instructor a lesson is with, so a credit pays any instructor’s lesson of its length.',
   },
   {
     birdieArea: 'Customer Search',
-    shows: 'Rain checks: the round, awarded, used, balance, a year to spend it',
-    buckScreen: 'Buck › Reports › Credits › Rain Checks',
+    shows: 'Rain checks: the round, awarded, used, balance, a year to spend it; spent at checkout on tee times only, the amount keyed',
+    buckScreen: 'Buck › Reports › Credits › Rain Checks · Course Settings › Booking Engine (Rainchecks Only on Tee Times)',
     buckFile: CREDITS,
     birdieFile: 'src/pos/data/rain-checks.ts',
     status: 'aligned',
+    note: 'A checkout tender since Nov 26, by Buck’s two rules: tee times only, and 365 days from issue.',
   },
 
   // ─── Bays and members ─────────────────────────────────────────────────────

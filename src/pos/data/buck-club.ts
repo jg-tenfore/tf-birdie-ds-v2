@@ -125,10 +125,16 @@ export const PAYMENT_TYPES: { tender: TenderKey; buckName: string; note?: string
   { tender: 'event', buckName: 'Accounts Receivable', note: 'Billed to the event, invoiced from Buck' },
   { tender: 'check', buckName: 'Check' },
   { tender: 'cashpay', buckName: 'Course Custom' },
+  // Credits as tenders (Nov 26). Rain Check is Buck's own payment type; the other three are redeemed
+  // against the credit itself, which is where Buck records them.
+  { tender: 'raincheck', buckName: 'Rain Check', note: 'Tee times only, as Buck’s “Rainchecks Only on Tee Times” says' },
+  { tender: 'punchcard', buckName: 'Punch card redemption', note: 'Recorded on the card (Products › Punch Cards), not as a payment type' },
+  { tender: 'creditbook', buckName: 'Credit book', note: 'Drawn on the book (Reports › Credits › Credit Books) for what it applies to' },
+  { tender: 'lessoncredit', buckName: 'Lesson credit', note: 'Recorded on the golfer’s lesson package' },
 ];
 
 /** Payment types Buck has on that the counter does not offer as a tender. */
-export const BUCK_ONLY_PAYMENT_TYPES = ['ACH', 'Rain Check', 'Tab', 'Internet Sales', 'Management', 'Bad Debt'];
+export const BUCK_ONLY_PAYMENT_TYPES = ['ACH', 'Tab', 'Internet Sales', 'Management', 'Bad Debt'];
 
 /**
  * Buck › Payments › **Other Settings** — the switches a counter feels. `followed` says whether the

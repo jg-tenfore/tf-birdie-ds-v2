@@ -20,6 +20,8 @@ export interface PaymentRef {
   cardLast4?: string;
   /** A check's number, when the operator keyed it. */
   checkNumber?: string;
+  /** A credit that paid — a rain check, a punch card, a credit book, a lesson credit (Nov 26). */
+  credit?: import('./credit-tenders').CreditRef;
 }
 
 export interface OrderTender {
@@ -163,12 +165,26 @@ function refundedByTender(order: OrderRecord): number[] {
  *
  * Refunding a whole order therefore returns exactly what each tender paid.
  */
-export function refundSplit(order: OrderRecord, amount: number, cardShare = 0): { tender: number; amount: number }[] {
+export function refundSplit(
+  order: OrderRecord,
+  amount: number,
+  cardShare = 0,
+  creditShare: Record<number, number> = {},
+): { tender: number; amount: number }[] {
   const back = refundedByTender(order);
   const room = order.tenders.map((t, i) => cents(Math.max(0, t.amount - back[i])));
   const out = order.tenders.map(() => 0);
   let left = cents(amount);
-  let cardLeft = cents(Math.min(cardShare, amount));
+  // A credit (Nov 26) takes back what it paid of the lines going back, and no more — a rain check that
+  // paid the tee fee is not handed the beer.
+  order.tenders.forEach((_, i) => {
+    if (!(i in creditShare) || left <= 0) return;
+    const give = cents(Math.min(room[i], creditShare[i], left));
+    out[i] += give;
+    room[i] = cents(room[i] - give);
+    left = cents(left - give);
+  });
+  let cardLeft = cents(Math.min(cardShare, left));
   order.tenders.forEach((t, i) => {
     if (t.method !== 'giftcard' || left <= 0) return;
     const give = cents(Math.min(room[i], cardLeft, left));
@@ -178,7 +194,7 @@ export function refundSplit(order: OrderRecord, amount: number, cardShare = 0): 
     left = cents(left - give);
   });
   for (let i = order.tenders.length - 1; i >= 0 && left > 0; i--) {
-    if (order.tenders[i].method === 'giftcard') continue;
+    if (order.tenders[i].method === 'giftcard' || i in creditShare) continue;
     const give = cents(Math.min(room[i], left));
     out[i] += give;
     left = cents(left - give);

@@ -17,8 +17,8 @@ import { seatSuggestedRecord } from '../logic/seat-pricing';
 import { IdMeBadge } from './IdMeBadge';
 import { golferOf } from '../data/customers';
 import { assignPlayer } from '../logic/reservation';
-import { rainCheckBalance, rainChecksFor } from '../data/rain-checks';
-import { PUNCH_STATUS_TONE, creditBookOf, creditBooksOf, punchCardItems, punchCardStatus } from '../data/credits';
+import { BUCK_PUNCH_CARDS, LESSON_CREDITS, PUNCH_STATUS_TONE, PUNCH_UNIT, buckPunchCardStatus, creditBookOf, creditBooksOf, punchCardItems, punchCardStatus, punchItemLabel } from '../data/credits';
+import { liveRainCheckBalance, liveRainChecksFor } from '../state/credit-ledger';
 import { money } from '../logic/cart';
 import { ModalFrame, FilledButton, OutlineButton } from '../modals/ModalFrame';
 import { usePos } from '../state/PosProvider';
@@ -71,8 +71,12 @@ function CustomerRecord({ customer }: { customer: Customer }) {
   const close = () => dispatch({ type: 'closeCustomerModal' });
   const tier = memberTierOf(customer);
   const idMe = idMeGroupOf(customer.id);
-  const credits = rainChecksFor(customer.id);
-  const owed = rainCheckBalance(customer.id);
+  // As they stand now (Nov 26): spent at the register, refunded onto, or issued here today.
+  const credits = liveRainChecksFor(state, customer.id);
+  const owed = liveRainCheckBalance(state, customer.id);
+  const buckCards = v1v2 ? (BUCK_PUNCH_CARDS[customer.id] ?? []) : [];
+  const lessons = v1v2 ? (LESSON_CREDITS[customer.id] ?? []) : [];
+  const spentOn = (key: string) => state.creditSpend[key] ?? 0;
   const noShows = customer.teeTimes.filter((t) => t.status === 'No show').length;
   // Seeded from the customer id — see `referralsOf`. Nothing in the booking history says who
   // sent whom, so this is a record field rather than something counted off the tee sheet.
@@ -296,16 +300,18 @@ function CustomerRecord({ customer }: { customer: Customer }) {
                   // A credit that is partly spent has to say where the rest went — that is the
                   // argument the counter actually has to settle.
                   sub: r.redemptions?.length
-                    ? `${money(r.redemptions[0].amount)} spent on ${r.redemptions[0].what} · ${r.redemptions[0].at}`
-                    : undefined,
+                    ? `${money(r.redemptions.at(-1)!.amount)} ${r.redemptions.at(-1)!.amount < 0 ? 'refunded' : 'spent'} · ${r.redemptions.at(-1)!.what} · ${r.redemptions.at(-1)!.at}${r.redemptions.at(-1)!.order ? ` · ${r.redemptions.at(-1)!.order}` : ''}`
+                    : `Issued ${r.issued} · expires ${r.expires}`,
                 }))}
               />
             )}
           </CustomerSection>
 
-          <CustomerSection title="Punch cards" summary={customer.punchCards.length ? `${customer.punchCards.length}` : 'None'}>
+          <CustomerSection title="Punch cards" summary={customer.punchCards.length + buckCards.length ? `${customer.punchCards.length + buckCards.length}` : 'None'}>
             {customer.punchCards.length === 0 ? (
-              <Muted>No punch cards.</Muted>
+              buckCards.length ? null : (
+                <Muted>No punch cards.</Muted>
+              )
             ) : v1v2 ? (
               /*
                 TF Buck's final punch-card design (Nov 26): each card's items with punches awarded,
@@ -337,24 +343,58 @@ function CustomerRecord({ customer }: { customer: Customer }) {
                 }))}
               />
             )}
+            {buckCards.length > 0 && (
+              /* Buck's multi-item cards (Nov 26): a product, an activity by minutes, a green fee and a cart. */
+              <Box data-buck-punch-cards sx={{ mt: customer.punchCards.length ? 1 : 0 }}>
+                <DataTable
+                  columns={['Card', 'Item', 'Awarded', 'Used', 'Remaining', 'Expires']}
+                  widths="1.6fr 1.1fr .7fr .6fr .8fr .9fr"
+                  rows={buckCards.flatMap((card) =>
+                    card.items.map((item, ii) => {
+                      const used = item.used + spentOn(`punch:${card.id}:${ii}`);
+                      return {
+                        key: `${card.id}-${ii}`,
+                        cells: [card.title, punchItemLabel(item), String(item.awarded), String(used), `${Math.max(0, item.awarded - used)} ${PUNCH_UNIT[item.kind]}`, card.expires ?? 'No expiration'],
+                        strongLast: false,
+                        badge: ii === 0 ? <PunchStatusChip status={buckPunchCardStatus(card)} /> : undefined,
+                      };
+                    }),
+                  )}
+                />
+              </Box>
+            )}
           </CustomerSection>
 
           {v1v2 && (
             <CustomerSection title="Credit books" summary={creditBooksOf(customer).length ? `${creditBooksOf(customer).length}` : 'None'}>
               {creditBooksOf(customer).length === 0 ? (
-                <Muted>In no credit book. A league or event book pays winnings out to a gift card.</Muted>
+                <Muted>In no credit book. A league or event book pays at checkout, and pays winnings out to a gift card.</Muted>
               ) : (
                 <DataTable
                   columns={['Credit book', 'ID', 'Customers', 'Balance']}
                   widths="2fr .6fr .8fr .9fr"
                   rows={creditBooksOf(customer).map((b) => ({
                     key: b.id,
-                    cells: [b.title, b.id, String(b.customers), money(b.balance)],
-                    alert: b.balance < 0,
-                    sub: `Pays out to gift cards · good for ${b.appliesTo.join(', ').toLowerCase()}`,
+                    cells: [b.title, b.id, String(b.customers), money(b.balance - spentOn(`book:${b.id}`))],
+                    alert: b.balance - spentOn(`book:${b.id}`) < 0,
+                    sub: `Pays at checkout and out to gift cards · good for ${b.appliesTo.join(', ').toLowerCase()}`,
                   }))}
                 />
               )}
+            </CustomerSection>
+          )}
+
+          {lessons.length > 0 && (
+            /* Buck's lesson packages (Nov 26): one credit pays one lesson of its length. */
+            <CustomerSection title="Lesson credits" summary={`${lessons.reduce((n, l) => n + Math.max(0, l.creditsRemaining - spentOn(`lesson:${l.id}`)), 0)} left`}>
+              <DataTable
+                columns={['Package', 'Instructor', 'Left', 'Per lesson', 'Expires']}
+                widths="1.5fr 1.4fr .6fr .8fr .9fr"
+                rows={lessons.map((l) => ({
+                  key: l.id,
+                  cells: [l.label, l.instructor, `${Math.max(0, l.creditsRemaining - spentOn(`lesson:${l.id}`))} of ${l.creditsTotal}`, money(l.perLesson), l.expires],
+                }))}
+              />
             </CustomerSection>
           )}
 

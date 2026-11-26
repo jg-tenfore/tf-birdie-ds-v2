@@ -284,6 +284,59 @@ export function orderTotals(cart: CartItem[], taxRate: number = TAX_RATE): Order
   };
 }
 
+/**
+ * Split `amount` across `weights` to the cent, so the parts add up to it exactly: each part is its
+ * weight's share, rounded, and the cent the rounding leaves over goes to the heaviest weight.
+ */
+export function allocateCents(amount: number, weights: number[]): number[] {
+  const sum = weights.reduce((s, w) => s + w, 0);
+  if (!sum || !amount) return weights.map(() => 0);
+  const parts = weights.map((w) => cents((w / sum) * amount));
+  const left = cents(amount - parts.reduce((s, p) => s + p, 0));
+  if (left) {
+    let at = 0;
+    weights.forEach((w, i) => {
+      if (Math.abs(w) > Math.abs(weights[at])) at = i;
+    });
+    parts[at] = cents(parts[at] + left);
+  }
+  return parts;
+}
+
+/**
+ * What each line of the order charges **with its share of the tax** — index for index with `cart`,
+ * 0 on a tax row — adding up to `orderTotals(cart).total` exactly. A credit that may pay only some
+ * lines (a gift card, a rain check, a credit book, a punch) pays those lines' amounts from here, and
+ * a split by item bills each part from here, so the two cannot disagree with the total.
+ *
+ * At a flat rate the golf carries its booking's tax line and the rest share the sales tax by what
+ * they charge; a gift card, an account payment and an event's charges carry none. With Buck's
+ * per-line pricing (`Pricing`, V1 → V2) each line's own tax and service charges are used instead.
+ */
+export function lineTotals(cart: CartItem[], taxRate: number = TAX_RATE): number[] {
+  const t = orderTotals(cart, taxRate);
+  const goods = cart.map((l) => (isTaxRow(l) ? 0 : payableTotal([l])));
+  const untaxed = (l: CartItem) => isTaxRow(l) || Boolean(l.giftCard || l.accountPayment || l.eventBill);
+  const golf = cart.map((l, i) => (l.isCheckIn && t.golfTax > 0 ? goods[i] : 0));
+  const sales = cart.map((l, i) => (untaxed(l) || (l.isCheckIn && t.golfTax > 0) ? 0 : goods[i]));
+  const golfShare = allocateCents(t.golfTax, golf);
+  const salesShare = allocateCents(t.salesTax, sales);
+  const out = cart.map((_, i) => cents(goods[i] + golfShare[i] + salesShare[i]));
+  return allocateRemainder(out, t.total);
+}
+
+/** Nudge index-aligned amounts so they add to `total` — the cent rounding left, on the largest line. */
+function allocateRemainder(out: number[], total: number): number[] {
+  const left = cents(total - out.reduce((s, x) => s + x, 0));
+  if (!left || !out.length) return out;
+  let at = 0;
+  out.forEach((x, i) => {
+    if (Math.abs(x) > Math.abs(out[at])) at = i;
+  });
+  out[at] = cents(out[at] + left);
+  return out;
+}
+
 /** Total players across the check-in lines — drives the guest chip row. */
 export function playerCount(cart: CartItem[]): number {
   const item = findCheckInItem(cart);

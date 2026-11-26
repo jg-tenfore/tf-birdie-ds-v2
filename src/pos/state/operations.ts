@@ -7,7 +7,7 @@ import { liveCustomer, liveRoster } from '../data/roster';
 import { SEED_OPEN_SHIFT, SEED_PUNCHES, SEED_SHIFT_HISTORY, type Punch, type Shift } from '../data/staff-seed';
 import { staffByPin } from '../data/staff';
 import { STOCK_ITEMS, applyStock, seedStock, type InventoryCount, type StockedCategory } from '../data/stock';
-import { orderTotals } from '../logic/cart';
+import { lineTotals, orderTotals } from '../logic/cart';
 import { allRefundable, refundAmount, refundSplit, type OrderRecord, type OrderTender, type PaymentRef, type RefundPart, type RefundRecord } from '../logic/orders';
 import { giftCardCovers } from '../logic/tenders';
 import { DEFAULT_GIFT_CATEGORIES } from '../data/spend';
@@ -17,6 +17,8 @@ import type { Booking, CartItem } from '../types';
 import { bookingOrder } from '../logic/booking-orders';
 import { rateContext } from './rate-context';
 import type { PosState } from './pos-store';
+import { applyCredit } from './credit-ledger';
+import { isCreditMethod } from '../logic/credit-tenders';
 import type { DrawerEvent } from './register-extras';
 
 /**
@@ -259,7 +261,14 @@ export function refundPlan(
   const cards = order.tenders.filter((t) => t.method === 'giftcard' && t.ref?.giftCardId);
   const categories = [...new Set(cards.flatMap((t) => findGiftCard(s, t.ref!.giftCardId!, t.ref?.customerId)?.card.categories ?? DEFAULT_GIFT_CATEGORIES))];
   const cardShare = cards.length ? giftCardCovers({ balance: Number.POSITIVE_INFINITY, categories }, returned, Number.POSITIVE_INFINITY) : 0;
-  return refundSplit(order, amount, cardShare).map((p) => ({ tender: order.tenders[p.tender], index: p.tender, amount: p.amount }));
+  // A credit's share: what it paid of the lines going back, in proportion to how many go back.
+  const creditShare: Record<number, number> = {};
+  order.tenders.forEach((t, i) => {
+    const covers = t.ref?.credit?.covers;
+    if (!isCreditMethod(t.method) || !covers) return;
+    creditShare[i] = cents(picks.reduce((s, p) => s + (covers[p.index] ?? 0) * (p.qty / Math.max(1, order.lines[p.index]?.qty ?? 1)), 0));
+  });
+  return refundSplit(order, amount, cardShare, creditShare).map((p) => ({ tender: order.tenders[p.tender], index: p.tender, amount: p.amount }));
 }
 
 /**
@@ -293,6 +302,12 @@ export const registerTotals = (s: Pick<PosState, 'cart' | 'terminalSettings'>) =
 export function amountDue(s: Pick<PosState, 'cart' | 'splitTender' | 'terminalSettings'>): number {
   return cents(Math.max(0, registerTotals(s).total - (s.splitTender?.paid ?? 0)));
 }
+
+/** What each line of the register's order charges with its tax (`lineTotals`), at the terminal's pricing. */
+export const registerLineTotals = (s: Pick<PosState, 'cart' | 'terminalSettings'>): number[] => lineTotals(s.cart, taxRateOf(s));
+
+/** What the next tender should take: everything still due. */
+export const dueNow = (s: Pick<PosState, 'cart' | 'splitTender' | 'terminalSettings'>): number => amountDue(s);
 
 /** An event's whole bill: its golf (taxed at checkout) plus everything charged to it (already taxed). */
 export function eventBill(event: GolfEvent, bookings: PosState['bookings']) {
@@ -378,6 +393,8 @@ function applyTender(
 ): PosState {
   const now = demoNow();
   const staffId = state.operatorId;
+  // A rain check, punch card, credit book or lesson credit (Nov 26). Credits never carry a tip.
+  if (ref?.credit) return applyCredit(state, ref.credit, sign, amount, orderNumber);
   if (method === 'giftcard' && ref?.giftCardId) {
     return { ...state, ...moveGiftCard(state, ref.giftCardId, ref.customerId, -sign * cents(amount + tip)) };
   }
