@@ -7,35 +7,69 @@ import { theme } from '../src/theme';
 import { WestonDefaultsProvider, westonDefaultsKey } from '../src/pos/state/weston-globals';
 import { DEFAULT_WESTON_OPTIONS } from '../src/pos/state/pos-store';
 import type { WestonOptions } from '../src/pos/state/pos-store';
+import { DEVICES, DEVICE_GROUP_LABELS, formatSize, isDeviceId } from '../src/pos/devices';
+import type { DeviceId } from '../src/pos/devices';
+import { DeviceProvider } from '../src/pos/device-context';
 
 /**
- * Birdie POS is a fixed-size counter terminal, not a responsive app: the prototype's
- * shell is 1366×840 and never reflows. Stories therefore default to that frame, and
- * the viewport control offers the neighbouring hardware sizes rather than phones.
+ * Viewports: the hardware Birdie ships on, from `src/pos/devices.ts`, plus the two design
+ * canvases every screen was drawn on.
+ *
+ * A tablet viewport is the device plus the 8px of dark ground `Screen` draws around the
+ * terminal on each side, so the whole frame — its bottom edge included — shows at 1:1 without
+ * scrolling. A phone viewport is the device exactly: the phone fills the canvas edge to edge.
+ *
+ * The canvases keep their old ids (`counterTerminal`, `mobile402`), because story files pin
+ * them — the phone stories open in `mobile402`, Weston's tablet stories in `counterTerminal`.
+ *
+ * The viewport sizes the canvas; the **Device** toolbar (below) sizes the app inside it. Pick
+ * the same device in both to see it at exactly its size.
  */
-const POS_VIEWPORTS = {
-  // Mobile Screens only — each of those story files selects it; nothing else defaults to it.
-  mobile402: {
-    name: 'Mobile · 402×797',
-    styles: { width: '402px', height: '797px' },
-    type: 'mobile' as const,
-  },
-  // The 1366×840 frame plus the 8px of dark ground `Screen` draws around it, so the whole
-  // terminal — its bottom edge included — is visible without scrolling.
-  counterTerminal: {
-    name: 'Counter terminal · 1366×840',
-    styles: { width: '1382px', height: '856px' },
-    type: 'desktop' as const,
-  },
-  tabletLandscape: {
-    name: 'Tablet · Landscape',
-    styles: { width: '1280px', height: '800px' },
-    type: 'tablet' as const,
-  },
-  ipadLandscape: {
-    name: 'iPad · Landscape',
-    styles: { width: '1024px', height: '768px' },
-    type: 'tablet' as const,
+const VIEWPORT_ID: Partial<Record<DeviceId, string>> = {
+  'tablet-canvas': 'counterTerminal',
+  'phone-canvas': 'mobile402',
+};
+const SCREEN_GROUND = 8;
+
+const POS_VIEWPORTS = Object.fromEntries(
+  DEVICES.map((d) => {
+    const ground = d.form === 'tablet' ? SCREEN_GROUND * 2 : 0;
+    return [
+      VIEWPORT_ID[d.id] ?? d.id,
+      {
+        name: `${d.label}${d.physical ? ` · ${formatSize(d.viewport)}` : ''}`,
+        styles: { width: `${d.viewport.width + ground}px`, height: `${d.viewport.height + ground}px` },
+        type: d.form === 'tablet' ? ('tablet' as const) : ('mobile' as const),
+      },
+    ];
+  }),
+);
+
+/**
+ * The **Device** toolbar: any story on any device. `auto` leaves each story on its own design
+ * canvas (1366×840 or 402×797), which is what every story and test renders without it.
+ *
+ * A device resizes the app of its own form only — a handheld leaves a tablet story on its
+ * canvas, and the other way round (see `src/pos/device-context.tsx`). Inside the frame,
+ * components lay out by the room they get: the large display shows more register tiles and a
+ * wider rail, a 360px handheld tightens the spacing of its rows.
+ */
+const DEVICE_GLOBAL_TYPES = {
+  device: {
+    name: 'Device',
+    description: 'Render the story on a device: the frame takes that device\'s size. Auto keeps the story\'s own design canvas.',
+    toolbar: {
+      icon: 'mobile' as const,
+      title: 'Device',
+      dynamicTitle: true,
+      items: [
+        { value: 'auto', title: 'Device: story canvas' },
+        ...DEVICES.map((d) => ({
+          value: d.id,
+          title: `${DEVICE_GROUP_LABELS[d.group].replace(/s$/, '')} · ${d.shortLabel} ${formatSize(d.viewport)}`,
+        })),
+      ],
+    },
   },
 };
 
@@ -163,11 +197,12 @@ const preview: Preview = {
   tags: ['autodocs'],
   initialGlobals: {
     viewport: { value: 'counterTerminal', isRotated: false },
+    device: 'auto',
     // The Weston switches start where the prototype stands today, so an untouched toolbar
     // shows exactly what the hosted build shows.
     ...WESTON_INITIAL_GLOBALS,
   },
-  globalTypes: WESTON_GLOBAL_TYPES,
+  globalTypes: { ...DEVICE_GLOBAL_TYPES, ...WESTON_GLOBAL_TYPES },
   parameters: {
     viewport: { options: POS_VIEWPORTS },
     controls: {
@@ -307,6 +342,18 @@ const preview: Preview = {
   // Every story renders inside the POS theme plus a date-picker localization
   // context, so MUI and MUI X components are themed and functional everywhere.
   decorators: [
+    // The **Device** toolbar. `auto` (or anything unrecognised from an old bookmark) renders
+    // no provider at all, so the story is exactly what it was before devices existed. Keyed so
+    // a new device remounts the story: its state was built for the frame it was born in.
+    (Story, context) => {
+      const id = context.globals.device;
+      if (!isDeviceId(id)) return <Story />;
+      return (
+        <DeviceProvider key={id} device={id}>
+          <Story />
+        </DeviceProvider>
+      );
+    },
     // Carries the toolbar's variant choices down to `PosProvider`, which folds them into the
     // state it builds. The `key` is what makes the toolbar feel connected: Storybook re-renders
     // a story when a global changes but does not remount it, and these are initial-state

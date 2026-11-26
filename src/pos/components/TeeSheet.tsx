@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
-import { md3, radius, shell } from '../../theme/tokens';
+import { md3, radius } from '../../theme/tokens';
+import { useTabletFrame } from '../device-context';
 import type { PosState } from '../state/pos-store';
 import { PosProvider } from '../state/PosProvider';
 import { TeeSheetView } from './TeeSheetView';
@@ -20,19 +21,20 @@ import { TeeSheetView } from './TeeSheetView';
  */
 export function TeeSheet({
   state,
-  height = shell.height,
+  height,
 }: {
   /** Starting state. `venueId` picks the club; anything else pins a specific condition. */
   state?: Partial<PosState>;
-  /** Frame height. The default matches the counter terminal the sheet is designed for. */
+  /** Frame height. The default is the terminal's: the design canvas, or the chosen device's. */
   height?: number;
 }) {
+  const frame = useTabletFrame();
   return (
     <PosProvider initialState={{ view: 'tee', leftPanelCollapsed: true, ...state }}>
       <Box
         sx={{
-          width: shell.width,
-          height,
+          width: frame.width,
+          height: height ?? frame.height,
           maxWidth: '100%',
           bgcolor: md3.surface,
           borderRadius: `${radius.lg}px`,
