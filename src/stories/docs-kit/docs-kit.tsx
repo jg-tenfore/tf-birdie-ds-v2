@@ -707,13 +707,16 @@ export const NumberedRow = ({ items }: { items: { title: ReactNode; body: ReactN
   </div>
 );
 
-/** A colour chip with its name, value and use. */
-export const Swatch = ({ color, name, value, use, ring }: { color: string; name: ReactNode; value: ReactNode; use: ReactNode; ring?: boolean }) => (
+/**
+ * A colour chip with its role, value and use. `role`, not `name`: the icon test reads every
+ * `name="…"` prop in src as an icon name.
+ */
+export const Swatch = ({ color, role, value, use, ring }: { color: string; role: ReactNode; value: ReactNode; use: ReactNode; ring?: boolean }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 16, background: '#fff', padding: 12, boxShadow: `inset 0 0 0 1px ${DOC.line}` }}>
     <span style={{ width: 44, height: 44, flexShrink: 0, borderRadius: radius.md, background: color, boxShadow: ring ? `inset 0 0 0 1px ${DOC.line}` : undefined }} />
     <span style={{ display: 'flex', minWidth: 0, flexDirection: 'column', fontSize: 13.5, lineHeight: '20px' }}>
       <span>
-        <strong style={{ color: DOC.ink, fontWeight: 600 }}>{name}</strong> <span style={{ color: DOC.muted }}>· {value}</span>
+        <strong style={{ color: DOC.ink, fontWeight: 600 }}>{role}</strong> <span style={{ color: DOC.muted }}>· {value}</span>
       </span>
       <span>{use}</span>
     </span>

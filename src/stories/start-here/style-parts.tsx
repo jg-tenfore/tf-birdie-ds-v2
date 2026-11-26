@@ -56,13 +56,13 @@ export const PayBadges = () => (
 /** The MD3 roles the counter is built from. */
 export const RoleSwatches = () => (
   <div className="bd-grid bd-grid--4" style={{ gap: 12, marginBottom: 16 }}>
-    <Swatch color={md3.primary} name="primary" value={md3.primary} use="The POS green: Check in & pay, selected tabs, paid chips." />
-    <Swatch color={md3.primaryContainer} name="primary-container" value={md3.primaryContainer} use="Selected chips, the golf summary, a loaded customer." />
-    <Swatch color={md3.surface} name="surface" value={md3.surface} use="The app's ground; cards and panels are white on it." ring />
-    <Swatch color={md3.surfaceContainer} name="surface-container" value={md3.surfaceContainer} use="Rows, group fills, the rate editor's tiles." ring />
-    <Swatch color={md3.onSurface} name="on-surface" value={md3.onSurface} use="Text, and the register's Pay button." />
-    <Swatch color={md3.outlineVariant} name="outline-variant" value={md3.outlineVariant} use="1.5px control outlines and dividers." />
-    <Swatch color={md3.error} name="error" value={md3.error} use="Delete, no-show, refusals." />
-    <Swatch color={md3.scrim} name="scrim" value={md3.scrim} use="The ground behind the terminal, and the top bar's main button (Register, Tee sheet)." />
+    <Swatch color={md3.primary} role="primary" value={md3.primary} use="The POS green: Check in & pay, selected tabs, paid chips." />
+    <Swatch color={md3.primaryContainer} role="primary-container" value={md3.primaryContainer} use="Selected chips, the golf summary, a loaded customer." />
+    <Swatch color={md3.surface} role="surface" value={md3.surface} use="The app's ground; cards and panels are white on it." ring />
+    <Swatch color={md3.surfaceContainer} role="surface-container" value={md3.surfaceContainer} use="Rows, group fills, the rate editor's tiles." ring />
+    <Swatch color={md3.onSurface} role="on-surface" value={md3.onSurface} use="Text, and the register's Pay button." />
+    <Swatch color={md3.outlineVariant} role="outline-variant" value={md3.outlineVariant} use="1.5px control outlines and dividers." />
+    <Swatch color={md3.error} role="error" value={md3.error} use="Delete, no-show, refusals." />
+    <Swatch color={md3.scrim} role="scrim" value={md3.scrim} use="The ground behind the terminal, and the top bar's main button (Register, Tee sheet)." />
   </div>
 );
