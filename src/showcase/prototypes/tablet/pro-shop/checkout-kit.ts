@@ -82,3 +82,10 @@ export async function done(): Promise<void> {
   await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Done' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 }
+
+/** From checkout: Credits › one of the four (Rain check, Punch card, Credit book, Lesson credit). */
+export async function chooseCredit(name: string): Promise<void> {
+  const checkout = await dialog();
+  await userEvent.click(checkout.getByRole('button', { name: 'Credits' }));
+  await userEvent.click(await within(document.body).findByRole('menuitem', { name }));
+}

@@ -308,30 +308,43 @@ function CustomerRecord({ customer }: { customer: Customer }) {
           </CustomerSection>
 
           <CustomerSection title="Punch cards" summary={customer.punchCards.length + buckCards.length ? `${customer.punchCards.length + buckCards.length}` : 'None'}>
-            {customer.punchCards.length === 0 ? (
-              buckCards.length ? null : (
-                <Muted>No punch cards.</Muted>
-              )
+            {customer.punchCards.length + buckCards.length === 0 ? (
+              <Muted>No punch cards.</Muted>
             ) : v1v2 ? (
               /*
                 TF Buck's final punch-card design (Nov 26): each card's items with punches awarded,
                 used and remaining, and Buck's status — Active, Expiring soon, Exhausted, Expired.
-                Birdie's cards hold one item, a green fee, counted in rounds.
+                A round card is one item, a green fee, counted in rounds; Buck's multi-item cards
+                (a product, an activity by minutes, a cart) list each item, with what checkout has
+                taken off them this session.
               */
               <DataTable
                 columns={['Card', 'Item', 'Awarded', 'Used', 'Remaining', 'Expires']}
                 widths="1.6fr 1.1fr .7fr .6fr .8fr .9fr"
-                rows={customer.punchCards.map((c) => {
-                  const item = punchCardItems(c)[0];
-                  const status = punchCardStatus(c);
-                  return {
-                    key: c.name,
-                    cells: [c.name, item.label, String(item.awarded), String(item.used), `${item.remaining} ${item.unit}`, c.expires || 'No expiration'],
-                    strongLast: false,
-                    badge: <PunchStatusChip status={status} />,
-                    sub: `${item.label} · ${item.target}`,
-                  };
-                })}
+                rows={[
+                  ...customer.punchCards.map((c) => {
+                    const item = punchCardItems(c)[0];
+                    const status = punchCardStatus(c);
+                    return {
+                      key: c.name,
+                      cells: [c.name, item.label, String(item.awarded), String(item.used), `${item.remaining} ${item.unit}`, c.expires || 'No expiration'],
+                      strongLast: false,
+                      badge: <PunchStatusChip status={status} />,
+                      sub: `${item.label} · ${item.target}`,
+                    };
+                  }),
+                  ...buckCards.flatMap((card) =>
+                    card.items.map((item, ii) => {
+                      const used = item.used + spentOn(`punch:${card.id}:${ii}`);
+                      return {
+                        key: `${card.id}-${ii}`,
+                        cells: [card.title, punchItemLabel(item), String(item.awarded), String(used), `${Math.max(0, item.awarded - used)} ${PUNCH_UNIT[item.kind]}`, card.expires ?? 'No expiration'],
+                        strongLast: false,
+                        badge: ii === 0 ? <PunchStatusChip status={buckPunchCardStatus(card)} /> : undefined,
+                      };
+                    }),
+                  ),
+                ]}
               />
             ) : (
               <DataTable
@@ -342,26 +355,6 @@ function CustomerRecord({ customer }: { customer: Customer }) {
                   cells: [c.name, String(c.remaining), String(c.total), c.expires],
                 }))}
               />
-            )}
-            {buckCards.length > 0 && (
-              /* Buck's multi-item cards (Nov 26): a product, an activity by minutes, a green fee and a cart. */
-              <Box data-buck-punch-cards sx={{ mt: customer.punchCards.length ? 1 : 0 }}>
-                <DataTable
-                  columns={['Card', 'Item', 'Awarded', 'Used', 'Remaining', 'Expires']}
-                  widths="1.6fr 1.1fr .7fr .6fr .8fr .9fr"
-                  rows={buckCards.flatMap((card) =>
-                    card.items.map((item, ii) => {
-                      const used = item.used + spentOn(`punch:${card.id}:${ii}`);
-                      return {
-                        key: `${card.id}-${ii}`,
-                        cells: [card.title, punchItemLabel(item), String(item.awarded), String(used), `${Math.max(0, item.awarded - used)} ${PUNCH_UNIT[item.kind]}`, card.expires ?? 'No expiration'],
-                        strongLast: false,
-                        badge: ii === 0 ? <PunchStatusChip status={buckPunchCardStatus(card)} /> : undefined,
-                      };
-                    }),
-                  )}
-                />
-              </Box>
             )}
           </CustomerSection>
 

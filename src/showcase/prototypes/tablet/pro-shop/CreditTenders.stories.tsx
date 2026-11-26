@@ -3,13 +3,13 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { CURRENT_EDITION } from '../../../../pos/edition';
 import { withEdition } from '../../../edition-decorator';
 import { Screen } from '../../../pos/screen-helpers';
-import { HOLDERS, counterOrder, counterRound, dialog, done, find, item, payOnReader, q } from './checkout-kit';
+import { HOLDERS, chooseCredit, counterOrder, counterRound, dialog, done, find, item, payOnReader, q } from './checkout-kit';
 
 /**
  * Pro Shop — **credits as tenders** (Nov 26, "checkout that's right").
  *
  * Until now only a gift card paid. Buck configures four more credits, and each is now a tender at
- * checkout for the customer on the order, under **Credits on the customer**:
+ * checkout for the customer on the order, under checkout's **Credits** tile:
  *
  * - **Rain check** — tee times only (Buck › Booking Engine › *Rainchecks Only on Tee Times*), a year
  *   to spend it (Main Info › *Rain Check Expiration*). Staff key the amount; nothing is prorated.
@@ -43,8 +43,7 @@ export const ABookPaysTheTeeFeeACardTheBeer: Story = {
     <Screen edition={T} initialState={counterOrder([counterRound(1), item('Beer Domestic', 5)], HOLDERS.kelsey, { modal: { kind: 'checkout' } })} />
   ),
   play: async () => {
-    const checkout = await dialog();
-    await userEvent.click(checkout.getByRole('button', { name: /Credit book/ }));
+    await chooseCredit('Credit book');
     const d = await dialog();
     await expect(d.getByText("Men's League Weekly Play")).toBeTruthy();
     await expect(q('[data-credit-cannot-line="Beer Domestic"]')!.textContent).toMatch(/not for alcohol/);

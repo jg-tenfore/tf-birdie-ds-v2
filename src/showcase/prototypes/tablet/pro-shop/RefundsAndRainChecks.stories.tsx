@@ -7,7 +7,7 @@ import { amountDue, dueNow } from '../../../../pos/state/operations';
 import { createInitialState, reducer, type PosState } from '../../../../pos/state/pos-store';
 import { withEdition } from '../../../edition-decorator';
 import { Screen } from '../../../pos/screen-helpers';
-import { dialog, find, q } from './checkout-kit';
+import { chooseCredit, dialog, find, q } from './checkout-kit';
 
 /**
  * Pro Shop — **the register's Refund and Rain check, for real** (Nov 26, "checkout that's right").
@@ -100,7 +100,8 @@ export const ARainCheckIssuedThenSpent: Story = {
     await within(document.body).findByText(/^Rain check for Kelsey James · \$30\.00 · expires 05\/21\/2027/);
     // Spend it on the round still on the register.
     await userEvent.click(within(canvasElement).getByRole('button', { name: /^Pay \$/ }));
-    await userEvent.click((await dialog()).getByRole('button', { name: /Rain check/ }));
+    await dialog();
+    await chooseCredit('Rain check');
     const option = await find('[data-credit-option="raincheck:61001"]');
     await expect(option.textContent).toContain('$30.00');
     await expect(q('[data-credit-before]')!.textContent).toBe('$30.00');

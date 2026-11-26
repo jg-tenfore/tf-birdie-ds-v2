@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, ButtonBase, Divider, Typography } from '@mui/material';
+import { Box, ButtonBase, Divider, Menu, MenuItem, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { PR_CONFIG } from '../data/config';
 import * as cart from '../logic/cart';
@@ -74,6 +74,7 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
   const base = { discounts: Math.abs(totals.discount), subtotal: totals.subtotal, tax: totals.tax, total: totals.total };
 
   const [mode, setMode] = useState<'tendered' | 'tip'>('tendered');
+  const [creditsAnchor, setCreditsAnchor] = useState<HTMLElement | null>(null);
   const [tenderedDigits, setTenderedDigits] = useState('');
   // A tip already recalculated in comes back with checkout when a gift card paid part (V1 → V2).
   const [tipDigits, setTipDigits] = useState(carried > 0 ? String(Math.round(carried * 100)) : '');
@@ -475,41 +476,50 @@ export function Checkout({ tip: carried = 0 }: { tip?: number } = {}) {
                   {t.label}
                 </ButtonBase>
               ))}
+            {/* Credits as tenders (Nov 26): one tile, so every tender stays above the fold on the
+                Clover Mini — the customer's rain checks, punch cards, credit books and lesson credits. */}
+            {v1v2 && CREDIT_KINDS.some((k) => offered(k)) && (
+              <ButtonBase
+                data-tender="credits"
+                aria-haspopup="menu"
+                onClick={(e) => setCreditsAnchor(e.currentTarget)}
+                sx={{
+                  flexDirection: 'column',
+                  gap: 0.5,
+                  py: 0.875,
+                  textAlign: 'center',
+                  lineHeight: 1.2,
+                  borderRadius: `${radius.md}px`,
+                  border: `1.5px solid ${creditsAnchor ? md3.primary : md3.outlineVariant}`,
+                  bgcolor: creditsAnchor ? md3.primaryContainer : '#fff',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: creditsAnchor ? md3.primary : md3.onSurfaceVariant,
+                  '&:hover': { borderColor: md3.primary, color: md3.primary, bgcolor: md3.primaryContainer },
+                }}
+              >
+                <Icon name="redeem" size={20} />
+                Credits
+              </ButtonBase>
+            )}
           </Box>
-          {/* Credits as tenders (Nov 26): what Buck lets the customer on the order pay with. */}
-          {v1v2 && CREDIT_KINDS.some((k) => offered(k)) && (
-            <>
-              <SectionLabel color={md3.outline} sx={{ mt: 1.25, mb: 0.75 }}>
-                Credits on the customer
-              </SectionLabel>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0.75 }}>
-                {CREDIT_KINDS.filter((k) => offered(k)).map((k) => (
-                  <ButtonBase
-                    key={k}
-                    data-tender={`credit-${k}`}
-                    onClick={() => dispatch({ type: 'openModal', modal: { kind: 'tenderCredit', credit: k, ...(bakedTip > 0 && { tip: bakedTip }) } })}
-                    sx={{
-                      flexDirection: 'column',
-                      gap: 0.25,
-                      py: 0.75,
-                      textAlign: 'center',
-                      lineHeight: 1.15,
-                      borderRadius: `${radius.md}px`,
-                      border: `1.5px solid ${md3.outlineVariant}`,
-                      bgcolor: '#fff',
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: md3.onSurfaceVariant,
-                      '&:hover': { borderColor: md3.primary, color: md3.primary, bgcolor: md3.primaryContainer },
-                    }}
-                  >
-                    <Icon name={CREDIT_ICONS[k]} size={18} />
-                    {CREDIT_NAMES[k]}
-                  </ButtonBase>
-                ))}
-              </Box>
-            </>
-          )}
+          <Menu anchorEl={creditsAnchor} open={Boolean(creditsAnchor)} onClose={() => setCreditsAnchor(null)} slotProps={{ paper: { sx: { width: 220 } } }}>
+            {CREDIT_KINDS.filter((k) => offered(k)).map((k) => (
+              <MenuItem
+                key={k}
+                data-tender={`credit-${k}`}
+                onClick={() => {
+                  setCreditsAnchor(null);
+                  dispatch({ type: 'openModal', modal: { kind: 'tenderCredit', credit: k, ...(bakedTip > 0 && { tip: bakedTip }) } });
+                }}
+                sx={{ gap: 1.25, fontSize: 13.5, fontWeight: 600 }}
+              >
+                <Icon name={CREDIT_ICONS[k]} size={18} color={md3.onSurfaceVariant} />
+                {CREDIT_NAMES[k]}
+              </MenuItem>
+            ))}
+          </Menu>
+
         </Box>
       </Stack>
     </ModalFrame>

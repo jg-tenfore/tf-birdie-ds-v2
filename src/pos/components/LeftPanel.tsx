@@ -504,22 +504,20 @@ export function LeftPanel() {
               <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>{cart.money(c.amount)}</Box>
             </Box>
           ))}
-          {totals.taxes && totals.taxes.length > 1 ? (
-            // More than one tax type on the order: each one, as the receipt prints them.
+          <span>Tax</span>
+          <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>
+            {cart.money(totals.tax)}
+          </Box>
+          {/* More than one tax type on the order (Buck's per line, Nov 26): each beneath, as the receipt prints them. */}
+          {totals.taxes && totals.taxes.length > 1 &&
             totals.taxes.map((t) => (
-              <Box key={t.id} data-rail-tax-line={t.id} sx={{ display: 'contents' }}>
-                <span>{t.label}</span>
-                <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>{cart.money(t.amount)}</Box>
+              <Box key={t.id} data-rail-tax-line={t.id} sx={{ display: 'contents', fontSize: 11 }}>
+                <Box component="span" sx={{ pl: 1, fontSize: 11 }}>
+                  {t.label}
+                </Box>
+                <Box sx={{ textAlign: 'right', fontSize: 11 }}>{cart.money(t.amount)}</Box>
               </Box>
-            ))
-          ) : (
-            <>
-              <span>{totals.taxes?.length === 1 ? totals.taxes[0].label : 'Tax'}</span>
-              <Box sx={{ textAlign: 'right', fontWeight: 600, color: md3.onSurface }}>
-                {cart.money(totals.tax)}
-              </Box>
-            </>
-          )}
+            ))}
         </Box>
 
         {/* What is left to pay: a part already paid by gift card comes off (V1 → V2, Wave 3). */}

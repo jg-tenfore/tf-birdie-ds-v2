@@ -183,11 +183,9 @@ export function TotalsBlock({ cart, tip = 0 }: { cart: CartItem[]; tip?: number 
       {m.serviceCharges.map((c) => (
         <MoneyRow key={c.id} label={c.label} value={cartLogic.money(c.amount)} />
       ))}
-      {m.taxes && m.taxes.length > 1 ? (
-        m.taxes.map((t) => <MoneyRow key={t.id} label={t.label} value={cartLogic.money(t.amount)} />)
-      ) : (
-        <MoneyRow label={m.exempt ? 'Tax (exempt)' : (m.taxes?.[0]?.label ?? 'Tax')} value={cartLogic.money(m.tax)} />
-      )}
+      <MoneyRow label={m.exempt ? 'Tax (exempt)' : 'Tax'} value={cartLogic.money(m.tax)} />
+      {/* More than one tax type (Buck's per line, Nov 26): each beneath the total, as the terminal shows them. */}
+      {m.taxes && m.taxes.length > 1 && m.taxes.map((t) => <MoneyRow key={t.id} label={<Box component="span" sx={{ pl: 2 }}>{t.label}</Box>} value={cartLogic.money(t.amount)} />)}
       {tip > 0 && <MoneyRow label="Tip" value={cartLogic.money(tip)} />}
       <Box sx={{ borderTop: `1px solid ${md3.outlineVariant}`, mt: 1, pt: 1 }}>
         <MoneyRow label="Total" value={cartLogic.money(m.total + tip)} strong />
