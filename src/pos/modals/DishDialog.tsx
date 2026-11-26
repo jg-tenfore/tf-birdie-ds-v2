@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../theme/tokens';
 import { menuItem, missingRequired, priceWithModifiers, type AppliedModifier, type ModifierGroup } from '../data/menu';
+import { menuImage } from '../data/menu-images';
 import { money } from '../logic/cart';
 import { chooseOption, groupsOf, isChosen, missingPrompt, ordered } from '../logic/dish-choice';
 import { isSent } from '../logic/restaurant';
@@ -69,6 +70,7 @@ export function DishDialog({ m }: { m: Extract<RestaurantModal, { kind: 'dish' }
   const unit = priceWithModifiers(item.price, mods);
   const editing = Boolean(line);
   const seatWord = tab ? (seat ? `Seat ${seat}` : 'Shared') : null;
+  const photo = menuImage(item);
 
   const confirm = () => {
     if (missing.length) return;
@@ -91,6 +93,17 @@ export function DishDialog({ m }: { m: Extract<RestaurantModal, { kind: 'dish' }
       width={660}
       tall
       onClose={close}
+      headerAside={
+        photo && (
+          <Box
+            component="img"
+            data-dish-photo
+            src={photo}
+            alt=""
+            sx={{ width: 72, height: 72, objectFit: 'cover', borderRadius: `${radius.md}px`, border: `1px solid ${md3.outlineVariant}`, bgcolor: '#fff', flexShrink: 0 }}
+          />
+        )
+      }
       actions={
         <>
           <Box sx={{ flex: 1, minWidth: 0 }}>

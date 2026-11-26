@@ -3,6 +3,7 @@ import { Box, ButtonBase, Menu, MenuItem as MuiMenuItem, Typography } from '@mui
 import { md3, radius } from '../../../theme/tokens';
 import { demoNow } from '../../data/bookings';
 import { menuItemsIn, modifierGroup, type MenuId, type MenuItem } from '../../data/menu';
+import { menuImage } from '../../data/menu-images';
 import { isMenuRunning, menuWindow, menusInOrder, notRunningReason, openingMenu, scheduledMenu, type ScheduledMenu } from '../../data/menu-schedule';
 import { money } from '../../logic/cart';
 import { groupsOf } from '../../logic/dish-choice';
@@ -26,8 +27,8 @@ import { Stack } from '../Stack';
  *
  * One component, three rows that never leave the screen: the **menu**, its **categories**, and the
  * **items** of the chosen one. Changing category changes only the bottom row, so where you are is
- * always visible and one tap from anywhere else. Tiles are text — name, price, a line of
- * description — and say when an item has options to choose.
+ * always visible and one tap from anywhere else. Tiles carry the dish's photo (Nov 26), its name,
+ * price and a line of description, and say when an item has options to choose.
  *
  * ## Menus by day and time (Nov 26, from TF Buck)
  *
@@ -215,60 +216,76 @@ export function MenuBrowser({
 }
 
 /**
- * One item. Text, not photography — see `data/menu.ts`. "Options" marks an item that opens the
- * dish dialog, and "Choose" one that cannot be sent until something is chosen, so the extra step
+ * One item. A photo on top when it has one (`menuImage` — its own, or an unbranded stand-in for a
+ * branded snack or drink), then name, description and price; without one, the text tile it always
+ * was, so a dish added before its photo still reads as finished. "Options" marks an item that opens
+ * the dish dialog, and "Choose" one that cannot be sent until something is chosen, so the extra step
  * is expected rather than a surprise.
  */
 function ItemTile({ item, onClick }: { item: MenuItem; onClick: () => void }) {
   const groups = groupsOf(item);
   const required = groups.some((g) => g.required);
+  const photo = menuImage(item);
   return (
     <ButtonBase
       data-menu-item={item.id}
+      data-has-photo={photo ? true : undefined}
       onClick={onClick}
       sx={{
         minHeight: 104,
-        p: '12px 14px',
+        p: 0,
         borderRadius: `${radius.md}px`,
         border: `1.5px solid ${md3.outlineVariant}`,
         bgcolor: '#fff',
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
         justifyContent: 'flex-start',
         textAlign: 'left',
-        gap: 0.5,
         '&:active': { borderColor: md3.primary, bgcolor: md3.primaryContainer },
       }}
     >
-      <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1.25 }}>{item.name}</Typography>
-      <Typography
-        sx={{
-          fontSize: 11.5,
-          color: md3.onSurfaceVariant,
-          lineHeight: 1.35,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        {item.description}
-      </Typography>
-      <Box sx={{ flex: 1 }} />
-      <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-        <Typography sx={{ fontSize: 14, fontWeight: 800, color: md3.primary }}>{money(item.price)}</Typography>
-        {groups.length > 0 && (
-          <Stack
-            direction="row"
-            alignItems="center"
-            gap={0.375}
-            sx={{ fontSize: 10.5, fontWeight: 700, color: required ? md3.onSurface : md3.outline }}
-          >
-            <Icon name="tune" size={13} />
-            {required ? 'Choose' : 'Options'}
-          </Stack>
-        )}
+      {photo && (
+        <Box
+          component="img"
+          src={photo}
+          alt=""
+          loading="lazy"
+          draggable={false}
+          sx={{ display: 'block', width: '100%', height: 120, objectFit: 'contain', bgcolor: '#fff', borderBottom: `1px solid ${md3.outlineVariant}` }}
+        />
+      )}
+      <Stack gap={0.5} sx={{ flex: 1, p: '10px 14px 12px' }}>
+        <Typography sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1.25 }}>{item.name}</Typography>
+        <Typography
+          sx={{
+            fontSize: 11.5,
+            color: md3.onSurfaceVariant,
+            lineHeight: 1.35,
+            display: '-webkit-box',
+            WebkitLineClamp: photo ? 1 : 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {item.description}
+        </Typography>
+        <Box sx={{ flex: 1 }} />
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
+          <Typography sx={{ fontSize: 14, fontWeight: 800, color: md3.primary }}>{money(item.price)}</Typography>
+          {groups.length > 0 && (
+            <Stack
+              direction="row"
+              alignItems="center"
+              gap={0.375}
+              sx={{ fontSize: 10.5, fontWeight: 700, color: required ? md3.onSurface : md3.outline }}
+            >
+              <Icon name="tune" size={13} />
+              {required ? 'Choose' : 'Options'}
+            </Stack>
+          )}
+        </Stack>
       </Stack>
     </ButtonBase>
   );

@@ -16,7 +16,8 @@
  *
  * v1's menu photos are not ours to publish. The dining-room images are, by v1's own note, Del
  * Frisco's photography taken from Uber Eats; the counter images carry no metadata and delivery-CDN
- * filenames. So menu tiles here are text, and real photography is something to drop in later.
+ * filenames. None of them is used. Since Nov 26 every item has an invented, generated photo instead
+ * (`menu-images.ts`, `src/assets/menu/`), branded items through an unbranded stand-in.
  *
  * ## Modifiers say what they are
  *
