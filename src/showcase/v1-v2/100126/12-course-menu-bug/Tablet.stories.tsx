@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { withEdition } from '../../../edition-decorator';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Typography } from '@mui/material';
 import { expect, userEvent, waitFor } from 'storybook/test';
@@ -10,7 +11,7 @@ import { ProposalTerminal } from '../mock-kit';
 import { sheet } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 12 · Course ⋮ menu bug
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 12 · Course ⋮ menu bug (100126)
  *
  * Caught on the call (*"Well, that's a bug… let me get a picture of that"*) — Justin's screenshot
  * at 3:23 PM.
@@ -22,7 +23,9 @@ import { sheet } from '../scenarios';
  * **Proposal** — the menu opens under the ⋮ that opened it, right-aligned to the button.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/12 · Course menu bug',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/12. Course menu bug',
+  id: 'v1-→-v2-migration-100126-12-·-course-menu-bug',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

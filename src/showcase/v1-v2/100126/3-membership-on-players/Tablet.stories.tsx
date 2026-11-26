@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box } from '@mui/material';
 import { expect, waitFor } from 'storybook/test';
 import { Screen } from '../../../pos/screen-helpers';
@@ -6,7 +7,7 @@ import { FullRow, MockPanel, MockPanelFooter, MockPanelHeader, ProposalTerminal,
 import { king, panelOn, sheet } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 3 · Membership on every player
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 3. Membership on every player (100126)
  *
  * **Weston:** *"And then we show the current membership, right? … Does it say their membership?"*
  * Justin: *"No, I gotta put that back in. I don't know why I got lost when I did the migration… I'll
@@ -19,7 +20,9 @@ import { king, panelOn, sheet } from '../scenarios';
  * as Customer Search shows them. An unlinked guest says so.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/3 · Membership on every player',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/3. Membership on every player',
+  id: 'v1-→-v2-migration-100126-3-·-membership-on-every-player',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

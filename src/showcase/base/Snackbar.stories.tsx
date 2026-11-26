@@ -126,7 +126,8 @@ function SnackbarAnchorDemo() {
 }
 
 const meta = {
-  title: 'Components/Feedback & Status/Snackbar',
+  title: 'Design System/Components/Feedback & Status/Snackbar',
+  id: 'components-feedback-status-snackbar',
   component: SnackbarDemo,
   parameters: {
     layout: 'centered',

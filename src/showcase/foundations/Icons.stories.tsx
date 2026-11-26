@@ -29,7 +29,8 @@ const ICONS = [
 ] as const;
 
 const meta = {
-  title: 'Foundations/Icons',
+  title: 'Design System/Styles/Icons',
+  id: 'foundations-icons',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 export default meta;

@@ -13,6 +13,7 @@ import {
   withWalkInOrder,
 } from '../../pos/state/scenarios';
 import type { PosState } from '../../pos/state/pos-store';
+import { useEdition } from '../../pos/edition';
 import type { Edition } from '../../pos/edition';
 import type { VenueId } from '../../pos/data/venues';
 import { venueBookings } from '../../pos/data/venues';
@@ -107,9 +108,14 @@ export function Screen({
   edition,
 }: {
   initialState?: Partial<PosState>;
-  /** Render Weston's edits (`'weston'`) or the base POS. Defaults to the build's own. */
+  /**
+   * Which edition renders. Defaults to the story file's `withEdition` decorator
+   * (`../edition-decorator.tsx`), and outside one to the build's own.
+   */
   edition?: Edition;
 }) {
+  const fromDecorator = useEdition();
+  const resolved = edition ?? fromDecorator;
   const scale = useFitScale();
   const [frame, setFrame] = useState<HTMLElement | null>(null);
   const scaled = scale < 1;
@@ -138,13 +144,13 @@ export function Screen({
           >
             {frame && (
               <ModalContainerProvider container={frame}>
-                <PosApp initialState={initialState} edition={edition} />
+                <PosApp initialState={initialState} edition={resolved} />
               </ModalContainerProvider>
             )}
           </Box>
         </Box>
       ) : (
-        <PosApp initialState={initialState} edition={edition} />
+        <PosApp initialState={initialState} edition={resolved} />
       )}
     </Box>
   );

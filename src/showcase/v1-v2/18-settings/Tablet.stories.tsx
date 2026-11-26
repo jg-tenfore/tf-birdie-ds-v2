@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { APP_IDENTITY } from '../../../pos/data/nav';
 import { settingsDefaults, type CheckoutSettings, type TerminalHardware } from '../../../pos/state/settings';
@@ -6,7 +7,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 18 · Settings / Tablet
+ * Prototypes / Tablet / Settings / Terminal settings (V1 → V2 Migration, section 18)
  *
  * **Birdie's own settings first — device info, the card reader, Clover, the tee sheet — then the
  * V1 → V2 proposals: the terminal, checkout and receipts, staff and PINs.**
@@ -37,7 +38,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   Clover's switches are the screen's own.
  */
 const meta = {
-  title: 'V1 → V2 Migration/18 · Settings/Tablet',
+  title: 'Prototypes/Tablet/Settings/Terminal settings',
+  id: 'v1-→-v2-migration-18-·-settings-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

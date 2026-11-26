@@ -197,15 +197,39 @@ all three clubs: in dev, `/mobile/?venue=eighteen` sets the club *before* the st
   Storybook's docs plugin injects its own `parameters` key and silently overwrites one that
   arrives by spread or by variable, dropping `layout: 'fullscreen'`.
 
+## Storybook sidebar
+
+Roots, in order: **Start Here**, **Prototypes** (`Tablet` / `Mobile` › nav area › topic, the
+current edition), **Design System** (`Styles`, `Components`), **Reviews** (`Mon D – Topic`,
+newest first, `Summary` first), **Archive** (collapsed). The order lives in `storySort` in
+`.storybook/preview.tsx`.
+
+- **Never use "·", "→" or "∕" in a title.** They leak into story ids. Use "–" in review folder
+  names.
+- **Moving a file never changes its ids.** Give the meta an `id:` equal to its current component
+  id (read it from `/index.json`). MDX can't pin an id: add the old docs id to
+  `.storybook/static/legacy-redirects.js`.
+- **Every story file states its edition** with `decorators: [withEdition(…)]` from
+  `src/showcase/edition-decorator.tsx`: `'current-tablet'` / `'current-mobile'` under
+  Prototypes, `'archived'` under Archive, a literal edition under Reviews. A story's own
+  `edition` prop, or a story-level `withEdition`, still wins (that is how the few Weston-only
+  stories under Prototypes are pinned).
+- **The current phone and tablet screens of the original port** are re-rendered in the current
+  edition by thin re-export files in `src/showcase/current-edition/` (copies of the archived
+  story objects, never the objects themselves).
+- **The mobile prototype reads story files by folder**, not by sidebar title, and builds its
+  hash routes from the pinned ids (`src/mobile-prototype/screen-index.ts`).
+
 ## Weston Edits (editions)
 
 `src/pos/edition.tsx` defines editions: `base` (default) and `weston` (Weston's golf-first
 reservation flow). It's a context, not a fork: branch with `useWestonEdits()` only where the
 edits differ, and pass `edition="weston"` to `<Screen>` / `<MobileStory>` / `<PosApp>` /
 `<MobileApp>`. Builds pick an edition with `VITE_EDITION`; dev uses `?edition=weston`. Published
-as `/weston-edits/` and `/weston-edits-mobile/` (18-hole club). Storybook's **Weston Edits**
-category has `Overview` plus one folder per changed component, each with `Tablet` and
-`Mobile` story files. Per-player reservation values (`holes`, `fee`, `transport`) live on
+as `/weston-edits/` and `/weston-edits-mobile/` (18-hole club). The Weston Edits story files
+(`src/showcase/weston-edits/`, one folder per changed component, `Tablet` and `Mobile`) now sit
+in Storybook under **Prototypes** by nav area; their overview is **Reviews › Sep 22 – Weston
+Edits, rounds 1–5 › Summary**. Per-player reservation values (`holes`, `fee`, `transport`) live on
 `PlayerState` and are edited through `src/pos/logic/reservation.ts`. A seat's rate class is its
 own player's (`seatRateClass` in `logic/rates.ts`), so pass `rateContext(state)` — which
 carries the roster — to anything that prices a seat.

@@ -3,7 +3,8 @@ import { Box, Button, Typography } from '@mui/material';
 import Inbox from '@mui/icons-material/Inbox';
 
 const meta = {
-  title: 'Components/Feedback & Status/Empty State',
+  title: 'Design System/Components/Feedback & Status/Empty State',
+  id: 'components-feedback-status-empty-state',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

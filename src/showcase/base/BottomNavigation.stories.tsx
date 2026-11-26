@@ -7,7 +7,8 @@ import Tag from '@mui/icons-material/Tag';
 import Settings from '@mui/icons-material/Settings';
 
 const meta = {
-  title: 'Components/Navigation/Bottom Navigation',
+  title: 'Design System/Components/Navigation/Bottom Navigation',
+  id: 'components-navigation-bottom-navigation',
   component: BottomNavigation,
   parameters: {
     layout: 'centered',

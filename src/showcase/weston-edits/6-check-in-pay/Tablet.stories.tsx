@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { buildTeeTimeCart, money, orderTotals } from '../../../pos/logic/cart';
 import { venue } from '../../../pos/data/venues';
@@ -12,7 +13,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 6 · Check In & Pay / Tablet
+ * Prototypes / Tablet / Tee Sheet / Check in & pay (Weston Edits, section 6)
  *
  * "You're still massaging the reservation before you submit it to the cart and then check
  * it out." **Check in & pay** is that submit: the panel's primary action. It checks in the
@@ -110,13 +111,24 @@ import {
  * leaves `playerStates[].paid` alone, so a refunded booking reopened here reads settled.
  */
 const meta = {
-  title: 'Weston Edits/6 · Check In & Pay/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Check in & pay',
+  id: 'weston-edits-6-·-check-in-pay-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj;
+
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 changed the two things these stories drive: the reservation's footer is Player rows
+ * v2's (**Check in & pay all**, or **Pay** for the players added; see Reviews › Oct 2 – Proposal
+ * review › 1. Player rows v2), and an empty order rail starts collapsed, so there is no **Walk-in**
+ * button to press until it is opened (Reviews › Oct 1 – Proposals from the Sep 30 call › 6).
+ */
+const westonOnly = [withEdition('weston')];
 
 const expected = () => money(orderTotals(buildTeeTimeCart(adjustedParty(), venue('eighteen').courses)).total);
 
@@ -126,7 +138,8 @@ const expected = () => money(orderTotals(buildTeeTimeCart(adjustedParty(), venue
  * same amount.
  */
 export const CheckInAndPay: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const total = expected();
@@ -138,7 +151,7 @@ export const CheckInAndPay: Story = {
 
 /** Where Check in & pay lands: the register, the golf summarised, the same total to pay. */
 export const InTheRegister: Story = {
-  render: () => <Screen edition="weston" initialState={registerWith(adjustedParty())} />,
+  render: () => <Screen initialState={registerWith(adjustedParty())} />,
 };
 
 /**
@@ -150,7 +163,6 @@ export const UpdateOrder: Story = {
     const b = adjustedParty();
     return (
       <Screen
-        edition="weston"
         initialState={registerWith(b, { reservationPanel: { bookingId: b.id, tab: 'players', playerIndex: 0 } })}
       />
     );
@@ -162,12 +174,12 @@ export const UpdateOrder: Story = {
  * **Open in register** — no second charge.
  */
 export const PaidBooking: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight())} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight())} />,
 };
 
 /** A no-show party: nothing due and no one to check in, so the action is disabled. */
 export const NoShowParty: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(noShowParty())} />,
+  render: () => <Screen initialState={sheetWithPanel(noShowParty())} />,
 };
 
 /**
@@ -178,7 +190,8 @@ export const NoShowParty: Story = {
  * "Guest Details" — with Pay asking the panel's amount.
  */
 export const WalkInThroughReservation: Story = {
-  render: () => <Screen edition="weston" initialState={atVenue('eighteen', { view: 'pos', leftPanelCollapsed: false })} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={atVenue('eighteen', { view: 'pos', leftPanelCollapsed: false })} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByText('Walk-in'));
@@ -201,7 +214,7 @@ export const WalkInThroughReservation: Story = {
  */
 export const WalkInFromRate: Story = {
   render: () => (
-    <Screen edition="weston" initialState={atVenue('eighteen', { view: 'pos', leftPanelCollapsed: false, currentCategory: 'CHECK IN' })} />
+    <Screen initialState={atVenue('eighteen', { view: 'pos', leftPanelCollapsed: false, currentCategory: 'CHECK IN' })} />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -217,6 +230,7 @@ export const WalkInFromRate: Story = {
  * re-prices a rate-card price for the new band).
  */
 export const WalkInChangeTime: Story = {
+  decorators: westonOnly,
   render: WalkInThroughReservation.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

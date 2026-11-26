@@ -98,7 +98,8 @@ function TransferListDemo() {
 }
 
 const meta = {
-  title: 'Components/Forms/Transfer List',
+  title: 'Design System/Components/Forms/Transfer List',
+  id: 'components-forms-transfer-list',
   component: TransferListDemo,
   parameters: {
     layout: 'centered',

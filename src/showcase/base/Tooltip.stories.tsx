@@ -3,7 +3,8 @@ import { Button, IconButton, Stack, Tooltip } from '@mui/material';
 import Info from '@mui/icons-material/Info';
 
 const meta = {
-  title: 'Components/Typography & Content/Tooltip',
+  title: 'Design System/Components/Typography & Content/Tooltip',
+  id: 'components-typography-content-tooltip',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

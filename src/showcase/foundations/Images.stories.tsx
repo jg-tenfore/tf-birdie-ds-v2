@@ -74,7 +74,8 @@ function Gallery({ only }: { only?: string }) {
 }
 
 const meta = {
-  title: 'Foundations/Images',
+  title: 'Design System/Styles/Images',
+  id: 'foundations-images',
   component: Gallery,
   parameters: { layout: 'fullscreen' },
 } satisfies Meta<typeof Gallery>;

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box } from '@mui/material';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { Screen } from '../../../pos/screen-helpers';
@@ -6,7 +7,7 @@ import { FullRow, MockPanel, MockPanelFooter, MockPanelHeader, ProposalTerminal,
 import { king, panelOn, sheet } from '../scenarios';
 
 /**
- * V1 → V2 Migration / 100126 / 2 · Status chip instead of the stepper
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 2. Status chip instead of the stepper (100126)
  *
  * **Weston:** *"it does take up a lot of space… we could still show the status and maybe they could
  * click on it and change it."* Justin: *"they haven't arrived… I don't need to see that yet… They
@@ -19,7 +20,9 @@ import { king, panelOn, sheet } from '../scenarios';
  * to move them along. The card loses about a third of its height without losing the status.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/2 · Status chip instead of the stepper',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/2. Status chip instead of the stepper',
+  id: 'v1-→-v2-migration-100126-2-·-status-chip-instead-of-the-stepper',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

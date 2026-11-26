@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, compedParty, partlyPaidNamed, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 5 · Financial, Notes & Activity / Mobile
+ * Prototypes / Mobile / Tee Sheet / Financial, notes & activity (Weston Edits, section 5)
  *
  * The rest of the reservation on the phone, as tabs on the pushed booking screen. The phone
  * has no dialog to move these out of — they were already tabs — so the edit here is what
@@ -79,7 +80,9 @@ import { adjustedParty, at18, compedParty, partlyPaidNamed, withBookings } from 
  * on this tab creates one; that is the register's job, reached through Check in & pay.
  */
 const meta = {
-  title: 'Weston Edits/5 · Financial, Notes & Activity/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Financial, notes & activity',
+  id: 'weston-edits-5-·-financial-notes-activity-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -96,7 +99,7 @@ type Story = StoryObj;
 export const Financial: Story = {
   render: () => {
     const b = adjustedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
   },
 };
 
@@ -104,7 +107,7 @@ export const Financial: Story = {
 export const FinancialWithComp: Story = {
   render: () => {
     const b = compedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
   },
 };
 
@@ -112,7 +115,7 @@ export const FinancialWithComp: Story = {
 export const FinancialPartlyPaid: Story = {
   render: () => {
     const b = partlyPaidNamed();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'financial' }]} />;
   },
 };
 
@@ -120,7 +123,7 @@ export const FinancialPartlyPaid: Story = {
 export const Notes: Story = {
   render: () => {
     const b = adjustedParty();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'notes' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'notes' }]} />;
   },
 };
 
@@ -128,6 +131,6 @@ export const Notes: Story = {
 export const Activity: Story = {
   render: () => {
     const b = partlyPaidNamed();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'activity' }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id, tab: 'activity' }]} />;
   },
 };

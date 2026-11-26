@@ -62,7 +62,8 @@ function LogIn() {
 }
 
 const meta = {
-  title: 'Account/Log in',
+  title: 'Archive/Account/Log in',
+  id: 'account-log-in',
   component: LogIn,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof LogIn>;

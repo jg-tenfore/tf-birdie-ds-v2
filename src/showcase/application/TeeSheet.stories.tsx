@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Box } from '@mui/material';
 import { md3 } from '../../theme/tokens';
 import { TeeSheet } from '../../pos/components/TeeSheet';
@@ -62,7 +63,9 @@ import {
  * not the wiring.
  */
 const meta = {
-  title: 'Components/Layout & Structure/Tee Sheet',
+  title: 'Design System/Components/Layout & Structure/Tee Sheet',
+  id: 'components-layout-structure-tee-sheet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

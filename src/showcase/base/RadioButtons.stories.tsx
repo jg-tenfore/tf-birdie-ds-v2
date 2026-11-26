@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FormControl, FormControlLabel, FormLabel, Radio, RadioGroup } from '@mui/material';
 
 const meta = {
-  title: 'Components/Forms/Radio Buttons',
+  title: 'Design System/Components/Forms/Radio Buttons',
+  id: 'components-forms-radio-buttons',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

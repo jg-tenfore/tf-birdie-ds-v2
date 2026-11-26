@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_ORDERS } from '../../../pos/data/orders-seed';
 import { venue } from '../../../pos/data/venues';
@@ -11,7 +12,7 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
 import { paidTwilight, sheetWithPanel } from '../../weston-edits/tablet-scenarios';
 
 /**
- * V1 → V2 Migration / 12 · Order Lookup / Tablet
+ * Prototypes / Tablet / Order Lookup / Lookup & refunds (V1 → V2 Migration, section 12)
  *
  * **Find a paid order, see what was in it, and refund it.**
  *
@@ -41,7 +42,9 @@ import { paidTwilight, sheetWithPanel } from '../../weston-edits/tablet-scenario
  *   booking, read-only, and opens in the register to refund there.
  */
 const meta = {
-  title: 'V1 → V2 Migration/12 · Order Lookup/Tablet',
+  title: 'Prototypes/Tablet/Order Lookup/Lookup & refunds',
+  id: 'v1-→-v2-migration-12-·-order-lookup-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

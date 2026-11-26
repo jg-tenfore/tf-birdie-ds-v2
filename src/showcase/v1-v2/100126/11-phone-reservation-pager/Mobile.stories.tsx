@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box, Typography } from '@mui/material';
 import { expect, waitFor } from 'storybook/test';
 import { md3, radius } from '../../../../theme/tokens';
@@ -10,7 +11,7 @@ import { at18, paidParty } from '../../../weston-edits/mobile-scenarios';
 import { Avatar, Chip, ProposalPhone, WhatChanged, seats, when } from '../mock-kit';
 
 /**
- * V1 → V2 Migration / 100126 / 11 · Phone: reservation without the pager
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 11 · Phone: reservation without the pager (100126)
  *
  * **Weston:** *"I think we could get rid of this. I just don't know if anyone would have enough
  * context to know like what comes next… it like takes up a line… don't worry about trying to fit all
@@ -24,7 +25,9 @@ import { Avatar, Chip, ProposalPhone, WhatChanged, seats, when } from '../mock-k
  * Leagues and outings step through their tee times in the group view instead.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/11 · Phone reservation pager',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/11. Phone reservation pager',
+  id: 'v1-→-v2-migration-100126-11-·-phone-reservation-pager',
+  decorators: [withEdition('weston')],
   ...mobileMeta,
 } satisfies Meta;
 

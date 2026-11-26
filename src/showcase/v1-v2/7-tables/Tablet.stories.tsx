@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_ROOMS, type Room } from '../../../pos/data/floor';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 7 · Tables / Tablet
+ * Prototypes / Tablet / Tables / Floor service (V1 → V2 Migration, section 7)
  *
  * **The live floor: every table saying what it is, and what can be done with it.**
  *
@@ -44,7 +45,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * on its check, Table 3 held for Delgado's 12:30, P2 just sat, B3 a bar tab.
  */
 const meta = {
-  title: 'V1 → V2 Migration/7 · Tables/Tablet',
+  title: 'Prototypes/Tablet/Tables/Floor service',
+  id: 'v1-→-v2-migration-7-·-tables-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
 
 const meta = {
-  title: 'Components/Feedback & Status/Progress Indicators',
+  title: 'Design System/Components/Feedback & Status/Progress Indicators',
+  id: 'components-feedback-status-progress-indicators',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

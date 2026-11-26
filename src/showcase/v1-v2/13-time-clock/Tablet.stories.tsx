@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { STAFF } from '../../../pos/data/staff';
 import { SEED_PUNCHES } from '../../../pos/data/staff-seed';
@@ -6,7 +7,7 @@ import { fmtHours, weeklyTotals } from '../../../pos/logic/staff-hours';
 import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 13 · Time Clock / Tablet
+ * Prototypes / Tablet / Time Clock / Clock in & out (V1 → V2 Migration, section 13)
  *
  * **Who is working, and the hours they have worked.**
  *
@@ -33,7 +34,9 @@ import { Screen, TODAY_STR, atVenue } from '../../pos/screen-helpers';
  * - A second clock-in, or a clock-out with nothing open, is refused by the store.
  */
 const meta = {
-  title: 'V1 → V2 Migration/13 · Time Clock/Tablet',
+  title: 'Prototypes/Tablet/Time Clock/Clock in & out',
+  id: 'v1-→-v2-migration-13-·-time-clock-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

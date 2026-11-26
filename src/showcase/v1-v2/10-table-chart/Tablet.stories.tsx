@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 import { FLOOR_W } from '../../../pos/data/floor';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 10 · Table Chart / Tablet
+ * Prototypes / Tablet / Table Chart / Floor plan editor (V1 → V2 Migration, section 10)
  *
  * **The floor-plan editor. What it saves is what Tables shows.**
  *
@@ -50,7 +51,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * preview size.
  */
 const meta = {
-  title: 'V1 → V2 Migration/10 · Table Chart/Tablet',
+  title: 'Prototypes/Tablet/Table Chart/Floor plan editor',
+  id: 'v1-→-v2-migration-10-·-table-chart-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

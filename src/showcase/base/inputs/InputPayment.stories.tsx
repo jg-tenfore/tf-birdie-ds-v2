@@ -3,7 +3,8 @@ import { Box, InputAdornment, TextField } from '@mui/material';
 import CreditCard from '@mui/icons-material/CreditCard';
 
 const meta = {
-  title: 'Components/Forms/Input Payment',
+  title: 'Design System/Components/Forms/Input Payment',
+  id: 'components-forms-input-payment',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

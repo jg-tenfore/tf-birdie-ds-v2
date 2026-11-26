@@ -41,7 +41,8 @@ function SpeedDialDemo({ direction = 'up' as const }: { direction?: 'up' | 'down
 }
 
 const meta = {
-  title: 'Components/Actions/Speed Dial',
+  title: 'Design System/Components/Actions/Speed Dial',
+  id: 'components-actions-speed-dial',
   component: SpeedDialDemo,
   parameters: {
     layout: 'centered',

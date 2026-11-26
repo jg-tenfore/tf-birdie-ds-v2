@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { venue } from '../../../pos/data/venues';
 import { buildTeeTimeCart, money, orderTotals, seatCharges } from '../../../pos/logic/cart';
@@ -8,7 +9,7 @@ import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, growableParty, mixedGroup, openParty, partlyPaidNamed, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 2 · Player Rows / Mobile
+ * Prototypes / Mobile / Tee Sheet / Player rows (Weston Edits, section 2)
  *
  * The same three per-player decisions Weston asked for — *"change the players, the amount of
  * players, the tee fee, or change from 9 to 18 holes per player"* — on a 402px screen, where a
@@ -115,7 +116,9 @@ import { adjustedParty, at18, growableParty, mixedGroup, openParty, partlyPaidNa
  *   fix is what it says, not how tightly it is packed.
  */
 const meta = {
-  title: 'Weston Edits/2 · Player Rows/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Player rows',
+  id: 'weston-edits-2-·-player-rows-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -139,7 +142,7 @@ const adjusted = () => {
 export const PlayerRows: Story = {
   render: () => {
     const { b, state } = adjusted();
-    return <MobileStory edition="weston" initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={state} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 
@@ -151,7 +154,7 @@ export const PlayerRows: Story = {
  */
 export const RateCardFeeOnSwitch: Story = {
   render: () => (
-    <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: openParty().id }]} />
+    <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: openParty().id }]} />
   ),
   play: async ({ canvasElement }) => {
     const b = openParty();
@@ -175,7 +178,7 @@ export const RateCardFeeOnSwitch: Story = {
 export const MixedMemberGuestGroup: Story = {
   render: () => {
     const b = mixedGroup();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
   play: async ({ canvasElement }) => {
     const b = mixedGroup();
@@ -257,7 +260,7 @@ export const GroupActions: Story = {
  */
 export const AddPlayer: Story = {
   render: () => (
-    <MobileStory edition="weston" initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: growableParty().id }]} />
+    <MobileStory initialState={at18()} tab="tee" stack={[{ name: 'bookingDetail', bookingId: growableParty().id }]} />
   ),
   play: async ({ canvasElement }) => {
     await userEvent.click(await within(canvasElement).findByLabelText('Add player'));
@@ -271,7 +274,7 @@ export const AddPlayer: Story = {
 export const PaidPlayersLocked: Story = {
   render: () => {
     const b = partlyPaidNamed();
-    return <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
+    return <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />;
   },
 };
 
@@ -285,7 +288,6 @@ export const PlayerDetail: Story = {
     const { b, state } = adjusted();
     return (
       <MobileStory
-        edition="weston"
         initialState={state}
         tab="tee"
         stack={[
@@ -306,7 +308,6 @@ export const SwapCustomer: Story = {
     const { b, state } = adjusted();
     return (
       <MobileStory
-        edition="weston"
         initialState={state}
         tab="tee"
         stack={[

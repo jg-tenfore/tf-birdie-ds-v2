@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { Screen } from '../../pos/screen-helpers';
 import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 4 · Customer Profile / Tablet
+ * Prototypes / Tablet / Customer Search / Customer profile (Weston Edits, section 4)
  *
  * **The Customer tab is gone.** Round 1 put a customer profile inside the reservation as a
  * fifth tab; round 3 took it back out. Weston: *"I don't think it needs to be a tab on the
@@ -157,7 +158,9 @@ import { adjustedParty, idMeParty, nameOnlyGuest, openParty, sheetWithCustomer, 
  * - **`CustomerTab.tsx` is still in the tree and rendered by nothing.** Dead since the tab went.
  */
 const meta = {
-  title: 'Weston Edits/4 · Customer Profile/Tablet',
+  title: 'Prototypes/Tablet/Customer Search/Customer profile',
+  id: 'weston-edits-4-·-customer-profile-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
@@ -167,7 +170,7 @@ type Story = StoryObj;
 
 /** The booker's record, opened from their name: membership, account, credits and history. */
 export const BookerRecord: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     // The contact grid, the account strip and the sectioned half, in that order.
@@ -180,7 +183,7 @@ export const BookerRecord: Story = {
 
 /** A guest seat linked to a real customer — their record, not the booker's. */
 export const LinkedGuest: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(adjustedParty(), 1)} />,
+  render: () => <Screen initialState={sheetWithCustomer(adjustedParty(), 1)} />,
 };
 
 /**
@@ -188,7 +191,7 @@ export const LinkedGuest: Story = {
  * fix it without typing the whole address on glass.
  */
 export const FixATypo: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     const email = await record.findByLabelText('Email');
@@ -203,7 +206,7 @@ export const FixATypo: Story = {
  * more you can" — rather than eighteen checkboxes in a column.
  */
 export const CustomerTypes: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(idMeParty(), 0)} />,
+  render: () => <Screen initialState={sheetWithCustomer(idMeParty(), 0)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     // Collapsed by default now — the bar carries "3 of 18", which is usually the whole answer.
@@ -218,7 +221,7 @@ export const CustomerTypes: Story = {
  * roster and links somebody, which is what makes that person price the round.
  */
 export const AssignASeat: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(openParty(), 1)} />,
+  render: () => <Screen initialState={sheetWithCustomer(openParty(), 1)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await record.findByText(/Add golfer · position 2/);
@@ -234,7 +237,7 @@ export const AssignASeat: Story = {
  * name is not an identification — and until someone links it, the seat pays the booking's rate.
  */
 export const NameIsNotAnIdentification: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithCustomer(nameOnlyGuest(), 1)} />,
+  render: () => <Screen initialState={sheetWithCustomer(nameOnlyGuest(), 1)} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await record.findByText(/Add golfer · position 2/);
@@ -274,7 +277,7 @@ const richRecord = () => {
  * balance is on the **Gift cards** bar whether or not anyone opens it.
  */
 export const TheRecordTightened: Story = {
-  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  render: () => <Screen initialState={richRecord()} />,
 };
 
 /**
@@ -286,7 +289,7 @@ export const TheRecordTightened: Story = {
  * closed section answers the common question on its own.
  */
 export const GiftCardsAsLineItems: Story = {
-  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  render: () => <Screen initialState={richRecord()} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await record.findByText('UPC');
@@ -304,7 +307,7 @@ export const GiftCardsAsLineItems: Story = {
  * underneath, because that is the argument a counter actually has to settle.
  */
 export const RainChecksAsLineItems: Story = {
-  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  render: () => <Screen initialState={richRecord()} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await record.findByText('Raincheck');
@@ -318,7 +321,7 @@ export const RainChecksAsLineItems: Story = {
  * The play test collapses Gift cards and checks the balance is still on screen.
  */
 export const ClosedSectionsStillAnswer: Story = {
-  render: () => <Screen edition="weston" initialState={richRecord()} />,
+  render: () => <Screen initialState={richRecord()} />,
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     const bar = await record.findByRole('button', { name: /Gift cards/ });

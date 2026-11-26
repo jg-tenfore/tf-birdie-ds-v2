@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import {
   DEMO_BOOKINGS,
@@ -12,7 +13,7 @@ import {
 } from '../screen-helpers';
 
 /**
- * POS Screens / 3 · Booking & Check-in
+ * Archive / Original port / Tablet / Booking & Check-in (POS Screens, section 3)
  *
  * The booking record and the flows that change it. Tab order follows how staff work a
  * tee time: confirm what it is, move players through check-in, settle money, read notes,
@@ -20,7 +21,9 @@ import {
  * arrives in twos and pays separately.
  */
 const meta = {
-  title: 'POS Screens/3 · Booking & Check-in',
+  title: 'Archive/Original port/Tablet/Booking & Check-in',
+  id: 'pos-screens-3-·-booking-check-in',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

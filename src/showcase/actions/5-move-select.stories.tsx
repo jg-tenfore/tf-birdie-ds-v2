@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Exhibit, T0, actionParams, afterShows, mk, row } from './action-helpers';
 import type { PlayerState } from '../../pos/types';
 
 /**
- * Tee Sheet Actions / **5 · Move & Select**
+ * Archive / Tee Sheet Actions / **Move & select** (Tee Sheet Actions, section 5)
  *
  * Actions that operate on more than one booking: moving a group to a different time or
  * course, and the multi-select bar that applies one change to a hand-picked set.
@@ -13,7 +14,9 @@ import type { PlayerState } from '../../pos/types';
  * doing it to the whole row would catch groups that already went out.
  */
 const meta = {
-  title: 'Tee Sheet Actions/5 · Move & Select',
+  title: 'Archive/Tee Sheet Actions/Move & select',
+  id: 'tee-sheet-actions-5-·-move-select',
+  decorators: [withEdition('archived')],
   parameters: actionParams,
 } satisfies Meta;
 

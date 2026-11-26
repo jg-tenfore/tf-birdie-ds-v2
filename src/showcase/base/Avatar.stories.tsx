@@ -3,7 +3,8 @@ import { Avatar, AvatarGroup, Stack } from '@mui/material';
 import Person from '@mui/icons-material/Person';
 
 const meta = {
-  title: 'Components/Media & Visuals/Avatar',
+  title: 'Design System/Components/Media & Visuals/Avatar',
+  id: 'components-media-visuals-avatar',
   component: Avatar,
   tags: ['autodocs'],
 } satisfies Meta<typeof Avatar>;

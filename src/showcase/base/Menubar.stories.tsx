@@ -8,7 +8,8 @@ import { AppBar, Box, Button, Divider, Menu, MenuItem, Toolbar } from '@mui/mate
  * the desktop-app menubar pattern (File / Edit / View / Help), KDS-flavoured.
  */
 const meta = {
-  title: 'Components/Navigation/Menubar',
+  title: 'Design System/Components/Navigation/Menubar',
+  id: 'components-navigation-menubar',
   component: AppBar,
   parameters: {
     layout: 'centered',

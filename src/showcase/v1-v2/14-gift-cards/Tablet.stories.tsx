@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { customers } from '../../../pos/data/customers';
 import { orderTotals } from '../../../pos/logic/cart';
@@ -9,7 +10,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 14 · Gift Cards / Tablet
+ * Prototypes / Tablet / Gift Cards / Selling & spending (V1 → V2 Migration, section 14)
  *
  * **Every card the course has out, what is left on each, what each may pay for — and checkout holding
  * a card to it.**
@@ -39,7 +40,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * - None of it exists in Weston Edits.
  */
 const meta = {
-  title: 'V1 → V2 Migration/14 · Gift Cards/Tablet',
+  title: 'Prototypes/Tablet/Gift Cards/Selling & spending',
+  id: 'v1-→-v2-migration-14-·-gift-cards-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

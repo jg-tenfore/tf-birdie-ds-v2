@@ -30,7 +30,8 @@ function SignUp() {
 }
 
 const meta = {
-  title: 'Account/Sign up',
+  title: 'Archive/Account/Sign up',
+  id: 'account-sign-up',
   component: SignUp,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof SignUp>;

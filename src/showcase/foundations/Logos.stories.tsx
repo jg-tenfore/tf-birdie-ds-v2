@@ -81,7 +81,8 @@ function LogosGallery() {
 }
 
 const meta = {
-  title: 'Foundations/Logos',
+  title: 'Design System/Styles/Logos',
+  id: 'foundations-logos',
   component: LogosGallery,
   parameters: {
     layout: 'fullscreen',

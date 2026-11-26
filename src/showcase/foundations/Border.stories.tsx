@@ -10,7 +10,8 @@ const BORDERS: [string, object][] = [
 ];
 
 const meta = {
-  title: 'Foundations/Border',
+  title: 'Design System/Styles/Border',
+  id: 'foundations-border',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 export default meta;

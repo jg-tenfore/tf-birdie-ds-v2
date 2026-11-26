@@ -5,7 +5,8 @@ import { Box, Paper, Typography } from '@mui/material';
 const LEVELS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24];
 
 const meta = {
-  title: 'Foundations/Effect Styles',
+  title: 'Design System/Styles/Effect Styles',
+  id: 'foundations-effect-styles',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 export default meta;
