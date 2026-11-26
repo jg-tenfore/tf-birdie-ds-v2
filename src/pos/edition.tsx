@@ -32,6 +32,22 @@ export type Edition = 'base' | 'weston' | 'v1v2';
 export const isEdition = (v: string): v is Edition => v === 'base' || v === 'weston' || v === 'v1v2';
 
 /**
+ * The **current** Birdie, per surface (decided Nov 26, 2026).
+ *
+ * Weston Edits is the version the team works from. On the tablet that is `v1v2`, because V1 → V2
+ * is Weston's edits *plus* every other nav destination; the phone has no V1 → V2 build, so its
+ * current design is `weston`. `base` — the original port of the HTML prototype — is archived:
+ * still rendered, but only under Storybook's Archive and the prototype's archive builds.
+ */
+export const CURRENT_EDITION = { tablet: 'v1v2', mobile: 'weston' } as const satisfies Record<
+  'tablet' | 'mobile',
+  Edition
+>;
+
+/** The edition the archive pins: the original port, before Weston's rounds. */
+export const ARCHIVED_EDITION: Edition = 'base';
+
+/**
  * An edition chosen at page load, ahead of `VITE_EDITION` — set from `?edition=` in
  * `main.tsx`, so one dev server can show both editions. Mirrors `setVenueOverride`.
  */
