@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { CURRENT_EDITION, EditionProvider } from '../../../../pos/edition';
+import { CURRENT_EDITION } from '../../../../pos/edition';
+import { withEdition } from '../../../edition-decorator';
 import { THIS_TABLET } from '../../../../pos/data/buck-club';
 import { settingsDefaults, type CheckoutSettings } from '../../../../pos/state/settings';
 import type { PosState } from '../../../../pos/state/pos-store';
@@ -26,13 +27,7 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
 const meta = {
   title: 'Prototypes/Tablet/Settings/Set in Buck',
   parameters: { layout: 'fullscreen' },
-  decorators: [
-    (Story) => (
-      <EditionProvider edition={CURRENT_EDITION.tablet}>
-        <Story />
-      </EditionProvider>
-    ),
-  ],
+  decorators: [withEdition('current-tablet')],
 } satisfies Meta;
 
 export default meta;

@@ -28,8 +28,10 @@ import { at, booking, panelOn, sheetWith, tapAt } from '../resource-scenarios';
  * ## What this does
  *
  * Bay Sheet is Court Sheet with a different configuration — see **3 · Court Sheet** for the
- * behaviour they share, which is all of it. What is particular to bays is only data, and it is
- * v1's own: **six bays, $45/hr, a 90-minute default**, open 8 AM to 10 PM, up to six golfers.
+ * behaviour they share, which is all of it. What is particular to bays is only data — since Nov 26,
+ * **TF Buck's**: ten bays with their capacities, Buck's fees (Sim Hour by start time, Member Sim
+ * Hour), the daily limit and membership ribbons (see **Bay Sheet / Buck bays**) — with v1's
+ * 90-minute default, open 8 AM to 10 PM.
  *
  * The one place the model helps bays most is length. A simulator session is sold by time, so the
  * price on the panel follows the length stepper live, and the charge that reaches the register is
