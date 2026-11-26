@@ -117,6 +117,10 @@ const SHOTS = [
   { name: 'mobile-quick-order', route: 'prototypes-mobile-quick-order-counter-on-the-handheld--the-counter' },
   { name: 'mobile-reservations', route: 'prototypes-mobile-reservations-today-on-the-handheld--todays-book' },
   { name: 'mobile-orders-tips', route: 'prototypes-mobile-orders-tips-today-on-the-handheld--the-day-so-far' },
+  // ── Design System pages: Actions & Navigation (menus, sheets, step header) ──
+  { name: 'ds-tablet-context-menu', story: 'prototypes-tablet-tee-sheet-booking-check-in--chip-context-menu' },
+  { name: 'ds-tablet-new-booking-steps', hash: '#/tee-sheet?modal=new-booking&course=champ-front&t=1144&slot=0' },
+  { name: 'ds-mobile-booking-actions', route: 'mobile-screens-2-·-tee-sheet--booking-actions-sheet' },
   // ── The archive: the original port, before Weston's rounds (`query` adds to the prototype URL) ──
   { name: 'archive-tablet-tee-sheet', hash: '#/tee-sheet?shift=early', query: 'edition=base&venue=three-nines' },
   { name: 'archive-mobile-tee-sheet', route: '', query: 'edition=base&venue=three-nines' },
