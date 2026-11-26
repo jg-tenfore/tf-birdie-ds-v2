@@ -230,6 +230,26 @@ newest first, `Summary` first), **Archive** (collapsed). The order lives in `sto
 - **The mobile prototype reads story files by folder**, not by sidebar title, and builds its
   hash routes from the pinned ids (`src/mobile-prototype/screen-index.ts`).
 
+## Docs pages (Start Here, Screen indexes, Review summaries, Archive)
+
+Built on `src/stories/docs-kit/` (ported from TF Crane's kit, in Birdie's MD3 tokens). Birdie has
+no Tailwind: the kit styles itself inline plus one injected stylesheet, and every page sits in
+`<DocPage>` (`sb-unstyled`), so Storybook's docs CSS stays out. Markdown inside a kit page goes in
+`<Prose>`.
+
+- **Link into Storybook with `DocLink` / `to="<id>"`**, never a raw `?path=` anchor: it switches
+  pages through the preview channel and works under the Pages base. Docs ids end `--overview`.
+- **Link into a prototype with `tabletPrototype('#/…')` / `mobilePrototype('<story id>')`**, which
+  go through `surfaceUrl` in `SiteLink.tsx`. Never build a prototype URL by hand.
+- **Don't type counts.** Story counts come from `screen-index-data.ts` (regenerate with
+  `node scripts/gen-screen-index.mjs` after adding or moving a prototype story), device counts from
+  `devices.ts`, Buck counts from `buck-sources.ts`.
+- **Screens are real screenshots** in the flat `TerminalFrame` / `HandheldFrame`, never generated
+  device art. `node scripts/capture-screens.mjs` retakes them on their devices (prototype on :5193,
+  Storybook on :6044 for the few clipped from a story). Higgsfield art lives in `public/docs/` and
+  is for these pages only.
+- `node scripts/check-doc-links.mjs` fails on any link target missing from `/index.json`.
+
 ## Weston Edits (editions)
 
 `src/pos/edition.tsx` defines editions: `base` (default) and `weston` (Weston's golf-first
