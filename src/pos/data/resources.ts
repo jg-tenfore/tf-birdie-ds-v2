@@ -23,9 +23,13 @@ import { ALL_GOLFERS } from './golfers';
  * "Tennis 2" and "Basketball" beside "Basket Ball 2", and v1 kept that faithfully because it
  * was recording the app. A v2 demo has no reason to.
  *
- * **Bay pricing** is v1's — $45 an hour, a 90-minute default. **Court pricing is invented**:
- * v1 never charged for a court, and Justin chose paid-like-bays for V1 → V2. The per-type rates
- * below are plausible placeholders and are the first thing to correct against a real club.
+ * **Bays are TF Buck's** (Nov 26, `tf-buck-ds-v1/.../nov-11-2026/bay-data.ts`): ten bays with a
+ * capacity each — five numbered bays, a Lesson Bay, two named bays and two single-seat porch sims —
+ * priced by Buck's fees (`BAY_FEES`: an hourly rate by time of day, and a member rate), with Buck's
+ * daily limit of two bookings a golfer. v1's six colour-named bays at a flat $45 are gone. **Court
+ * pricing is invented**: v1 never charged for a court, and Justin chose paid-like-bays for V1 → V2.
+ * The per-type rates below are plausible placeholders and are the first thing to correct against a
+ * real club. The 90-minute bay default is still v1's.
  */
 
 export type ResourceKind = 'court' | 'bay';
@@ -36,8 +40,13 @@ export interface Resource {
   name: string;
   /** Short label for the column header, where the full name does not fit. */
   short: string;
-  /** Dollars per hour. */
+  /**
+   * Dollars per hour. For a bay, the walk-in daytime rate — what the column header shows; the charge
+   * itself comes from Buck's fees (`bayFeeFor`), which change with the hour and the golfer.
+   */
   hourly: number;
+  /** The most people it holds (Buck's bay capacity). Absent: the sheet's own maximum. */
+  capacity?: number;
   /** Groups rates and icons: a pool is not priced like a tennis court. */
   type: 'tennis' | 'pickleball' | 'basketball' | 'pool' | 'simulator';
 }
@@ -66,12 +75,17 @@ export const RESOURCES: Resource[] = [
   { id: 'bball-2', kind: 'court', name: 'Basketball Court 2', short: 'Basketball 2', hourly: 25, type: 'basketball' },
   { id: 'pool-1', kind: 'court', name: 'Swimming Pool', short: 'Pool', hourly: 10, type: 'pool' },
 
-  { id: 'bay-red', kind: 'bay', name: 'Red Bay', short: 'Red', hourly: 45, type: 'simulator' },
-  { id: 'bay-orange', kind: 'bay', name: 'Orange Bay', short: 'Orange', hourly: 45, type: 'simulator' },
-  { id: 'bay-green', kind: 'bay', name: 'Green Bay', short: 'Green', hourly: 45, type: 'simulator' },
-  { id: 'bay-blue', kind: 'bay', name: 'Blue Bay', short: 'Blue', hourly: 45, type: 'simulator' },
-  { id: 'bay-magenta', kind: 'bay', name: 'Magenta Bay', short: 'Magenta', hourly: 45, type: 'simulator' },
-  { id: 'bay-white', kind: 'bay', name: 'White Bay', short: 'White', hourly: 45, type: 'simulator' },
+  // Buck's ten bays, by Buck's ids, names and capacities.
+  { id: 'bay-1', kind: 'bay', name: 'Bay 1', short: 'Bay 1', hourly: 60, capacity: 6, type: 'simulator' },
+  { id: 'bay-2', kind: 'bay', name: 'Bay 2', short: 'Bay 2', hourly: 60, capacity: 6, type: 'simulator' },
+  { id: 'bay-3', kind: 'bay', name: 'Bay 3', short: 'Bay 3', hourly: 60, capacity: 6, type: 'simulator' },
+  { id: 'bay-4', kind: 'bay', name: 'Bay 4', short: 'Bay 4', hourly: 60, capacity: 8, type: 'simulator' },
+  { id: 'bay-5', kind: 'bay', name: 'Bay 5', short: 'Bay 5', hourly: 60, capacity: 8, type: 'simulator' },
+  { id: 'lesson', kind: 'bay', name: 'Lesson Bay', short: 'Lesson', hourly: 60, capacity: 2, type: 'simulator' },
+  { id: 'nicklaus', kind: 'bay', name: 'Nicklaus Bay', short: 'Nicklaus', hourly: 60, capacity: 8, type: 'simulator' },
+  { id: 'palmer', kind: 'bay', name: 'Palmer Bay', short: 'Palmer', hourly: 60, capacity: 6, type: 'simulator' },
+  { id: 'east-porch', kind: 'bay', name: 'East Porch Sim', short: 'East Porch', hourly: 60, capacity: 1, type: 'simulator' },
+  { id: 'west-porch', kind: 'bay', name: 'West Porch Sim', short: 'West Porch', hourly: 60, capacity: 1, type: 'simulator' },
 ];
 
 export const SHEETS: Record<ResourceKind, ResourceSheetConfig> = {
@@ -100,13 +114,58 @@ export const SHEETS: Record<ResourceKind, ResourceSheetConfig> = {
     minDurationMin: 30,
     maxDurationMin: 240,
     partyNoun: 'golfers',
-    maxParty: 6,
+    // Buck's largest bays hold eight; each bay's own capacity is the real limit.
+    maxParty: 8,
   },
 };
 
 export const resourcesOf = (kind: ResourceKind): Resource[] => RESOURCES.filter((r) => r.kind === kind);
 
 export const resourceById = (id: string): Resource | undefined => RESOURCES.find((r) => r.id === id);
+
+/** How many a resource holds: its own capacity, else its sheet's maximum. */
+export const capacityOf = (r: Pick<Resource, 'kind' | 'capacity'>): number => r.capacity ?? SHEETS[r.kind].maxParty;
+
+// ─── Buck's bay fees and limit ──────────────────────────────────────────────
+
+/**
+ * Buck's bay fees (Simulator Bays › Fees): an hourly rate by start time, and a member rate. **The most
+ * specific fee wins** — one that names the golfer's membership beats one for everybody — exactly as
+ * Buck's `feeFor` picks it, so a booking costs the same at the counter as in the back office.
+ *
+ * Buck's member fee names its *Club* and *Monthly Range* plans; Birdie's members hold golf plans, so
+ * "member" here is a plan Buck gives the *Member Sim Hour* (`memberSimRate` in `memberships.ts`).
+ */
+export interface BayFee {
+  name: string;
+  hourly: number;
+  /** Start times it covers, minutes from midnight, `[from, to)`. */
+  from: number;
+  to: number;
+  membersOnly: boolean;
+}
+
+export const BAY_FEES: BayFee[] = [
+  { name: 'Sim Hour Sun–Thu', hourly: 60, from: 8 * 60, to: 16 * 60, membersOnly: false },
+  { name: 'Sim Hour Evening', hourly: 75, from: 16 * 60, to: 22 * 60, membersOnly: false },
+  { name: 'Member Sim Hour', hourly: 40, from: 8 * 60, to: 22 * 60, membersOnly: true },
+];
+
+/** The fee a bay booking pays: the member rate for a member, else the rate for its start time. */
+export function bayFeeFor(isMember: boolean, startMin: number, durationMin: number): { name: string; hourly: number; amount: number } {
+  const fee =
+    BAY_FEES.filter((f) => startMin >= f.from && startMin < f.to)
+      .filter((f) => !f.membersOnly || isMember)
+      .sort((a, b) => Number(b.membersOnly) - Number(a.membersOnly))[0] ?? BAY_FEES[0];
+  return { name: fee.name, hourly: fee.hourly, amount: Math.round(fee.hourly * (durationMin / 60) * 100) / 100 };
+}
+
+/**
+ * Buck's daily limit: **two bookings per golfer per day**. A no-show would still count and a
+ * cancellation would not (Birdie's bookings carry neither yet). Staff can override it. Buck's open
+ * question — whether the limit counts bookings or hours — is open here too; this counts bookings.
+ */
+export const BAY_DAILY_LIMIT = 2;
 
 export interface ResourceBooking {
   id: string;
@@ -172,6 +231,13 @@ export function seedResourceDay(
 ): ResourceBooking[] {
   const cfg = SHEETS[kind];
   const out: ResourceBooking[] = [];
+  // Nobody is in two places at once, and on the bay sheet nobody books more than Buck's daily
+  // limit — so the seeded day never shows a booking the sheet itself would refuse.
+  const limit = kind === 'bay' ? BAY_DAILY_LIMIT : Infinity;
+  const free = (g: Golfer, start: number, duration: number) => {
+    const theirs = out.filter((x) => x.crmId === g.id);
+    return theirs.length < limit && !theirs.some((x) => start < x.startMin + x.durationMin && x.startMin < start + duration);
+  };
 
   for (const r of resourcesOf(kind)) {
     const rand = stream(`${kind}|${date}|${r.id}`);
@@ -189,7 +255,12 @@ export function seedResourceDay(
         Math.round((cfg.defaultDurationMin / cfg.stepMin) * (0.5 + rand())),
       );
       const duration = Math.min(steps * cfg.stepMin, cfg.closeMin - t);
-      const who = roster[Math.floor(rand() * roster.length)];
+      let who = roster[Math.floor(rand() * roster.length)];
+      for (let tries = 0; tries < 8 && !free(who, t, duration); tries++) who = roster[Math.floor(rand() * roster.length)];
+      if (!free(who, t, duration)) {
+        t += duration;
+        continue;
+      }
       const started = nowMin != null && t <= nowMin;
       out.push({
         id: `${kind}-${date}-${r.id}-${t}`,
@@ -201,7 +272,7 @@ export function seedResourceDay(
         name: who.name,
         crmId: who.id,
         phone: who.phone,
-        players: 1 + Math.floor(rand() * Math.min(4, cfg.maxParty)),
+        players: 1 + Math.floor(rand() * Math.min(4, capacityOf(r))),
         checkedIn: started,
         paid: started && rand() < 0.8,
       });

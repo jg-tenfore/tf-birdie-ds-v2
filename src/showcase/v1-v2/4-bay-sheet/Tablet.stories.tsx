@@ -28,8 +28,10 @@ import { at, booking, panelOn, sheetWith, tapAt } from '../resource-scenarios';
  * ## What this does
  *
  * Bay Sheet is Court Sheet with a different configuration — see **3 · Court Sheet** for the
- * behaviour they share, which is all of it. What is particular to bays is only data, and it is
- * v1's own: **six bays, $45/hr, a 90-minute default**, open 8 AM to 10 PM, up to six golfers.
+ * behaviour they share, which is all of it. What is particular to bays is only data — since Nov 26,
+ * **TF Buck's**: ten bays with their capacities, Buck's fees (Sim Hour by start time, Member Sim
+ * Hour), the daily limit and membership ribbons (see **Bay Sheet / Buck bays**) — with v1's
+ * 90-minute default, open 8 AM to 10 PM.
  *
  * The one place the model helps bays most is length. A simulator session is sold by time, so the
  * price on the panel follows the length stepper live, and the charge that reaches the register is
@@ -48,12 +50,13 @@ type Story = StoryObj;
 
 const KIND = 'bay' as const;
 
-/** **An ordinary Thursday**, seeded: six bays, and busiest in the evening. */
+/** **An ordinary Thursday**, seeded: Buck's ten bays, each saying how many it holds, busiest in the evening. */
 export const AnOrdinaryDay: Story = {
   render: () => <Screen edition="v1v2" initialState={sheetWith(KIND, seedResourceDay(KIND, TODAY_STR, at(12)))} />,
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelectorAll('[data-resource-column]').length).toBe(resourcesOf(KIND).length);
-    await expect(within(canvasElement).getAllByText('$45/hr').length).toBe(6);
+    await expect(canvasElement.querySelectorAll('[data-resource-capacity]').length).toBe(10);
+    await expect(within(canvasElement).getAllByText('Up to 6').length).toBeGreaterThan(0);
     await expect(canvasElement.querySelectorAll('[data-resource-booking]').length).toBeGreaterThan(10);
   },
 };
@@ -62,7 +65,7 @@ export const AnOrdinaryDay: Story = {
 export const NinetyMinutesByDefault: Story = {
   render: () => <Screen edition="v1v2" initialState={sheetWith(KIND, [])} />,
   play: async ({ canvasElement }) => {
-    tapAt(canvasElement, KIND, 'bay-red', at(14));
+    tapAt(canvasElement, KIND, 'bay-1', at(14));
     const panel = await waitFor(() => {
       const el = canvasElement.querySelector<HTMLElement>('[data-resource-panel]');
       if (!el) throw new Error('no panel');
@@ -74,20 +77,21 @@ export const NinetyMinutesByDefault: Story = {
 };
 
 /**
- * **The price follows the length.** 90 minutes is $67.50; one more half-hour makes it $90.00,
- * and the Check in & pay button says so before it is tapped.
+ * **The price follows the length.** David Kim is a member, so Buck's Member Sim Hour ($40) applies:
+ * 90 minutes is $60.00; one more half-hour makes it $80.00, and the Check in & pay button says so
+ * before it is tapped.
  */
 export const PriceFollowsLength: Story = {
   render: () => {
-    const a = booking(KIND, { resourceId: 'bay-blue', startMin: at(14), durationMin: 90 });
+    const a = booking(KIND, { resourceId: 'bay-3', startMin: at(14), durationMin: 90 });
     return <Screen edition="v1v2" initialState={panelOn(KIND, [a], a.id)} />;
   },
   play: async ({ canvasElement }) => {
     const panel = within(canvasElement.querySelector<HTMLElement>('[data-resource-panel]')!);
-    await expect(panel.getByText('$67.50')).toBeTruthy();
+    await expect(panel.getByText('$60.00')).toBeTruthy();
     await userEvent.click(panel.getByRole('button', { name: 'Increase length' }));
-    await waitFor(() => expect(panel.getByText('$90.00')).toBeTruthy());
-    await expect(panel.getByRole('button', { name: 'Check in & pay · $90.00' })).toBeTruthy();
+    await waitFor(() => expect(panel.getByText('$80.00')).toBeTruthy());
+    await expect(panel.getByRole('button', { name: 'Check in & pay · $80.00' })).toBeTruthy();
   },
 };
 
@@ -98,7 +102,7 @@ export const PriceFollowsLength: Story = {
  */
 export const APaidSession: Story = {
   render: () => {
-    const a = booking(KIND, { resourceId: 'bay-green', startMin: at(10), checkedIn: true, paid: true });
+    const a = booking(KIND, { resourceId: 'bay-2', startMin: at(10), checkedIn: true, paid: true });
     return <Screen edition="v1v2" initialState={panelOn(KIND, [a], a.id)} />;
   },
   play: async ({ canvasElement }) => {
@@ -119,7 +123,7 @@ export const APaidSession: Story = {
  */
 export const RePayingRefreshesTheLine: Story = {
   render: () => {
-    const a = booking(KIND, { resourceId: 'bay-white', startMin: at(16), durationMin: 60 });
+    const a = booking(KIND, { resourceId: 'bay-5', startMin: at(16), durationMin: 60 });
     // Already on the order at its 60-minute price.
     return (
       <Screen
@@ -133,9 +137,9 @@ export const RePayingRefreshesTheLine: Story = {
     const panel = within(canvasElement.querySelector<HTMLElement>('[data-resource-panel]')!);
     await userEvent.click(panel.getByRole('button', { name: 'Increase length' }));
     // On the order already, so the button offers to update it rather than add to it.
-    await userEvent.click(await panel.findByRole('button', { name: 'Update order · $67.50' }));
+    await userEvent.click(await panel.findByRole('button', { name: 'Update order · $60.00' }));
     await waitFor(() => expect(canvasElement.querySelector('[data-resource-sheet]')).toBeNull());
-    await expect(canvas.getAllByText('White Bay · 1 hr 30 min')).toHaveLength(1);
-    await expect(canvas.queryByText('White Bay · 1 hr')).toBeNull();
+    await expect(canvas.getAllByText('Bay 5 · 1 hr 30 min')).toHaveLength(1);
+    await expect(canvas.queryByText('Bay 5 · 1 hr')).toBeNull();
   },
 };

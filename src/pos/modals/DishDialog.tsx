@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
-import { md3, radius } from '../../theme/tokens';
-import { menuItem, missingRequired, priceWithModifiers, type AppliedModifier, type ModifierGroup } from '../data/menu';
+import { md3, noteColors, radius } from '../../theme/tokens';
+
+/** Buck's modifier-group button colours, on Birdie's palette. */
+const GROUP_COLORS: Record<ModifierGroupColor, string> = {
+  gray: md3.outline,
+  brand: md3.primary,
+  blue: noteColors.blue.dot,
+  orange: noteColors.yellow.dot,
+  error: md3.error,
+  success: noteColors.green.dot,
+};
+import { menuItem, missingRequired, priceWithModifiers, type AppliedModifier, type ModifierGroup, type ModifierGroupColor } from '../data/menu';
+import { menuImage } from '../data/menu-images';
 import { money } from '../logic/cart';
 import { chooseOption, groupsOf, isChosen, missingPrompt, ordered } from '../logic/dish-choice';
 import { isSent } from '../logic/restaurant';
@@ -69,6 +80,7 @@ export function DishDialog({ m }: { m: Extract<RestaurantModal, { kind: 'dish' }
   const unit = priceWithModifiers(item.price, mods);
   const editing = Boolean(line);
   const seatWord = tab ? (seat ? `Seat ${seat}` : 'Shared') : null;
+  const photo = menuImage(item);
 
   const confirm = () => {
     if (missing.length) return;
@@ -91,6 +103,17 @@ export function DishDialog({ m }: { m: Extract<RestaurantModal, { kind: 'dish' }
       width={660}
       tall
       onClose={close}
+      headerAside={
+        photo && (
+          <Box
+            component="img"
+            data-dish-photo
+            src={photo}
+            alt=""
+            sx={{ width: 72, height: 72, objectFit: 'cover', borderRadius: `${radius.md}px`, border: `1px solid ${md3.outlineVariant}`, bgcolor: '#fff', flexShrink: 0 }}
+          />
+        )
+      }
       actions={
         <>
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -203,6 +226,10 @@ function GroupBlock({
     >
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.875 }}>
         {alert && <Icon name="warning_amber" size={18} color={md3.error} />}
+        {/* Buck's button colour for the group, as a mark — the colour a server learns it by. */}
+        {group.color && !alert && (
+          <Box data-group-color={group.color} sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: GROUP_COLORS[group.color], flexShrink: 0 }} />
+        )}
         <Typography sx={{ fontSize: 14, fontWeight: 800, color: alert ? md3.error : md3.onSurface }}>{group.name}</Typography>
         <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant }}>
           {one ? 'Choose one' : 'Choose any'}

@@ -18,6 +18,7 @@ import { IdMeBadge } from './IdMeBadge';
 import { golferOf } from '../data/customers';
 import { assignPlayer } from '../logic/reservation';
 import { rainCheckBalance, rainChecksFor } from '../data/rain-checks';
+import { PUNCH_STATUS_TONE, creditBookOf, creditBooksOf, punchCardItems, punchCardStatus } from '../data/credits';
 import { money } from '../logic/cart';
 import { ModalFrame, FilledButton, OutlineButton } from '../modals/ModalFrame';
 import { usePos } from '../state/PosProvider';
@@ -262,7 +263,13 @@ function CustomerRecord({ customer }: { customer: Customer }) {
                   key: g.id,
                   cells: [g.upc, g.type, g.expires, money(g.awarded), money(g.spent), money(g.balance)],
                   strongLast: true,
-                  ...(v1v2 && { sub: `Good for ${categoryLabels(g).join(', ').toLowerCase()}`, badge: isSpent(g) ? <SpentBadge /> : undefined }),
+                  ...(v1v2 && {
+                    // Buck: a Winnings card was paid out from a credit book, and says which.
+                    sub: [`Good for ${categoryLabels(g).join(', ').toLowerCase()}`, creditBookOf(g) && `paid out from credit book ${creditBookOf(g)!.title}`]
+                      .filter(Boolean)
+                      .join(' · '),
+                    badge: isSpent(g) ? <SpentBadge /> : undefined,
+                  }),
                 }))}
               />
             )}
@@ -299,6 +306,27 @@ function CustomerRecord({ customer }: { customer: Customer }) {
           <CustomerSection title="Punch cards" summary={customer.punchCards.length ? `${customer.punchCards.length}` : 'None'}>
             {customer.punchCards.length === 0 ? (
               <Muted>No punch cards.</Muted>
+            ) : v1v2 ? (
+              /*
+                TF Buck's final punch-card design (Nov 26): each card's items with punches awarded,
+                used and remaining, and Buck's status — Active, Expiring soon, Exhausted, Expired.
+                Birdie's cards hold one item, a green fee, counted in rounds.
+              */
+              <DataTable
+                columns={['Card', 'Item', 'Awarded', 'Used', 'Remaining', 'Expires']}
+                widths="1.6fr 1.1fr .7fr .6fr .8fr .9fr"
+                rows={customer.punchCards.map((c) => {
+                  const item = punchCardItems(c)[0];
+                  const status = punchCardStatus(c);
+                  return {
+                    key: c.name,
+                    cells: [c.name, item.label, String(item.awarded), String(item.used), `${item.remaining} ${item.unit}`, c.expires || 'No expiration'],
+                    strongLast: false,
+                    badge: <PunchStatusChip status={status} />,
+                    sub: `${item.label} · ${item.target}`,
+                  };
+                })}
+              />
             ) : (
               <DataTable
                 columns={['Card', 'Remaining', 'Total', 'Expires']}
@@ -310,6 +338,25 @@ function CustomerRecord({ customer }: { customer: Customer }) {
               />
             )}
           </CustomerSection>
+
+          {v1v2 && (
+            <CustomerSection title="Credit books" summary={creditBooksOf(customer).length ? `${creditBooksOf(customer).length}` : 'None'}>
+              {creditBooksOf(customer).length === 0 ? (
+                <Muted>In no credit book. A league or event book pays winnings out to a gift card.</Muted>
+              ) : (
+                <DataTable
+                  columns={['Credit book', 'ID', 'Customers', 'Balance']}
+                  widths="2fr .6fr .8fr .9fr"
+                  rows={creditBooksOf(customer).map((b) => ({
+                    key: b.id,
+                    cells: [b.title, b.id, String(b.customers), money(b.balance)],
+                    alert: b.balance < 0,
+                    sub: `Pays out to gift cards · good for ${b.appliesTo.join(', ').toLowerCase()}`,
+                  }))}
+                />
+              )}
+            </CustomerSection>
+          )}
 
           <CustomerSection title="Tee time history" summary={`${booked} on the sheet · ${customer.teeTimes.length - booked} played`}>
             <DataTable
@@ -737,6 +784,24 @@ function Chip({
     >
       {label}
     </ButtonBase>
+  );
+}
+
+/** Buck's punch-card status, in Buck's badge colours. */
+function PunchStatusChip({ status }: { status: ReturnType<typeof punchCardStatus> }) {
+  const tone = PUNCH_STATUS_TONE[status];
+  const c =
+    tone === 'success'
+      ? { bg: '#f0fdf4', fg: '#166534' }
+      : tone === 'warning'
+        ? { bg: '#fef3c7', fg: '#92400e' }
+        : tone === 'error'
+          ? { bg: '#ffdad6', fg: md3.error }
+          : { bg: md3.surfaceHighest, fg: md3.onSurfaceVariant };
+  return (
+    <Box component="span" data-punch-status={status} sx={{ px: '7px', py: '1px', borderRadius: 999, bgcolor: c.bg, color: c.fg, fontSize: 10.5, fontWeight: 800, whiteSpace: 'nowrap' }}>
+      {status}
+    </Box>
   );
 }
 

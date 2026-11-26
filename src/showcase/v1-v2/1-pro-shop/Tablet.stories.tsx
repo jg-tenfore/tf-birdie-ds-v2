@@ -143,7 +143,7 @@ export const CombosCategory: Story = {
 };
 
 /**
- * **A combo rings as one line.** Tapping Turn Dog twice gives one line at quantity 2 — not six
+ * **A combo rings as one line.** Tapping Turn Special twice gives one line at quantity 2 — not six
  * `[c]` lines — with its components beneath it and the saving for both.
  */
 export const RingingAComboAddsOneLine: Story = {

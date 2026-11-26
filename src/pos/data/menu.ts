@@ -16,7 +16,8 @@
  *
  * v1's menu photos are not ours to publish. The dining-room images are, by v1's own note, Del
  * Frisco's photography taken from Uber Eats; the counter images carry no metadata and delivery-CDN
- * filenames. So menu tiles here are text, and real photography is something to drop in later.
+ * filenames. None of them is used. Since Nov 26 every item has an invented, generated photo instead
+ * (`menu-images.ts`, `src/assets/menu/`), branded items through an unbranded stand-in.
  *
  * ## Modifiers say what they are
  *
@@ -45,8 +46,15 @@ export interface ModifierOption {
   price?: number;
 }
 
+/**
+ * The button colours Buck lets a modifier group take on the ordering screen (Buck › Products ›
+ * Modifiers › Modifier Groups › Color).
+ */
+export type ModifierGroupColor = 'gray' | 'brand' | 'blue' | 'orange' | 'error' | 'success';
+
 export interface ModifierGroup {
   id: string;
+  /** Buck's group "Description" — the name the dialog prints. */
   name: string;
   /** `one` is a choice (a temperature); `many` is a set (add-ons). The UI renders each as such. */
   select: 'one' | 'many';
@@ -54,30 +62,51 @@ export interface ModifierGroup {
   required?: boolean;
   /** Shown to the kitchen as a warning, not just a line of text. */
   alert?: boolean;
+  /** Buck's modifier-group number, where Buck has the group. */
+  buckId?: number;
+  /** Buck's colour for the group's button; drawn as a mark beside its name. */
+  color?: ModifierGroupColor;
   options: ModifierOption[];
 }
 
 const opts = (group: string, list: [string, number?][]): ModifierOption[] =>
   list.map(([name, price]) => ({ id: `${group}:${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, name, price }));
 
+/**
+ * Modifier groups, **named as in TF Buck** (Nov 26; Buck › Products › Modifiers). Buck's group is a
+ * description, a sequence and a button colour over a shared list of modifiers. Where Buck has the
+ * group, Birdie uses its name, number and colour: *Temp*, *Sides*, *Sandwich Toppings*, *Cheeses*,
+ * *Side Sauces*, *Allergies* — and Buck's *Apple Slices* and *Carrots & Celery* on Sides, *Blue
+ * Cheese* at Buck's 69¢. Birdie keeps what Buck's model does not have: whether a group is a single
+ * choice or a set, whether it is required, and the allergy alert.
+ *
+ * Two deliberate differences, listed in `buck-sources.ts`: Buck's burger add-ons live in a group its
+ * sample calls *Burger Temps*, which would print "Choose burger temps" over bacon and avocado — so
+ * Birdie calls it *Burger Add-ons* and flags the name for Buck; and *Enhancements*, *Add Protein*
+ * and *Hold* are Birdie's own, with no Buck group yet. Ids are unchanged, so a ticket already rung
+ * still reads.
+ */
 export const MODIFIER_GROUPS: ModifierGroup[] = [
   {
     id: 'temperature',
-    name: 'Temperature',
+    name: 'Temp',
+    buckId: 2,
     select: 'one',
     required: true,
     options: opts('temperature', [['Rare'], ['Medium rare'], ['Medium'], ['Medium well'], ['Well done']]),
   },
   {
     id: 'side',
-    name: 'Side',
+    name: 'Sides',
+    buckId: 3,
     select: 'one',
     required: true,
-    options: opts('side', [['Fries'], ['Sweet potato fries', 1.5], ['Side salad'], ['Chips'], ['Onion rings', 2]]),
+    options: opts('side', [['Fries'], ['Sweet potato fries', 1.5], ['Side salad'], ['Chips'], ['Onion rings', 2], ['Apple slices', 1.01], ['Carrots & celery', 1.84]]),
   },
   {
     id: 'burger-addons',
-    name: 'Add-ons',
+    name: 'Burger Add-ons',
+    buckId: 1501,
     select: 'many',
     options: opts('burger-addons', [
       ['Bacon', 2],
@@ -90,10 +119,28 @@ export const MODIFIER_GROUPS: ModifierGroup[] = [
     ]),
   },
   {
+    id: 'cheeses',
+    name: 'Cheeses',
+    buckId: 4,
+    color: 'error',
+    select: 'one',
+    options: opts('cheeses', [['American'], ['Cheddar'], ['Swiss'], ['Pepper jack'], ['Blue cheese', 0.69]]),
+  },
+  {
     id: 'sandwich-addons',
-    name: 'Add-ons',
+    name: 'Sandwich Toppings',
+    buckId: 5,
+    color: 'blue',
     select: 'many',
     options: opts('sandwich-addons', [['Bacon', 2], ['Extra cheese', 1], ['Avocado', 2], ['Make it a wrap']]),
+  },
+  {
+    id: 'side-sauces',
+    name: 'Side Sauces',
+    buckId: 3480,
+    color: 'gray',
+    select: 'many',
+    options: opts('side-sauces', [['BBQ'], ['Ranch'], ['Honey mustard'], ['Blue cheese', 0.69]]),
   },
   {
     id: 'steak-addons',
@@ -108,7 +155,7 @@ export const MODIFIER_GROUPS: ModifierGroup[] = [
   },
   {
     id: 'salad-protein',
-    name: 'Add protein',
+    name: 'Add Protein',
     select: 'one',
     options: opts('salad-protein', [['Grilled chicken', 7], ['Shrimp', 10], ['Salmon', 12], ['Steak', 14]]),
   },
@@ -121,6 +168,7 @@ export const MODIFIER_GROUPS: ModifierGroup[] = [
   {
     id: 'allergies',
     name: 'Allergies',
+    buckId: 1515,
     select: 'many',
     alert: true,
     options: opts('allergies', [['Gluten'], ['Dairy'], ['Tree nut'], ['Peanut'], ['Shellfish'], ['Egg'], ['Soy']]),
@@ -142,15 +190,15 @@ export interface MenuItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   { id: 'counter-chili-dog', menu: 'counter', category: 'Grill', name: 'Chili Dog', price: 7.5, description: 'All-beef frank, house chili, steamed bun.', modifiers: ['hold', 'allergies'] },
-  { id: 'counter-chicken-tenders', menu: 'counter', category: 'Grill', name: 'Chicken Tenders', price: 12.5, description: 'Four hand-breaded tenders with a dipping sauce.', modifiers: ['hold', 'allergies'] },
+  { id: 'counter-chicken-tenders', menu: 'counter', category: 'Grill', name: 'Chicken Tenders', price: 12.5, description: 'Four hand-breaded tenders with a dipping sauce.', modifiers: ['side-sauces', 'hold', 'allergies'] },
   { id: 'counter-lobster-roll-fries', menu: 'counter', category: 'Grill', name: 'Lobster Roll & Fries', price: 26, description: 'Buttered split-top roll, lobster salad, fries.', modifiers: ['hold', 'allergies'] },
   { id: 'counter-lobster-roll-basket', menu: 'counter', category: 'Grill', name: 'Lobster Roll Basket', price: 26, description: 'Lobster roll with a side of fries.', modifiers: ['hold', 'allergies'] },
-  { id: 'counter-basket-of-fries', menu: 'counter', category: 'Grill', name: 'Basket of Fries', price: 6, description: 'Shoestring fries, sea salt.', modifiers: ['hold', 'allergies'] },
-  { id: 'counter-clubhouse-cheeseburger', menu: 'counter', category: 'Burgers', name: 'Clubhouse Cheeseburger', price: 13, description: 'Quarter-pound patty, American cheese, lettuce and tomato.', modifiers: ['temperature', 'side', 'burger-addons', 'hold', 'allergies'] },
-  { id: 'counter-turn-burger', menu: 'counter', category: 'Burgers', name: 'Turn Burger', price: 12, description: 'Single patty, American cheese, pickles, griddled bun.', modifiers: ['temperature', 'side', 'burger-addons', 'hold', 'allergies'] },
-  { id: 'counter-bacon-bbq-burger', menu: 'counter', category: 'Burgers', name: 'Bacon BBQ Burger', price: 15, description: 'Cheddar, thick-cut bacon, crispy onions, smoky BBQ sauce.', modifiers: ['temperature', 'side', 'burger-addons', 'hold', 'allergies'] },
-  { id: 'counter-double-smash-burger', menu: 'counter', category: 'Burgers', name: 'Double Smash Burger', price: 16, description: 'Two smashed patties, American cheese, house sauce.', modifiers: ['temperature', 'side', 'burger-addons', 'hold', 'allergies'] },
-  { id: 'counter-veggie-burger', menu: 'counter', category: 'Burgers', name: 'Black Bean Veggie Burger', price: 12, description: 'House black bean patty, avocado, pico, chipotle mayo.', modifiers: ['temperature', 'side', 'burger-addons', 'hold', 'allergies'] },
+  { id: 'counter-basket-of-fries', menu: 'counter', category: 'Grill', name: 'Basket of Fries', price: 6, description: 'Shoestring fries, sea salt.', modifiers: ['side-sauces', 'hold', 'allergies'] },
+  { id: 'counter-clubhouse-cheeseburger', menu: 'counter', category: 'Burgers', name: 'Clubhouse Cheeseburger', price: 13, description: 'Quarter-pound patty, American cheese, lettuce and tomato.', modifiers: ['temperature', 'side', 'cheeses', 'burger-addons', 'hold', 'allergies'] },
+  { id: 'counter-turn-burger', menu: 'counter', category: 'Burgers', name: 'Turn Burger', price: 12, description: 'Single patty, American cheese, pickles, griddled bun.', modifiers: ['temperature', 'side', 'cheeses', 'burger-addons', 'hold', 'allergies'] },
+  { id: 'counter-bacon-bbq-burger', menu: 'counter', category: 'Burgers', name: 'Bacon BBQ Burger', price: 15, description: 'Cheddar, thick-cut bacon, crispy onions, smoky BBQ sauce.', modifiers: ['temperature', 'side', 'cheeses', 'burger-addons', 'hold', 'allergies'] },
+  { id: 'counter-double-smash-burger', menu: 'counter', category: 'Burgers', name: 'Double Smash Burger', price: 16, description: 'Two smashed patties, American cheese, house sauce.', modifiers: ['temperature', 'side', 'cheeses', 'burger-addons', 'hold', 'allergies'] },
+  { id: 'counter-veggie-burger', menu: 'counter', category: 'Burgers', name: 'Black Bean Veggie Burger', price: 12, description: 'House black bean patty, avocado, pico, chipotle mayo.', modifiers: ['temperature', 'side', 'cheeses', 'burger-addons', 'hold', 'allergies'] },
   { id: 'counter-nashville-hot-chicken-sandwich', menu: 'counter', category: 'Sandwiches', name: 'Nashville Hot Chicken Sandwich', price: 14.5, description: 'Spiced fried chicken, pickles, brioche bun.', modifiers: ['side', 'sandwich-addons', 'hold', 'allergies'] },
   { id: 'counter-tuna-sub', menu: 'counter', category: 'Sandwiches', name: 'Tuna Sub', price: 12, description: 'Albacore tuna salad, lettuce, tomato, red onion.', modifiers: ['side', 'sandwich-addons', 'hold', 'allergies'] },
   { id: 'counter-crispy-chicken-sandwich', menu: 'counter', category: 'Sandwiches', name: 'Crispy Chicken Sandwich', price: 13.5, description: 'Breaded breast, lettuce, mayo, toasted bun.', modifiers: ['side', 'sandwich-addons', 'hold', 'allergies'] },

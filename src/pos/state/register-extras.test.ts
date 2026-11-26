@@ -44,7 +44,7 @@ describe('combos', () => {
     expect(s.cart).toHaveLength(1);
     expect(s.cart[0].qty).toBe(2);
     expect(payableTotal(s.cart)).toBe(16);
-    // Turn Dog: $5 + $2.50 + $3 = $10.50 against $8 — $2.50 a combo, $5 for two.
+    // Turn Special: $5 + $2.50 + $3 = $10.50 against $8 — $2.50 a combo, $5 for two.
     expect(comboSavings(s.cart[0])).toBe(5);
     const stepped = run(s, { type: 'changeQty', index: 0, delta: -1 });
     expect(stepped.cart[0].qty).toBe(1);
@@ -127,7 +127,7 @@ describe('hold', () => {
     const swapped = run(busy, { type: 'resumeHeldOrder', id, holdCurrent: true });
     expect(swapped.cart.map((i) => i.name)).toEqual(['Golf Glove Mens', 'Water']);
     expect(swapped.heldOrders).toHaveLength(1);
-    expect(swapped.heldOrders[0].order.cart[0].name).toBe('Cart Bucket');
+    expect(swapped.heldOrders[0].order.cart[0].name).toBe('6 Pack Combo');
   });
 
   it('empties the rail by exactly the rule Clear order uses', () => {

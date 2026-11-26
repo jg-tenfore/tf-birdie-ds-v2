@@ -1,10 +1,13 @@
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { md3, radius } from '../../../theme/tokens';
+import { discountLabel, discountTypeById, discountTypesFor } from '../../data/discount-types';
 import { money } from '../../logic/cart';
 import { dishUnitPrice } from '../../logic/restaurant';
 import { tabById, type DishTarget } from '../../state/restaurant';
+import { canManageStaff } from '../../state/settings';
 import { usePos } from '../../state/PosProvider';
 import type { CartItem } from '../../types';
+import { Icon } from '../primitives';
 import { Stack } from '../Stack';
 
 /**
@@ -18,9 +21,12 @@ import { Stack } from '../Stack';
  * seat 2 to seat 3 changes who pays, not what the cook makes. So this opens on sent and unsent plates
  * alike — only a voided one has nothing left to adjust. And each part appears only where it means
  * something: seats only on a tab, a split only on a line of two or more.
+ *
+ * **Discount offers Buck's discount types** (Nov 26, `data/discount-types.ts`) rather than bare
+ * percentages: only the percent types whose categories cover this line — a beer can take *Shift
+ * Drink*, a steak cannot — so the name on the line is the reason Buck reports. A type Buck flags for
+ * approval is offered to everyone but applied only by a manager; anyone else sees *Manager*.
  */
-const DISCOUNTS = [0, 10, 25, 50, 100];
-
 export function DishAdjust({ line, target }: { line: CartItem; target: DishTarget }) {
   const { state, dispatch, toast } = usePos();
   const dish = line.dish!;
@@ -28,6 +34,8 @@ export function DishAdjust({ line, target }: { line: CartItem; target: DishTarge
   const seats = tab ? Array.from({ length: tab.guests }, (_, i) => i + 1) : [];
   const full = dishUnitPrice({ ...dish, discountPct: 0 });
   const seatLabel = (s: number | null) => (s ? `Seat ${s}` : 'Shared');
+  const types = discountTypesFor(line, canManageStaff(state));
+  const applied = discountTypeById(dish.discountTypeId);
 
   return (
     <Box
@@ -68,17 +76,32 @@ export function DishAdjust({ line, target }: { line: CartItem; target: DishTarge
       )}
 
       <Row label="Discount">
-        {DISCOUNTS.map((pct) => (
+        <Pick
+          label="None"
+          active={!dish.discountPct}
+          onClick={() => {
+            dispatch({ type: 'discountDish', target, lineId: dish.lineId, pct: 0 });
+            toast(`${line.name}: full price`);
+          }}
+        />
+        {types.map(({ type, needsManager }) => (
           <Pick
-            key={pct}
-            label={pct === 0 ? 'None' : pct === 100 ? 'Comp' : `${pct}%`}
-            active={(dish.discountPct ?? 0) === pct}
+            key={type.id}
+            label={`${type.description} · ${type.value}%`}
+            active={dish.discountTypeId === type.id}
+            locked={needsManager}
             onClick={() => {
-              dispatch({ type: 'discountDish', target, lineId: dish.lineId, pct });
-              toast(pct ? `${line.name}: ${pct === 100 ? 'comped' : `${pct}% off`}` : `${line.name}: full price`);
+              if (needsManager) {
+                toast(`${type.description} needs a manager — sign in as one to apply it`);
+                return;
+              }
+              dispatch({ type: 'discountDish', target, lineId: dish.lineId, pct: type.value, discountTypeId: type.id });
+              toast(`${line.name}: ${discountLabel(type)}`);
             }}
           />
         ))}
+        {/* A percentage with no Buck type behind it — rung before discount types, or by a test. */}
+        {dish.discountPct && !applied ? <Pick label={`${dish.discountPct}% off`} active onClick={() => {}} /> : null}
         {dish.discountPct ? (
           <Typography sx={{ fontSize: 11.5, color: md3.onSurfaceVariant, ml: 0.5 }}>
             {money(full)} → {money(line.price)}
@@ -102,12 +125,16 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function Pick({ label, active, onClick }: { label: string; active?: boolean; onClick: () => void }) {
+function Pick({ label, active, locked, onClick }: { label: string; active?: boolean; locked?: boolean; onClick: () => void }) {
   return (
     <ButtonBase
       onClick={onClick}
       aria-pressed={active}
+      aria-label={locked ? `${label}, needs a manager` : undefined}
+      data-locked={locked || undefined}
       sx={{
+        gap: 0.5,
+        color: locked ? md3.outline : md3.onSurface,
         minHeight: 40,
         px: 1.5,
         borderRadius: `${radius.xl}px`,
@@ -117,6 +144,7 @@ function Pick({ label, active, onClick }: { label: string; active?: boolean; onC
         fontWeight: 600,
       }}
     >
+      {locked && <Icon name="lock" size={13} />}
       {label}
     </ButtonBase>
   );

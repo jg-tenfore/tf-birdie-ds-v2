@@ -293,9 +293,10 @@ export const GiftCardsAsLineItems: Story = {
   play: async () => {
     const record = within(await screen.findByRole('dialog'));
     await record.findByText('UPC');
-    // "Awarded" heads both this table and the rain-check one, which is the point — they are
-    // the same shape of thing and read the same way.
-    await expect(record.getAllByText('Awarded').length).toBe(2);
+    // "Awarded" heads this table, the rain-check one and — since punch cards took TF Buck's final
+    // design on Nov 26 — the punch-card one, which is the point: they are the same shape of thing
+    // and read the same way.
+    await expect(record.getAllByText('Awarded').length).toBe(3);
     // Two cards, so two rows — not one summed figure.
     await expect(record.getAllByText(/^Winnings|^Purchased/).length).toBeGreaterThan(1);
   },
