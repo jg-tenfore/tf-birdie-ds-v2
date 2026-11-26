@@ -15,7 +15,8 @@ const HiddenInput = styled('input')({
 });
 
 const meta = {
-  title: 'Components/Forms/File Upload Trigger',
+  title: 'Design System/Components/Forms/File Upload Trigger',
+  id: 'components-forms-file-upload-trigger',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

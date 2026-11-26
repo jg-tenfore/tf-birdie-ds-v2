@@ -10,7 +10,8 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const meta = {
-  title: 'Components/Layout & Structure/Accordion',
+  title: 'Design System/Components/Layout & Structure/Accordion',
+  id: 'components-layout-structure-accordion',
   component: Accordion,
   parameters: {
     layout: 'centered',

@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { DEMO_TODAY } from '../../../pos/data/bookings';
 import { timeRowKey } from '../../../pos/state/pos-store';
 import { MobileStory, mobileMeta, onTeeSheet } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 6 · Operations
+ * Archive / Original port / Mobile / Operations (Mobile Screens, section 6)
  *
  * Time-row operations and course configuration. The terminal opens these as centred
  * dialogs from the time gutter; on the phone every one that edits something is a
@@ -16,7 +17,9 @@ import { MobileStory, mobileMeta, onTeeSheet } from '../mobile-helpers';
  * lists them too, starting at the first tee time, for when there's no row to hand.
  */
 const meta = {
-  title: 'Mobile Screens/6 · Operations',
+  title: 'Archive/Original port/Mobile/Operations',
+  id: 'mobile-screens-6-·-operations',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

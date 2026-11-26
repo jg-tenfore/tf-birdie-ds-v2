@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../../edition-decorator';
 import { Box, Typography } from '@mui/material';
 import { expect, waitFor } from 'storybook/test';
 import { md3, radius } from '../../../../theme/tokens';
@@ -9,7 +10,7 @@ import { Screen, atVenue } from '../../../pos/screen-helpers';
 import { Chip, ProposalTerminal, WhatChanged } from '../mock-kit';
 
 /**
- * V1 → V2 Migration / 100126 / 7 · Menu by role
+ * Reviews / Oct 1 – Proposals from the Sep 30 call / 7. Menu by role (100126)
  *
  * Justin: *"we can segment based on permissions and employee capabilities. So you can make some of
  * these appear or not appear depending on the type of user… if it's just a bartender, right? She
@@ -23,7 +24,9 @@ import { Chip, ProposalTerminal, WhatChanged } from '../mock-kit';
  * there at all (not dimmed — dimmed means "not built yet"). A manager edits the grid in Settings.
  */
 const meta = {
-  title: 'V1 → V2 Migration/100126/7 · Menu by role',
+  title: 'Reviews/Oct 1 – Proposals from the Sep 30 call/7. Menu by role',
+  id: 'v1-→-v2-migration-100126-7-·-menu-by-role',
+  decorators: [withEdition('v1v2')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

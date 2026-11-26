@@ -12,7 +12,8 @@ import {
 } from '@mui/material';
 
 const meta = {
-  title: 'Components/Feedback & Status/Dialog',
+  title: 'Design System/Components/Feedback & Status/Dialog',
+  id: 'components-feedback-status-dialog',
   component: Dialog,
   parameters: {
     layout: 'centered',

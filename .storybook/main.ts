@@ -22,6 +22,10 @@ const config: StorybookConfig = {
     '@storybook/addon-mcp',
   ],
   framework: '@storybook/react-vite',
+  // `static/` holds the sidebar's TenFore logo and `legacy-redirects.js`, which sends links to
+  // pages moved in the Nov 26 regroup to their new ids (loaded by manager-head.html and
+  // preview-head.html).
+  staticDirs: ['./static'],
   docs: { defaultName: 'Overview' },
 };
 

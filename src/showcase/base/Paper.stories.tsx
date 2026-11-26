@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Paper, Typography } from '@mui/material';
 
 const meta = {
-  title: 'Components/Layout & Structure/Paper',
+  title: 'Design System/Components/Layout & Structure/Paper',
+  id: 'components-layout-structure-paper',
   component: Paper,
   parameters: {
     layout: 'centered',

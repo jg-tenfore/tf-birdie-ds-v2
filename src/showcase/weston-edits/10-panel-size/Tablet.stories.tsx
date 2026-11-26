@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, within } from 'storybook/test';
 import { Screen } from '../../pos/screen-helpers';
 import { adjustedParty, openParty, sheetWithPanel } from '../tablet-scenarios';
 import { PANEL_WIDTHS } from '../../../pos/state/pos-store';
 
 /**
- * Weston Edits / 10 · Panel Size / Tablet
+ * Reviews / Sep 22 – Weston Edits, rounds 1–5 / Panel size / Tablet (Weston Edits, section 10)
  *
  * How much of the terminal the reservation takes, and what happens to the tee sheet while it
  * has it. Two separate decisions that were tangled together until this section pulled them
@@ -130,7 +131,9 @@ import { PANEL_WIDTHS } from '../../../pos/state/pos-store';
  * Detail**.
  */
 const meta = {
-  title: 'Weston Edits/10 · Panel Size/Tablet',
+  title: 'Reviews/Sep 22 – Weston Edits, rounds 1–5/Panel size/Tablet',
+  id: 'weston-edits-10-·-panel-size-tablet',
+  decorators: [withEdition('weston')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;

@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Card, CardContent, CircularProgress, Skeleton, Stack } from '@mui/material';
 
 const meta = {
-  title: 'Components/Feedback & Status/Loading Indicator',
+  title: 'Design System/Components/Feedback & Status/Loading Indicator',
+  id: 'components-feedback-status-loading-indicator',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

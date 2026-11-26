@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box, Skeleton } from '@mui/material';
 
 const meta = {
-  title: 'Components/Feedback & Status/Skeleton',
+  title: 'Design System/Components/Feedback & Status/Skeleton',
+  id: 'components-feedback-status-skeleton',
   component: Skeleton,
   parameters: {
     layout: 'centered',

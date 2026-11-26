@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { DEMO_BOOKINGS, MobileStory, mobileMeta, withWalkInOrder } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 0 · Navigation
+ * Archive / Original port / Mobile / Navigation (Mobile Screens, section 0)
  *
  * The phone app, live. Four destinations on an MD3 navigation bar — Tee Sheet, Register,
  * People, More — and everything else one level down: pushed pages with a back arrow,
@@ -12,7 +13,9 @@ import { DEMO_BOOKINGS, MobileStory, mobileMeta, withWalkInOrder } from '../mobi
  * between them.
  */
 const meta = {
-  title: 'Mobile Screens/0 · Navigation',
+  title: 'Archive/Original port/Mobile/Navigation',
+  id: 'mobile-screens-0-·-navigation',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

@@ -17,7 +17,8 @@ import InsertDriveFile from '@mui/icons-material/InsertDriveFile';
 const HiddenInput = styled('input')({ display: 'none' });
 
 const meta = {
-  title: 'Components/Forms/File Upload',
+  title: 'Design System/Components/Forms/File Upload',
+  id: 'components-forms-file-upload',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

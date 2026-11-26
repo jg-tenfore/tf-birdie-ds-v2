@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Box } from '@mui/material';
 import { md3, shell } from '../../theme/tokens';
 import { PosShell } from '../../pos/PosApp';
@@ -19,7 +20,9 @@ import { DEMO_BOOKINGS, paidFoursome, withLoadedBooking, withWalkInOrder } from 
  * off that.
  */
 const meta = {
-  title: 'Components/Layout & Structure/App Chrome',
+  title: 'Design System/Components/Layout & Structure/App Chrome',
+  id: 'components-layout-structure-app-chrome',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, bookerWithRecord, nameOnlyGuest, openParty, withBookings } from '../mobile-scenarios';
@@ -6,7 +7,7 @@ import { seatRecord } from '../../../pos/logic/seat-pricing';
 import type { Booking } from '../../../pos/types';
 
 /**
- * Weston Edits / 4 · Customer Profile / Mobile
+ * Prototypes / Mobile / Customer Search / Customer profile (Weston Edits, section 4)
  *
  * The Customer **tab** is gone on the phone too. Weston's third round: "I don't think it needs
  * to be a tab on the reservation, I wonder if it's its own thing." A customer record is not a
@@ -108,7 +109,9 @@ import type { Booking } from '../../../pos/types';
  *   currently goes to `golferDetail` in the People tab, a different screen entirely.
  */
 const meta = {
-  title: 'Weston Edits/4 · Customer Profile/Mobile',
+  title: 'Prototypes/Mobile/Customer Search/Customer profile',
+  id: 'weston-edits-4-·-customer-profile-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -121,7 +124,6 @@ type Story = StoryObj;
 /** The reservation, then that seat's record stacked over it. */
 const recordOver = (b: Booking, seat: number) => (
   <MobileStory
-    edition="weston"
     initialState={at18(withBookings(b))}
     tab="tee"
     stack={[
@@ -183,7 +185,6 @@ export const FourTabs: Story = {
     const b = adjustedParty();
     return (
       <MobileStory
-        edition="weston"
         initialState={at18(withBookings(b))}
         tab="tee"
         stack={[{ name: 'bookingDetail', bookingId: b.id }]}

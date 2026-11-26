@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { playerName } from '../../../pos/logic/reservation';
 import { Screen } from '../../pos/screen-helpers';
@@ -11,7 +12,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 14 · Per-seat Cart / Tablet
+ * Prototypes / Tablet / Pro Shop / Per-seat cart (Weston Edits, section 14)
  *
  * Weston, on the third call, describing how a group that splits the bill actually gets rung up:
  * *"you hit add to cart for each player, and then you hit save."*
@@ -110,13 +111,24 @@ import {
  *   order.
  */
 const meta = {
-  title: 'Weston Edits/14 · Per-seat Cart/Tablet',
+  title: 'Prototypes/Tablet/Pro Shop/Per-seat cart',
+  id: 'weston-edits-14-·-per-seat-cart-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj;
+
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
 
 /** Seat `i`'s row, scoped for queries. */
 const row = (canvasElement: HTMLElement, i: number) =>
@@ -129,7 +141,8 @@ const row = (canvasElement: HTMLElement, i: number) =>
  * fee, his ride and his own green-fee tax — not the party's.
  */
 export const AddOnePlayer: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const b = openParty();
@@ -152,7 +165,8 @@ export const AddOnePlayer: Story = {
  * are simply absent rather than discounted away.
  */
 export const AddingTwoOneAtATime: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const b = openParty();
@@ -180,7 +194,7 @@ export const AddingTwoOneAtATime: Story = {
  * is on the bill.
  */
 export const SplittingTheBill: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithSeatOrder(openParty(), [0, 2])} />,
+  render: () => <Screen initialState={sheetWithSeatOrder(openParty(), [0, 2])} />,
 };
 
 /**
@@ -192,7 +206,8 @@ export const SplittingTheBill: Story = {
  * The play test asserts the collapsed strip is there before the Add and gone after it.
  */
 export const TheRailComesBack: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(openParty())} />,
   play: async ({ canvasElement }) => {
     const b = openParty();
     await expect(canvasElement.querySelector('[data-order-rail="collapsed"]')).toBeTruthy();
@@ -215,7 +230,8 @@ export const TheRailComesBack: Story = {
  * for all three seats.
  */
 export const CheckInAndPayTopsUp: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithSeatOrder(openParty(), [0])} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithSeatOrder(openParty(), [0])} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const b = openParty();
@@ -238,7 +254,8 @@ export const CheckInAndPayTopsUp: Story = {
  * cart read them from there.
  */
 export const AdjustmentsSurviveTheTopUp: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithSeatOrder(adjustedParty(), [2])} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithSeatOrder(adjustedParty(), [2])} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const b = adjustedParty();

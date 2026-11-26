@@ -3,7 +3,8 @@ import { Box, Link, Stack, Typography } from '@mui/material';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 
 const meta = {
-  title: 'Components/Navigation/Link',
+  title: 'Design System/Components/Navigation/Link',
+  id: 'components-navigation-link',
   component: Link,
   parameters: {
     layout: 'centered',

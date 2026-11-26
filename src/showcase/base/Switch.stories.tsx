@@ -37,7 +37,8 @@ function SwitchDemo() {
 }
 
 const meta = {
-  title: 'Components/Forms/Switch',
+  title: 'Design System/Components/Forms/Switch',
+  id: 'components-forms-switch',
   component: SwitchDemo,
   tags: ['autodocs'],
   parameters: {

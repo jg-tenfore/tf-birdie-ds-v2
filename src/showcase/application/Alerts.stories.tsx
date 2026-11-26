@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Alert, AlertTitle, Stack } from '@mui/material';
 
 const meta = {
-  title: 'Components/Feedback & Status/Alerts',
+  title: 'Design System/Components/Feedback & Status/Alerts',
+  id: 'components-feedback-status-alerts',
   component: Alert,
   tags: ['autodocs'],
 } satisfies Meta<typeof Alert>;

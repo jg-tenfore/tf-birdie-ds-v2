@@ -16,7 +16,8 @@ import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import Check from '@mui/icons-material/Check';
 
 const meta = {
-  title: 'Components/Navigation/Menu',
+  title: 'Design System/Components/Navigation/Menu',
+  id: 'components-navigation-menu',
   component: Menu,
   parameters: {
     layout: 'centered',

@@ -24,7 +24,8 @@ function SelectDemo() {
 }
 
 const meta = {
-  title: 'Components/Forms/Select',
+  title: 'Design System/Components/Forms/Select',
+  id: 'components-forms-select',
   component: SelectDemo,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof SelectDemo>;

@@ -9,6 +9,12 @@ import { parseStoryExports, storyId, storyNameFromExport } from './story-meta';
  * prototype on the next build. Modules give the render/play functions; the raw source gives
  * the authored order and each story's JSDoc, which a module namespace can't (its keys are
  * sorted, and comments don't survive compilation).
+ *
+ * The files are read by **folder**, not by sidebar title. Since the Nov 26 regroup the Mobile
+ * Screens files sit in Storybook under *Archive › Original port › Mobile* and Weston's phone
+ * files under *Prototypes › Mobile* (two of them under *Reviews*), but each pins its old story
+ * id in its meta (`id:`), so every hash route here, and every "Open in Storybook" link, is the
+ * id it was before the move.
  */
 
 export interface StoryContextLike {
@@ -21,14 +27,15 @@ interface StoryExport {
 }
 
 interface StoryModule {
-  default?: { title?: string };
+  /** `id` is the pinned component id; Storybook builds story ids from it rather than the title. */
+  default?: { title?: string; id?: string };
   [exportName: string]: unknown;
 }
 
 export interface ScreenEntry {
   /** Storybook's story id — also this screen's hash route. */
   id: string;
-  /** The section, i.e. meta.title after `Mobile Screens/` (`2 · Tee Sheet`). */
+  /** The section: the folder's number and the file's sidebar name (`2 · Tee Sheet`). */
   section: string;
   /** Storybook's display name for the export (`Detail Players`). */
   name: string;
@@ -43,8 +50,6 @@ export interface ScreenSection {
   entries: ScreenEntry[];
 }
 
-const PREFIX = 'Mobile Screens/';
-
 const modules = import.meta.glob<StoryModule>('../showcase/pos-mobile/*/*.stories.tsx', { eager: true });
 const sources = import.meta.glob<string>('../showcase/pos-mobile/*/*.stories.tsx', {
   query: '?raw',
@@ -57,7 +62,6 @@ const sources = import.meta.glob<string>('../showcase/pos-mobile/*/*.stories.tsx
  * — Vite needs a static glob — but only indexed when the build's edition is `weston`, so the
  * base mobile prototypes list exactly what they did before.
  */
-const WESTON_PREFIX = 'Weston Edits/';
 const westonModules = import.meta.glob<StoryModule>('../showcase/weston-edits/*/Mobile.stories.tsx', { eager: true });
 const westonSources = import.meta.glob<string>('../showcase/weston-edits/*/Mobile.stories.tsx', {
   query: '?raw',
@@ -65,14 +69,26 @@ const westonSources = import.meta.glob<string>('../showcase/weston-edits/*/Mobil
   eager: true,
 });
 
-/** `Weston Edits/1 · Reservation Panel/Mobile` → `Weston Edits · 1 · Reservation Panel`. */
-const westonSection = (title: string) =>
-  `Weston Edits · ${title.slice(WESTON_PREFIX.length).replace(/\/Mobile$/, '')}`;
+/** `…/2-tee-sheet/TeeSheet.stories.tsx` → `2`: the folder's number, which orders the sections. */
+const folderNumber = (path: string) => /\/(\d+)-[^/]+\/[^/]+$/.exec(path)?.[1] ?? '';
+
+/** The file's own name in the sidebar: its title's last segment, ignoring a trailing `Mobile`. */
+const sidebarName = (title: string) => {
+  const parts = title.split('/');
+  if (parts.length > 1 && parts[parts.length - 1] === 'Mobile') parts.pop();
+  return parts[parts.length - 1];
+};
+
+/** `…/1-register/Register.stories.tsx` titled `…/Register & Order` → `1 · Register & Order`. */
+const mobileSection = (title: string, path: string) => `${folderNumber(path)} · ${sidebarName(title)}`;
+
+/** `…/1-reservation-panel/Mobile.stories.tsx` → `Weston Edits · 1 · Reservation panel`. */
+const westonSection = (title: string, path: string) => `Weston Edits · ${mobileSection(title, path)}`;
 
 function buildIndex(
   mods: Record<string, StoryModule>,
   srcs: Record<string, string>,
-  sectionOf: (title: string) => string,
+  sectionOf: (title: string, path: string) => string,
 ): ScreenEntry[] {
   // Paths start with the numbered section folder (`0-navigation`, `1-register` …), so a
   // path sort is Storybook's sidebar order too.
@@ -82,13 +98,15 @@ function buildIndex(
     const mod = mods[path];
     const title = mod.default?.title;
     if (!title) continue;
-    const section = sectionOf(title);
+    const section = sectionOf(title, path);
+    // Storybook builds a story's id from the meta's pinned `id` when there is one.
+    const componentId = mod.default?.id ?? title;
     for (const { exportName, description } of parseStoryExports(srcs[path] ?? '')) {
       if (exportName === 'default' || exportName === '__namedExportsOrder') continue;
       const story = mod[exportName] as StoryExport | undefined;
       if (!story || typeof story !== 'object' || typeof story.render !== 'function') continue;
       entries.push({
-        id: storyId(title, exportName),
+        id: storyId(componentId, exportName),
         section,
         name: storyNameFromExport(exportName),
         exportName,
@@ -104,9 +122,7 @@ function buildIndex(
 /** True in the Weston Edits mobile prototype. */
 export const WESTON = buildEdition() === 'weston';
 
-const MOBILE_SCREENS = buildIndex(modules, sources, (title) =>
-  title.startsWith(PREFIX) ? title.slice(PREFIX.length) : title,
-);
+const MOBILE_SCREENS = buildIndex(modules, sources, mobileSection);
 
 /** The Weston Edits screens come first in their prototype, then every Mobile Screens story. */
 export const SCREENS: ScreenEntry[] = WESTON

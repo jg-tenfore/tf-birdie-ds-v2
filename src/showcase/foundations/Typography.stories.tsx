@@ -18,7 +18,8 @@ const VARIANTS = [
 ] as const;
 
 const meta = {
-  title: 'Foundations/Typography',
+  title: 'Design System/Styles/Typography',
+  id: 'foundations-typography',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 export default meta;

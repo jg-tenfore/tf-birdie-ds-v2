@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_TABS } from '../../../pos/data/restaurant-seed';
 import type { PosState } from '../../../pos/state/pos-store';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 6 · Tabs / Tablet
+ * Prototypes / Tablet / Tabs / Bar tabs (V1 → V2 Migration, section 6)
  *
  * **Every open tab, and the seat-by-seat check a tab opens into — now with a kitchen.**
  *
@@ -46,7 +47,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * - **Pay** hands the tab to the register — or, if the register has someone else's order, says so.
  */
 const meta = {
-  title: 'V1 → V2 Migration/6 · Tabs/Tablet',
+  title: 'Prototypes/Tablet/Tabs/Bar tabs',
+  id: 'v1-→-v2-migration-6-·-tabs-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

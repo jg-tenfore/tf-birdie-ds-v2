@@ -5,7 +5,8 @@ import Edit from '@mui/icons-material/Edit';
 import Navigation from '@mui/icons-material/Navigation';
 
 const meta = {
-  title: 'Components/Actions/Floating Action Button',
+  title: 'Design System/Components/Actions/Floating Action Button',
+  id: 'components-actions-floating-action-button',
   component: Fab,
   parameters: {
     layout: 'centered',

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { userEvent, within } from 'storybook/test';
 import type { PosState } from '../../../pos/state/pos-store';
 import {
@@ -13,7 +14,7 @@ import {
 } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 1 · Register & Order
+ * Archive / Original port / Mobile / Register & Order (Mobile Screens, section 1)
  *
  * The core translation from the terminal: there, the order is a panel that never leaves
  * the screen; here it's a screen of its own. Everything else in the Register destination
@@ -31,7 +32,9 @@ import {
  * clearing the order) are bottom sheets that keep you where you were.
  */
 const meta = {
-  title: 'Mobile Screens/1 · Register & Order',
+  title: 'Archive/Original port/Mobile/Register & Order',
+  id: 'mobile-screens-1-·-register-order',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

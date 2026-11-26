@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { DEMO_BOOKINGS, Screen, onTeeSheet, screenParams } from '../screen-helpers';
 
 /**
- * POS Screens / 2 · Tee Sheet
+ * Archive / Original port / Tablet / Tee Sheet (POS Screens, section 2)
  *
  * The sheet is courses × time. A booking spans one cell per player, so a row reads as
  * capacity without any numbers on it.
@@ -13,7 +14,9 @@ import { DEMO_BOOKINGS, Screen, onTeeSheet, screenParams } from '../screen-helpe
  * the counter's first question is always who still owes money.
  */
 const meta = {
-  title: 'POS Screens/2 · Tee Sheet',
+  title: 'Archive/Original port/Tablet/Tee Sheet',
+  id: 'pos-screens-2-·-tee-sheet',
+  decorators: [withEdition('archived')],
   parameters: { ...screenParams },
 } satisfies Meta;
 

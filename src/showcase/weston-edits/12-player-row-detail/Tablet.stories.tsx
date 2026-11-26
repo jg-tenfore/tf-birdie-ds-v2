@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { money } from '../../../pos/logic/cart';
 import { playerName } from '../../../pos/logic/reservation';
@@ -14,7 +15,7 @@ import {
 } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 12 · Player Row Detail / Tablet
+ * Prototypes / Tablet / Tee Sheet / Player row detail (Weston Edits, section 12)
  *
  * What a player row says underneath the name.
  *
@@ -116,13 +117,24 @@ import {
  *   *and* a cart, is taller in both densities.
  */
 const meta = {
-  title: 'Weston Edits/12 · Player Row Detail/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Player row detail',
+  id: 'weston-edits-12-·-player-row-detail-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj;
+
+/**
+ * Pinned to **Weston Edits** rather than the current tablet edition (listed in the Nov 26 regroup).
+ * V1 → V2 replaced Weston's player rows with **Player rows v2** (approved Oct 3; see Reviews ›
+ * Oct 2 – Proposal review › 1. Player rows v2): every player open on two lines, **Add** per
+ * player, and the rate editor, cart key and tee fee behind **⋯**. These stories drive Weston's
+ * row controls, which only Weston Edits still has.
+ */
+const westonOnly = [withEdition('weston')];
 
 // ─── Play-test helpers ──────────────────────────────────────────────────────
 
@@ -148,7 +160,7 @@ const isTruncated = (el: HTMLElement) => el.scrollWidth > el.clientWidth + 1;
  * is a line of its own rather than a continuation of it.
  */
 export const Comfortable: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(annotatedFoursome())} />,
+  render: () => <Screen initialState={sheetWithPanel(annotatedFoursome())} />,
   play: async ({ canvasElement }) => {
     const seat = within(row(canvasElement, 1));
     const name = seat.getByText('Weekday Senior Resident');
@@ -171,9 +183,9 @@ export const Comfortable: Story = {
  * four seats are rendered.
  */
 export const Dense: Story = {
+  decorators: westonOnly,
   render: () => (
     <Screen
-      edition="weston"
       initialState={sheetWithPanel(annotatedFoursome(), 'players', {
         weston: { ...DEFAULT_WESTON_OPTIONS, rowDensity: 'dense' },
       })}
@@ -204,7 +216,8 @@ export const Dense: Story = {
  * the struck price is the gross.
  */
 export const ADiscountedSeat: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(discountedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(discountedParty())} />,
   play: async ({ canvasElement }) => {
     const b = discountedParty();
     const seat = within(row(canvasElement, 1));
@@ -242,7 +255,8 @@ export const ADiscountedSeat: Story = {
  * The play test checks the card name, the $0 green fee and the unchanged ride.
  */
 export const OnAPunchCard: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(punchedParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(punchedParty())} />,
   play: async ({ canvasElement }) => {
     const seat = within(row(canvasElement, 2));
     await expect(seat.getByText(punchCard().name)).toBeTruthy();
@@ -266,7 +280,8 @@ export const OnAPunchCard: Story = {
  * The play test checks both places the number appears: the key button and the meta line.
  */
 export const ACartSignedOut: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(cartKeyParty())} />,
+  decorators: westonOnly,
+  render: () => <Screen initialState={sheetWithPanel(cartKeyParty())} />,
   play: async ({ canvasElement }) => {
     const b = cartKeyParty();
     const seat = within(row(canvasElement, 0));

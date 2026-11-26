@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Chip, Stack } from '@mui/material';
 
 const meta = {
-  title: 'Components/Feedback & Status/Badge Group',
+  title: 'Design System/Components/Feedback & Status/Badge Group',
+  id: 'components-feedback-status-badge-group',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

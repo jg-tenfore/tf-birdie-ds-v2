@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_EVENTS, SEED_EVENT_BOOKINGS, eventGolf, eventSpend } from '../../../pos/data/events';
 import { money, orderTotals } from '../../../pos/logic/cart';
@@ -6,7 +7,7 @@ import type { CartItem } from '../../../pos/types';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 15 · Events / Tablet
+ * Prototypes / Tablet / Events / Events & charges (V1 → V2 Migration, section 15)
  *
  * **An outing's golf and its spend, as one thing, billed to the organiser once.**
  *
@@ -35,7 +36,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  *   open event.
  */
 const meta = {
-  title: 'V1 → V2 Migration/15 · Events/Tablet',
+  title: 'Prototypes/Tablet/Events/Events & charges',
+  id: 'v1-→-v2-migration-15-·-events-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

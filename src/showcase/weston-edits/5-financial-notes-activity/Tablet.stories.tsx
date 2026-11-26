@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { Screen } from '../../pos/screen-helpers';
 import { adjustedParty, noShowParty, openParty, paidTwilight, sheetWithPanel } from '../tablet-scenarios';
 
 /**
- * Weston Edits / 5 · Financial, Notes & Activity / Tablet
+ * Prototypes / Tablet / Tee Sheet / Financial, notes & activity (Weston Edits, section 5)
  *
  * The rest of the old Booking Detail dialog, moved into the panel so the reservation is one
  * place. Weston's ask was that the golf be worked before the order — "you're still massaging
@@ -83,7 +84,9 @@ import { adjustedParty, noShowParty, openParty, paidTwilight, sheetWithPanel } f
  * events are synthesised from the booking's state. Edits made in the panel do not append to it.
  */
 const meta = {
-  title: 'Weston Edits/5 · Financial, Notes & Activity/Tablet',
+  title: 'Prototypes/Tablet/Tee Sheet/Financial, notes & activity',
+  id: 'weston-edits-5-·-financial-notes-activity-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
   globals: { viewport: { value: 'counterTerminal', isRotated: false } },
 } satisfies Meta;
@@ -97,25 +100,25 @@ type Story = StoryObj;
  * adjusted per player. Refund and rain check stay per player.
  */
 export const FinancialAdjusted: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(adjustedParty(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(adjustedParty(), 'financial')} />,
 };
 
 /** Financial on a paid booking — nothing outstanding; the same $29 the reservation shows. */
 export const FinancialPaid: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight(), 'financial')} />,
 };
 
 /** Financial on a no-show party: nobody owes, and the rain-check trail is where action is. */
 export const FinancialNoShow: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(noShowParty(), 'financial')} />,
+  render: () => <Screen initialState={sheetWithPanel(noShowParty(), 'financial')} />,
 };
 
 /** Notes: tags, the group note (shown on the chip and cart), and per-player notes. */
 export const Notes: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(openParty(), 'notes')} />,
+  render: () => <Screen initialState={sheetWithPanel(openParty(), 'notes')} />,
 };
 
 /** Activity: the audit trail, seeded from the booking's state so it is never empty. */
 export const Activity: Story = {
-  render: () => <Screen edition="weston" initialState={sheetWithPanel(paidTwilight(), 'activity')} />,
+  render: () => <Screen initialState={sheetWithPanel(paidTwilight(), 'activity')} />,
 };

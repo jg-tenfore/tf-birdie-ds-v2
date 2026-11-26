@@ -11,7 +11,8 @@ import {
 } from '@mui/material';
 
 const meta = {
-  title: 'Components/Forms/Form',
+  title: 'Design System/Components/Forms/Form',
+  id: 'components-forms-form',
   parameters: { layout: 'centered' },
 } satisfies Meta;
 export default meta;

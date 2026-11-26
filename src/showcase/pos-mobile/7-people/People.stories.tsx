@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { userEvent, within } from 'storybook/test';
 import type { Golfer } from '../../../pos/types';
 import { DEMO_BOOKINGS, MobileStory, mobileMeta, withWalkInOrder } from '../mobile-helpers';
 
 /**
- * Mobile Screens / 7 · People
+ * Archive / Original port / Mobile / People (Mobile Screens, section 7)
  *
  * The CRM as a destination of its own. The shape is the Android contacts app: search and
  * filter chips at the top, an alphabetical list, tap a person to drill in. Creating a
@@ -16,7 +17,9 @@ import { DEMO_BOOKINGS, MobileStory, mobileMeta, withWalkInOrder } from '../mobi
  * order.
  */
 const meta = {
-  title: 'Mobile Screens/7 · People',
+  title: 'Archive/Original port/Mobile/People',
+  id: 'mobile-screens-7-·-people',
+  decorators: [withEdition('archived')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.

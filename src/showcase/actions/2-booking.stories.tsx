@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../edition-decorator';
 import { Exhibit, T0, actionParams, afterShows, mk, row } from './action-helpers';
 import type { PlayerState } from '../../pos/types';
 
 /**
- * Tee Sheet Actions / **2 · Booking**
+ * Archive / Tee Sheet Actions / **Booking** (Tee Sheet Actions, section 2)
  *
  * Everything reachable by right-clicking a booking chip. These are the actions staff run
  * most: a group arrives, tees off, finishes, settles up, or fails to show.
@@ -14,7 +15,9 @@ import type { PlayerState } from '../../pos/types';
  * in a field-by-field comparison.
  */
 const meta = {
-  title: 'Tee Sheet Actions/2 · Booking',
+  title: 'Archive/Tee Sheet Actions/Booking',
+  id: 'tee-sheet-actions-2-·-booking',
+  decorators: [withEdition('archived')],
   parameters: actionParams,
 } satisfies Meta;
 

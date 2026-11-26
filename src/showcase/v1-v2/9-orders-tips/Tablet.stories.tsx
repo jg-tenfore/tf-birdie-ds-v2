@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SEED_PAYMENTS } from '../../../pos/data/restaurant-seed';
 import { dayTotals } from '../../../pos/logic/tips';
 import { Screen, atVenue } from '../../pos/screen-helpers';
 
 /**
- * V1 → V2 Migration / 9 · Orders & Tips / Tablet
+ * Prototypes / Tablet / Orders & Tips / Tips ledger (V1 → V2 Migration, section 9)
  *
  * **The day's payments, and the tips changed after the fact.**
  *
@@ -35,7 +36,9 @@ import { Screen, atVenue } from '../../pos/screen-helpers';
  * - **No cash drop.** It moves to closing the till, with Shift, in wave 3.
  */
 const meta = {
-  title: 'V1 → V2 Migration/9 · Orders & Tips/Tablet',
+  title: 'Prototypes/Tablet/Orders & Tips/Tips ledger',
+  id: 'v1-→-v2-migration-9-·-orders-tips-tablet',
+  decorators: [withEdition('current-tablet')],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta;
 

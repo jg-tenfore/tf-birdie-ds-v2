@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withEdition } from '../../edition-decorator';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MobileStory, mobileMeta } from '../../pos-mobile/mobile-helpers';
 import { adjustedParty, at18, loadedOrder, memberParty, paidParty, partlyPaidNamed, withBookings } from '../mobile-scenarios';
 
 /**
- * Weston Edits / 6 · Check In & Pay / Mobile
+ * Prototypes / Mobile / Tee Sheet / Check in & pay (Weston Edits, section 6)
  *
  * The reservation's pinned bottom action — the one moment the golf goes to the register.
  * Its amount is what the order will charge for the reservation *as adjusted* (fees, holes,
@@ -110,7 +111,9 @@ import { adjustedParty, at18, loadedOrder, memberParty, paidParty, partlyPaidNam
  * no-show flag; an accidental Check in & pay is corrected on the player rows, not from the bar.
  */
 const meta = {
-  title: 'Weston Edits/6 · Check In & Pay/Mobile',
+  title: 'Prototypes/Mobile/Tee Sheet/Check in & pay',
+  id: 'weston-edits-6-·-check-in-pay-mobile',
+  decorators: [withEdition('current-mobile')],
   ...mobileMeta,
   // Inline, not only via the spread: the docs plugin injects its own `parameters` key and
   // would overwrite a spread one, silently dropping `layout: fullscreen`.
@@ -121,7 +124,7 @@ export default meta;
 type Story = StoryObj;
 
 const detail = (b: ReturnType<typeof adjustedParty>) => (
-  <MobileStory edition="weston" initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />
+  <MobileStory initialState={at18(withBookings(b))} tab="tee" stack={[{ name: 'bookingDetail', bookingId: b.id }]} />
 );
 
 /** An adjusted, unpaid reservation: **Check in & pay · $amount**, with the amount the order will show. */
@@ -160,7 +163,7 @@ export const MemberNoCharge: Story = {
 
 /** The order a paid-in-full reservation opens: every seat struck through, nothing to charge. */
 export const PaidInFullOrder: Story = {
-  render: () => <MobileStory edition="weston" initialState={loadedOrder(paidParty())} tab="register" stack={[{ name: 'order' }]} />,
+  render: () => <MobileStory initialState={loadedOrder(paidParty())} tab="register" stack={[{ name: 'order' }]} />,
 };
 
 /**
@@ -173,7 +176,6 @@ export const PaidInFullOrder: Story = {
 export const QuickSheetOpensReservation: Story = {
   render: () => (
     <MobileStory
-      edition="weston"
       initialState={at18(withBookings(adjustedParty()), { contextMenu: { kind: 'booking', bookingId: adjustedParty().id, x: 0, y: 0 } })}
       tab="tee"
     />
@@ -192,7 +194,7 @@ export const QuickSheetOpensReservation: Story = {
  * the party is set up; its Check in & pay brings it to the order.
  */
 export const WalkInFromRegister: Story = {
-  render: () => <MobileStory edition="weston" initialState={at18()} tab="register" />,
+  render: () => <MobileStory initialState={at18()} tab="register" />,
   play: async ({ canvasElement }) => {
     const c = within(canvasElement);
     await userEvent.click(await c.findByText('Walk-in'));
